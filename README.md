@@ -4,6 +4,11 @@ Tukaan is the new, pythonic and colorful (like a keel-billed toucan) framework t
 It has everything (on my computer, not at GitHub) that you need to develop cross-platform GUIs.
 
 
+## WIP
+Although all the basic widgets and other objects already exist on my local repo, they are not yet ready to push them to GitHub.
+I only push things to GotHub that work and can be tried, but they are still in progress, so you shouldn’t use it in any project. 
+
+
 ## Credits
 Many thing in Tukaan is based on:
 
