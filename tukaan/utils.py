@@ -6,7 +6,10 @@ from typing import Any, Callable
 
 counts: collections.defaultdict = collections.defaultdict(lambda: itertools.count(1))
 
-class TukaanError(Exception): ...
+
+class TukaanError(Exception):
+    ...
+
 
 def updated(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
@@ -48,6 +51,7 @@ def get_tcl_interp():
 
 
 _flatten = itertools.chain.from_iterable
+
 
 def from_tcl(type_spec, value):
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""

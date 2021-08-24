@@ -3,12 +3,12 @@ import itertools
 import os
 import sys
 import types
-from typing import Any, Callable, Tuple, Union, Dict
+from typing import Any, Callable, Dict, Tuple, Union
 
 import _tkinter as tk
 
 from .tkwidget import TkWidget
-from .utils import from_tcl, to_tcl, TukaanError
+from .utils import TukaanError, from_tcl, to_tcl
 from .windowmanager import WindowManager
 
 tcl_interp = None
@@ -58,11 +58,15 @@ class App(WindowManager, TkWidget):
         self.topmost = topmost
         self.transparency = transparency
         # i can't figure out why, but mypy says 'size' is read-only
-        self.size = width, height # type: ignore
+        self.size = width, height  # type: ignore
         self.fullscreen = fullscreen
 
         if theme is None:
-            theme = "clam" if self.tcl_call(str, "tk", "windowingsystem") == "x11" else "native"
+            theme = (
+                "clam"
+                if self.tcl_call(str, "tk", "windowingsystem") == "x11"
+                else "native"
+            )
 
         self.theme = theme
 
@@ -72,7 +76,7 @@ class App(WindowManager, TkWidget):
             return from_tcl(return_type, result)
         except tk.TclError as e:
             _, msg, tb = sys.exc_info()
-            back_frame: types.FrameType = tb.tb_frame.f_back # type: ignore
+            back_frame: types.FrameType = tb.tb_frame.f_back  # type: ignore
 
             back_tb = types.TracebackType(
                 tb_next=None,

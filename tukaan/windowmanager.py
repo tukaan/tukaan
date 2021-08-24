@@ -1,11 +1,12 @@
 import re
-from typing import Any, Callable, List, Tuple, Union, Literal
+from typing import Any, Callable, List, Literal, Tuple, Union
 
 from ._platform import Platform
 from .utils import TukaanError
 
 # This module can't use anything that relies on get_tcl_interp,
 # so it has its own each of those, which isn't a good thing :(
+
 
 def updated(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
@@ -16,12 +17,14 @@ def updated(func: Callable) -> Callable:
 
     return wrapper
 
+
 def update_before(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
         self.tcl_call(None, "update", "idletasks")
         return func(self, *args, **kwargs)
 
     return wrapper
+
 
 def update_after(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
@@ -31,9 +34,10 @@ def update_after(func: Callable) -> Callable:
 
     return wrapper
 
+
 # FIXME: the name 'windowmanager' is dumb because
 # this class contains not only wm stuff, but all the other methods and properties
-# needed for App and Window objects 
+# needed for App and Window objects
 class WindowManager:
     tcl_call: Callable
     wm_path: str
@@ -68,7 +72,7 @@ class WindowManager:
             None, "wm", "attributes", self.wm_path, "-fullscreen", is_fullscreen
         )
 
-    @property # type: ignore
+    @property  # type: ignore
     @update_before
     def size(self) -> tuple:
         return tuple(
@@ -80,7 +84,7 @@ class WindowManager:
             )
         )
 
-    @size.setter # type: ignore
+    @size.setter  # type: ignore
     @update_after
     def size(self, size: Union[Tuple, List, int]) -> None:
         if isinstance(size, (tuple, list)) and len(size) > 1:
@@ -95,7 +99,7 @@ class WindowManager:
         )
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"{width}x{height}")
 
-    @property # type: ignore
+    @property  # type: ignore
     @update_before
     def position(self) -> Tuple:
         return tuple(
@@ -107,12 +111,11 @@ class WindowManager:
             )
         )
 
-    @position.setter # type: ignore
+    @position.setter  # type: ignore
     @update_after
     def position(
         self,
-        position:
-        Union[
+        position: Union[
             int,
             Tuple,
             List,
@@ -121,7 +124,7 @@ class WindowManager:
                 Literal["top-left"],
                 Literal["top-right"],
                 Literal["bottom-left"],
-                Literal["bottom-right"]
+                Literal["bottom-right"],
             ],
         ],
     ):
@@ -170,7 +173,7 @@ class WindowManager:
             x = y = position
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"+{x}+{y}")
 
-    @property # type: ignore
+    @property  # type: ignore
     def bbox(self):
         # TODO: bottom border hack
 
@@ -184,62 +187,62 @@ class WindowManager:
 
         return (x1, y1, x2, y2)
 
-    @property # type: ignore
+    @property  # type: ignore
     @update_before
     def x(self):
         return self.tcl_call(int, "winfo", "x", self.wm_path)
 
-    @x.setter # type: ignore
+    @x.setter  # type: ignore
     @update_after
     def x(self, x):
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"{x}x{self.y}")
 
-    @property # type: ignore
+    @property  # type: ignore
     @update_before
     def y(self):
         return self.tcl_call(int, "winfo", "y", self.wm_path)
 
-    @y.setter # type: ignore
+    @y.setter  # type: ignore
     @update_after
     def y(self, y):
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"{self.x}x{y}")
 
-    @property # type: ignore
+    @property  # type: ignore
     @update_before
     def root_x(self):
         return self.tcl_call(int, "winfo", "rootx", self.wm_path)
 
-    @property # type: ignore
+    @property  # type: ignore
     @update_before
     def root_y(self):
         return self.tcl_call(int, "winfo", "rooty", self.wm_path)
 
-    @property # type: ignore
+    @property  # type: ignore
     @update_before
     def width(self):
         return self.tcl_call(int, "winfo", "width", self.wm_path)
 
-    @width.setter # type: ignore
+    @width.setter  # type: ignore
     @update_after
     def width(self, width):
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"{width}x{self.height}")
 
-    @property # type: ignore
+    @property  # type: ignore
     @update_before
     def height(self):
         return self.tcl_call(int, "winfo", "height", self.wm_path)
 
-    @height.setter # type: ignore
+    @height.setter  # type: ignore
     @update_after
     def height(self, height):
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"{self.width}x{height}")
 
-    @property # type: ignore
+    @property  # type: ignore
     @update_before
     def minsize(self):
         return self.tcl_call(None, "wm", "minsize", self.wm_path)
 
-    @minsize.setter # type: ignore
+    @minsize.setter  # type: ignore
     @update_after
     def minsize(self, size):
         if isinstance(size, (tuple, list)) and len(size) > 1:
@@ -248,12 +251,12 @@ class WindowManager:
             width = height = size
         self.tcl_call(None, "wm", "minsize", self.wm_path, width, height)
 
-    @property # type: ignore
+    @property  # type: ignore
     @update_before
     def maxsize(self):
         return self.tcl_call(None, "wm", "maxsize", self.wm_path)
 
-    @maxsize.setter # type: ignore
+    @maxsize.setter  # type: ignore
     @update_after
     def maxsize(self, size):
         if isinstance(size, (tuple, list)) and len(size) > 1:
@@ -292,7 +295,12 @@ class WindowManager:
         return self._resizable
 
     @resizable.setter
-    def resizable(self, direction: Union[Literal["none"], Literal["horizontal"], Literal["vertical"], Literal["both"]]):
+    def resizable(
+        self,
+        direction: Union[
+            Literal["none"], Literal["horizontal"], Literal["vertical"], Literal["both"]
+        ],
+    ):
         resize_dict = {
             "none": (False, False),
             "horizontal": (True, False),
@@ -345,4 +353,6 @@ class WindowManager:
 
     @theme.setter
     def theme(self, theme):
-        self.tcl_call(None, "ttk::style", "theme", "use", self._get_theme_aliases()[theme])
+        self.tcl_call(
+            None, "ttk::style", "theme", "use", self._get_theme_aliases()[theme]
+        )

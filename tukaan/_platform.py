@@ -1,4 +1,5 @@
 import platform
+
 import _tkinter as tk
 
 from .utils import ClassPropertyMetaClass, classproperty, get_tcl_interp
