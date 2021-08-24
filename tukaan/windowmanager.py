@@ -82,17 +82,18 @@ class WindowManager:
 
     @size.setter # type: ignore
     @update_after
-    def size(
-        self,
-        size:
-        Union[
-            int,
-            Tuple,
-            List
-        ],
-    ):
-        pass
-        
+    def size(self, size: Union[Tuple, List, int]) -> None:
+        if isinstance(size, (tuple, list)) and len(size) > 1:
+            width, height = size
+        elif isinstance(size, int):
+            width = height = size
+        width, height = tuple(
+            map(
+                lambda a: self.tcl_call(int, "winfo", "pixels", ".", a),
+                (width, height),
+            )
+        )
+        self.tcl_call(None, "wm", "geometry", self.wm_path, f"{width}x{height}")
 
     @property # type: ignore
     @update_before

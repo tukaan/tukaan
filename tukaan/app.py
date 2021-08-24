@@ -72,7 +72,7 @@ class App(WindowManager, TkWidget):
             return from_tcl(return_type, result)
         except tk.TclError as e:
             _, msg, tb = sys.exc_info()
-            back_frame = tb.tb_frame.f_back
+            back_frame: types.FrameType = tb.tb_frame.f_back # type: ignore
 
             back_tb = types.TracebackType(
                 tb_next=None,
