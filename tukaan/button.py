@@ -4,8 +4,7 @@ from ._base import BaseWidget, TkWidget
 
 
 class Button(BaseWidget):
-    # FIXME: return the actual function for command attribute, not the tcl name
-    _keys: Dict[str, Any] = {"command": str, "style":str, "text": str}
+    _keys: Dict[str, Any] = {"command": Callable, "style": str, "text": str}
 
     def __init__(
         self,

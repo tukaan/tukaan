@@ -3,7 +3,7 @@ import itertools
 from abc import abstractmethod
 from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
 
-from .utils import (create_command, get_tcl_interp, update_after,
+from .utils import (_callbacks, create_command, get_tcl_interp, update_after,
                     update_before, updated)
 
 
@@ -92,11 +92,16 @@ class MethodMixin:
     def id(self) -> int:
         return self._tcl_call(int, "winfo", "id", self.tcl_path)
 
-    def _cget(self, key):
+    def _cget(self, key: str) -> Any:
         if isinstance(self._keys[key], tuple):
             type_spec, key = self._keys[key]
         else:
             type_spec = self._keys[key]
+
+        if isinstance(type_spec, Callable):
+            # return a callable func, not tcl name
+            result = self._tcl_call(str, self, "cget", f"-{key}")
+            return _callbacks[result]
 
         return self._tcl_call(type_spec, self, "cget", f"-{key}")
 
