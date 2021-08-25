@@ -43,14 +43,14 @@ class HSV:
         s = 0 if high == 0 else (diff / high) * 100
         v = high * 100
 
-        return cast(Tuple[int, int, int], tuple(int(x) for x in (h, s, v)))
+        return cast(Tuple[int, int, int], tuple(int(round(x, 0)) for x in (h, s, v)))
 
     @staticmethod
     def from_hsv(h, s, v) -> Tuple[int, int, int]:
         h, s, v = h / 360, s / 100, v / 100
 
         if s == 0.0:
-            return cast(Tuple[int, int, int], tuple(int(x * 255) for x in (v, v, v)))
+            return cast(Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (v, v, v)))
 
         i = int(h * 6.0)
         f = (h * 6.0) - i
@@ -70,7 +70,7 @@ class HSV:
             (v, p, q),
         ][int(i % 6)]
 
-        return cast(Tuple[int, int, int], tuple(int(x * 255) for x in (r, g, b)))
+        return cast(Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (r, g, b)))
 
 
 class CMYK:
@@ -87,7 +87,7 @@ class CMYK:
         y = (y - k) / (1 - k)
 
         return cast(
-            Tuple[int, int, int, int], tuple(int(x * 100) for x in (c, m, y, k))
+            Tuple[int, int, int, int], tuple(int(round(x * 100, 0)) for x in (c, m, y, k))
         )
 
     @staticmethod
