@@ -18,12 +18,12 @@ class Button(BaseWidget):
         self,
         parent: Union[TkWidget, None] = None,
         callback: Union[Callable, None] = None,
-        default: str = None,
-        focusable: bool = None,
-        style: str = None,
-        text: str = None,
-        underline: int = None,
-        width: int = None,
+        default: Union[str, None] = None,
+        focusable: Union[bool, None] = None,
+        style: Union[str, None] = None,
+        text: Union[str, None] = None,
+        underline: Union[int, None] = None,
+        width: Union[int, None] = None,
     ) -> None:
         BaseWidget.__init__(
             self,
