@@ -28,17 +28,24 @@ class MyApp(tukaan.App):
 	def __init__(self, title="My nice little Tukaan app"):
 		tukaan.App.__init__(self, title=title)
 
+		self.position = "center"
+
+		self.button = tukaan.Button(self, text="Button", command=lambda: print("ok"))
+
+		self.pack_widgets()
+	
+	def pack_widgets(self):
+		self.button.pack()
+
 
 def main():
 	app = MyApp()
-	app.position = "center"
 
 	app.run()
 
 
 if __name__ == "__main__":
-	main()
-
+	main() 
 ```
 
 
