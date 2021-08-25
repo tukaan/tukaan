@@ -213,8 +213,8 @@ class BaseWidget(TkWidget):
         # FIXME: more elegant way to count child types
         # itertools.count isn't good, because we need plain ints
 
-        count = self.parent._child_type_count.get(name, 0) + 1
-        self.parent._child_type_count[name] = count
+        count = self.parent._child_type_count.get(klass, 0) + 1
+        self.parent._child_type_count[klass] = count
 
         name: str = f"{self.parent.tcl_path}.{klass.__name__.lower()}{count}"
 
