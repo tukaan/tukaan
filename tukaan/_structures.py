@@ -92,11 +92,11 @@ class CMYK:
 
     @staticmethod
     def from_cmyk(c, m, y, k) -> Tuple[int, int, int]:
-        r = (1 - c / 100) * (1 - k / 100)
-        g = (1 - m / 100) * (1 - k / 100)
-        b = (1 - y / 100) * (1 - k / 100)
+        r = (1.0 - (c + k) / 100.0)
+        g = (1.0 - (m + k) / 100.0)
+        b = (1.0 - (y + k) / 100.0)
 
-        return cast(Tuple[int, int, int], tuple(int(x * 255) for x in (r, g, b)))
+        return cast(Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (r, g, b)))
 
 
 # TODO: hsl, yiq
