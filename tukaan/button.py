@@ -8,17 +8,28 @@ class Button(BaseWidget):
         "callback": (Callable, "command"),
         "style": str,
         "text": str,
+        "underline": int,
+        "width": int,
     }
 
     def __init__(
         self,
         master: Union[TkWidget, None] = None,
-        text: str = "",
-        style: str = "TButton",
         callback: Union[Callable, None] = None,
+        style: str = "TButton",
+        text: str = "",
+        underline: int = None,
+        width: int = None,
     ) -> None:
         BaseWidget.__init__(
-            self, master, "ttk::button", text=text, style=style, command=callback
+            self,
+            master,
+            "ttk::button",
+            command=callback,
+            style=style,
+            text=text,
+            width=width,
+            underline=underline,
         )
 
     def invoke(self):
