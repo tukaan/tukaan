@@ -107,6 +107,10 @@ class MethodMixin:
 
     @update_after
     def config(self, **kwargs) -> None:
+        for key in tuple(kwargs.keys()):
+            if isinstance(self._keys[key], tuple):
+                kwargs[self._keys[key][1]] = kwargs.pop(key)
+
         get_tcl_interp().tcl_call(
             None, self, "configure", *self._py_to_tcl_arguments(kwargs)
         )
