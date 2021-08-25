@@ -1,10 +1,14 @@
 import collections
 import itertools
 import numbers
+import sys
+import traceback
 from inspect import isclass
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 
 counts: collections.defaultdict = collections.defaultdict(lambda: itertools.count(1))
+
+_callbacks: Dict[str, Callable] = {}
 
 
 class TukaanError(Exception):
@@ -51,6 +55,32 @@ def get_tcl_interp():
 
 
 _flatten = itertools.chain.from_iterable
+
+
+def create_command(func):
+    stack_info = "".join(traceback.format_stack())
+
+    name = f"tukaan_command_{next(counts['commands'])}"
+
+    _callbacks[name] = func
+
+    def real_func(*args):
+        try:
+            return func(*args)
+        except Exception as e:
+            # TODO: better error handling
+            # don't print the unrelevant lines
+            tb, rest = traceback.format_exc().split("\n", 1)
+            print(f"{tb}\n{stack_info}{rest}", end="", file=sys.stderr)
+            return ""
+
+    get_tcl_interp().app.createcommand(name, real_func)
+    return name
+
+
+def delete_command(name):
+    del _callbacks[name]
+    get_tcl_interp().app.deletecommand(name)
 
 
 def from_tcl(type_spec, value):
