@@ -14,7 +14,7 @@ class Button(BaseWidget):
 
     def __init__(
         self,
-        master: Union[TkWidget, None] = None,
+        parent: Union[TkWidget, None] = None,
         callback: Union[Callable, None] = None,
         style: str = "TButton",
         text: str = "",
@@ -23,7 +23,7 @@ class Button(BaseWidget):
     ) -> None:
         BaseWidget.__init__(
             self,
-            master,
+            parent,
             "ttk::button",
             command=callback,
             style=style,
