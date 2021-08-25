@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import collections
-from typing import List, Tuple, Union, cast
+from typing import List, Optional, Tuple, Union, cast
 
 # fmt: off
-from .utils import (ClassPropertyMetaClass, classproperty, get_tcl_interp,
-                    update_before)
+from .utils import (ClassPropertyMetaClass, ColorError, classproperty,
+                    get_tcl_interp, update_before)
 
 
 class HEX:
@@ -101,19 +101,41 @@ class CMYK:
 
 # TODO: hsl, yiq
 class Color:
-    def __init__(self, color, space: str = "hex") -> None:
-        if space == "hex":
+    _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk"}
+
+    def __init__(self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str = "hex") -> None:
+        if space == "hex" and isinstance(color, str):
             rgb = HEX.from_hex(color)
-        elif space == "rgb":
-            rgb = color
-        elif space == "hsv":
+        elif space == "rgb" and isinstance(color, tuple) and len(color) == 3:
+            rgb = color # type: ignore
+        elif space == "hsv" and isinstance(color, tuple) and len(color) == 3:
             rgb = HSV.from_hsv(*color)
-        elif space == "cmyk":
+        elif space == "cmyk" and isinstance(color, tuple) and len(color) == 4:
             rgb = CMYK.from_cmyk(*color)
         else:
-            raise ValueError
+            raise ColorError(self._what_is_fckd_up(color, space))
 
         self.red, self.green, self.blue = rgb
+
+    def _what_is_fckd_up(self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str) -> str:
+        length_dict = {
+            "rgb":3,
+            "hsv": 3,
+            "cmyk": 4
+        }
+
+        if space not in self._supported_color_spaces:
+            return f"{space!r} is not a supported color space for tukaan.Color."
+        elif space == "hex":
+            return f"{color!r} is not a valid hexadecimal color name."
+        elif space in {"rgb", "hsv", "cmyk"} and not isinstance(color, tuple):
+            return f"{color!r} is not a valid {space} color. A tuple is expected."
+        elif space in {"rgb", "hsv", "cmyk"} and len(color) != length_dict[space]:
+            return f"{color!r} is not a valid {space} color. A tuple with length of {length_dict[space]} is expected."
+
+        return "Not implemented tukaan.Color error."  # shouldn't get here
+
+
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(red={self.red}, green={self.green}, blue={self.blue})"
