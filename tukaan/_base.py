@@ -1,11 +1,10 @@
 import collections.abc
 import itertools
 from abc import abstractmethod
+from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
 
-from .utils import get_tcl_interp, update_after, update_before, updated, create_command
-
-from typing import Callable, Union, Any, Dict, Tuple, List, Iterator
-
+from .utils import (create_command, get_tcl_interp, update_after,
+                    update_before, updated)
 
 
 class ChildStatistics:
@@ -26,6 +25,7 @@ class ChildStatistics:
 
 class StateSet(collections.abc.MutableSet):
     """Object that contains the state of the widget, though it inherits from MutableSet, it behaves like a dict"""
+
     __tk_widgets: set = {"text"}
 
     def __init__(self, widget) -> None:
@@ -62,15 +62,12 @@ class StateSet(collections.abc.MutableSet):
             self._widget._tcl_call(None, self._widget, "config", "-state", "normal")
 
 
-
-
 # FIXME: MethodMixin isn't a good nam, because it contains mostly properties
 class MethodMixin:
     _tcl_call: Callable
     _py_to_tcl_arguments: Callable
     _keys: Dict[str, Any]
     tcl_path: str
-
 
     def __repr__(self) -> str:
         return f"<tukaan.{type(self).__name__} widget{': ' + self._repr_details() if self._repr_details() else ''}>"
@@ -153,7 +150,6 @@ class MethodMixin:
         del self.parent._children[self.tcl_path]
 
 
-
 class TkWidget(MethodMixin):
     """Base class for every Tukaan widget"""
 
@@ -182,7 +178,9 @@ class TkWidget(MethodMixin):
 
 
 class BaseWidget(TkWidget):
-    def __init__(self, parent: Union[TkWidget, None], widget_name: str, **kwargs) -> None:
+    def __init__(
+        self, parent: Union[TkWidget, None], widget_name: str, **kwargs
+    ) -> None:
         TkWidget.__init__(self)
 
         self.parent = parent if parent else get_tcl_interp()

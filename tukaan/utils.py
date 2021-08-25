@@ -1,6 +1,8 @@
 import collections
 import itertools
-import numbers, sys, traceback
+import numbers
+import sys
+import traceback
 from inspect import isclass
 from typing import Any, Callable, Dict
 
