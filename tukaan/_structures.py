@@ -1,8 +1,8 @@
-from .utils import get_tcl_interp
-
-from typing import Union, Tuple
-
 from __future__ import annotations
+
+from typing import Tuple, Union
+
+from .utils import get_tcl_interp
 
 
 class HEX:
@@ -93,7 +93,7 @@ class CMYK:
 
 # TODO: hsl, yiq
 class Color:
-    def __init__(self, color, space: str="hex") -> None:
+    def __init__(self, color, space: str = "hex") -> None:
         if space == "hex":
             rgb = HEX.from_hex(color)
         elif space == "rgb":
