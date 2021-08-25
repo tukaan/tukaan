@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Tuple, Union
+from typing import Tuple, Union, cast
 
 from .utils import get_tcl_interp
 
@@ -11,14 +11,14 @@ class HEX:
         return f"#{r:02x}{g:02x}{b:02x}"
 
     @staticmethod
-    def from_hex(hex) -> tuple:
+    def from_hex(hex) -> Tuple[int, int, int]:
         int_value = int(hex[1:], 16)
-        return (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF)
+        return cast(Tuple[int, int, int], (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF))
 
 
 class HSV:
     @staticmethod
-    def to_hsv(r, g, b) -> tuple:
+    def to_hsv(r, g, b) -> Tuple[int, int, int]:
         r, g, b = tuple(x / 255 for x in (r, g, b))
 
         high = max(r, g, b)
@@ -37,14 +37,14 @@ class HSV:
         s = 0 if high == 0 else (diff / high) * 100
         v = high * 100
 
-        return tuple(x for x in (h, s, v))
+        return cast(Tuple[int, int, int], tuple(int(x) for x in (h, s, v)))
 
     @staticmethod
-    def from_hsv(h, s, v) -> tuple:
+    def from_hsv(h, s, v) -> Tuple[int, int, int]:
         h, s, v = h / 360, s / 100, v / 100
 
         if s == 0.0:
-            return tuple(int(x * 255) for x in (v, v, v))
+            return cast(Tuple[int, int, int], tuple(int(x * 255) for x in (v, v, v)))
 
         i = int(h * 6.0)
         f = (h * 6.0) - i
@@ -64,12 +64,12 @@ class HSV:
             (v, p, q),
         ][int(i % 6)]
 
-        return tuple(int(x * 255) for x in (r, g, b))
+        return cast(Tuple[int, int, int], tuple(int(x * 255) for x in (r, g, b)))
 
 
 class CMYK:
     @staticmethod
-    def to_cmyk(r, g, b) -> tuple:
+    def to_cmyk(r, g, b) -> Tuple[int, int, int, int]:
         if (r, g, b) == (0, 0, 0):
             return 0, 0, 0, 100
 
@@ -80,15 +80,15 @@ class CMYK:
         m = (m - k) / (1 - k)
         y = (y - k) / (1 - k)
 
-        return tuple(int(x * 100) for x in (c, m, y, k))
+        return cast(Tuple[int, int, int, int], tuple(int(x * 100) for x in (c, m, y, k)))
 
     @staticmethod
-    def from_cmyk(c, m, y, k) -> tuple:
+    def from_cmyk(c, m, y, k) -> Tuple[int, int, int]:
         r = (1 - c / 100) * (1 - k / 100)
         g = (1 - m / 100) * (1 - k / 100)
         b = (1 - y / 100) * (1 - k / 100)
 
-        return tuple(int(x * 255) for x in (r, g, b))
+        return cast(Tuple[int, int, int], tuple(int(x * 255) for x in (r, g, b)))
 
 
 # TODO: hsl, yiq
