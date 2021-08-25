@@ -16,3 +16,6 @@ class Button(BaseWidget):
         BaseWidget.__init__(
             self, master, "ttk::button", text=text, style=style, command=command
         )
+
+    def invoke(self):
+        return self._tcl_call(None, self, "invoke")
