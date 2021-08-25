@@ -98,7 +98,7 @@ class MethodMixin:
         else:
             type_spec = self._keys[key]
 
-        if isinstance(type_spec, Callable):
+        if type(type_spec) is Callable:
             # return a callable func, not tcl name
             result = self._tcl_call(str, self, "cget", f"-{key}")
             return _callbacks[result]
