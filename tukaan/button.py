@@ -6,6 +6,7 @@ from ._base import BaseWidget, TkWidget
 class Button(BaseWidget):
     _keys: Dict[str, Union[Any, Tuple[Any, str]]] = {
         "callback": (Callable, "command"),
+        "default": str,
         "style": str,
         "text": str,
         "underline": int,
@@ -16,8 +17,9 @@ class Button(BaseWidget):
         self,
         parent: Union[TkWidget, None] = None,
         callback: Union[Callable, None] = None,
-        style: str = "TButton",
-        text: str = "",
+        default: str = None, 
+        style: str = None,
+        text: str = None,
         underline: int = None,
         width: int = None,
     ) -> None:
@@ -26,6 +28,7 @@ class Button(BaseWidget):
             parent,
             "ttk::button",
             command=callback,
+            default=default,
             style=style,
             text=text,
             width=width,
