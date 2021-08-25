@@ -1,6 +1,6 @@
 from ._base import BaseWidget, TkWidget
 
-from typing import Dict, Callable
+from typing import Dict, Callable, Any, Union
 
 
 class Button(BaseWidget):

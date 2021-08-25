@@ -1,10 +1,10 @@
-import collections
+import collections.abc
 import itertools
 from abc import abstractmethod
 
 from .utils import get_tcl_interp, update_after, update_before, updated, create_command
 
-from typing import Callable, Union, Any, Dict, Tuple, List
+from typing import Callable, Union, Any, Dict, Tuple, List, Iterator
 
 
 
@@ -31,10 +31,10 @@ class StateSet(collections.abc.MutableSet):
     def __init__(self, widget) -> None:
         self._widget = widget
 
-    def __repr__(self) -> list:
-        return list(self)
+    def __repr__(self) -> str:
+        return f"<state object of {self._widget}: state={list(self)}>"
 
-    def __iter__(self) -> str:
+    def __iter__(self) -> Iterator[str]:
         return iter(self._widget._tcl_call([str], self._widget, "state"))
 
     def __len__(self) -> int:
@@ -67,6 +67,9 @@ class StateSet(collections.abc.MutableSet):
 # FIXME: MethodMixin isn't a good nam, because it contains mostly properties
 class MethodMixin:
     _tcl_call: Callable
+    _py_to_tcl_arguments: Callable
+    _keys: Dict[str, Any]
+    tcl_path: str
 
 
     def __repr__(self) -> str:
@@ -74,9 +77,9 @@ class MethodMixin:
 
     __str__ = __repr__
 
-    def _repr_details(self) -> Union[str, None]:
+    def _repr_details(self) -> str:
         # overriden in subclasses
-        return None
+        return ""
 
     @property
     def busy(self) -> bool:
@@ -122,22 +125,22 @@ class MethodMixin:
     def bbox(self) -> tuple:
         return (self.x, self.y, self.x + self.width, self.y + self.height)
 
-    @property
+    @property  # type: ignore
     @update_before
     def x(self) -> int:
         return self._tcl_call(int, "winfo", "rootx", self)
 
-    @property
+    @property  # type: ignore
     @update_before
     def y(self) -> int:
         return self._tcl_call(int, "winfo", "rooty", self)
 
-    @property
+    @property  # type: ignore
     @update_before
     def width(self) -> int:
         return self._tcl_call(int, "winfo", "width", self)
 
-    @property
+    @property  # type: ignore
     @update_before
     def height(self) -> int:
         return self._tcl_call(int, "winfo", "height", self)
@@ -184,7 +187,7 @@ class BaseWidget(TkWidget):
 
         self.parent = parent if parent else get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
-        self._tcl_call = get_tcl_interp().tcl_call
+        self._tcl_call: Callable = get_tcl_interp().tcl_call
 
         self.state = StateSet(self)
 
@@ -207,7 +210,7 @@ class BaseWidget(TkWidget):
             return super().__getattribute__(key)
 
     def _give_me_a_name(self) -> str:
-        name = type(self)
+        klass = type(self)
 
         # FIXME: more elegant way to count child types
         # itertools.count isn't good, because we need plain ints
@@ -215,7 +218,7 @@ class BaseWidget(TkWidget):
         count = self.parent._child_type_count.get(name, 0) + 1
         self.parent._child_type_count[name] = count
 
-        name = f"{self.parent.tcl_path}.{name.__name__.lower()}{count}"
+        name: str = f"{self.parent.tcl_path}.{klass.__name__.lower()}{count}"
 
         return name
 
