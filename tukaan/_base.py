@@ -3,14 +3,8 @@ import itertools
 from abc import abstractmethod
 from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
 
-from .utils import (
-    _callbacks,
-    create_command,
-    get_tcl_interp,
-    update_after,
-    update_before,
-    updated,
-)
+from .utils import (_callbacks, create_command, get_tcl_interp, update_after,
+                    update_before, updated)
 
 
 class ChildStatistics:
