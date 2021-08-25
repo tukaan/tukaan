@@ -1,4 +1,5 @@
 # Tukaan
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-1c1c1c.svg"></a>
 
 Tukaan is the new, pythonic and colorful (like a keel-billed toucan) framework that aims to replace Tkinter.
 It has everything (on my computer, not at GitHub) that you need to develop cross-platform GUIs.
