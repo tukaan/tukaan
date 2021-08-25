@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Tuple, Union
 
 import _tkinter as tk
 
-from .tkwidget import TkWidget
+from ._base import TkWidget
 from .utils import TukaanError, from_tcl, to_tcl
 from .windowmanager import WindowManager
 
@@ -29,10 +29,12 @@ class App(WindowManager, TkWidget):
         theme: Union[str, None] = None,
     ) -> None:
 
+        TkWidget.__init__(self)
+
         global tcl_interp
 
         if tcl_interp:
-            raise TukaanError("can't create multiple app objects use a Window instead")
+            raise TukaanError("can't create multiple App objects use a Window instead")
 
         self.app = tk.create(
             None,
@@ -45,9 +47,6 @@ class App(WindowManager, TkWidget):
             None,
         )
         self.app.loadtk()
-
-        self._children: Dict[str, TkWidget] = {}
-        self._child_type_count: Dict[TkWidget, int] = {}
 
         tcl_interp = self
 
@@ -102,7 +101,7 @@ class App(WindowManager, TkWidget):
 
         return self.tcl_call(str, "format", obj)
 
-    def split_list(self, arg) -> Tuple:
+    def split_list(self, arg) -> tuple:
         return self.app.splitlist(arg)
 
     def run(self) -> None:
