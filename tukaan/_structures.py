@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple, Union, cast
 
 # fmt: off
 from .utils import (ClassPropertyMetaClass, ColorError, classproperty,
-                    get_tcl_interp, update_before, reversed_dict)
+                    get_tcl_interp, reversed_dict, update_before)
 
 
 class HEX:

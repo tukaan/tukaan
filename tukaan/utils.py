@@ -10,6 +10,7 @@ counts: collections.defaultdict = collections.defaultdict(lambda: itertools.coun
 
 _callbacks: Dict[str, Callable] = {}
 
+
 class TukaanError(Exception):
     ...
 
