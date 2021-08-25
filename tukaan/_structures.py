@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Tuple, Union, cast
+import collections
+from typing import List, Tuple, Union, cast
 
-from .utils import get_tcl_interp
+# fmt: off
+from .utils import (ClassPropertyMetaClass, classproperty, get_tcl_interp,
+                    update_before)
 
 
 class HEX:
@@ -13,7 +16,10 @@ class HEX:
     @staticmethod
     def from_hex(hex) -> Tuple[int, int, int]:
         int_value = int(hex[1:], 16)
-        return cast(Tuple[int, int, int], (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF))
+        return cast(
+            Tuple[int, int, int],
+            (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF),
+        )
 
 
 class HSV:
@@ -80,7 +86,9 @@ class CMYK:
         m = (m - k) / (1 - k)
         y = (y - k) / (1 - k)
 
-        return cast(Tuple[int, int, int, int], tuple(int(x * 100) for x in (c, m, y, k)))
+        return cast(
+            Tuple[int, int, int, int], tuple(int(x * 100) for x in (c, m, y, k))
+        )
 
     @staticmethod
     def from_cmyk(c, m, y, k) -> Tuple[int, int, int]:
@@ -144,6 +152,9 @@ class Color:
 
 
 class ScreenDistance:
+    """An object to convert between different screen distance units"""
+
+    # TODO: make this an immutable object?
     _tcl_units = {"px": "", "mm": "m", "cm": "c", "m": "c", "inch": "i", "ft": "i"}
 
     def __init__(self, distance, unit="px") -> None:
@@ -156,7 +167,6 @@ class ScreenDistance:
                 pixels *= 100
             elif unit == "ft":
                 pixels *= 12
-
         else:
             pixels = distance
 
@@ -198,3 +208,108 @@ class ScreenDistance:
     @property
     def ft(self) -> float:
         return round(self.distance / (self.dpi * 12), 4)
+
+
+class Cursor(
+    collections.namedtuple("Cursor", "cursor"), metaclass=ClassPropertyMetaClass
+):
+    """An object to use cross-platform, and human-understandable cursor names,
+    and to get and set the mouse cursor position"""
+
+    cursor_dict = {
+        "center": "center_ptr",
+        "crosshair": "crosshair",
+        "default": "arrow",
+        "e-resize": "right_side",
+        "ew-resize": "sb_h_double_arrow",
+        "help": "question_arrow",
+        "move": "fleur",
+        "n-resize": "top_side",
+        "ne-resize": "top_right_corner",
+        "not-allowed": "circle",
+        "ns-resize": "sb_v_double_arrow",
+        "nw-resize": "top_left_corner",
+        "pointer": "hand2",
+        "s-resize": "bottom_side",
+        "se-resize": "bottom_right_corner",  # se == nw, sw == ne
+        "sw-resize": "bottom_left_corner",
+        "text": "xterm",
+        "w-resize": "left_side",
+        "wait": "watch",
+        None: "none",
+    }
+
+    def to_tcl(self):
+        return self.cursor_dict[self.cursor]
+
+    @classmethod
+    def from_tcl(cls, tcl_value):
+        return cls(
+            list(cls.cursor_dict.keys())[
+                list(cls.cursor_dict.values()).index(tcl_value)
+            ]  # crazy thing to get the key by the value, but i don't wanna make 2 dicts
+        )
+
+    @classproperty
+    def x(cls):
+        return get_tcl_interp().tcl_call(int, "winfo", "pointerx", ".")
+
+    @x.setter  # type: ignore
+    @update_before
+    def x(cls, new_x: int):
+        get_tcl_interp().tcl_call(
+            None,
+            "event",
+            "generate",
+            ".",
+            "<Motion>",
+            "-warp",
+            "1",
+            "-x",
+            new_x,
+        )
+
+    @classproperty
+    def y(cls):
+        return get_tcl_interp().tcl_call(int, "winfo", "pointery", ".")
+
+    @y.setter  # type: ignore
+    @update_before
+    def y(cls, new_y: int):
+        get_tcl_interp().tcl_call(
+            None,
+            "event",
+            "generate",
+            ".",
+            "<Motion>",
+            "-warp",
+            "1",
+            "-y",
+            new_y,
+        )
+
+    @classproperty
+    def position(cls):
+        return (cls.x(), cls.y())
+
+    @position.setter  # type: ignore
+    @update_before
+    def position(cls, new_pos: int | Tuple | List) -> None:
+        if isinstance(new_pos, (tuple, list)) and len(new_pos) > 1:
+            x, y = new_pos
+        else:
+            x = y = new_pos
+
+        get_tcl_interp().tcl_call(
+            None,
+            "event",
+            "generate",
+            ".",
+            "<Motion>",
+            "-warp",
+            "1",
+            "-x",
+            x,
+            "-y",
+            y,
+        )
