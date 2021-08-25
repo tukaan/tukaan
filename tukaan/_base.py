@@ -3,6 +3,7 @@ import itertools
 from abc import abstractmethod
 from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
 
+# fmt: off
 from .utils import (_callbacks, create_command, get_tcl_interp, update_after,
                     update_before, updated)
 
