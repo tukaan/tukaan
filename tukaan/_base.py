@@ -15,7 +15,6 @@ class ChildStatistics:
         try:
             return self._widget._child_type_count[type]
         except KeyError:
-            print("ok")
             return 0
 
     @property
