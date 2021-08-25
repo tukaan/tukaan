@@ -10,8 +10,11 @@ counts: collections.defaultdict = collections.defaultdict(lambda: itertools.coun
 
 _callbacks: Dict[str, Callable] = {}
 
-
 class TukaanError(Exception):
+    ...
+
+
+class ColorError(Exception):
     ...
 
 
@@ -40,6 +43,10 @@ def update_after(func: Callable) -> Callable:
         return result
 
     return wrapper
+
+
+def reversed_dict(dictionary: dict) -> dict:
+    return {value: key for key, value in dictionary.items()}
 
 
 def get_tcl_interp():

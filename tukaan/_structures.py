@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple, Union, cast
 
 # fmt: off
 from .utils import (ClassPropertyMetaClass, ColorError, classproperty,
-                    get_tcl_interp, update_before)
+                    get_tcl_interp, update_before, reversed_dict)
 
 
 class HEX:
@@ -266,11 +266,7 @@ class Cursor(
 
     @classmethod
     def from_tcl(cls, tcl_value):
-        return cls(
-            list(cls.cursor_dict.keys())[
-                list(cls.cursor_dict.values()).index(tcl_value)
-            ]  # crazy thing to get the key by the value, but i don't wanna make 2 dicts
-        )
+        return cls(reversed_dict(cls.cursor_dict)[tcl_value])
 
     @classproperty
     def x(cls):
