@@ -1,20 +1,24 @@
-from typing import Any, Callable, Dict, Union
+from typing import Any, Callable, Dict, Tuple, Union
 
 from ._base import BaseWidget, TkWidget
 
 
 class Button(BaseWidget):
-    _keys: Dict[str, Any] = {"command": Callable, "style": str, "text": str}
+    _keys: Dict[str, Union[Any, Tuple[Any, str]]] = {
+        "callback": (Callable, "command"),
+        "style": str,
+        "text": str,
+    }
 
     def __init__(
         self,
         master: Union[TkWidget, None] = None,
         text: str = "",
         style: str = "TButton",
-        command: Union[Callable, None] = None,
+        callback: Union[Callable, None] = None,
     ) -> None:
         BaseWidget.__init__(
-            self, master, "ttk::button", text=text, style=style, command=command
+            self, master, "ttk::button", text=text, style=style, command=callback
         )
 
     def invoke(self):
