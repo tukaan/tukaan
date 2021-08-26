@@ -338,12 +338,16 @@ class Font(
 
         return cls(**result_dict)
 
-    @classproperty
-    def families(self, at_prefix: bool = False) -> List[str]:
+    @classmethod
+    def get_families(self, at_prefix: bool = False) -> List[str]:
         result = sorted(get_tcl_interp().tcl_call([str], "font", "families"))
         if at_prefix:
             return result
         return [family for family in result if not family.startswith("@")]
+
+    @classproperty
+    def families(self) -> List[str]:
+        return self.get_families(True)
 
     @classproperty
     def presets(self) -> List[str]:
