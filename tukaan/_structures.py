@@ -5,9 +5,9 @@ import re
 from typing import Dict, List, Optional, Tuple, Union, cast
 
 # fmt: off
-from .utils import (ClassPropertyMetaClass, ColorError, FontError, _flatten, _pairs,
-                    classproperty, from_tcl, get_tcl_interp, reversed_dict,
-                    to_tcl, update_before)
+from .utils import (ClassPropertyMetaClass, ColorError, FontError, _flatten,
+                    _pairs, classproperty, from_tcl, get_tcl_interp,
+                    reversed_dict, to_tcl, update_before)
 
 
 class HEX:
@@ -106,14 +106,19 @@ class Color:
     _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk"}
 
     def __init__(self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str = "hex") -> None:
+
         if space == "hex" and isinstance(color, str):
             rgb = HEX.from_hex(color)
+
         elif space == "rgb" and isinstance(color, tuple) and len(color) == 3:
             rgb = color  # type: ignore
+
         elif space == "hsv" and isinstance(color, tuple) and len(color) == 3:
             rgb = HSV.from_hsv(*color)
+
         elif space == "cmyk" and isinstance(color, tuple) and len(color) == 4:
             rgb = CMYK.from_cmyk(*color)
+
         else:
             raise ColorError(self._what_is_fckd_up(color, space))
 
@@ -180,7 +185,7 @@ class Cursor(
     """An object to use cross-platform, and human-understandable cursor names,
     and to get and set the mouse cursor position"""
 
-    cursor_dict = {
+    _cursor_dict = {
         "center": "center_ptr",
         "crosshair": "crosshair",
         "default": "arrow",
@@ -203,20 +208,20 @@ class Cursor(
         None: "none",
     }
 
-    def to_tcl(self):
-        return self.cursor_dict[self.cursor]
+    def to_tcl(self) -> str:
+        return self._cursor_dict[self.cursor]
 
     @classmethod
-    def from_tcl(cls, tcl_value):
-        return cls(reversed_dict(cls.cursor_dict)[tcl_value])
+    def from_tcl(cls, tcl_value) -> Cursor:
+        return cls(reversed_dict(cls._cursor_dict)[tcl_value])
 
     @classproperty
-    def x(cls):
+    def x(cls) -> int:
         return get_tcl_interp().tcl_call(int, "winfo", "pointerx", ".")
 
     @x.setter  # type: ignore
     @update_before
-    def x(cls, new_x: int):
+    def x(cls, new_x: int) -> None:
         get_tcl_interp().tcl_call(
             None,
             "event",
@@ -230,12 +235,12 @@ class Cursor(
         )
 
     @classproperty
-    def y(cls):
+    def y(cls) -> int:
         return get_tcl_interp().tcl_call(int, "winfo", "pointery", ".")
 
     @y.setter  # type: ignore
     @update_before
-    def y(cls, new_y: int):
+    def y(cls, new_y: int) -> None:
         get_tcl_interp().tcl_call(
             None,
             "event",
@@ -249,7 +254,7 @@ class Cursor(
         )
 
     @classproperty
-    def position(cls):
+    def position(cls) -> Tuple[int, int]:
         return (cls.x(), cls.y())
 
     @position.setter  # type: ignore
@@ -381,25 +386,25 @@ class Font(
 
 class Screen(object, metaclass=ClassPropertyMetaClass):
     @classproperty
-    def width(cls):
+    def width(cls) -> ScreenDistance:
         width = get_tcl_interp().tcl_call(int, "winfo", "screenwidth", ".")
         return ScreenDistance(width)
 
     @classproperty
-    def height(cls):
+    def height(cls) -> ScreenDistance:
         height = get_tcl_interp().tcl_call(int, "winfo", "screenheight", ".")
         return ScreenDistance(height)
 
     @classproperty
-    def size(cls):
+    def size(cls) -> Tuple[ScreenDistance, ScreenDistance]:
         return (cls.width, cls.height)
 
     @classproperty
-    def depth(cls):
+    def depth(cls) -> str:
         return get_tcl_interp().tcl_call(str, "winfo", "screendepth", ".")
 
     @classproperty
-    def dpi(cls):
+    def dpi(cls) -> float:
         return get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", "1i")
 
 
@@ -426,7 +431,7 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
         return super(ScreenDistance, cls).__new__(cls, pixels)
 
     def to_tcl(self) -> str:
-        return self.distance
+        return str(self.distance)
 
     @classmethod
     def from_tcl(cls, tcl_value: int) -> ScreenDistance:
