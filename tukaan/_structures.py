@@ -190,7 +190,7 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
         else:
             pixels = distance
 
-        cls.dpi = get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", "1i")
+        cls.dpi = Screen.dpi
 
         return super(ScreenDistance, cls).__new__(cls, pixels)
 
