@@ -107,7 +107,7 @@ class Color:
         if space == "hex" and isinstance(color, str):
             rgb = HEX.from_hex(color)
         elif space == "rgb" and isinstance(color, tuple) and len(color) == 3:
-            rgb = color # type: ignore
+            rgb = color  # type: ignore
         elif space == "hsv" and isinstance(color, tuple) and len(color) == 3:
             rgb = HSV.from_hsv(*color)
         elif space == "cmyk" and isinstance(color, tuple) and len(color) == 4:
@@ -134,7 +134,6 @@ class Color:
             return f"{color!r} is not a valid {space} color. A tuple with length of {length_dict[space]} is expected."
 
         return "Not implemented tukaan.Color error."  # shouldn't get here
-
 
 
     def __repr__(self) -> str:
@@ -173,15 +172,14 @@ class Color:
         return CMYK.to_cmyk(self.red, self.green, self.blue)
 
 
-class ScreenDistance:
+class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
     """An object to convert between different screen distance units"""
 
-    # TODO: make this an immutable object?
     _tcl_units = {"px": "", "mm": "m", "cm": "c", "m": "c", "inch": "i", "ft": "i"}
 
-    def __init__(self, distance, unit="px") -> None:
+    def __new__(cls, distance, unit="px") -> None:
         if unit != "px":
-            distance = f"{distance}{self._tcl_units[unit]}"
+            distance = f"{distance}{cls._tcl_units[unit]}"
 
             pixels = get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", distance)
 
@@ -192,13 +190,9 @@ class ScreenDistance:
         else:
             pixels = distance
 
-        self.dpi = get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", "1i")
-        self.distance = pixels
+        cls.dpi = get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", "1i")
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}(distance={round(self.distance, 4)} pixels)"
-
-    __str__ = __repr__
+        return super(ScreenDistance, cls).__new__(cls, pixels)
 
     def to_tcl(self) -> str:
         return self.distance
