@@ -172,60 +172,6 @@ class Color:
         return CMYK.to_cmyk(self.red, self.green, self.blue)
 
 
-class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
-    """An object to convert between different screen distance units"""
-
-    _tcl_units = {"px": "", "mm": "m", "cm": "c", "m": "c", "inch": "i", "ft": "i"}
-
-    def __new__(cls, distance, unit="px") -> None:
-        if unit != "px":
-            distance = f"{distance}{cls._tcl_units[unit]}"
-
-            pixels = get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", distance)
-
-            if unit == "m":
-                pixels *= 100
-            elif unit == "ft":
-                pixels *= 12
-        else:
-            pixels = distance
-
-        cls.dpi = Screen.dpi
-
-        return super(ScreenDistance, cls).__new__(cls, pixels)
-
-    def to_tcl(self) -> str:
-        return self.distance
-
-    @classmethod
-    def from_tcl(cls, tcl_value: int) -> ScreenDistance:
-        return cls(tcl_value)
-
-    @property
-    def px(self) -> float:
-        return round(self.distance, 4)
-
-    @property
-    def mm(self) -> float:
-        return round(self.distance / (self.dpi / 25.4), 4)
-
-    @property
-    def cm(self) -> float:
-        return round(self.distance / (self.dpi / 2.54), 4)
-
-    @property
-    def m(self) -> float:
-        return round(self.distance / (self.dpi / 0.0254), 4)
-
-    @property
-    def inch(self) -> float:
-        return round(self.distance / self.dpi, 4)
-
-    @property
-    def ft(self) -> float:
-        return round(self.distance / (self.dpi * 12), 4)
-
-
 class Cursor(
     collections.namedtuple("Cursor", "cursor"), metaclass=ClassPropertyMetaClass
 ):
@@ -349,3 +295,57 @@ class Screen(object, metaclass=ClassPropertyMetaClass):
     @classproperty
     def dpi(cls):
         return get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", "1i")
+
+
+class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
+    """An object to convert between different screen distance units"""
+
+    _tcl_units = {"px": "", "mm": "m", "cm": "c", "m": "c", "inch": "i", "ft": "i"}
+
+    def __new__(cls, distance, unit="px") -> None:
+        if unit != "px":
+            distance = f"{distance}{cls._tcl_units[unit]}"
+
+            pixels = get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", distance)
+
+            if unit == "m":
+                pixels *= 100
+            elif unit == "ft":
+                pixels *= 12
+        else:
+            pixels = distance
+
+        cls.dpi = Screen.dpi
+
+        return super(ScreenDistance, cls).__new__(cls, pixels)
+
+    def to_tcl(self) -> str:
+        return self.distance
+
+    @classmethod
+    def from_tcl(cls, tcl_value: int) -> ScreenDistance:
+        return cls(tcl_value)
+
+    @property
+    def px(self) -> float:
+        return round(self.distance, 4)
+
+    @property
+    def mm(self) -> float:
+        return round(self.distance / (self.dpi / 25.4), 4)
+
+    @property
+    def cm(self) -> float:
+        return round(self.distance / (self.dpi / 2.54), 4)
+
+    @property
+    def m(self) -> float:
+        return round(self.distance / (self.dpi / 0.0254), 4)
+
+    @property
+    def inch(self) -> float:
+        return round(self.distance / self.dpi, 4)
+
+    @property
+    def ft(self) -> float:
+        return round(self.distance / (self.dpi * 12), 4)
