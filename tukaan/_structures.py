@@ -120,11 +120,11 @@ class Color:
             rgb = CMYK.from_cmyk(*color)
 
         else:
-            raise ColorError(self._what_is_fckd_up(color, space))
+            raise ColorError(self._what_is_the_problem(color, space))
 
         self.red, self.green, self.blue = rgb
 
-    def _what_is_fckd_up(self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str) -> str:
+    def _what_is_the_problem(self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str) -> str:
         length_dict = {
             "rgb":3,
             "hsv": 3,
