@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import collections
-from typing import List, Optional, Tuple, Union, cast
+import re
+from typing import Dict, List, Optional, Tuple, Union, cast
 
 # fmt: off
-from .utils import (ClassPropertyMetaClass, ColorError, classproperty,
-                    get_tcl_interp, reversed_dict, update_before)
+from .utils import (ClassPropertyMetaClass, ColorError, _flatten, _pairs,
+                    classproperty, from_tcl, get_tcl_interp, reversed_dict,
+                    to_tcl, update_before)
 
 
 class HEX:
@@ -273,6 +275,102 @@ class Cursor(
         )
 
 
+class Font(
+    collections.namedtuple("Font", "family size bold italic underline strikethrough"),
+    metaclass=ClassPropertyMetaClass,
+):
+    def __new__(
+        cls,
+        family: str="default-font",
+        size: int=10,
+        bold: bool=False,
+        italic: bool=False,
+        underline: bool=False,
+        strikethrough: bool=False,
+    ) -> Font:
+
+        if family in cls.presets:
+            # small-caption-font -> TkSmallCaptionFont
+            family = f"Tk{family.title().replace('-', '')}"
+
+        return super(Font, cls).__new__(
+            cls, family, size, bold, italic, underline, strikethrough
+        )
+
+    def to_tcl(self) -> Tuple:  # i won't write out, and then cast 12 str-s
+        font_dict = {
+            "-family": self.family,
+            "-size": self.size,
+            "-weight": "bold" if self.bold else "normal",
+            "-slant": "italic" if self.italic else "roman",
+            "-underline": self.underline,
+            "-overstrike": self.strikethrough,
+        }
+
+        return tuple(to_tcl(x) for x in _flatten(font_dict.items()))
+
+    @classmethod
+    def from_tcl(cls, tcl_value: Tuple) -> Font:
+        types = {
+            "family": str,
+            "size": int,
+            "bold": bool,
+            "italic": bool,
+            "underline": bool,
+            "strikethrough": bool,
+        }
+
+        result_dict = {}
+
+        for key, value in _pairs(tcl_value):
+            key = key.lstrip("-")
+
+            if key == "weight":
+                value = (value == "bold")
+                key = "bold"
+            elif key == "slant":
+                value = (value == "italic")
+                key = "italic"
+            elif key == "overstrike":
+                key = "strikethrough"
+
+            result_dict[key] = from_tcl(types[key], value)
+
+        return cls(**result_dict)
+
+    @classproperty
+    def families(self, at_prefix: bool = False) -> List[str]:
+        result = sorted(get_tcl_interp().tcl_call([str], "font", "families"))
+        if at_prefix:
+            return result
+        return [family for family in result if not family.startswith("@")]
+
+    @classproperty
+    def presets(self) -> List[str]:
+        result = sorted(get_tcl_interp().tcl_call([str], "font", "names"))
+
+        for index, item in enumerate(result):
+            #  TkSmallCaptionFont -> small-caption-font
+            result[index] = "-".join(
+                re.findall(r".[^A-Z]*", item.replace("Tk", ""))
+            ).lower()
+
+        return result
+
+    def measure(self, text: str) -> int:
+        return get_tcl_interp().tcl_call(int, "font", "measure", self, text)
+
+    def metrics(self) -> Dict[str, Union[int, bool]]:
+        result = get_tcl_interp().tcl_call(
+            {"-ascent": int, "-descent": int, "-linespace": int, "-fixed": bool},
+            "font",
+            "metrics",
+            self,
+        )
+        return {key.lstrip("-"): value for key, value in result.items()}
+
+
+
 class Screen(object, metaclass=ClassPropertyMetaClass):
     @classproperty
     def width(cls):
@@ -302,7 +400,7 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
 
     _tcl_units = {"px": "", "mm": "m", "cm": "c", "m": "c", "inch": "i", "ft": "i"}
 
-    def __new__(cls, distance, unit="px") -> None:
+    def __new__(cls, distance, unit="px") -> ScreenDistance:
         if unit != "px":
             distance = f"{distance}{cls._tcl_units[unit]}"
 
