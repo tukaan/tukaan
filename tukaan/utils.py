@@ -19,6 +19,10 @@ class ColorError(Exception):
     ...
 
 
+class FontError(Exception):
+    ...
+
+
 def updated(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
         get_tcl_interp().tcl_call(None, "update", "idletasks")
@@ -89,6 +93,11 @@ def create_command(func):
 def delete_command(name):
     del _callbacks[name]
     get_tcl_interp().app.deletecommand(name)
+
+
+def _pairs(sequence):
+    """Source: https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
+    return zip(sequence[0::2], sequence[1::2])
 
 
 def from_tcl(type_spec, value):

@@ -5,7 +5,7 @@ import re
 from typing import Dict, List, Optional, Tuple, Union, cast
 
 # fmt: off
-from .utils import (ClassPropertyMetaClass, ColorError, _flatten, _pairs,
+from .utils import (ClassPropertyMetaClass, ColorError, FontError, _flatten, _pairs,
                     classproperty, from_tcl, get_tcl_interp, reversed_dict,
                     to_tcl, update_before)
 
@@ -281,17 +281,20 @@ class Font(
 ):
     def __new__(
         cls,
-        family: str="default-font",
-        size: int=10,
-        bold: bool=False,
-        italic: bool=False,
-        underline: bool=False,
-        strikethrough: bool=False,
+        family: str = "default-font",
+        size: int = 10,
+        bold: bool = False,
+        italic: bool = False,
+        underline: bool = False,
+        strikethrough: bool = False,
     ) -> Font:
 
         if family in cls.presets:
             # small-caption-font -> TkSmallCaptionFont
             family = f"Tk{family.title().replace('-', '')}"
+
+        if family not in cls.families: # presets are already checked
+            raise FontError(f"the font family {family!r} is not found, or is not a valid font name.")
 
         return super(Font, cls).__new__(
             cls, family, size, bold, italic, underline, strikethrough
@@ -340,7 +343,8 @@ class Font(
 
     @classmethod
     def get_families(self, at_prefix: bool = False) -> List[str]:
-        result = sorted(get_tcl_interp().tcl_call([str], "font", "families"))
+        result = sorted(set(get_tcl_interp().tcl_call([str], "font", "families")))
+        # i get a way longer list, if not convert it to set. e.g Ubuntu were 3 times
         if at_prefix:
             return result
         return [family for family in result if not family.startswith("@")]
