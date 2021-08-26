@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable, List, Literal, Tuple, Union, Dict, cast
+from typing import Any, Callable, Dict, List, Literal, Tuple, Union, cast
 
 from ._platform import Platform
 from .utils import TukaanError
@@ -75,14 +75,17 @@ class WindowManager:
     @property  # type: ignore
     @update_before
     def size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], tuple(
-            map(
-                int,
-                re.split(r"x|\+", self.tcl_call(str, "wm", "geometry", self.wm_path))[
-                    :2
-                ],
-            )
-        ))
+        return cast(
+            Tuple[int, int],
+            tuple(
+                map(
+                    int,
+                    re.split(
+                        r"x|\+", self.tcl_call(str, "wm", "geometry", self.wm_path)
+                    )[:2],
+                )
+            ),
+        )
 
     @size.setter  # type: ignore
     @update_after
@@ -102,14 +105,17 @@ class WindowManager:
     @property  # type: ignore
     @update_before
     def position(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], tuple(
-            map(
-                int,
-                re.split(r"x|\+", self.tcl_call(str, "wm", "geometry", self.wm_path))[
-                    2:
-                ],
-            )
-        ))
+        return cast(
+            Tuple[int, int],
+            tuple(
+                map(
+                    int,
+                    re.split(
+                        r"x|\+", self.tcl_call(str, "wm", "geometry", self.wm_path)
+                    )[2:],
+                )
+            ),
+        )
 
     @position.setter  # type: ignore
     @update_after
@@ -119,8 +125,8 @@ class WindowManager:
             int,
             Tuple[int, int],
             List[int],
-            Literal["center", "top-left", "top-right", "bottom-left", "bottom-right"]
-            ],
+            Literal["center", "top-left", "top-right", "bottom-left", "bottom-right"],
+        ],
     ) -> None:
         if position in {
             "center",
@@ -289,10 +295,7 @@ class WindowManager:
         return self._resizable
 
     @resizable.setter
-    def resizable(
-        self,
-        direction: Literal["none", "horizontal", "vertical", "both"]
-    ):
+    def resizable(self, direction: Literal["none", "horizontal", "vertical", "both"]):
         resize_dict = {
             "none": (False, False),
             "horizontal": (True, False),

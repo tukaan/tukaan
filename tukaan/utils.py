@@ -4,7 +4,7 @@ import numbers
 import sys
 import traceback
 from inspect import isclass
-from typing import Any, Callable, Dict, Union, get_type_hints
+from typing import Any, Callable, Dict, Union
 
 counts: collections.defaultdict = collections.defaultdict(lambda: itertools.count(1))
 
@@ -179,7 +179,7 @@ class ClassPropertyDescriptor:
         self.fget = fget
         self.fset = fset
 
-    def __get__(self, obj, owner: Union[object, None]=None):
+    def __get__(self, obj, owner: Union[object, None] = None):
         return self.fget.__get__(obj, owner or type(obj))()
 
     def __set__(self, obj, value):
@@ -192,7 +192,9 @@ class ClassPropertyDescriptor:
             type_ = type(obj)
         return self.fset.__get__(obj, type_)(value)
 
-    def setter(self, func: Union[Callable, classmethod]):  # mypy thinks classmethod is not Callable
+    def setter(
+        self, func: Union[Callable, classmethod]
+    ) -> ClassPropertyDescriptor:  # mypy thinks classmethod is not Callable
         if not isinstance(func, classmethod):
             func = classmethod(func)
         self.fset = func
@@ -214,4 +216,3 @@ def classproperty(func: Union[Callable, classmethod]) -> ClassPropertyDescriptor
         func = classmethod(func)
 
     return ClassPropertyDescriptor(func)
-
