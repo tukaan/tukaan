@@ -325,3 +325,27 @@ class Cursor(
             "-y",
             y,
         )
+
+
+class Screen(object, metaclass=ClassPropertyMetaClass):
+    @classproperty
+    def width(cls):
+        width = get_tcl_interp().tcl_call(int, "winfo", "screenwidth", ".")
+        return ScreenDistance(width)
+
+    @classproperty
+    def height(cls):
+        height = get_tcl_interp().tcl_call(int, "winfo", "screenheight", ".")
+        return ScreenDistance(height)
+
+    @classproperty
+    def size(cls):
+        return (cls.width, cls.height)
+
+    @classproperty
+    def depth(cls):
+        return get_tcl_interp().tcl_call(str, "winfo", "screendepth", ".")
+
+    @classproperty
+    def dpi(cls):
+        return get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", "1i")
