@@ -4,7 +4,7 @@ import numbers
 import sys
 import traceback
 from inspect import isclass
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Union
 
 counts: collections.defaultdict = collections.defaultdict(lambda: itertools.count(1))
 
@@ -57,7 +57,7 @@ def get_tcl_interp():
 _flatten = itertools.chain.from_iterable
 
 
-def create_command(func):
+def create_command(func) -> str:
     stack_info = "".join(traceback.format_stack())
 
     name = f"tukaan_command_{next(counts['commands'])}"
@@ -78,12 +78,17 @@ def create_command(func):
     return name
 
 
-def delete_command(name):
+def delete_command(name) -> None:
     del _callbacks[name]
     get_tcl_interp().app.deletecommand(name)
 
 
-def from_tcl(type_spec, value):
+def _pairs(sequence):
+    """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
+    return zip(sequence[0::2], sequence[1::2])
+
+
+def from_tcl(type_spec, value) -> Any:
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
     if type_spec is None:
         return None
@@ -108,7 +113,8 @@ def from_tcl(type_spec, value):
             string = from_tcl(str, value)
             if not string:
                 return None
-            return type_spec(string)
+
+            return type_spec(string)  # type: ignore
 
         if hasattr(type_spec, "from_tcl"):
             string = from_tcl(str, value)
@@ -116,7 +122,7 @@ def from_tcl(type_spec, value):
             if not string:
                 return None
 
-            return type_spec.from_tcl(string)
+            return type_spec.from_tcl(string)  # type: ignore
 
     if isinstance(type_spec, (list, tuple, dict)):
         items = get_tcl_interp().split_list(value)
@@ -143,7 +149,7 @@ def from_tcl(type_spec, value):
             return result
 
 
-def to_tcl(value):
+def to_tcl(value: Any) -> Any:
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
 
     if isinstance(value, str):
@@ -173,7 +179,7 @@ class ClassPropertyDescriptor:
         self.fget = fget
         self.fset = fset
 
-    def __get__(self, obj, owner=None):
+    def __get__(self, obj, owner: Union[object, None] = None):
         return self.fget.__get__(obj, owner or type(obj))()
 
     def __set__(self, obj, value):
@@ -186,7 +192,9 @@ class ClassPropertyDescriptor:
             type_ = type(obj)
         return self.fset.__get__(obj, type_)(value)
 
-    def setter(self, func):
+    def setter(
+        self, func: Union[Callable, classmethod]
+    ) -> ClassPropertyDescriptor:  # mypy thinks classmethod is not Callable
         if not isinstance(func, classmethod):
             func = classmethod(func)
         self.fset = func
@@ -194,7 +202,7 @@ class ClassPropertyDescriptor:
 
 
 class ClassPropertyMetaClass(type):
-    def __setattr__(self, key, value):
+    def __setattr__(self, key: str, value: Any):
         if key in self.__dict__:
             obj = self.__dict__.get(key)
         if obj and type(obj) is ClassPropertyDescriptor:
@@ -203,7 +211,7 @@ class ClassPropertyMetaClass(type):
         return super(ClassPropertyMetaClass, self).__setattr__(key, value)
 
 
-def classproperty(func):
+def classproperty(func: Union[Callable, classmethod]) -> ClassPropertyDescriptor:
     if not isinstance(func, classmethod):
         func = classmethod(func)
 

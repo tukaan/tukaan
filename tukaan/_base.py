@@ -1,6 +1,5 @@
 import collections.abc
 import itertools
-from abc import abstractmethod
 from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
 
 # fmt: off
@@ -24,7 +23,7 @@ class ChildStatistics:
 
 
 class StateSet(collections.abc.MutableSet):
-    """Object that contains the state of the widget, though it inherits from MutableSet, it behaves like a dict"""
+    """Object that contains the state of the widget, though it inherits from MutableSet, it behaves like a list"""
 
     __tk_widgets: set = {"text"}
 
