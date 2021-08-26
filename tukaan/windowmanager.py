@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable, List, Literal, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Tuple, Union, cast
 
 from ._platform import Platform
 from .utils import TukaanError
@@ -43,30 +43,30 @@ class WindowManager:
     wm_path: str
     tcl_path: str
 
-    def maximize(self):
+    def maximize(self) -> None:
         if self.tcl_call(None, "tk", "windowingsystem") == "win32":
             self.tcl_call(None, "wm", "state", self.wm_path, "zoomed")
         else:
             self.tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", True)
 
-    def restore(self):
+    def restore(self) -> None:
         if self.tcl_call(None, "tk", "windowingsystem") == "win32":
             self.tcl_call(None, "wm", "state", self.wm_path, "normal")
         else:
             self.tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", False)
 
-    def iconify(self):
+    def iconify(self) -> None:
         self.tcl_call(None, "wm", "iconify", self.wm_path)
 
-    def deiconify(self):
+    def deiconify(self) -> None:
         self.tcl_call(None, "wm", "deiconify", self.wm_path)
 
     @property
-    def fullscreen(self):
+    def fullscreen(self) -> bool:
         return self.tcl_call(bool, "wm", "attributes", self.wm_path, "-fullscreen")
 
     @fullscreen.setter
-    def fullscreen(self, is_fullscreen):
+    def fullscreen(self, is_fullscreen) -> None:
         # todo: bind f11
         self.tcl_call(
             None, "wm", "attributes", self.wm_path, "-fullscreen", is_fullscreen
@@ -74,19 +74,22 @@ class WindowManager:
 
     @property  # type: ignore
     @update_before
-    def size(self) -> tuple:
-        return tuple(
-            map(
-                int,
-                re.split(r"x|\+", self.tcl_call(str, "wm", "geometry", self.wm_path))[
-                    :2
-                ],
-            )
+    def size(self) -> Tuple[int, int]:
+        return cast(
+            Tuple[int, int],
+            tuple(
+                map(
+                    int,
+                    re.split(
+                        r"x|\+", self.tcl_call(str, "wm", "geometry", self.wm_path)
+                    )[:2],
+                )
+            ),
         )
 
     @size.setter  # type: ignore
     @update_after
-    def size(self, size: Union[Tuple, List, int]) -> None:
+    def size(self, size: Union[int, Tuple[int, int], List[int]]) -> None:
         if isinstance(size, (tuple, list)) and len(size) > 1:
             width, height = size
         elif isinstance(size, int):
@@ -101,14 +104,17 @@ class WindowManager:
 
     @property  # type: ignore
     @update_before
-    def position(self) -> Tuple:
-        return tuple(
-            map(
-                int,
-                re.split(r"x|\+", self.tcl_call(str, "wm", "geometry", self.wm_path))[
-                    2:
-                ],
-            )
+    def position(self) -> Tuple[int, int]:
+        return cast(
+            Tuple[int, int],
+            tuple(
+                map(
+                    int,
+                    re.split(
+                        r"x|\+", self.tcl_call(str, "wm", "geometry", self.wm_path)
+                    )[2:],
+                )
+            ),
         )
 
     @position.setter  # type: ignore
@@ -117,17 +123,11 @@ class WindowManager:
         self,
         position: Union[
             int,
-            Tuple,
-            List,
-            Union[
-                Literal["center"],
-                Literal["top-left"],
-                Literal["top-right"],
-                Literal["bottom-left"],
-                Literal["bottom-right"],
-            ],
+            Tuple[int, int],
+            List[int],
+            Literal["center", "top-left", "top-right", "bottom-left", "bottom-right"],
         ],
-    ):
+    ) -> None:
         if position in {
             "center",
             "top-left",
@@ -174,7 +174,7 @@ class WindowManager:
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"+{x}+{y}")
 
     @property  # type: ignore
-    def bbox(self):
+    def bbox(self) -> Tuple[int, int, int, int]:
         # TODO: bottom border hack
 
         window_border_width = self.x - self.position[0]
@@ -189,79 +189,79 @@ class WindowManager:
 
     @property  # type: ignore
     @update_before
-    def x(self):
+    def x(self) -> int:
         return self.tcl_call(int, "winfo", "x", self.wm_path)
 
     @x.setter  # type: ignore
     @update_after
-    def x(self, x):
+    def x(self, x: int) -> None:
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"{x}x{self.y}")
 
     @property  # type: ignore
     @update_before
-    def y(self):
+    def y(self) -> int:
         return self.tcl_call(int, "winfo", "y", self.wm_path)
 
     @y.setter  # type: ignore
     @update_after
-    def y(self, y):
+    def y(self, y: int) -> None:
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"{self.x}x{y}")
 
     @property  # type: ignore
     @update_before
-    def root_x(self):
+    def root_x(self) -> int:
         return self.tcl_call(int, "winfo", "rootx", self.wm_path)
 
     @property  # type: ignore
     @update_before
-    def root_y(self):
+    def root_y(self) -> int:
         return self.tcl_call(int, "winfo", "rooty", self.wm_path)
 
     @property  # type: ignore
     @update_before
-    def width(self):
+    def width(self) -> int:
         return self.tcl_call(int, "winfo", "width", self.wm_path)
 
     @width.setter  # type: ignore
     @update_after
-    def width(self, width):
+    def width(self, width: int) -> None:
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"{width}x{self.height}")
 
     @property  # type: ignore
     @update_before
-    def height(self):
+    def height(self) -> int:
         return self.tcl_call(int, "winfo", "height", self.wm_path)
 
     @height.setter  # type: ignore
     @update_after
-    def height(self, height):
+    def height(self, height: int) -> None:
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"{self.width}x{height}")
 
     @property  # type: ignore
     @update_before
-    def minsize(self):
-        return self.tcl_call(None, "wm", "minsize", self.wm_path)
+    def minsize(self) -> Tuple[int, int]:
+        return self.tcl_call((int), "wm", "minsize", self.wm_path)
 
     @minsize.setter  # type: ignore
     @update_after
-    def minsize(self, size):
+    def minsize(self, size: Union[int, Tuple[int, int], List[int]]) -> None:
         if isinstance(size, (tuple, list)) and len(size) > 1:
             width, height = size
-        else:
+        elif isinstance(size, int):
             width = height = size
         self.tcl_call(None, "wm", "minsize", self.wm_path, width, height)
 
     @property  # type: ignore
     @update_before
-    def maxsize(self):
-        return self.tcl_call(None, "wm", "maxsize", self.wm_path)
+    def maxsize(self) -> Tuple[int, int]:
+        return self.tcl_call((int), "wm", "maxsize", self.wm_path)
 
     @maxsize.setter  # type: ignore
     @update_after
-    def maxsize(self, size):
+    def maxsize(self, size: Union[int, Tuple[int, int], List[int]]) -> None:
         if isinstance(size, (tuple, list)) and len(size) > 1:
             width, height = size
-        else:
+        elif isinstance(size, int):
             width = height = size
         self.tcl_call(None, "wm", "maxsize", self.wm_path, width, height)
 
@@ -270,7 +270,7 @@ class WindowManager:
         return self.tcl_call(None, "wm", "title", self.wm_path, None)
 
     @title.setter
-    def title(self, new_title: str = None):
+    def title(self, new_title: str = None) -> None:
         self.tcl_call(None, "wm", "title", self.wm_path, new_title)
 
     @property
@@ -278,7 +278,7 @@ class WindowManager:
         return self.tcl_call(bool, "wm", "attributes", self.wm_path, "-topmost")
 
     @topmost.setter
-    def topmost(self, istopmost: bool = False):
+    def topmost(self, istopmost: bool = False) -> None:
         self.tcl_call(None, "wm", "attributes", self.wm_path, "-topmost", istopmost)
 
     @property
@@ -286,21 +286,16 @@ class WindowManager:
         return self.tcl_call(float, "wm", "attributes", self.wm_path, "-alpha")
 
     @transparency.setter
-    def transparency(self, alpha: Union[int, float] = False):
+    def transparency(self, alpha: Union[int, float] = 1) -> None:
         self.tcl_call(None, "tkwait", "visibility", self.wm_path)
         self.tcl_call(None, "wm", "attributes", self.wm_path, "-alpha", alpha)
 
     @property
-    def resizable(self):
+    def resizable(self) -> str:
         return self._resizable
 
     @resizable.setter
-    def resizable(
-        self,
-        direction: Union[
-            Literal["none"], Literal["horizontal"], Literal["vertical"], Literal["both"]
-        ],
-    ):
+    def resizable(self, direction: Literal["none", "horizontal", "vertical", "both"]):
         resize_dict = {
             "none": (False, False),
             "horizontal": (True, False),
@@ -317,18 +312,18 @@ class WindowManager:
         self.tcl_call(None, "wm", "resizable", self.wm_path, width, height)
 
     @property
-    def user_last_active(self):
+    def user_last_active(self) -> int:
         return self.tcl_call(int, "tk", "inactive") / 1000
 
     @property
-    def scaling(self):
-        self.tcl_call(int, "tk", "scaling", "-displayof", self.wm_path)
+    def scaling(self) -> int:
+        return self.tcl_call(int, "tk", "scaling", "-displayof", self.wm_path)
 
     @scaling.setter
-    def scaling(self, factor):
+    def scaling(self, factor: int) -> None:
         self.tcl_call(None, "tk", "scaling", "-displayof", self.wm_path, factor)
 
-    def _get_theme_aliases(self):
+    def _get_theme_aliases(self) -> Dict[str, str]:
         # available_themes will use this
         theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
 
@@ -340,7 +335,7 @@ class WindowManager:
         return theme_dict
 
     @property
-    def theme(self):
+    def theme(self) -> str:
         theme_dict = {"clam": "clam", "default": "legacy"}
 
         if Platform.windowing_system == "win32":
@@ -352,7 +347,7 @@ class WindowManager:
         return theme_dict[result]
 
     @theme.setter
-    def theme(self, theme):
+    def theme(self, theme) -> None:
         self.tcl_call(
             None, "ttk::style", "theme", "use", self._get_theme_aliases()[theme]
         )
