@@ -19,7 +19,7 @@ class HEX:
 
     @staticmethod
     def from_hex(hex) -> Tuple[int, int, int]:
-        int_value = int(hex[1:], 16)
+        int_value = int(hex.lstrip("#"), 16)
         return cast(
             Tuple[int, int, int],
             (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF),
