@@ -19,7 +19,7 @@ class HEX:
 
     @staticmethod
     def from_hex(hex) -> Tuple[int, int, int]:
-        int_value = int(hex[1:], 16)
+        int_value = int(hex.lstrip("#"), 16)
         return cast(
             Tuple[int, int, int],
             (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF),
@@ -71,7 +71,7 @@ class HSV:
             (p, v, t),
             (p, q, v),
             (t, p, v),
-            (v, p, q),
+            (v, p, q)
         ][int(i % 6)]
 
         return cast(Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (r, g, b)))
@@ -81,7 +81,7 @@ class CMYK:
     @staticmethod
     def to_cmyk(r, g, b) -> Tuple[int, int, int, int]:
         if (r, g, b) == (0, 0, 0):
-            return 0, 0, 0, 100
+            return (0, 0, 0, 100)
 
         c, m, y = (1 - x / 255 for x in (r, g, b))
 
@@ -108,7 +108,6 @@ class Color:
     _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk"}
 
     def __init__(self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str = "hex") -> None:
-
         if space == "hex" and isinstance(color, str):
             rgb = HEX.from_hex(color)
 
@@ -143,7 +142,6 @@ class Color:
             return f"{color!r} is not a valid {space} color. A tuple with length of {length_dict[space]} is expected."
 
         return "Not implemented tukaan.Color error."  # shouldn't get here
-
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(red={self.red}, green={self.green}, blue={self.blue})"
@@ -313,7 +311,7 @@ class Cursor(
     def position(cls, new_pos: int | Tuple[int, int] | List[int]) -> None:
         if isinstance(new_pos, (tuple, list)) and len(new_pos) > 1:
             x, y = new_pos
-        else:
+        elif isinstance(new_pos, int):
             x = y = new_pos
 
         get_tcl_interp().tcl_call(
