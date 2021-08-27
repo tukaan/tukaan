@@ -4,8 +4,8 @@ import collections
 import re
 from typing import Dict, List, Optional, Tuple, Union, cast
 
+# fmt: off
 from ._platform import Platform
-
 # fmt: off
 from .utils import (ClassPropertyMetaClass, ColorError, FontError, TukaanError,
                     _flatten, _pairs, classproperty, from_tcl, get_tcl_interp,
