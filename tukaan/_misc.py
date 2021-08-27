@@ -4,6 +4,8 @@ import collections
 import re
 from typing import Dict, List, Optional, Tuple, Union, cast
 
+from ._platform import Platform
+
 # fmt: off
 from .utils import (ClassPropertyMetaClass, ColorError, FontError, TukaanError,
                     _flatten, _pairs, classproperty, from_tcl, get_tcl_interp,
@@ -224,27 +226,38 @@ class Cursor(
     and to get and set the mouse cursor position"""
 
     _cursor_dict = {
-        "center": "center_ptr",
         "crosshair": "crosshair",
         "default": "arrow",
         "e-resize": "right_side",
-        "ew-resize": "sb_h_double_arrow",
         "help": "question_arrow",
         "move": "fleur",
         "n-resize": "top_side",
-        "ne-resize": "top_right_corner",
+        "ne-sw-resize": "top_right_corner",
         "not-allowed": "circle",
         "ns-resize": "sb_v_double_arrow",
-        "nw-resize": "top_left_corner",
+        "nw-se-resize": "top_left_corner",
         "pointer": "hand2",
+        "progress": "arrow",  # for cross-platform compatibility
         "s-resize": "bottom_side",
-        "se-resize": "bottom_right_corner",  # se == nw, sw == ne
-        "sw-resize": "bottom_left_corner",
         "text": "xterm",
         "w-resize": "left_side",
         "wait": "watch",
+        "we-resize": "sb_h_double_arrow",
         None: "none",
     }
+
+    _win_cursor_dict = {
+        "not-allowed": "no",
+        "progress": "starting",
+        "ne-sw-resize": "size_ne_sw",
+        "ns-resize": "size_ns",
+        "nw-se-resize": "size_nw_se",
+        "wait": "wait",
+        "we-resize": "size_we",
+    }
+
+    if Platform.system == "Windows":
+        _cursor_dict = {**_cursor_dict, **_win_cursor_dict}
 
     def to_tcl(self) -> str:
         return self._cursor_dict[self.cursor]
