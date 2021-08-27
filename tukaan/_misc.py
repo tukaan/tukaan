@@ -108,7 +108,6 @@ class Color:
     _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk"}
 
     def __init__(self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str = "hex") -> None:
-
         if space == "hex" and isinstance(color, str):
             rgb = HEX.from_hex(color)
 
