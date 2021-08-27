@@ -81,7 +81,7 @@ class CMYK:
     @staticmethod
     def to_cmyk(r, g, b) -> Tuple[int, int, int, int]:
         if (r, g, b) == (0, 0, 0):
-            return 0, 0, 0, 100
+            return (0, 0, 0, 100)
 
         c, m, y = (1 - x / 255 for x in (r, g, b))
 
