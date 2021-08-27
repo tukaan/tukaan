@@ -206,7 +206,7 @@ class ClassPropertyDescriptor:
 
     def setter(
         self, func: Union[Callable, classmethod]
-    ) -> ClassPropertyDescriptor:  # mypy thinks classmethod is not Callable
+    ) -> "ClassPropertyDescriptor":  # mypy thinks classmethod is not Callable
         if not isinstance(func, classmethod):
             func = classmethod(func)
         self.fset = func
