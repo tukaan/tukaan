@@ -225,7 +225,7 @@ class Cursor(
     """An object to use cross-platform, and human-understandable cursor names,
     and to get and set the mouse cursor position"""
 
-    _cursor_dict = {
+    _cursor_dict: Dict[Union[str, None], str] = {
         "crosshair": "crosshair",
         "default": "arrow",
         "e-resize": "right_side",
@@ -246,7 +246,7 @@ class Cursor(
         None: "none",
     }
 
-    _win_cursor_dict = {
+    _win_cursor_dict: Dict[Union[str, None], str] = {
         "not-allowed": "no",
         "progress": "starting",
         "ne-sw-resize": "size_ne_sw",
@@ -310,7 +310,7 @@ class Cursor(
 
     @position.setter  # type: ignore
     @update_before
-    def position(cls, new_pos: int | Tuple | List) -> None:
+    def position(cls, new_pos: int | Tuple[int, int] | List[int]) -> None:
         if isinstance(new_pos, (tuple, list)) and len(new_pos) > 1:
             x, y = new_pos
         else:
