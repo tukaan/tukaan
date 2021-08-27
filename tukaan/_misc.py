@@ -143,7 +143,6 @@ class Color:
 
         return "Not implemented tukaan.Color error."  # shouldn't get here
 
-
     def __repr__(self) -> str:
         return f"{type(self).__name__}(red={self.red}, green={self.green}, blue={self.blue})"
 
