@@ -71,7 +71,7 @@ class HSV:
             (p, v, t),
             (p, q, v),
             (t, p, v),
-            (v, p, q),
+            (v, p, q)
         ][int(i % 6)]
 
         return cast(Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (r, g, b)))
