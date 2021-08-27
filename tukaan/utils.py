@@ -15,6 +15,14 @@ class TukaanError(Exception):
     ...
 
 
+class ColorError(Exception):
+    ...
+
+
+class FontError(Exception):
+    ...
+
+
 def updated(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
         get_tcl_interp().tcl_call(None, "update", "idletasks")
@@ -40,6 +48,10 @@ def update_after(func: Callable) -> Callable:
         return result
 
     return wrapper
+
+
+def reversed_dict(dictionary: dict) -> dict:
+    return {value: key for key, value in dictionary.items()}
 
 
 def get_tcl_interp():
@@ -194,7 +206,7 @@ class ClassPropertyDescriptor:
 
     def setter(
         self, func: Union[Callable, classmethod]
-    ) -> ClassPropertyDescriptor:  # mypy thinks classmethod is not Callable
+    ) -> "ClassPropertyDescriptor":  # mypy thinks classmethod is not Callable
         if not isinstance(func, classmethod):
             func = classmethod(func)
         self.fset = func
