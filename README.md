@@ -48,6 +48,56 @@ if __name__ == "__main__":
     main() 
 ```
 
+### Some very nice things in tukaan
+
+#### Get clipboard content
+
+```python
+print(tukaan.Clipboard.get())
+
+# or
+
+print(tukaan.Clipboard.content)
+```
+
+#### When was the user last active on the computer
+
+```python
+print("User last active", tukaan.App().user_last_active, "seconds ago.")
+```
+
+#### Centering a window on the screen
+For some reason it doesn't work sometimes
+
+```python
+app = tukaan.App()
+app.position = "center"
+```
+
+#### Color conversions
+
+```python
+color = tukaan.Color("#007fff")
+print(color.rgb)
+>>> (0, 127, 255)
+print(color.hsv)
+>>> (210, 100, 100)
+print(color.cmyk)
+>>> (100, 50, 0, 0)
+```
+
+#### Screen information
+```python
+screen = tukaan.Screen()
+print(screen.width)
+>>> 1920
+print(screen.height)
+>>> 1080
+print(screen.dpi)
+>>> 72
+```
+
+
 
 ## Credits
 Many thing in Tukaan is based on:
