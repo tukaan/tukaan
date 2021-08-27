@@ -308,7 +308,7 @@ class Cursor(
 
     @position.setter  # type: ignore
     @update_before
-    def position(cls, new_pos: int | Tuple | List) -> None:
+    def position(cls, new_pos: int | Tuple[int, int] | List[int]) -> None:
         if isinstance(new_pos, (tuple, list)) and len(new_pos) > 1:
             x, y = new_pos
         elif isinstance(new_pos, int):
