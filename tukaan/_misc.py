@@ -311,7 +311,7 @@ class Cursor(
     def position(cls, new_pos: int | Tuple | List) -> None:
         if isinstance(new_pos, (tuple, list)) and len(new_pos) > 1:
             x, y = new_pos
-        else:
+        elif isinstance(new_pos, int):
             x = y = new_pos
 
         get_tcl_interp().tcl_call(
