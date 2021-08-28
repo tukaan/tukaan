@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple, Union, Literal
+from typing import Any, Dict, Literal, Tuple, Union
 
 from ._base import BaseWidget, TkWidget
 
