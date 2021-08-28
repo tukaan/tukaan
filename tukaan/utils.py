@@ -8,7 +8,9 @@ from typing import Any, Callable, Dict, Union
 
 counts: collections.defaultdict = collections.defaultdict(lambda: itertools.count(1))
 
+
 _callbacks: Dict[str, Callable] = {}
+_timeouts: Dict[str, object] = {}  # can't import timeout
 
 
 class TukaanError(Exception):

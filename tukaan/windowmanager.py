@@ -96,8 +96,7 @@ class WindowManager:
             width = height = size
         width, height = tuple(
             map(
-                lambda a: self.tcl_call(int, "winfo", "pixels", ".", a),
-                (width, height),
+                lambda a: self.tcl_call(int, "winfo", "pixels", ".", a), (width, height)
             )
         )
         self.tcl_call(None, "wm", "geometry", self.wm_path, f"{width}x{height}")
@@ -306,7 +305,8 @@ class WindowManager:
             width, height = resize_dict[direction]
         except KeyError:
             raise TukaanError(
-                f"invalid resizable value: {direction!r}. Allowed values: 'none', 'horizontal' 'vertical', 'both'"
+                f"invalid resizable value: {direction!r}. Allowed values: 'none',"
+                " 'horizontal' 'vertical', 'both'"
             )
         self._resizable = direction
         self.tcl_call(None, "wm", "resizable", self.wm_path, width, height)

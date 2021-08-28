@@ -14,7 +14,6 @@ class Label(BaseWidget):
     }
 
     _anchors: Dict[Union[str, None], Union[str, None]] = {
-        None: None,
         "bottom": "s",
         "bottom-left": "sw",
         "bottom-right": "se",
@@ -50,7 +49,8 @@ class Label(BaseWidget):
         text: Union[str, None] = None,
     ) -> None:
 
-        anchor = self._anchors[anchor]
+        if anchor is not None:
+            anchor = self._anchors[anchor]
 
         BaseWidget.__init__(
             self,
