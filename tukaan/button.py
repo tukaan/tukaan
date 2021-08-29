@@ -1,6 +1,7 @@
 from typing import Any, Callable, Dict, Tuple, Union
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, TukaanWidget
+from ._returntype import Callback
 
 
 class Button(BaseWidget):
@@ -16,7 +17,7 @@ class Button(BaseWidget):
 
     def __init__(
         self,
-        parent: Union[TkWidget, None] = None,
+        parent: Union[TukaanWidget, None] = None,
         callback: Union[Callable, None] = None,
         default: Union[str, None] = None,
         focusable: Union[bool, None] = None,

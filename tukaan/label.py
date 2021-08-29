@@ -1,11 +1,13 @@
 from typing import Any, Dict, Literal, Tuple, Union
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, TukaanWidget
+from ._constants import _anchors
+from ._returntype import DictKey
 
 
 class Label(BaseWidget):
     _keys: Dict[str, Union[Any, Tuple[Any, str]]] = {
-        "anchor": str,
+        "anchor": DictKey(_anchors),
         "focusable": (bool, "takefocus"),
         "justify": str,
         "max_line_length": (int, "wraplength"),
@@ -13,35 +15,10 @@ class Label(BaseWidget):
         "text": str,
     }
 
-    _anchors: Dict[Union[str, None], Union[str, None]] = {
-        "bottom": "s",
-        "bottom-left": "sw",
-        "bottom-right": "se",
-        "center": "center",
-        "left": "w",
-        "right": "e",
-        "top": "n",
-        "top-left": "nw",
-        "top-right": "ne",
-    }
-
     def __init__(
         self,
-        parent: Union[TkWidget, None] = None,
-        anchor: Union[
-            Literal[
-                "bottom",
-                "bottom-left",
-                "bottom-right",
-                "center",
-                "left",
-                "right",
-                "top",
-                "top-left",
-                "top-right",
-            ],
-            None,
-        ] = None,
+        parent: Union[TukaanWidget, None] = None,
+        anchor: Union[Literal["none"], None,] = None,
         focusable: Union[bool, None] = None,
         justify: Union[Literal["left", "center", "right"], None] = None,
         max_line_length: Union[int, None] = None,
@@ -50,7 +27,7 @@ class Label(BaseWidget):
     ) -> None:
 
         if anchor is not None:
-            anchor = self._anchors[anchor]
+            anchor = _anchors[anchor]
 
         BaseWidget.__init__(
             self,

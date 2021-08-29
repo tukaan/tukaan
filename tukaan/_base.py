@@ -6,6 +6,8 @@ from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
 from .utils import (_callbacks, create_command, get_tcl_interp, update_after,
                     update_before, updated)
 
+from ._returntype import Callback, DictKey
+
 
 class ChildStatistics:
     def __init__(self, widget) -> None:
@@ -61,7 +63,7 @@ class StateSet(collections.abc.MutableSet):
             self._widget._tcl_call(None, self._widget, "config", "-state", "normal")
 
 
-# FIXME: MethodMixin isn't a good nam, because it contains mostly properties
+# FIXME: MethodMixin isn't a good name, because it contains mostly properties
 class MethodMixin:
     _tcl_call: Callable
     _py_to_tcl_arguments: Callable
@@ -98,17 +100,23 @@ class MethodMixin:
         else:
             type_spec = self._keys[key]
 
-        if type(type_spec) is Callable:
+        if type(type_spec) is Callback:
             # return a callable func, not tcl name
             result = self._tcl_call(str, self, "cget", f"-{key}")
             return _callbacks[result]
 
+        if type(type_spec) is DictKey:
+            # FIXME: now this can only return str, or is this a problem?
+            # DictKey will return the key, and the value should be a string
+            result = self._tcl_call(str, self, "cget", f"-{key}")
+            return type_spec[result]
+
         return self._tcl_call(type_spec, self, "cget", f"-{key}")
 
-    @update_after
     def config(self, **kwargs) -> None:
         for key in tuple(kwargs.keys()):
             if isinstance(self._keys[key], tuple):
+                # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
                 kwargs[self._keys[key][1]] = kwargs.pop(key)
 
         get_tcl_interp().tcl_call(
@@ -158,12 +166,12 @@ class MethodMixin:
         del self.parent._children[self.tcl_path]
 
 
-class TkWidget(MethodMixin):
+class TukaanWidget(MethodMixin):
     """Base class for every Tukaan widget"""
 
     def __init__(self):
-        self._children: Dict[str, "TkWidget"] = {}
-        self._child_type_count: Dict["TkWidget", int] = {}
+        self._children: Dict[str, "TukaanWidget"] = {}
+        self._child_type_count: Dict["TukaanWidget", int] = {}
         self.child_stats = ChildStatistics(self)
 
     @classmethod
@@ -175,7 +183,7 @@ class TkWidget(MethodMixin):
                 continue
 
             if key.endswith("_"):
-                key = key[:-1]
+                key = key.rstrip("_")
 
             if callable(value):
                 value = create_command(value)
@@ -185,11 +193,11 @@ class TkWidget(MethodMixin):
         return tuple(result)
 
 
-class BaseWidget(TkWidget):
+class BaseWidget(TukaanWidget):
     def __init__(
-        self, parent: Union[TkWidget, None], widget_name: str, **kwargs
+        self, parent: Union[TukaanWidget, None], widget_name: str, **kwargs
     ) -> None:
-        TkWidget.__init__(self)
+        TukaanWidget.__init__(self)
 
         self.parent = parent if parent else get_tcl_interp()
         self.tcl_path = self._give_me_a_name()

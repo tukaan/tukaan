@@ -7,14 +7,14 @@ from typing import Any, Callable, Dict, Tuple, Union
 
 import _tkinter as tk
 
-from ._base import TkWidget
+from ._base import TukaanWidget
 from .utils import TukaanError, from_tcl, to_tcl
 from .windowmanager import WindowManager
 
 tcl_interp = None
 
 
-class App(WindowManager, TkWidget):
+class App(WindowManager, TukaanWidget):
     wm_path = "."
     tcl_path = ".app"
 
@@ -29,7 +29,7 @@ class App(WindowManager, TkWidget):
         theme: Union[str, None] = None,
     ) -> None:
 
-        TkWidget.__init__(self)
+        TukaanWidget.__init__(self)
 
         global tcl_interp
 

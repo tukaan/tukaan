@@ -1,6 +1,7 @@
 import re
 from typing import Any, Callable, Dict, List, Literal, Tuple, Union, cast
 
+from ._constants import _window_pos
 from ._platform import Platform
 from .utils import TukaanError
 
@@ -127,13 +128,7 @@ class WindowManager:
             Literal["center", "top-left", "top-right", "bottom-left", "bottom-right"],
         ],
     ) -> None:
-        if position in {
-            "center",
-            "top-left",
-            "top-right",
-            "bottom-left",
-            "bottom-right",
-        }:
+        if position in _window_pos:
             if position == "center":
                 x = int(
                     (self.tcl_call(int, "winfo", "screenwidth", self.wm_path) / 2)
