@@ -1,5 +1,6 @@
 import collections.abc
 import itertools
+import contextlib
 from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
 
 # fmt: off
@@ -80,15 +81,23 @@ class MethodMixin:
         return ""
 
     @property
-    def busy(self) -> bool:
+    def is_busy(self) -> bool:
         return self._tcl_call(bool, "tk", "busy", "status", self)
 
-    @busy.setter
-    def busy(self, is_busy) -> None:
+    @is_busy.setter
+    def is_busy(self, is_busy) -> None:
         if is_busy:
             self._tcl_call(None, "tk", "busy", "hold", self)
         else:
             self._tcl_call(None, "tk", "busy", "forget", self)
+
+    @contextlib.contextmanager
+    def busy(self):
+        self.is_busy = True
+        try:
+            yield
+        finally:
+            self.is_busy = False
 
     @property
     def id(self) -> int:
