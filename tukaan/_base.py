@@ -76,7 +76,7 @@ class MethodMixin:
     __str__ = __repr__
 
     def _repr_details(self) -> str:
-        # overriden in subclasses
+        # overridden in subclasses
         return ""
 
     @property
