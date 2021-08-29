@@ -5,7 +5,7 @@ from ._returntype import Callback
 
 
 class Button(BaseWidget):
-    _keys: Dict[str, Union[Any, Tuple[Any, str]]] = {
+    _keys = {
         "callback": (Callable, "command"),
         "default": str,
         "focusable": (bool, "takefocus"),

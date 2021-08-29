@@ -6,7 +6,7 @@ from ._returntype import DictKey
 
 
 class Label(BaseWidget):
-    _keys: Dict[str, Union[Any, Tuple[Any, str]]] = {
+    _keys = {
         "anchor": DictKey(_anchors),
         "focusable": (bool, "takefocus"),
         "justify": str,
@@ -18,7 +18,10 @@ class Label(BaseWidget):
     def __init__(
         self,
         parent: Union[TukaanWidget, None] = None,
-        anchor: Union[Literal["none"], None,] = None,
+        anchor: Union[
+            Literal["none"],
+            None,
+        ] = None,
         focusable: Union[bool, None] = None,
         justify: Union[Literal["left", "center", "right"], None] = None,
         max_line_length: Union[int, None] = None,

@@ -1,13 +1,13 @@
 import collections.abc
-import itertools
 import contextlib
+import itertools
 from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
 
 # fmt: off
+from ._returntype import Callback, DictKey
+# fmt: off
 from .utils import (_callbacks, create_command, get_tcl_interp, update_after,
                     update_before, updated)
-
-from ._returntype import Callback, DictKey
 
 
 class ChildStatistics:
@@ -203,6 +203,8 @@ class TukaanWidget(MethodMixin):
 
 
 class BaseWidget(TukaanWidget):
+    _keys: Dict[str, Union[Any, Tuple[Any, str]]]
+    
     def __init__(
         self, parent: Union[TukaanWidget, None], widget_name: str, **kwargs
     ) -> None:

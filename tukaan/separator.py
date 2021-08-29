@@ -1,9 +1,10 @@
-from typing import Literal, Union, Dict, Any, Tuple
+from typing import Any, Dict, Literal, Tuple, Union
+
 from ._base import BaseWidget, TukaanWidget
 
 
 class Separator(BaseWidget):
-    _keys: Dict[str, Union[Any, Tuple[Any, str]]] = {"orientation": (str, "orient")}
+    _keys = {"orientation": (str, "orient")}
 
     def __init__(
         self,

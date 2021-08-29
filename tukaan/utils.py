@@ -117,10 +117,9 @@ def from_tcl(type_spec, value) -> Any:
         return get_tcl_interp().get_boolean(value)
 
     if type_spec is int:
-        stringed_value = from_tcl(str, value)
-        if not stringed_value:
+        if not value:
             return None
-        return int(stringed_value, 0)
+        return int(value)
 
     if isinstance(type_spec, type):
         if issubclass(type_spec, numbers.Real):
