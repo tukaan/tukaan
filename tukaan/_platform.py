@@ -16,11 +16,11 @@ class Platform(metaclass=ClassPropertyMetaClass):
 
     @classproperty
     def windowing_system(cls):
-        return get_tcl_interp().tcl_call(str, "tk", "windowingsystem")
+        return get_tcl_interp()._tcl_call(str, "tk", "windowingsystem")
 
     @classproperty
     def tcl_version(cls):
-        return get_tcl_interp().tcl_call(str, "info", "patchlevel")
+        return get_tcl_interp()._tcl_call(str, "info", "patchlevel")
 
     @classproperty
     def tk_version(cls):

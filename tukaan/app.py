@@ -9,12 +9,12 @@ import _tkinter as tk
 
 from ._base import TukaanWidget
 from .utils import TukaanError, from_tcl, to_tcl
-from .windowmanager import WindowManager
+from .windowmanager import WindowMixin
 
 tcl_interp = None
 
 
-class App(WindowManager, TukaanWidget):
+class App(WindowMixin, TukaanWidget):
     wm_path = "."
     tcl_path = ".app"
 
@@ -33,7 +33,7 @@ class App(WindowManager, TukaanWidget):
 
         global tcl_interp
 
-        if tcl_interp:
+        if tcl_interp is self:
             raise TukaanError("can't create multiple App objects use a Window instead")
 
         self.app = tk.create(
@@ -50,26 +50,25 @@ class App(WindowManager, TukaanWidget):
 
         tcl_interp = self
 
-        self.tcl_call(None, "ttk::frame", ".app")
-        self.tcl_call(None, "pack", ".app", "-expand", "1", "-fill", "both")
+        self._tcl_call(None, "ttk::frame", ".app")
+        self._tcl_call(None, "pack", ".app", "-expand", "1", "-fill", "both")
 
         self.title = title
         self.topmost = topmost
         self.transparency = transparency
-        # i can't figure out why, but mypy says 'size' is read-only
         self.size = width, height  # type: ignore
         self.fullscreen = fullscreen
 
         if theme is None:
             theme = (
                 "clam"
-                if self.tcl_call(str, "tk", "windowingsystem") == "x11"
+                if self._tcl_call(str, "tk", "windowingsystem") == "x11"
                 else "native"
             )
 
         self.theme = theme
 
-    def tcl_call(self, return_type: Any, *args) -> Any:
+    def _tcl_call(self, return_type: Any, *args) -> Any:
         try:
             result = self.app.call(tuple(map(to_tcl, args)))
             return from_tcl(return_type, result)
@@ -99,7 +98,7 @@ class App(WindowManager, TukaanWidget):
         if isinstance(obj, tk.Tcl_Obj):
             return obj.string
 
-        return self.tcl_call(str, "format", obj)
+        return self._tcl_call(str, "format", obj)
 
     def split_list(self, arg) -> tuple:
         return self.app.splitlist(arg)
@@ -115,7 +114,9 @@ class App(WindowManager, TukaanWidget):
         for child in tuple(self._children.values()):
             child.destroy()
 
-        self.tcl_call(None, "destroy", self.tcl_path)
-        self.tcl_call(None, "destroy", self.wm_path)
+        self._tcl_call(None, "destroy", self.tcl_path)
+        self._tcl_call(None, "destroy", self.wm_path)
+
+        tcl_interp = None
 
         self.app.quit()

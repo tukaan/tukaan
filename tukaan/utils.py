@@ -27,9 +27,9 @@ class FontError(Exception):
 
 def updated(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
-        get_tcl_interp().tcl_call(None, "update", "idletasks")
+        get_tcl_interp()._tcl_call(None, "update", "idletasks")
         result = func(self, *args, **kwargs)
-        get_tcl_interp().tcl_call(None, "update", "idletasks")
+        get_tcl_interp()._tcl_call(None, "update", "idletasks")
         return result
 
     return wrapper
@@ -37,7 +37,7 @@ def updated(func: Callable) -> Callable:
 
 def update_before(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
-        get_tcl_interp().tcl_call(None, "update", "idletasks")
+        get_tcl_interp()._tcl_call(None, "update", "idletasks")
         return func(self, *args, **kwargs)
 
     return wrapper
@@ -46,7 +46,7 @@ def update_before(func: Callable) -> Callable:
 def update_after(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
         result = func(self, *args, **kwargs)
-        get_tcl_interp().tcl_call(None, "update", "idletasks")
+        get_tcl_interp()._tcl_call(None, "update", "idletasks")
         return result
 
     return wrapper

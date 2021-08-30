@@ -12,7 +12,7 @@ class Timeout:
         self._func = func
         self._callback = create_command(self._call_func)
 
-        self.id = get_tcl_interp().tcl_call(
+        self.id = get_tcl_interp()._tcl_call(
             str, "after", int(time * 1000), self._callback
         )
 
@@ -32,8 +32,8 @@ class Timeout:
         if self.state != "pending":
             raise RuntimeError(f"cannot cancel a {self.state} timeout")
 
-        after_id = get_tcl_interp().tcl_call([str], "after", "info", self.id)[0]
-        get_tcl_interp().tcl_call(None, "after", "cancel", after_id)
+        after_id = get_tcl_interp()._tcl_call([str], "after", "info", self.id)[0]
+        get_tcl_interp()._tcl_call(None, "after", "cancel", after_id)
 
         delete_command(after_id)
 

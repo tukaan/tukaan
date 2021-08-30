@@ -25,47 +25,7 @@ class ChildStatistics:
         return list(cls._widget._children.values())
 
 
-class StateSet(collections.abc.MutableSet):
-    """Object that contains the state of the widget, though it inherits from MutableSet, it behaves like a list"""
-
-    __tk_widgets: set = {"text"}
-
-    def __init__(self, widget) -> None:
-        self._widget = widget
-
-    def __repr__(self) -> str:
-        return f"<state object of {self._widget}: state={list(self)}>"
-
-    def __iter__(self) -> Iterator[str]:
-        return iter(self._widget._tcl_call([str], self._widget, "state"))
-
-    def __len__(self) -> int:
-        if self._widget._class not in self.__tk_widgets:
-            return len(self._widget._tcl_call([str], self._widget, "state"))
-        else:
-            return 1
-
-    def __contains__(self, state) -> bool:
-        if self._widget._class not in self.__tk_widgets:
-            return self._widget._tcl_call(bool, self._widget, "instate", state)
-        else:
-            return self._widget._tcl_call(str, self._widget, "cget", "-state") == state
-
-    def add(self, state) -> None:
-        if self._widget._class not in self.__tk_widgets:
-            self._widget._tcl_call(None, self._widget, "state", state)
-        else:
-            self._widget._tcl_call(None, self._widget, "config", "-state", state)
-
-    def discard(self, state) -> None:
-        if self._widget._class not in self.__tk_widgets:
-            self._widget._tcl_call(None, self._widget, "state", f"!{state}")
-        else:
-            self._widget._tcl_call(None, self._widget, "config", "-state", "normal")
-
-
-# FIXME: MethodMixin isn't a good name, because it contains mostly properties
-class MethodMixin:
+class MethodAndPropMixin:
     _tcl_call: Callable
     _py_to_tcl_arguments: Callable
     _keys: Dict[str, Any]
@@ -128,7 +88,7 @@ class MethodMixin:
                 # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
                 kwargs[self._keys[key][1]] = kwargs.pop(key)
 
-        get_tcl_interp().tcl_call(
+        get_tcl_interp()._tcl_call(
             None, self, "configure", *self._py_to_tcl_arguments(kwargs)
         )
 
@@ -137,11 +97,11 @@ class MethodMixin:
 
     @property
     def _class(self):
-        return self._tcl_call(str, "winfo", "class", self)
+        return self._tcl_call(str, "winfo", "class", self.tcl_path)
 
     @property
     def keys(self) -> list:
-        return sorted(self._keys)
+        return sorted(self._keys.keys())
 
     @property
     def bbox(self) -> tuple:
@@ -175,7 +135,7 @@ class MethodMixin:
         del self.parent._children[self.tcl_path]
 
 
-class TukaanWidget(MethodMixin):
+class TukaanWidget(MethodAndPropMixin):
     """Base class for every Tukaan widget"""
 
     def __init__(self):
@@ -202,6 +162,31 @@ class TukaanWidget(MethodMixin):
         return tuple(result)
 
 
+class StateSet(collections.abc.MutableSet):
+    """Object that contains the state of the widget, though it inherits from MutableSet, it behaves like a list"""
+
+    def __init__(self, widget: TukaanWidget) -> None:
+        self._widget = widget
+
+    def __repr__(self) -> str:
+        return f"<state object of {self._widget}: state={list(self)}>"
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._widget._tcl_call([str], self._widget, "state"))
+
+    def __len__(self) -> int:
+        return len(self._widget._tcl_call([str], self._widget, "state"))
+
+    def __contains__(self, state: str) -> bool:
+        return self._widget._tcl_call(bool, self._widget, "instate", state)
+
+    def add(self, state: str) -> None:
+        self._widget._tcl_call(None, self._widget, "state", state)
+
+    def discard(self, state: str) -> None:
+        self._widget._tcl_call(None, self._widget, "state", f"!{state}")
+
+
 class BaseWidget(TukaanWidget):
     _keys: Dict[str, Union[Any, Tuple[Any, str]]]
     
@@ -212,15 +197,18 @@ class BaseWidget(TukaanWidget):
 
         self.parent = parent if parent else get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
-        self._tcl_call: Callable = get_tcl_interp().tcl_call
-
-        self.state = StateSet(self)
+        self._tcl_call: Callable = get_tcl_interp()._tcl_call
 
         self.parent._children[self.tcl_path] = self
 
         self._tcl_call(
             None, widget_name, self.tcl_path, *self._py_to_tcl_arguments(kwargs)
         )
+
+        if self._class.startswith("ttk::"):
+            self.state = StateSet(self)
+        # else:
+        #     need to define separately for non-ttk widgets
 
     def __setattr__(self, key: str, value: Any) -> None:
         if key in self._keys.keys():
@@ -243,21 +231,21 @@ class BaseWidget(TukaanWidget):
         count = self.parent._child_type_count.get(klass, 0) + 1
         self.parent._child_type_count[klass] = count
 
-        name: str = f"{self.parent.tcl_path}.{klass.__name__.lower()}{count}"
+        name: str = f"{self.parent.tcl_path}.{klass.__name__.lower()}_{count}"
 
         return name
 
     def pack(self, **kwargs) -> None:
-        get_tcl_interp().tcl_call(
+        get_tcl_interp()._tcl_call(
             None, "pack", self, *self._py_to_tcl_arguments(kwargs)
         )
 
     def grid(self, **kwargs) -> None:
-        get_tcl_interp().tcl_call(
+        get_tcl_interp()._tcl_call(
             None, "grid", self, *self._py_to_tcl_arguments(kwargs)
         )
 
     def place(self, **kwargs) -> None:
-        get_tcl_interp().tcl_call(
+        get_tcl_interp()._tcl_call(
             None, "place", self, *self._py_to_tcl_arguments(kwargs)
         )
