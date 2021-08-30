@@ -2,7 +2,7 @@ import platform
 
 import _tkinter as tk
 
-from .utils import ClassPropertyMetaClass, classproperty, get_tcl_interp
+from ._utils import ClassPropertyMetaClass, classproperty, get_tcl_interp
 
 
 class Platform(metaclass=ClassPropertyMetaClass):

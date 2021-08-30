@@ -6,8 +6,8 @@ from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
 # fmt: off
 from ._returntype import Callback, DictKey
 # fmt: off
-from .utils import (_callbacks, create_command, get_tcl_interp, update_after,
-                    update_before, updated)
+from ._utils import (_callbacks, create_command, get_tcl_interp, update_after,
+                    update_before, updated, _widgets)
 
 
 class ChildStatistics:
@@ -92,12 +92,30 @@ class MethodAndPropMixin:
             None, self, "configure", *self._py_to_tcl_arguments(kwargs)
         )
 
+    @classmethod
+    def from_tcl(cls, tcl_value: str) -> "TukaanWidget":
+        # unlike int teek, this method won't raise a TypeError,
+        # if the return widget, and the class you call it on isn't the same
+        # this could be annoying, but very useful if you don't know
+        # what kind of widget it is and just want to get it 
+
+        # teek.Button.from_tcl(teek.Label().to_tcl())
+        # >>> TypeError: blablabla
+
+        # tukaan.Button.from_tcl(teek.tukaan().to_tcl())
+        # >>> '.app.label_1'
+
+        if tcl_value == '.':
+            return get_tcl_interp()
+
+        return _widgets[tcl_value]
+
     def to_tcl(self) -> str:
         return self.tcl_path
 
     @property
     def _class(self):
-        return self._tcl_call(str, "winfo", "class", self.tcl_path)
+        return self._tcl_call(str, "winfo", "class", self)
 
     @property
     def keys(self) -> list:
@@ -141,6 +159,7 @@ class TukaanWidget(MethodAndPropMixin):
     def __init__(self):
         self._children: Dict[str, "TukaanWidget"] = {}
         self._child_type_count: Dict["TukaanWidget", int] = {}
+        _widgets[self.tcl_path] = self
         self.child_stats = ChildStatistics(self)
 
     @classmethod
@@ -193,11 +212,11 @@ class BaseWidget(TukaanWidget):
     def __init__(
         self, parent: Union[TukaanWidget, None], widget_name: str, **kwargs
     ) -> None:
-        TukaanWidget.__init__(self)
-
         self.parent = parent if parent else get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
         self._tcl_call: Callable = get_tcl_interp()._tcl_call
+
+        TukaanWidget.__init__(self)
 
         self.parent._children[self.tcl_path] = self
 

@@ -8,8 +8,8 @@ from typing import Any, Callable, Dict, Tuple, Union
 import _tkinter as tk
 
 from ._base import TukaanWidget
-from .utils import TukaanError, from_tcl, to_tcl
-from .windowmanager import WindowMixin
+from ._utils import TukaanError, from_tcl, to_tcl
+from ._window_mixin import WindowMixin
 
 tcl_interp = None
 

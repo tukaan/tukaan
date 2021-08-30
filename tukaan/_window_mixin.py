@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Literal, Tuple, Union, cast
 
 from ._constants import _window_pos
 from ._platform import Platform
-from .utils import TukaanError
+from ._utils import TukaanError
 
 # This module can't use anything that relies on get_tcl_interp,
 # so it has its own each of those, which isn't a good thing (update decoratos) :(

@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from .utils import reversed_dict
+from ._utils import reversed_dict
 
 
 class Callback:

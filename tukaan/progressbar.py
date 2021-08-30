@@ -1,7 +1,7 @@
 from typing import Literal, Union
 
 from ._base import BaseWidget, TukaanWidget
-from .utils import get_tcl_interp
+from ._utils import get_tcl_interp
 
 
 class ProgressBar(BaseWidget):

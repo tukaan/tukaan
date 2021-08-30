@@ -10,7 +10,8 @@ counts: collections.defaultdict = collections.defaultdict(lambda: itertools.coun
 
 
 _callbacks: Dict[str, Callable] = {}
-_timeouts: Dict[str, object] = {}  # can't import timeout
+_timeouts: Dict[str, object] = {}  # can't import Timeout
+_widgets: Dict[str, object] = {}  # can't import TukaanWidget
 
 
 class TukaanError(Exception):
