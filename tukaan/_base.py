@@ -6,8 +6,8 @@ from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
 # fmt: off
 from ._returntype import Callback, DictKey
 # fmt: off
-from ._utils import (_callbacks, create_command, get_tcl_interp, update_after,
-                    update_before, updated, _widgets)
+from ._utils import (_callbacks, _widgets, create_command, get_tcl_interp,
+                     update_after, update_before, updated)
 
 
 class ChildStatistics:

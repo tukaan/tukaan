@@ -7,9 +7,9 @@ from typing import Dict, List, Optional, Tuple, Union, cast
 # fmt: off
 from ._platform import Platform
 # fmt: off
-from ._utils import (ClassPropertyMetaClass, ColorError, FontError, TukaanError,
-                    _flatten, _pairs, classproperty, from_tcl, get_tcl_interp,
-                    reversed_dict, to_tcl, update_before)
+from ._utils import (ClassPropertyMetaClass, ColorError, FontError,
+                     TukaanError, _flatten, _pairs, classproperty, from_tcl,
+                     get_tcl_interp, reversed_dict, to_tcl, update_before)
 
 
 class HEX:
