@@ -69,7 +69,7 @@ class MethodAndPropMixin:
         else:
             type_spec = self._keys[key]
 
-        if type(type_spec) is Callback:
+        if type_spec is Callback:
             # return a callable func, not tcl name
             result = self._tcl_call(str, self, "cget", f"-{key}")
             return _callbacks[result]
