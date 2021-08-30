@@ -196,7 +196,7 @@ class StateSet(collections.abc.MutableSet):
     def __len__(self) -> int:
         return len(self._widget._tcl_call([str], self._widget, "state"))
 
-    def __contains__(self, state: str) -> bool:
+    def __contains__(self, state: object) -> bool:
         return self._widget._tcl_call(bool, self._widget, "instate", state)
 
     def add(self, state: str) -> None:
