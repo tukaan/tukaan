@@ -1,11 +1,12 @@
 from typing import Any, Callable, Dict, Tuple, Union
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, TukaanWidget
+from ._returntype import Callback
 
 
 class Button(BaseWidget):
-    _keys: Dict[str, Union[Any, Tuple[Any, str]]] = {
-        "callback": (Callable, "command"),
+    _keys = {
+        "on_click": (Callback, "command"),
         "default": str,
         "focusable": (bool, "takefocus"),
         "style": str,
@@ -16,8 +17,8 @@ class Button(BaseWidget):
 
     def __init__(
         self,
-        parent: Union[TkWidget, None] = None,
-        callback: Union[Callable, None] = None,
+        parent: Union[TukaanWidget, None] = None,
+        on_click: Union[Callable, None] = None,
         default: Union[str, None] = None,
         focusable: Union[bool, None] = None,
         style: Union[str, None] = None,
@@ -29,7 +30,7 @@ class Button(BaseWidget):
             self,
             parent,
             "ttk::button",
-            command=callback,
+            command=on_click,
             default=default,
             style=style,
             takefocus=focusable,
@@ -39,4 +40,4 @@ class Button(BaseWidget):
         )
 
     def invoke(self):
-        return self._tcl_call(None, self, "invoke")
+        self._tcl_call(None, self, "invoke")

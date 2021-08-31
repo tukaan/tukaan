@@ -7,9 +7,9 @@ from typing import Dict, List, Optional, Tuple, Union, cast
 # fmt: off
 from ._platform import Platform
 # fmt: off
-from .utils import (ClassPropertyMetaClass, ColorError, FontError, TukaanError,
-                    _flatten, _pairs, classproperty, from_tcl, get_tcl_interp,
-                    reversed_dict, to_tcl, update_before)
+from ._utils import (ClassPropertyMetaClass, ColorError, FontError,
+                     TukaanError, _flatten, _pairs, classproperty, from_tcl,
+                     get_tcl_interp, reversed_dict, to_tcl, update_before)
 
 
 class HEX:
@@ -186,16 +186,16 @@ class Clipboard(metaclass=ClassPropertyMetaClass):
 
     @classmethod
     def clear(cls) -> None:
-        get_tcl_interp().tcl_call(None, "clipboard", "clear")
+        get_tcl_interp()._tcl_call(None, "clipboard", "clear")
 
     @classmethod
     def append(cls, content) -> None:
-        get_tcl_interp().tcl_call(None, "clipboard", "append", content)
+        get_tcl_interp()._tcl_call(None, "clipboard", "append", content)
 
     @classmethod
     def get(cls) -> str:
         try:
-            return get_tcl_interp().tcl_call(str, "clipboard", "get")
+            return get_tcl_interp()._tcl_call(str, "clipboard", "get")
         except TukaanError:
             # implement clipboard image with PIL.ImageGrab.grabclipboard
             return ""
@@ -204,8 +204,8 @@ class Clipboard(metaclass=ClassPropertyMetaClass):
 
     @classmethod
     def set(cls, new_content: str) -> None:
-        get_tcl_interp().tcl_call(None, "clipboard", "clear")
-        get_tcl_interp().tcl_call(None, "clipboard", "append", new_content)
+        get_tcl_interp()._tcl_call(None, "clipboard", "clear")
+        get_tcl_interp()._tcl_call(None, "clipboard", "append", new_content)
 
     @classproperty
     def content(cls) -> str:
@@ -266,12 +266,12 @@ class Cursor(
 
     @classproperty
     def x(cls) -> int:
-        return get_tcl_interp().tcl_call(int, "winfo", "pointerx", ".")
+        return get_tcl_interp()._tcl_call(int, "winfo", "pointerx", ".")
 
     @x.setter  # type: ignore
     @update_before
     def x(cls, new_x: int) -> None:
-        get_tcl_interp().tcl_call(
+        get_tcl_interp()._tcl_call(
             None,
             "event",
             "generate",
@@ -285,12 +285,12 @@ class Cursor(
 
     @classproperty
     def y(cls) -> int:
-        return get_tcl_interp().tcl_call(int, "winfo", "pointery", ".")
+        return get_tcl_interp()._tcl_call(int, "winfo", "pointery", ".")
 
     @y.setter  # type: ignore
     @update_before
     def y(cls, new_y: int) -> None:
-        get_tcl_interp().tcl_call(
+        get_tcl_interp()._tcl_call(
             None,
             "event",
             "generate",
@@ -314,7 +314,7 @@ class Cursor(
         elif isinstance(new_pos, int):
             x = y = new_pos
 
-        get_tcl_interp().tcl_call(
+        get_tcl_interp()._tcl_call(
             None,
             "event",
             "generate",
@@ -397,7 +397,7 @@ class Font(
 
     @classmethod
     def get_families(self, at_prefix: bool = False) -> List[str]:
-        result = sorted(set(get_tcl_interp().tcl_call([str], "font", "families")))
+        result = sorted(set(get_tcl_interp()._tcl_call([str], "font", "families")))
         # i get a way longer list, if not convert it to set. e.g Ubuntu were 3 times
         if at_prefix:
             return result
@@ -409,7 +409,7 @@ class Font(
 
     @classproperty
     def presets(self) -> List[str]:
-        result = sorted(get_tcl_interp().tcl_call([str], "font", "names"))
+        result = sorted(get_tcl_interp()._tcl_call([str], "font", "names"))
 
         for index, item in enumerate(result):
             #  TkSmallCaptionFont -> small-caption-font
@@ -420,10 +420,10 @@ class Font(
         return result
 
     def measure(self, text: str) -> int:
-        return get_tcl_interp().tcl_call(int, "font", "measure", self, text)
+        return get_tcl_interp()._tcl_call(int, "font", "measure", self, text)
 
     def metrics(self) -> Dict[str, Union[int, bool]]:
-        result = get_tcl_interp().tcl_call(
+        result = get_tcl_interp()._tcl_call(
             {"-ascent": int, "-descent": int, "-linespace": int, "-fixed": bool},
             "font",
             "metrics",
@@ -436,12 +436,12 @@ class Font(
 class Screen(metaclass=ClassPropertyMetaClass):
     @classproperty
     def width(cls) -> ScreenDistance:
-        width = get_tcl_interp().tcl_call(int, "winfo", "screenwidth", ".")
+        width = get_tcl_interp()._tcl_call(int, "winfo", "screenwidth", ".")
         return ScreenDistance(width)
 
     @classproperty
     def height(cls) -> ScreenDistance:
-        height = get_tcl_interp().tcl_call(int, "winfo", "screenheight", ".")
+        height = get_tcl_interp()._tcl_call(int, "winfo", "screenheight", ".")
         return ScreenDistance(height)
 
     @classproperty
@@ -450,11 +450,11 @@ class Screen(metaclass=ClassPropertyMetaClass):
 
     @classproperty
     def depth(cls) -> str:
-        return get_tcl_interp().tcl_call(str, "winfo", "screendepth", ".")
+        return get_tcl_interp()._tcl_call(str, "winfo", "screendepth", ".")
 
     @classproperty
     def dpi(cls) -> float:
-        return get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", "1i")
+        return get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", "1i")
 
 
 class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
@@ -466,7 +466,7 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
         if unit != "px":
             distance = f"{distance}{cls._tcl_units[unit]}"
 
-            pixels = get_tcl_interp().tcl_call(float, "winfo", "fpixels", ".", distance)
+            pixels = get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", distance)
 
             if unit == "m":
                 pixels *= 100
