@@ -74,7 +74,7 @@ class MethodAndPropMixin:
             result = self._tcl_call(str, self, "cget", f"-{key}")
             return _callbacks[result]
 
-        if type(type_spec) is DictKey:
+        if isinstance(type_spec, DictKey):
             # FIXME: now this can only return str, or is this a problem?
             # DictKey will return the key, and the value should be a string
             result = self._tcl_call(str, self, "cget", f"-{key}")
