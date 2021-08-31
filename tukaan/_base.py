@@ -1,13 +1,12 @@
 import collections.abc
 import contextlib
-import itertools
-from typing import Any, Callable, Dict, Iterator, List, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, Tuple, Union
 
 # fmt: off
 from ._returntype import Callback, DictKey
 # fmt: off
-from ._utils import (_callbacks, create_command, get_tcl_interp, update_after,
-                    update_before, updated, _widgets)
+from ._utils import (_callbacks, _widgets, create_command, get_tcl_interp,
+                     update_before)
 
 
 class ChildStatistics:
@@ -69,12 +68,12 @@ class MethodAndPropMixin:
         else:
             type_spec = self._keys[key]
 
-        if type(type_spec) is Callback:
+        if type_spec is Callback:
             # return a callable func, not tcl name
             result = self._tcl_call(str, self, "cget", f"-{key}")
             return _callbacks[result]
 
-        if type(type_spec) is DictKey:
+        if isinstance(type_spec, DictKey):
             # FIXME: now this can only return str, or is this a problem?
             # DictKey will return the key, and the value should be a string
             result = self._tcl_call(str, self, "cget", f"-{key}")
@@ -196,7 +195,7 @@ class StateSet(collections.abc.MutableSet):
     def __len__(self) -> int:
         return len(self._widget._tcl_call([str], self._widget, "state"))
 
-    def __contains__(self, state: str) -> bool:
+    def __contains__(self, state: object) -> bool:
         return self._widget._tcl_call(bool, self._widget, "instate", state)
 
     def add(self, state: str) -> None:
@@ -208,7 +207,7 @@ class StateSet(collections.abc.MutableSet):
 
 class BaseWidget(TukaanWidget):
     _keys: Dict[str, Union[Any, Tuple[Any, str]]]
-    
+
     def __init__(
         self, parent: Union[TukaanWidget, None], widget_name: str, **kwargs
     ) -> None:

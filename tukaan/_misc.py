@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import Dict, List, Optional, Tuple, Union, cast
+from typing import Dict, List, Tuple, Union, cast
 
 # fmt: off
 from ._platform import Platform
 # fmt: off
-from ._utils import (ClassPropertyMetaClass, ColorError, FontError, TukaanError,
-                    _flatten, _pairs, classproperty, from_tcl, get_tcl_interp,
-                    reversed_dict, to_tcl, update_before)
+from ._utils import (ClassPropertyMetaClass, ColorError, FontError,
+                     TukaanError, _flatten, _pairs, classproperty, from_tcl,
+                     get_tcl_interp, reversed_dict, to_tcl, update_before)
 
 
 class HEX:
@@ -347,7 +347,7 @@ class Font(
             # small-caption-font -> TkSmallCaptionFont
             family = f"Tk{family.title().replace('-', '')}"
 
-        if family not in cls.families: # presets are already checked
+        if family not in cls.families:  # presets are already checked
             raise FontError(f"the font family {family!r} is not found, or is not a valid font name.")
 
         return super(Font, cls).__new__(
@@ -430,7 +430,6 @@ class Font(
             self,
         )
         return {key.lstrip("-"): value for key, value in result.items()}
-
 
 
 class Screen(metaclass=ClassPropertyMetaClass):
