@@ -1,9 +1,7 @@
-import collections
-import itertools
 import os
 import sys
 import types
-from typing import Any, Callable, Dict, Tuple, Union
+from typing import Any, Union
 
 import _tkinter as tk
 
@@ -72,7 +70,7 @@ class App(WindowMixin, TukaanWidget):
         try:
             result = self.app.call(tuple(map(to_tcl, args)))
             return from_tcl(return_type, result)
-        except tk.TclError as e:
+        except tk.TclError:
             _, msg, tb = sys.exc_info()
             back_frame: types.FrameType = tb.tb_frame.f_back  # type: ignore
 

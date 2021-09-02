@@ -82,7 +82,7 @@ def create_command(func) -> str:
     def real_func(*args):
         try:
             return func(*args)
-        except Exception as e:
+        except Exception:
             # TODO: better error handling
             # don't print the unrelevant lines
             tb, rest = traceback.format_exc().split("\n", 1)
