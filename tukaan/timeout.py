@@ -1,8 +1,6 @@
 from typing import Callable, Union
 
-# fmt: off
-from ._utils import (_timeouts, counts, create_command, delete_command,
-                     get_tcl_interp)
+from ._utils import _timeouts, counts, create_command, delete_command, get_tcl_interp
 
 
 class Timeout:

@@ -4,12 +4,21 @@ import collections
 import re
 from typing import Dict, List, Tuple, Union, cast
 
-# fmt: off
 from ._platform import Platform
-# fmt: off
-from ._utils import (ClassPropertyMetaClass, ColorError, FontError,
-                     TukaanError, _flatten, _pairs, classproperty, from_tcl,
-                     get_tcl_interp, reversed_dict, to_tcl, update_before)
+from ._utils import (
+    ClassPropertyMetaClass,
+    ColorError,
+    FontError,
+    TukaanError,
+    _flatten,
+    _pairs,
+    classproperty,
+    from_tcl,
+    get_tcl_interp,
+    reversed_dict,
+    to_tcl,
+    update_before,
+)
 
 
 class HEX:
@@ -54,27 +63,22 @@ class HSV:
         h, s, v = h / 360, s / 100, v / 100
 
         if s == 0.0:
-            return cast(Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (v, v, v)))
+            return cast(
+                Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (v, v, v))
+            )
 
         i = int(h * 6.0)
         f = (h * 6.0) - i
 
-        p, q, t = (
-            v * (1.0 - s),
-            v * (1.0 - s * f),
-            v * (1.0 - s * (1.0 - f)),
+        p, q, t = (v * (1.0 - s), v * (1.0 - s * f), v * (1.0 - s * (1.0 - f)))
+
+        r, g, b = [(v, t, p), (q, v, p), (p, v, t), (p, q, v), (t, p, v), (v, p, q)][
+            int(i % 6)
+        ]
+
+        return cast(
+            Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (r, g, b))
         )
-
-        r, g, b = [
-            (v, t, p),
-            (q, v, p),
-            (p, v, t),
-            (p, q, v),
-            (t, p, v),
-            (v, p, q)
-        ][int(i % 6)]
-
-        return cast(Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (r, g, b)))
 
 
 class CMYK:
@@ -91,23 +95,30 @@ class CMYK:
         y = (y - k) / (1 - k)
 
         return cast(
-            Tuple[int, int, int, int], tuple(int(round(x * 100, 0)) for x in (c, m, y, k))
+            Tuple[int, int, int, int],
+            tuple(int(round(x * 100, 0)) for x in (c, m, y, k)),
         )
 
     @staticmethod
     def from_cmyk(c, m, y, k) -> Tuple[int, int, int]:
-        r = (1.0 - (c + k) / 100.0)
-        g = (1.0 - (m + k) / 100.0)
-        b = (1.0 - (y + k) / 100.0)
+        r = 1.0 - (c + k) / 100.0
+        g = 1.0 - (m + k) / 100.0
+        b = 1.0 - (y + k) / 100.0
 
-        return cast(Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (r, g, b)))
+        return cast(
+            Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (r, g, b))
+        )
 
 
 # TODO: hsl, yiq
 class Color:
     _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk"}
 
-    def __init__(self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str = "hex") -> None:
+    def __init__(
+        self,
+        color: str | Tuple[int, int, int] | Tuple[int, int, int, int],
+        space: str = "hex",
+    ) -> None:
         if space == "hex" and isinstance(color, str):
             rgb = HEX.from_hex(color)
 
@@ -125,12 +136,10 @@ class Color:
 
         self.red, self.green, self.blue = rgb
 
-    def _what_is_the_problem(self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str) -> str:
-        length_dict = {
-            "rgb":3,
-            "hsv": 3,
-            "cmyk": 4
-        }
+    def _what_is_the_problem(
+        self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str
+    ) -> str:
+        length_dict = {"rgb": 3, "hsv": 3, "cmyk": 4}
 
         if space not in self._supported_color_spaces:
             return f"{space!r} is not a supported color space for tukaan.Color."
@@ -139,12 +148,18 @@ class Color:
         elif space in {"rgb", "hsv", "cmyk"} and not isinstance(color, tuple):
             return f"{color!r} is not a valid {space} color. A tuple is expected."
         elif space in {"rgb", "hsv", "cmyk"} and len(color) != length_dict[space]:
-            return f"{color!r} is not a valid {space} color. A tuple with length of {length_dict[space]} is expected."
+            return (
+                f"{color!r} is not a valid {space} color. A tuple with length of"
+                f" {length_dict[space]} is expected."
+            )
 
         return "Not implemented tukaan.Color error."  # shouldn't get here
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}(red={self.red}, green={self.green}, blue={self.blue})"
+        return (
+            f"{type(self).__name__}(red={self.red}, green={self.green},"
+            f" blue={self.blue})"
+        )
 
     __str__ = __repr__
 
@@ -272,15 +287,7 @@ class Cursor(
     @update_before
     def x(cls, new_x: int) -> None:
         get_tcl_interp()._tcl_call(
-            None,
-            "event",
-            "generate",
-            ".",
-            "<Motion>",
-            "-warp",
-            "1",
-            "-x",
-            new_x,
+            None, "event", "generate", ".", "<Motion>", "-warp", "1", "-x", new_x
         )
 
     @classproperty
@@ -291,15 +298,7 @@ class Cursor(
     @update_before
     def y(cls, new_y: int) -> None:
         get_tcl_interp()._tcl_call(
-            None,
-            "event",
-            "generate",
-            ".",
-            "<Motion>",
-            "-warp",
-            "1",
-            "-y",
-            new_y,
+            None, "event", "generate", ".", "<Motion>", "-warp", "1", "-y", new_y
         )
 
     @classproperty
@@ -315,17 +314,7 @@ class Cursor(
             x = y = new_pos
 
         get_tcl_interp()._tcl_call(
-            None,
-            "event",
-            "generate",
-            ".",
-            "<Motion>",
-            "-warp",
-            "1",
-            "-x",
-            x,
-            "-y",
-            y,
+            None, "event", "generate", ".", "<Motion>", "-warp", "1", "-x", x, "-y", y
         )
 
 
@@ -348,7 +337,9 @@ class Font(
             family = f"Tk{family.title().replace('-', '')}"
 
         if family not in cls.families:  # presets are already checked
-            raise FontError(f"the font family {family!r} is not found, or is not a valid font name.")
+            raise FontError(
+                f"the font family {family!r} is not found, or is not a valid font name."
+            )
 
         return super(Font, cls).__new__(
             cls, family, size, bold, italic, underline, strikethrough
@@ -383,10 +374,10 @@ class Font(
             key = key.lstrip("-")
 
             if key == "weight":
-                value = (value == "bold")
+                value = value == "bold"
                 key = "bold"
             elif key == "slant":
-                value = (value == "italic")
+                value = value == "italic"
                 key = "italic"
             elif key == "overstrike":
                 key = "strikethrough"
@@ -465,7 +456,9 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
         if unit != "px":
             distance = f"{distance}{cls._tcl_units[unit]}"
 
-            pixels = get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", distance)
+            pixels = get_tcl_interp()._tcl_call(
+                float, "winfo", "fpixels", ".", distance
+            )
 
             if unit == "m":
                 pixels *= 100

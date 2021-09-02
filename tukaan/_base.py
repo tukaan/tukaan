@@ -2,11 +2,8 @@ import collections.abc
 import contextlib
 from typing import Any, Callable, Dict, Iterator, Tuple, Union
 
-# fmt: off
 from ._returntype import Callback, DictKey
-# fmt: off
-from ._utils import (_callbacks, _widgets, create_command, get_tcl_interp,
-                     update_before)
+from ._utils import _callbacks, _widgets, create_command, get_tcl_interp, update_before
 
 
 class ChildStatistics:
@@ -31,7 +28,10 @@ class MethodAndPropMixin:
     tcl_path: str
 
     def __repr__(self) -> str:
-        return f"<tukaan.{type(self).__name__} widget{': ' + self._repr_details() if self._repr_details() else ''}>"
+        return (
+            f"<tukaan.{type(self).__name__}"
+            f" widget{': ' + self._repr_details() if self._repr_details() else ''}>"
+        )
 
     __str__ = __repr__
 
@@ -96,7 +96,7 @@ class MethodAndPropMixin:
         # unlike int teek, this method won't raise a TypeError,
         # if the return widget, and the class you call it on isn't the same
         # this could be annoying, but very useful if you don't know
-        # what kind of widget it is and just want to get it 
+        # what kind of widget it is and just want to get it
 
         # teek.Button.from_tcl(teek.Label().to_tcl())
         # >>> TypeError: blablabla
@@ -104,7 +104,7 @@ class MethodAndPropMixin:
         # tukaan.Button.from_tcl(teek.tukaan().to_tcl())
         # >>> '.app.label_1'
 
-        if tcl_value == '.':
+        if tcl_value == ".":
             return get_tcl_interp()
 
         return _widgets[tcl_value]

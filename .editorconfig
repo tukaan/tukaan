@@ -1,0 +1,8 @@
+root = true
+
+[*.py]
+profile = black
+indent_style = space
+indent_size = 4
+skip = venv
+src_paths=isort 
