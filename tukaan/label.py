@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Literal, Optional
 
 from ._base import BaseWidget, TukaanWidget
 from ._constants import _anchors
@@ -17,16 +17,13 @@ class Label(BaseWidget):
 
     def __init__(
         self,
-        parent: Union[TukaanWidget, None] = None,
-        anchor: Union[
-            Literal["none"],
-            None,
-        ] = None,
-        focusable: Union[bool, None] = None,
-        justify: Union[Literal["left", "center", "right"], None] = None,
-        max_line_length: Union[int, None] = None,
-        style: Union[str, None] = None,
-        text: Union[str, None] = None,
+        parent: Optional[TukaanWidget] = None,
+        anchor: Optional[str] = None,
+        focusable: Optional[bool] = None,
+        justify: Optional[Literal["left", "center", "right"]] = None,
+        max_line_length: Optional[int] = None,
+        style: Optional[str] = None,
+        text: Optional[str] = None,
     ) -> None:
 
         if anchor is not None:

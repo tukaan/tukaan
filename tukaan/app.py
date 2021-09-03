@@ -1,7 +1,7 @@
 import os
 import sys
 import types
-from typing import Any, Union
+from typing import Any, Optional
 
 import _tkinter as tk
 
@@ -24,7 +24,7 @@ class App(WindowMixin, TukaanWidget):
         transparency: int = 1,
         topmost: bool = False,
         fullscreen: bool = False,
-        theme: Union[str, None] = None,
+        theme: Optional[str] = None,
     ) -> None:
 
         TukaanWidget.__init__(self)

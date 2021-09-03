@@ -1,4 +1,4 @@
-from typing import Callable, Union
+from typing import Callable, Optional
 
 from ._base import BaseWidget, TukaanWidget
 from ._returntype import Callback
@@ -17,14 +17,14 @@ class Button(BaseWidget):
 
     def __init__(
         self,
-        parent: Union[TukaanWidget, None] = None,
-        on_click: Union[Callable, None] = None,
-        default: Union[str, None] = None,
-        focusable: Union[bool, None] = None,
-        style: Union[str, None] = None,
-        text: Union[str, None] = None,
-        underline: Union[int, None] = None,
-        width: Union[int, None] = None,
+        parent: Optional[TukaanWidget] = None,
+        on_click: Optional[Callable] = None,
+        default: Optional[str] = None,
+        focusable: Optional[bool] = None,
+        style: Optional[str] = None,
+        text: Optional[str] = None,
+        underline: Optional[int] = None,
+        width: Optional[int] = None,
     ) -> None:
         BaseWidget.__init__(
             self,

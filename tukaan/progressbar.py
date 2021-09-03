@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Literal, Optional
 
 from ._base import BaseWidget, TukaanWidget
 
@@ -14,11 +14,11 @@ class ProgressBar(BaseWidget):
 
     def __init__(
         self,
-        parent: Union[TukaanWidget, None] = None,
-        focusable: Union[bool, None] = None,
-        max: Union[Literal["left", "center", "right"], None] = None,
-        mode: Union[Literal["determinate", "indeterminate"], None] = None,
-        orientation: Union[Literal["horizontal", "vertical"], None] = None,
+        parent: Optional[TukaanWidget] = None,
+        focusable: Optional[bool] = None,
+        max: Optional[Literal["left", "center", "right"]] = None,
+        mode: Optional[Literal["determinate", "indeterminate"]] = None,
+        orientation: Optional[Literal["horizontal", "vertical"]] = None,
         value: int = 50,
     ) -> None:
         BaseWidget.__init__(
