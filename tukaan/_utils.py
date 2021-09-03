@@ -1,17 +1,18 @@
-import collections
+from collections import defaultdict
+import collections.abc
 import itertools
 import numbers
 import sys
 import traceback
 from inspect import isclass
-from typing import Any, Callable, Dict, Union
+from typing import Any, Callable, Dict, Type, Union
 
-counts: collections.defaultdict = collections.defaultdict(lambda: itertools.count(1))
+counts: defaultdict = defaultdict(lambda: itertools.count(1))
 
 
 _callbacks: Dict[str, Callable] = {}
-_timeouts: Dict[str, object] = {}  # can't import Timeout
-_widgets: Dict[str, object] = {}  # can't import TukaanWidget
+_timeouts: Dict[str, Type] = {}  # can't import Timeout
+_widgets: Dict[str, Type] = {}  # can't import TukaanWidget
 
 
 class TukaanError(Exception):
@@ -219,8 +220,9 @@ class ClassPropertyMetaClass(type):
     def __setattr__(self, key: str, value: Any):
         if key in self.__dict__:
             obj = self.__dict__.get(key)
-        if obj and type(obj) is ClassPropertyDescriptor:
-            return obj.__set__(self, value)
+
+            if obj and type(obj) is ClassPropertyDescriptor:
+                return obj.__set__(self, value)
 
         return super(ClassPropertyMetaClass, self).__setattr__(key, value)
 

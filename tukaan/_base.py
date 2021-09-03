@@ -1,6 +1,6 @@
 import collections.abc
 import contextlib
-from typing import Any, Callable, Dict, Iterator, Tuple, Union
+from typing import Any, Callable, Dict, Iterator, Tuple, Type, Union
 
 from ._returntype import Callback, DictKey
 from ._utils import _callbacks, _widgets, create_command, get_tcl_interp, update_before
@@ -30,7 +30,7 @@ class MethodAndPropMixin:
     def __repr__(self) -> str:
         return (
             f"<tukaan.{type(self).__name__}"
-            f" widget{': ' + self._repr_details() if self._repr_details() else ''}>"
+            + f" widget{': ' + self._repr_details() if self._repr_details() else ''}>"
         )
 
     __str__ = __repr__
@@ -156,13 +156,13 @@ class TukaanWidget(MethodAndPropMixin):
     """Base class for every Tukaan widget"""
 
     def __init__(self):
-        self._children: Dict[str, "TukaanWidget"] = {}
-        self._child_type_count: Dict["TukaanWidget", int] = {}
+        self._children: Dict[str, Type] = {}
+        self._child_type_count: Dict[Type, int] = {}
         _widgets[self.tcl_path] = self
         self.child_stats = ChildStatistics(self)
 
     @classmethod
-    def _py_to_tcl_arguments(self, kwargs) -> tuple:
+    def _py_to_tcl_arguments(cls, kwargs) -> tuple:
         result = []
 
         for key, value in kwargs.items():
@@ -211,7 +211,7 @@ class BaseWidget(TukaanWidget):
     def __init__(
         self, parent: Union[TukaanWidget, None], widget_name: str, **kwargs
     ) -> None:
-        self.parent = parent if parent else get_tcl_interp()
+        self.parent = parent or get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
         self._tcl_call: Callable = get_tcl_interp()._tcl_call
 
