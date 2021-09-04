@@ -19,8 +19,8 @@ class Slider(BaseWidget):
         self,
         parent: Optional[TukaanWidget] = None,
         length: Optional[Union[int, ScreenDistance]] = None,
-        max: Optional[int] = 100,
-        min: Optional[int] = 0,
+        max: Optional[int] = None,
+        min: Optional[int] = None,
         on_move: Optional[Callable] = None,
         orientation: Optional[Literal["horizontal", "vertical"]] = None,
         value: Optional[float] = None,
@@ -36,6 +36,9 @@ class Slider(BaseWidget):
             to=max,
             value=value,
         )
+
+    def _repr_details(self):
+        return f"value={self.value!r}"
 
     def get(self) -> float:
         return self._tcl_call(float, self, "get")
