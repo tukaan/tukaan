@@ -1,9 +1,9 @@
-from collections import defaultdict
 import collections.abc
 import itertools
 import numbers
 import sys
 import traceback
+from collections import defaultdict
 from inspect import isclass
 from typing import Any, Callable, Dict, Type, Union
 

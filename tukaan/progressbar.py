@@ -19,7 +19,7 @@ class ProgressBar(BaseWidget):
         max: Optional[Literal["left", "center", "right"]] = None,
         mode: Optional[Literal["determinate", "indeterminate"]] = None,
         orientation: Optional[Literal["horizontal", "vertical"]] = None,
-        value: int = 50,
+        value: Optional[int] = None,
     ) -> None:
         BaseWidget.__init__(
             self,
@@ -34,6 +34,12 @@ class ProgressBar(BaseWidget):
 
     def _repr_details(self):
         return f"mode={self.mode!r}, max={self.max!r}, value={self.value!r}"
+
+    def get(self) -> float:
+        return self.value
+
+    def set(self, value: float = 0) -> None:
+        self.value = value
 
     def start(self, steps_per_second: int = 20) -> None:
         if steps_per_second > 1000:
