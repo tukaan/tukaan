@@ -150,7 +150,7 @@ class Color:
         elif space in {"rgb", "hsv", "cmyk"} and len(color) != length_dict[space]:
             return (
                 f"{color!r} is not a valid {space} color. A tuple with length of"
-                f" {length_dict[space]} is expected."
+                + f" {length_dict[space]} is expected."
             )
 
         return "Not implemented tukaan.Color error."  # shouldn't get here
@@ -158,7 +158,7 @@ class Color:
     def __repr__(self) -> str:
         return (
             f"{type(self).__name__}(red={self.red}, green={self.green},"
-            f" blue={self.blue})"
+            + f" blue={self.blue})"
         )
 
     __str__ = __repr__
@@ -196,8 +196,8 @@ class Color:
 
 class Clipboard(metaclass=ClassPropertyMetaClass):
     @classmethod
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}(content={self.get()})"
+    def __repr__(cls) -> str:
+        return f"{type(cls).__name__}(content={cls.get()})"
 
     @classmethod
     def clear(cls) -> None:
@@ -387,7 +387,7 @@ class Font(
         return cls(**result_dict)
 
     @classmethod
-    def get_families(self, at_prefix: bool = False) -> List[str]:
+    def get_families(cls, at_prefix: bool = False) -> List[str]:
         result = sorted(set(get_tcl_interp()._tcl_call([str], "font", "families")))
         # i get a way longer list, if not convert it to set. e.g Ubuntu were 3 times
         if at_prefix:
@@ -465,11 +465,14 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
             elif unit == "ft":
                 pixels *= 12
         else:
-            pixels = distance
+            pixels = float(distance)
 
         cls.dpi = Screen.dpi
 
         return super(ScreenDistance, cls).__new__(cls, pixels)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(distance={self.distance}px))"
 
     def to_tcl(self) -> str:
         return str(self.distance)
