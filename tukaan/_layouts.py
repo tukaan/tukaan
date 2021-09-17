@@ -7,18 +7,18 @@ class LayoutManager:
     def __init__(self, widget):
         self._widget = widget
 
-    def _parse_margin_or_padding(self, to_parse):
+    def _parse_margin(self, to_parse):
         if to_parse is None:
             return None, None
 
         if isinstance(to_parse, int):
-            return ((to_parse, to_parse), (to_parse, to_parse))
+            return ((to_parse,) * 2,) * 2
 
         elif len(to_parse) == 2:
-            return ((to_parse[1], to_parse[1]), (to_parse[0], to_parse[0]))
+            return ((to_parse[1], to_parse[1]), (to_parse[0],) * 2)
 
         elif len(to_parse) == 3:
-            return ((to_parse[1], to_parse[1]), (to_parse[0], to_parse[2]))
+            return ((to_parse[1],) * 2, (to_parse[0], to_parse[2]))
 
         elif len(to_parse) == 4:
             return ((to_parse[3], to_parse[1]), (to_parse[0], to_parse[2]))
@@ -69,7 +69,7 @@ class LayoutManager:
         rowspan: Optional[int] = None,
         vert_align: Optional[Literal["top", "bottom", "stretch"]] = None,
     ):
-        padx, pady = self._parse_margin_or_padding(margin)
+        padx, pady = self._parse_margin(margin)
         print(padx, pady)
 
         self._widget._tcl_call(
