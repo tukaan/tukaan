@@ -2,8 +2,16 @@ import collections.abc
 import contextlib
 from typing import Any, Callable, Dict, Iterator, Tuple, Type, Union
 
+from ._layouts import LayoutManager
 from ._returntype import Callback, DictKey
-from ._utils import _callbacks, _widgets, create_command, get_tcl_interp, update_before
+from ._utils import (
+    _callbacks,
+    _widgets,
+    create_command,
+    get_tcl_interp,
+    update_before,
+    py_to_tcl_arguments,
+)
 
 
 class ChildStatistics:
@@ -23,7 +31,6 @@ class ChildStatistics:
 
 class MethodAndPropMixin:
     _tcl_call: Callable
-    _py_to_tcl_arguments: Callable
     _keys: Dict[str, Any]
     tcl_path: str
 
@@ -88,12 +95,12 @@ class MethodAndPropMixin:
                 kwargs[self._keys[key][1]] = kwargs.pop(key)
 
         get_tcl_interp()._tcl_call(
-            None, self, "configure", *self._py_to_tcl_arguments(kwargs)
+            None, self, "configure", *py_to_tcl_arguments(**kwargs)
         )
 
     @classmethod
     def from_tcl(cls, tcl_value: str) -> "TukaanWidget":
-        # unlike int teek, this method won't raise a TypeError,
+        # unlike in teek, this method won't raise a TypeError,
         # if the return widget, and the class you call it on isn't the same
         # this could be annoying, but very useful if you don't know
         # what kind of widget it is and just want to get it
@@ -161,24 +168,6 @@ class TukaanWidget(MethodAndPropMixin):
         _widgets[self.tcl_path] = self
         self.child_stats = ChildStatistics(self)
 
-    @classmethod
-    def _py_to_tcl_arguments(cls, kwargs) -> tuple:
-        result = []
-
-        for key, value in kwargs.items():
-            if value is None:
-                continue
-
-            if key.endswith("_"):
-                key = key.rstrip("_")
-
-            if callable(value):
-                value = create_command(value)
-
-            result.extend([f"-{key}", value])
-
-        return tuple(result)
-
 
 class StateSet(collections.abc.MutableSet):
     """Object that contains the state of the widget, though it inherits from MutableSet, it behaves like a list"""
@@ -219,9 +208,9 @@ class BaseWidget(TukaanWidget):
 
         self.parent._children[self.tcl_path] = self
 
-        self._tcl_call(
-            None, widget_name, self.tcl_path, *self._py_to_tcl_arguments(kwargs)
-        )
+        self._tcl_call(None, widget_name, self.tcl_path, *py_to_tcl_arguments(**kwargs))
+
+        self.layout = LayoutManager(self)
 
         if self._class.startswith("ttk::"):
             self.state = StateSet(self)
@@ -252,18 +241,3 @@ class BaseWidget(TukaanWidget):
         name: str = f"{self.parent.tcl_path}.{klass.__name__.lower()}_{count}"
 
         return name
-
-    def pack(self, **kwargs) -> None:
-        get_tcl_interp()._tcl_call(
-            None, "pack", self, *self._py_to_tcl_arguments(kwargs)
-        )
-
-    def grid(self, **kwargs) -> None:
-        get_tcl_interp()._tcl_call(
-            None, "grid", self, *self._py_to_tcl_arguments(kwargs)
-        )
-
-    def place(self, **kwargs) -> None:
-        get_tcl_interp()._tcl_call(
-            None, "place", self, *self._py_to_tcl_arguments(kwargs)
-        )

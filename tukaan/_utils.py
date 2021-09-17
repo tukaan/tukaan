@@ -99,6 +99,24 @@ def delete_command(name) -> None:
     get_tcl_interp().app.deletecommand(name)
 
 
+def py_to_tcl_arguments(**kwargs) -> tuple:
+    result = []
+
+    for key, value in kwargs.items():
+        if value is None:
+            continue
+
+        if key.endswith("_"):
+            key = key.rstrip("_")
+
+        if callable(value):
+            value = create_command(value)
+
+        result.extend([f"-{key}", value])
+
+    return tuple(result)
+
+
 def _pairs(sequence):
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
     return zip(sequence[0::2], sequence[1::2])
