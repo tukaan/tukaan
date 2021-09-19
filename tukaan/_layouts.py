@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Literal, Optional, Tuple, Union, Any
+from typing import Callable, Dict, Literal, Optional, Tuple, Union, Any, List
 
 from ._constants import AnchorAnnotation
 from ._misc import ScreenDistance
@@ -30,12 +30,58 @@ StickyValues: Dict[Tuple[HorAlignAlias, VertAlignAlias], str] = {
 }
 
 
-class Grid:
+class GridCells:
+    cell_managed_widgets: Dict["BaseWidget", str] = {}
+
+    @property
+    def grid_cells(self):
+        return self._grid_cells
+
+    @grid_cells.setter
+    def grid_cells(self, cells_data: List[List[str]]):
+        self._grid_cells = cells_data
+        self._grid_cells_values = self.__parse_grid_areas(cells_data)
+
+        for widget in self.cell_managed_widgets.keys():
+            widget.layout._set_cell(self.cell_managed_widgets[widget])
+
+    def __parse_grid_areas(self, areas_list: List[List[str]]):
+        result = {}
+        for row_index, row_list in enumerate(areas_list):
+            for col_index, cell_name in enumerate(row_list):
+                if cell_name is None:
+                    continue
+                if cell_name in result:
+                    if not result[cell_name].get("cols_counted", False):
+                        result[cell_name]["colspan"] = row_list.count(cell_name)
+                        result[cell_name]["cols_counted"] = True
+
+                    if not result[cell_name].get("rows_counted", False):
+                        result[cell_name]["rowspan"] = sum(
+                            cell_name in item for item in areas_list
+                        )
+                        result[cell_name]["rows_counted"] = True
+                else:
+                    result[cell_name] = {
+                        "row": row_index,
+                        "col": col_index,
+                        "rowspan": 1,
+                        "colspan": 1,
+                    }
+        for i, value in result.items():
+            value.pop("cols_counted", "")
+            result[i].pop("rows_counted", "")
+
+        return result
+
+
+class Grid(GridCells):
     _widget: "BaseWidget"
     manager: Callable
 
     def grid(
         self,
+        cell: Optional[str] = None,
         col: Optional[int] = None,
         colspan: Optional[int] = None,
         hor_align: HorAlignAlias = None,
@@ -60,6 +106,20 @@ class Grid:
                 sticky=self.__parse_sticky_values(hor_align, vert_align),
             ),
         )
+        if cell:
+            self._set_cell(cell)
+
+    def _set_cell(self, cell: str):
+        try:
+            row = self._widget.parent.layout._grid_cells_values[cell]["row"]
+            col = self._widget.parent.layout._grid_cells_values[cell]["col"]
+            rowspan = self._widget.parent.layout._grid_cells_values[cell]["rowspan"]
+            colspan = self._widget.parent.layout._grid_cells_values[cell]["colspan"]
+        except KeyError:
+            raise RuntimeError(f"cell {cell!r} doesn't exists")
+        self.config(row=row, column=col, rowspan=rowspan, columnspan=colspan)
+
+        self.cell_managed_widgets[self._widget] = cell
 
     def __parse_margin(
         self, to_parse
@@ -95,8 +155,11 @@ class Grid:
             self._widget,
         )
 
-    def __grid_config(self, key: str, value: Any) -> None:
-        self._widget._tcl_call(None, "grid", "configure", self._widget, key, value)
+    def config(self, **kwargs) -> None:
+        # Fixme: sticky and margin values
+        self._widget._tcl_call(
+            None, "grid", "configure", self._widget, *py_to_tcl_arguments(**kwargs)
+        )
 
     def __get_grid_properties(self, what: str):
         if self.manager == "grid":
@@ -108,7 +171,7 @@ class Grid:
 
     def __set_grid_properties(self, key: str, value: Any):
         if self.manager == "grid":
-            return self.__grid_config(f"-{key}", value)
+            return self.config(**{key: value})
         else:
             raise RuntimeError(
                 f"{self._widget} is managed by position, not grid. Can't set {key}"
@@ -116,6 +179,14 @@ class Grid:
 
     def __get_sticky_values(self, key: str) -> Tuple[HorAlignAlias, VertAlignAlias]:
         return reversed_dict(StickyValues)[key]
+
+    @property
+    def cell(self) -> str:
+        return self.cell_managed_widgets[self._widget]
+
+    @cell.setter
+    def cell(self, new_cell: str) -> None:
+        self._set_cell(new_cell)
 
     @property
     def row(self) -> int:
