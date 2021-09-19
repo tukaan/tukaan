@@ -24,7 +24,7 @@ class App(WindowMixin, TukaanWidget):
         transparency: int = 1,
         topmost: bool = False,
         fullscreen: bool = False,
-        theme: Optional[str] = None,
+        theme: Optional[str] = "native",
     ) -> None:
 
         TukaanWidget.__init__(self)
@@ -56,14 +56,6 @@ class App(WindowMixin, TukaanWidget):
         self.transparency = transparency
         self.size = width, height  # type: ignore
         self.fullscreen = fullscreen
-
-        if theme is None:
-            theme = (
-                "clam"
-                if self._tcl_call(str, "tk", "windowingsystem") == "x11"
-                else "native"
-            )
-
         self.theme = theme
 
     def _tcl_call(self, return_type: Any, *args) -> Any:

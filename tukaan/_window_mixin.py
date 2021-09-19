@@ -299,7 +299,7 @@ class WindowMixin:
         except KeyError:
             raise TukaanError(
                 f"invalid resizable value: {direction!r}. Allowed values: 'none',"
-                " 'horizontal' 'vertical', 'both'"
+                + " 'horizontal' 'vertical', 'both'"
             )
         self._resizable = direction
         self._tcl_call(None, "wm", "resizable", self.wm_path, width, height)
@@ -317,12 +317,14 @@ class WindowMixin:
         self._tcl_call(None, "tk", "scaling", "-displayof", self.wm_path, factor)
 
     def _get_theme_aliases(self) -> Dict[str, str]:
-        # available_themes will use this
+        # available_themes property should use this
         theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
 
-        if Platform.windowing_system == "win32":
+        wm = Platform.windowing_system
+
+        if wm == "win32":
             theme_dict["native"] = "vista"
-        elif Platform.windowing_system == "aqua":
+        elif wm == "aqua":
             theme_dict["native"] = "aqua"
 
         return theme_dict
@@ -331,9 +333,11 @@ class WindowMixin:
     def theme(self) -> str:
         theme_dict = {"clam": "clam", "default": "legacy"}
 
-        if Platform.windowing_system == "win32":
+        wm = Platform.windowing_system
+
+        if wm == "win32":
             theme_dict["vista"] = "native"
-        elif Platform.windowing_system == "aqua":
+        elif wm == "aqua":
             theme_dict["aqua"] = "native"
 
         result = self._tcl_call(str, "ttk::style", "theme", "use")
