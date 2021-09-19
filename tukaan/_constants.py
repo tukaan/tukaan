@@ -1,4 +1,18 @@
-from typing import Any, Dict, Set
+from typing import Any, Dict, Literal, Optional, Set
+
+AnchorAnnotation = Optional[
+    Literal[
+        "bottom",
+        "bottom-left",
+        "bottom-right",
+        "center",
+        "left",
+        "right",
+        "top",
+        "top-left",
+        "top-right",
+    ]
+]
 
 _anchors: Dict[Any, str] = {
     None: "",
