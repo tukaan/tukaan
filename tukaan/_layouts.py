@@ -1,4 +1,4 @@
-from typing import Dict, Literal, Optional, Tuple, Union, Any
+from typing import Callable, Dict, Literal, Optional, Tuple, Union, Any
 
 from ._constants import AnchorAnnotation
 from ._misc import ScreenDistance
@@ -30,46 +30,9 @@ StickyValues: Dict[Tuple[HorAlignAlias, VertAlignAlias], str] = {
 }
 
 
-class LayoutManager:
-    def __init__(self, widget):
-        self._widget = widget
-
-    def __parse_margin(
-        self, to_parse
-    ) -> Union[Tuple[Tuple[int, ...], ...], Tuple[None, ...]]:
-        if isinstance(to_parse, int):
-            return ((to_parse,) * 2,) * 2
-
-        elif isinstance(to_parse, tuple) and len(to_parse) == 2:
-            return ((to_parse[1], to_parse[1]), (to_parse[0],) * 2)
-
-        elif isinstance(to_parse, tuple) and len(to_parse) == 3:
-            return ((to_parse[1],) * 2, (to_parse[0], to_parse[2]))
-
-        elif isinstance(to_parse, tuple) and len(to_parse) == 4:
-            return ((to_parse[3], to_parse[1]), (to_parse[0], to_parse[2]))
-
-        return None, None
-
-    def __parse_sticky_values(self, hor: HorAlignAlias, vert: VertAlignAlias) -> str:
-        return StickyValues[(hor, vert)]
-
-    def __parse_possibly_relative_values(
-        self, names: Tuple[str, ...], values: Tuple[ScrDstAlias, ...]
-    ) -> ScrDstRtrnAlias:
-        result_dict: ScrDstRtrnAlias = {}
-
-        for name, value in zip(names, values):
-            if value is None:
-                continue
-            elif isinstance(value, str) and value.endswith("%"):
-                result_dict[f"rel{name}"] = float(value[:-1]) / 100
-            elif isinstance(value, (int, ScreenDistance)):
-                result_dict[name] = value
-            else:
-                raise TypeError(f"expected {ScrDstAlias}, got {type(value)}")
-
-        return result_dict
+class Grid:
+    _widget: "BaseWidget"
+    manager: Callable
 
     def grid(
         self,
@@ -98,31 +61,25 @@ class LayoutManager:
             ),
         )
 
-    def position(
-        self,
-        anchor: AnchorAnnotation = None,
-        height: ScrDstAlias = None,
-        width: ScrDstAlias = None,
-        x: ScrDstAlias = None,
-        y: ScrDstAlias = None,
-    ) -> None:
-        possibly_relative_values_dict = self.__parse_possibly_relative_values(
-            ("x", "y", "width", "height"), (x, y, width, height)
-        )
+    def __parse_margin(
+        self, to_parse
+    ) -> Union[Tuple[Tuple[int, ...], ...], Tuple[None, ...]]:
+        if isinstance(to_parse, int):
+            return ((to_parse,) * 2,) * 2
 
-        self._widget._tcl_call(
-            None,
-            "place",
-            self._widget,
-            *py_to_tcl_arguments(**possibly_relative_values_dict, anchor=anchor),
-        )
+        elif isinstance(to_parse, tuple) and len(to_parse) == 2:
+            return ((to_parse[1], to_parse[1]), (to_parse[0],) * 2)
 
-    @property
-    def manager(self):
-        result = self._widget._tcl_call(str, "winfo", "manager", self._widget)
-        if result == "place":
-            return "position"
-        return result
+        elif isinstance(to_parse, tuple) and len(to_parse) == 3:
+            return ((to_parse[1],) * 2, (to_parse[0], to_parse[2]))
+
+        elif isinstance(to_parse, tuple) and len(to_parse) == 4:
+            return ((to_parse[3], to_parse[1]), (to_parse[0], to_parse[2]))
+
+        return None, None
+
+    def __parse_sticky_values(self, hor: HorAlignAlias, vert: VertAlignAlias) -> str:
+        return StickyValues[(hor, vert)]
 
     def __grid_info(self):
         return self._widget._tcl_call(
@@ -224,7 +181,60 @@ class LayoutManager:
         return margin[1][0], margin[0][1], margin[1][1], margin[0][0]
 
     @margin.setter
-    def margin(self, new_margin: MrgnAlias) -> None:
+    def margin(self, new_margin: MrgnAlias) -> None:  # type: ignore
         result = self.__parse_margin(new_margin)
         self.__set_grid_properties("padx", result[0])
         self.__set_grid_properties("pady", result[1])
+
+
+class Position:
+    _widget: "BaseWidget"
+    manager: Callable
+
+    def position(
+        self,
+        anchor: AnchorAnnotation = None,
+        height: ScrDstAlias = None,
+        width: ScrDstAlias = None,
+        x: ScrDstAlias = None,
+        y: ScrDstAlias = None,
+    ) -> None:
+        possibly_relative_values_dict = self.__parse_possibly_relative_values(
+            ("x", "y", "width", "height"), (x, y, width, height)
+        )
+
+        self._widget._tcl_call(
+            None,
+            "place",
+            self._widget,
+            *py_to_tcl_arguments(**possibly_relative_values_dict, anchor=anchor),
+        )
+
+    def __parse_possibly_relative_values(
+        self, names: Tuple[str, ...], values: Tuple[ScrDstAlias, ...]
+    ) -> ScrDstRtrnAlias:
+        result_dict: ScrDstRtrnAlias = {}
+
+        for name, value in zip(names, values):
+            if value is None:
+                continue
+            elif isinstance(value, str) and value.endswith("%"):
+                result_dict[f"rel{name}"] = float(value[:-1]) / 100
+            elif isinstance(value, (int, ScreenDistance)):
+                result_dict[name] = value
+            else:
+                raise TypeError(f"expected {ScrDstAlias}, got {type(value)}")
+
+        return result_dict
+
+
+class LayoutManager(Grid, Position):
+    def __init__(self, widget):
+        self._widget = widget
+
+    @property
+    def manager(self):
+        result = self._widget._tcl_call(str, "winfo", "manager", self._widget)
+        if result == "place":
+            return "position"
+        return result
