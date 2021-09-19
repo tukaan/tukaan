@@ -8,7 +8,7 @@ import _tkinter as tk
 from ._base import TukaanWidget
 from ._utils import TukaanError, from_tcl, to_tcl
 from ._window_mixin import WindowMixin
-from ._layouts import GridCells
+from ._layouts import WindowLayoutManager
 
 tcl_interp = None
 
@@ -47,7 +47,7 @@ class App(WindowMixin, TukaanWidget):
         )
         self.app.loadtk()
 
-        self.layout = GridCells()
+        self.layout = WindowLayoutManager(self)
 
         tcl_interp = self
 

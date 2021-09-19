@@ -75,9 +75,38 @@ class GridCells:
         return result
 
 
-class Grid(GridCells):
+class GridTemplates:
+    _widget: "BaseWidget"
+
+    @property
+    def grid_row_template(self):
+        return self._row_template
+
+    @grid_row_template.setter
+    def grid_row_template(self, new_row_template):
+        self._row_template = new_row_template
+        for index, weight in enumerate(new_row_template):
+            self._widget._tcl_call(
+                None, "grid", "rowconfigure", self._widget, index, "-weight", weight
+            )
+
+    @property
+    def grid_col_template(self):
+        return self._col_template
+
+    @grid_col_template.setter
+    def grid_col_template(self, new_col_template):
+        self._col_template = new_col_template
+        for index, weight in enumerate(new_col_template):
+            self._widget._tcl_call(
+                None, "grid", "columnconfigure", self._widget, index, "-weight", weight
+            )
+
+
+class Grid:
     _widget: "BaseWidget"
     manager: Callable
+    cell_managed_widgets: Dict["BaseWidget", str]
 
     def grid(
         self,
@@ -299,7 +328,7 @@ class Position:
         return result_dict
 
 
-class LayoutManager(Grid, Position):
+class LayoutManager(Grid, Position, GridCells, GridTemplates):
     def __init__(self, widget):
         self._widget = widget
 
@@ -309,3 +338,8 @@ class LayoutManager(Grid, Position):
         if result == "place":
             return "position"
         return result
+
+
+class WindowLayoutManager(GridCells, GridTemplates):
+    def __init__(self, widget):
+        self._widget = widget
