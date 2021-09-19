@@ -7,10 +7,9 @@ from ._returntype import Callback, DictKey
 from ._utils import (
     _callbacks,
     _widgets,
-    create_command,
     get_tcl_interp,
-    update_before,
     py_to_tcl_arguments,
+    update_before,
 )
 
 
@@ -81,8 +80,6 @@ class MethodAndPropMixin:
             return _callbacks[result]
 
         if isinstance(type_spec, DictKey):
-            # FIXME: now this can only return str, or is this a problem?
-            # DictKey will return the key, and the value should be a string
             result = self._tcl_call(str, self, "cget", f"-{key}")
             return type_spec[result]
 
