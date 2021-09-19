@@ -1,4 +1,6 @@
-from typing import Callable, Dict, Literal, Optional, Tuple, Union, Any, List
+from __future__ import annotations
+
+from typing import Any, Callable, Dict, Literal, Optional, Tuple, Union
 
 from ._constants import AnchorAnnotation
 from ._misc import ScreenDistance
@@ -10,7 +12,7 @@ ScrDstAlias = Optional[Union[int, str, ScreenDistance]]
 ScrDstRtrnAlias = Dict[str, Union[float, ScreenDistance]]
 VertAlignAlias = Optional[Literal["bottom", "stretch", "top"]]
 
-StickyValues: Dict[Tuple[HorAlignAlias, VertAlignAlias], str] = {
+StickyValues: dict[tuple[HorAlignAlias, VertAlignAlias], str] = {
     ("left", "bottom"): "sw",
     ("left", "stretch"): "nsw",
     ("left", "top"): "nw",
@@ -31,21 +33,22 @@ StickyValues: Dict[Tuple[HorAlignAlias, VertAlignAlias], str] = {
 
 
 class GridCells:
-    cell_managed_widgets: Dict["BaseWidget", str] = {}
+    _widget: "TukaanWidget"
+    cell_managed_widgets: dict["BaseWidget", str] = {}
 
     @property
-    def grid_cells(self):
+    def grid_cells(self) -> list[list[str]]:
         return self._grid_cells
 
     @grid_cells.setter
-    def grid_cells(self, cells_data: List[List[str]]):
+    def grid_cells(self, cells_data: list[list[str]]) -> None:
         self._grid_cells = cells_data
         self._grid_cells_values = self.__parse_grid_areas(cells_data)
 
         for widget in self.cell_managed_widgets.keys():
             widget.layout._set_cell(self.cell_managed_widgets[widget])
 
-    def __parse_grid_areas(self, areas_list: List[List[str]]):
+    def __parse_grid_areas(self, areas_list: list[list[str]]) -> dict[str, int]:
         result = {}
         for row_index, row_list in enumerate(areas_list):
             for col_index, cell_name in enumerate(row_list):
@@ -68,22 +71,22 @@ class GridCells:
                         "rowspan": 1,
                         "colspan": 1,
                     }
-        for i, value in result.items():
+        for value in result.values():
             value.pop("cols_counted", "")
-            result[i].pop("rows_counted", "")
+            value.pop("rows_counted", "")
 
         return result
 
 
 class GridTemplates:
-    _widget: "BaseWidget"
+    _widget: "TukaanWidget"
 
     @property
-    def grid_row_template(self):
+    def grid_row_template(self) -> tuple[int, ...]:
         return self._row_template
 
     @grid_row_template.setter
-    def grid_row_template(self, new_row_template):
+    def grid_row_template(self, new_row_template) -> None:
         self._row_template = new_row_template
         for index, weight in enumerate(new_row_template):
             self._widget._tcl_call(
@@ -91,11 +94,11 @@ class GridTemplates:
             )
 
     @property
-    def grid_col_template(self):
+    def grid_col_template(self) -> tuple[int, ...]:
         return self._col_template
 
     @grid_col_template.setter
-    def grid_col_template(self, new_col_template):
+    def grid_col_template(self, new_col_template) -> None:
         self._col_template = new_col_template
         for index, weight in enumerate(new_col_template):
             self._widget._tcl_call(
@@ -106,7 +109,7 @@ class GridTemplates:
 class Grid:
     _widget: "BaseWidget"
     manager: Callable
-    cell_managed_widgets: Dict["BaseWidget", str]
+    cell_managed_widgets: dict["BaseWidget", str]
 
     def grid(
         self,
@@ -138,7 +141,7 @@ class Grid:
         if cell:
             self._set_cell(cell)
 
-    def _set_cell(self, cell: str):
+    def _set_cell(self, cell: str) -> None:
         try:
             row = self._widget.parent.layout._grid_cells_values[cell]["row"]
             col = self._widget.parent.layout._grid_cells_values[cell]["col"]
@@ -152,7 +155,7 @@ class Grid:
 
     def __parse_margin(
         self, to_parse
-    ) -> Union[Tuple[Tuple[int, ...], ...], Tuple[None, ...]]:
+    ) -> tuple[tuple[int, ...], ...] | tuple[None, ...]:
         if isinstance(to_parse, int):
             return ((to_parse,) * 2,) * 2
 
@@ -185,7 +188,7 @@ class Grid:
         )
 
     def config(self, **kwargs) -> None:
-        # Fixme: sticky and margin values
+        # FIXME: sticky and margin values
         self._widget._tcl_call(
             None, "grid", "configure", self._widget, *py_to_tcl_arguments(**kwargs)
         )
@@ -198,7 +201,7 @@ class Grid:
                 f"{self._widget} is managed by position, not grid. Can't get {what}"
             )
 
-    def __set_grid_properties(self, key: str, value: Any):
+    def __set_grid_properties(self, key: str, value: Any) -> None:
         if self.manager == "grid":
             return self.config(**{key: value})
         else:
@@ -206,7 +209,7 @@ class Grid:
                 f"{self._widget} is managed by position, not grid. Can't set {key}"
             )
 
-    def __get_sticky_values(self, key: str) -> Tuple[HorAlignAlias, VertAlignAlias]:
+    def __get_sticky_values(self, key: str) -> tuple[HorAlignAlias, VertAlignAlias]:
         return reversed_dict(StickyValues)[key]
 
     @property
@@ -270,7 +273,7 @@ class Grid:
         )
 
     @property
-    def margin(self) -> Tuple[int, ...]:
+    def margin(self) -> tuple[int, ...]:
         result = self._widget._tcl_call({}, "grid", "info", self._widget)
 
         padx = tuple(map(int, result["-padx"].split(" ")))
@@ -311,7 +314,7 @@ class Position:
         )
 
     def __parse_possibly_relative_values(
-        self, names: Tuple[str, ...], values: Tuple[ScrDstAlias, ...]
+        self, names: tuple[str, ...], values: tuple[ScrDstAlias, ...]
     ) -> ScrDstRtrnAlias:
         result_dict: ScrDstRtrnAlias = {}
 

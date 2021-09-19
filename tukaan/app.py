@@ -6,9 +6,9 @@ from typing import Any, Optional
 import _tkinter as tk
 
 from ._base import TukaanWidget
+from ._layouts import WindowLayoutManager
 from ._utils import TukaanError, from_tcl, to_tcl
 from ._window_mixin import WindowMixin
-from ._layouts import WindowLayoutManager
 
 tcl_interp = None
 
