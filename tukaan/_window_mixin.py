@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import re
-from typing import Any, Callable, Dict, List, Literal, Tuple, Union, cast
+from typing import Any, Callable, Literal, cast
 
 from ._constants import _window_pos
 from ._platform import Platform
@@ -72,9 +74,9 @@ class WindowMixin:
 
     @property  # type: ignore
     @update_before
-    def size(self) -> Tuple[int, int]:
+    def size(self) -> tuple[int, int]:
         return cast(
-            Tuple[int, int],
+            tuple[int, int],
             tuple(
                 map(
                     int,
@@ -87,11 +89,13 @@ class WindowMixin:
 
     @size.setter  # type: ignore
     @update_after
-    def size(self, size: Union[int, Tuple[int, int], List[int]]) -> None:
-        if isinstance(size, (tuple, list)) and len(size) > 1:
-            width, height = size
-        elif isinstance(size, int):
+    def size(self, size: int | tuple[int, int] | list[int]) -> None:
+        if isinstance(size, int):
             width = height = size
+        elif isinstance(size, (tuple, list)) and len(size) > 1:
+            width, height = size
+        else:
+            raise RuntimeError
         width, height = tuple(
             map(
                 lambda a: self._tcl_call(int, "winfo", "pixels", ".", a),
@@ -102,9 +106,9 @@ class WindowMixin:
 
     @property  # type: ignore
     @update_before
-    def position(self) -> Tuple[int, int]:
+    def position(self) -> tuple[int, int]:
         return cast(
-            Tuple[int, int],
+            tuple[int, int],
             tuple(
                 map(
                     int,
@@ -119,12 +123,10 @@ class WindowMixin:
     @update_after
     def position(
         self,
-        position: Union[
-            int,
-            Tuple[int, int],
-            List[int],
-            Literal["center", "top-left", "top-right", "bottom-left", "bottom-right"],
-        ],
+        position: int
+        | tuple[int, int]
+        | list[int]
+        | Literal["center", "top-left", "top-right", "bottom-left", "bottom-right"],
     ) -> None:
         if position in _window_pos:
             if position == "center":
@@ -163,10 +165,12 @@ class WindowMixin:
             x, y = position
         elif isinstance(position, int):
             x = y = position
+        else:
+            raise RuntimeError
         self._tcl_call(None, "wm", "geometry", self.wm_path, f"+{x}+{y}")
 
     @property  # type: ignore
-    def bbox(self) -> Tuple[int, int, int, int]:
+    def bbox(self) -> tuple[int, int, int, int]:
         # TODO: bottom border hack
 
         window_border_width = self.x - self.position[0]
@@ -231,30 +235,34 @@ class WindowMixin:
 
     @property  # type: ignore
     @update_before
-    def minsize(self) -> Tuple[int, int]:
+    def minsize(self) -> tuple[int, int]:
         return self._tcl_call((int), "wm", "minsize", self.wm_path)
 
     @minsize.setter  # type: ignore
     @update_after
-    def minsize(self, size: Union[int, Tuple[int, int], List[int]]) -> None:
-        if isinstance(size, (tuple, list)) and len(size) > 1:
-            width, height = size
-        elif isinstance(size, int):
+    def minsize(self, size: int | tuple[int, int] | list[int]) -> None:
+        if isinstance(size, int):
             width = height = size
+        elif isinstance(size, (tuple, list)) and len(size) > 1:
+            width, height = size
+        else:
+            raise RuntimeError
         self._tcl_call(None, "wm", "minsize", self.wm_path, width, height)
 
     @property  # type: ignore
     @update_before
-    def maxsize(self) -> Tuple[int, int]:
+    def maxsize(self) -> tuple[int, int]:
         return self._tcl_call((int), "wm", "maxsize", self.wm_path)
 
     @maxsize.setter  # type: ignore
     @update_after
-    def maxsize(self, size: Union[int, Tuple[int, int], List[int]]) -> None:
-        if isinstance(size, (tuple, list)) and len(size) > 1:
-            width, height = size
-        elif isinstance(size, int):
+    def maxsize(self, size: int | tuple[int, int] | list[int]) -> None:
+        if isinstance(size, int):
             width = height = size
+        elif isinstance(size, (tuple, list)) and len(size) > 1:
+            width, height = size
+        else:
+            raise RuntimeError
         self._tcl_call(None, "wm", "maxsize", self.wm_path, width, height)
 
     @property
@@ -274,11 +282,11 @@ class WindowMixin:
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-topmost", istopmost)
 
     @property
-    def transparency(self) -> Union[int, float]:
+    def transparency(self) -> float:
         return self._tcl_call(float, "wm", "attributes", self.wm_path, "-alpha")
 
     @transparency.setter
-    def transparency(self, alpha: Union[int, float] = 1) -> None:
+    def transparency(self, alpha: float = 1) -> None:
         self._tcl_call(None, "tkwait", "visibility", self.wm_path)
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-alpha", alpha)
 
@@ -316,7 +324,7 @@ class WindowMixin:
     def scaling(self, factor: int) -> None:
         self._tcl_call(None, "tk", "scaling", "-displayof", self.wm_path, factor)
 
-    def _get_theme_aliases(self) -> Dict[str, str]:
+    def _get_theme_aliases(self) -> dict[str, str]:
         # available_themes property should use this
         theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
 

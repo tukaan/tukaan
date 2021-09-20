@@ -47,7 +47,7 @@ class App(WindowMixin, TukaanWidget):
         )
         self.app.loadtk()
 
-        self.layout = WindowLayoutManager(self)
+        self.layout: WindowLayoutManager = WindowLayoutManager(self)
 
         tcl_interp = self
 
@@ -63,7 +63,9 @@ class App(WindowMixin, TukaanWidget):
 
     def _tcl_call(self, return_type: Any, *args) -> Any:
         try:
-            result = self.app.call(tuple(map(to_tcl, args)))
+            result = self.app.call(*map(to_tcl, args))
+            if return_type is None:
+                return
             return from_tcl(return_type, result)
         except tk.TclError:
             _, msg, tb = sys.exc_info()
@@ -104,6 +106,8 @@ class App(WindowMixin, TukaanWidget):
         There is no App.destroy, just App.quit,
         which also quits the entire tcl interpreter
         """
+        global tcl_interp
+
         for child in tuple(self._children.values()):
             child.destroy()
 

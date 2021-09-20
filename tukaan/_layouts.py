@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Optional, Tuple, Union
+
+if TYPE_CHECKING:
+    # pyright won't complain
+    from ._base import TukaanWidget, BaseWidget
 
 from ._constants import AnchorAnnotation
 from ._misc import ScreenDistance
@@ -33,8 +37,8 @@ StickyValues: dict[tuple[HorAlignAlias, VertAlignAlias], str] = {
 
 
 class GridCells:
-    _widget: "TukaanWidget"
-    cell_managed_widgets: dict["BaseWidget", str] = {}
+    _widget: TukaanWidget
+    cell_managed_widgets: dict[BaseWidget, str] = {}
 
     @property
     def grid_cells(self) -> list[list[str]]:
@@ -48,7 +52,9 @@ class GridCells:
         for widget in self.cell_managed_widgets.keys():
             widget.layout._set_cell(self.cell_managed_widgets[widget])
 
-    def __parse_grid_areas(self, areas_list: list[list[str]]) -> dict[str, int]:
+    def __parse_grid_areas(
+        self, areas_list: list[list[str]]
+    ) -> dict[str, dict[str, int]]:
         result = {}
         for row_index, row_list in enumerate(areas_list):
             for col_index, cell_name in enumerate(row_list):
@@ -79,7 +85,7 @@ class GridCells:
 
 
 class GridTemplates:
-    _widget: "TukaanWidget"
+    _widget: TukaanWidget
 
     @property
     def grid_row_template(self) -> tuple[int, ...]:
@@ -107,9 +113,9 @@ class GridTemplates:
 
 
 class Grid:
-    _widget: "BaseWidget"
+    _widget: BaseWidget
     manager: Callable
-    cell_managed_widgets: dict["BaseWidget", str]
+    cell_managed_widgets: dict[BaseWidget, str]
 
     def grid(
         self,
@@ -291,7 +297,7 @@ class Grid:
 
 
 class Position:
-    _widget: "BaseWidget"
+    _widget: BaseWidget
     manager: Callable
 
     def position(

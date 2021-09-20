@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import Dict, List, Tuple, Union, cast
+from typing import cast
 
 from ._platform import Platform
 from ._utils import (
@@ -20,6 +20,9 @@ from ._utils import (
     update_before,
 )
 
+intround = lambda x: int(round(x, 0))
+round4 = lambda x: round(x, 4)
+
 
 class HEX:
     @staticmethod
@@ -27,63 +30,62 @@ class HEX:
         return f"#{r:02x}{g:02x}{b:02x}"
 
     @staticmethod
-    def from_hex(hex) -> Tuple[int, int, int]:
+    def from_hex(hex) -> tuple[int, ...]:
         int_value = int(hex.lstrip("#"), 16)
         return cast(
-            Tuple[int, int, int],
-            (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF),
+            tuple[int, ...], (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF)
         )
 
 
 class HSV:
     @staticmethod
-    def to_hsv(r, g, b) -> Tuple[int, int, int]:
+    def to_hsv(r, g, b) -> tuple[int, ...]:
         r, g, b = tuple(x / 255 for x in (r, g, b))
 
         high = max(r, g, b)
         low = min(r, g, b)
         diff = high - low
 
-        if high == low:
-            h = 0
-        elif high == r:
+        h = 0
+        s = 0 if high == 0 else (diff / high) * 100
+        v = high * 100
+
+        if high == r:
             h = (60 * ((g - b) / diff) + 360) % 360
         elif high == g:
             h = (60 * ((b - r) / diff) + 120) % 360
         elif high == b:
             h = (60 * ((r - g) / diff) + 240) % 360
 
-        s = 0 if high == 0 else (diff / high) * 100
-        v = high * 100
-
-        return cast(Tuple[int, int, int], tuple(int(round(x, 0)) for x in (h, s, v)))
+        return cast(tuple[int, ...], tuple(intround(x) for x in (h, s, v)))
 
     @staticmethod
-    def from_hsv(h, s, v) -> Tuple[int, int, int]:
+    def from_hsv(h, s, v) -> tuple[int, ...]:
         h, s, v = h / 360, s / 100, v / 100
 
         if s == 0.0:
-            return cast(
-                Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (v, v, v))
-            )
+            return cast(tuple[int, ...], tuple(intround(x * 255) for x in (v, v, v)))
 
-        i = int(h * 6.0)
+        i = intround(h * 6.0)
         f = (h * 6.0) - i
 
         p, q, t = (v * (1.0 - s), v * (1.0 - s * f), v * (1.0 - s * (1.0 - f)))
 
-        r, g, b = [(v, t, p), (q, v, p), (p, v, t), (p, q, v), (t, p, v), (v, p, q)][
-            int(i % 6)
-        ]
+        r, g, b = (  # fmt: off
+            (v, t, p),
+            (q, v, p),
+            (p, v, t),
+            (p, q, v),
+            (t, p, v),
+            (v, p, q),
+        )[int(i % 6)]
 
-        return cast(
-            Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (r, g, b))
-        )
+        return cast(tuple[int, ...], tuple(intround(x * 255) for x in (r, g, b)))
 
 
 class CMYK:
     @staticmethod
-    def to_cmyk(r, g, b) -> Tuple[int, int, int, int]:
+    def to_cmyk(r, g, b) -> tuple[int, ...]:
         if (r, g, b) == (0, 0, 0):
             return (0, 0, 0, 100)
 
@@ -94,36 +96,27 @@ class CMYK:
         m = (m - k) / (1 - k)
         y = (y - k) / (1 - k)
 
-        return cast(
-            Tuple[int, int, int, int],
-            tuple(int(round(x * 100, 0)) for x in (c, m, y, k)),
-        )
+        return cast(tuple[int, ...], tuple(intround(x * 100) for x in (c, m, y, k)))
 
     @staticmethod
-    def from_cmyk(c, m, y, k) -> Tuple[int, int, int]:
+    def from_cmyk(c, m, y, k) -> tuple[int, ...]:
         r = 1.0 - (c + k) / 100.0
         g = 1.0 - (m + k) / 100.0
         b = 1.0 - (y + k) / 100.0
 
-        return cast(
-            Tuple[int, int, int], tuple(int(round(x * 255, 0)) for x in (r, g, b))
-        )
+        return cast(tuple[int, ...], tuple(intround(x * 255) for x in (r, g, b)))
 
 
 # TODO: hsl, yiq
 class Color:
     _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk"}
 
-    def __init__(
-        self,
-        color: str | Tuple[int, int, int] | Tuple[int, int, int, int],
-        space: str = "hex",
-    ) -> None:
+    def __init__(self, color: str | tuple[int, ...], space: str = "hex") -> None:
         if space == "hex" and isinstance(color, str):
             rgb = HEX.from_hex(color)
 
         elif space == "rgb" and isinstance(color, tuple) and len(color) == 3:
-            rgb = color  # type: ignore
+            rgb = color
 
         elif space == "hsv" and isinstance(color, tuple) and len(color) == 3:
             rgb = HSV.from_hsv(*color)
@@ -136,9 +129,7 @@ class Color:
 
         self.red, self.green, self.blue = rgb
 
-    def _what_is_the_problem(
-        self, color: str | Tuple[int, int, int] | Tuple[int, int, int, int], space: str
-    ) -> str:
+    def _what_is_the_problem(self, color: str | tuple[int, ...], space: str) -> str:
         length_dict = {"rgb": 3, "hsv": 3, "cmyk": 4}
 
         if space not in self._supported_color_spaces:
@@ -182,7 +173,7 @@ class Color:
         return HEX.to_hex(self.red, self.green, self.blue)
 
     @property
-    def rgb(self) -> Tuple[int, int, int]:
+    def rgb(self) -> tuple[int, int, int]:
         return (self.red, self.green, self.blue)
 
     @property
@@ -215,19 +206,16 @@ class Clipboard(metaclass=ClassPropertyMetaClass):
             # implement clipboard image with PIL.ImageGrab.grabclipboard
             return ""
 
-    __str__ = get
-
     @classmethod
     def set(cls, new_content: str) -> None:
         get_tcl_interp()._tcl_call(None, "clipboard", "clear")
         get_tcl_interp()._tcl_call(None, "clipboard", "append", new_content)
 
     @classproperty
-    def content(cls) -> str:
+    def content(cls) -> str:  # type: ignore
         return cls.get()
 
-    # "Name "content" already defined on line blablabla"
-    @content.setter  # type: ignore
+    @content.setter
     def content(cls, new_content: str) -> None:
         cls.set(new_content)
 
@@ -238,7 +226,7 @@ class Cursor(
     """An object to use cross-platform, and human-understandable cursor names,
     and to get and set the mouse cursor position"""
 
-    _cursor_dict: Dict[Union[str, None], str] = {
+    _cursor_dict: dict[str | None, str] = {
         "crosshair": "crosshair",
         "default": "arrow",
         "e-resize": "right_side",
@@ -259,7 +247,7 @@ class Cursor(
         None: "none",
     }
 
-    _win_cursor_dict: Dict[Union[str, None], str] = {
+    _win_cursor_dict: dict[str | None, str] = {
         "not-allowed": "no",
         "progress": "starting",
         "ne-sw-resize": "size_ne_sw",
@@ -276,14 +264,14 @@ class Cursor(
         return self._cursor_dict[self.cursor]
 
     @classmethod
-    def from_tcl(cls, tcl_value) -> Cursor:
+    def from_tcl(cls, tcl_value: str) -> Cursor:
         return cls(reversed_dict(cls._cursor_dict)[tcl_value])
 
     @classproperty
-    def x(cls) -> int:
+    def x(cls) -> int:  # type: ignore
         return get_tcl_interp()._tcl_call(int, "winfo", "pointerx", ".")
 
-    @x.setter  # type: ignore
+    @x.setter
     @update_before
     def x(cls, new_x: int) -> None:
         get_tcl_interp()._tcl_call(
@@ -291,10 +279,10 @@ class Cursor(
         )
 
     @classproperty
-    def y(cls) -> int:
+    def y(cls) -> int:  # type: ignore
         return get_tcl_interp()._tcl_call(int, "winfo", "pointery", ".")
 
-    @y.setter  # type: ignore
+    @y.setter
     @update_before
     def y(cls, new_y: int) -> None:
         get_tcl_interp()._tcl_call(
@@ -302,16 +290,18 @@ class Cursor(
         )
 
     @classproperty
-    def position(cls) -> Tuple[int, int]:
+    def position(cls) -> tuple[int, int]:  # type: ignore
         return (cls.x(), cls.y())
 
-    @position.setter  # type: ignore
+    @position.setter
     @update_before
-    def position(cls, new_pos: int | Tuple[int, int] | List[int]) -> None:
+    def position(cls, new_pos: int | tuple[int, int] | list[int]) -> None:
         if isinstance(new_pos, (tuple, list)) and len(new_pos) > 1:
             x, y = new_pos
         elif isinstance(new_pos, int):
             x = y = new_pos
+        else:
+            raise RuntimeError
 
         get_tcl_interp()._tcl_call(
             None, "event", "generate", ".", "<Motion>", "-warp", "1", "-x", x, "-y", y
@@ -343,9 +333,9 @@ class Font(
 
         return super(Font, cls).__new__(
             cls, family, size, bold, italic, underline, strikethrough
-        )
+        )  # type: ignore
 
-    def to_tcl(self) -> Tuple:  # i won't write out, and then cast 12 str-s
+    def to_tcl(self) -> tuple[int, ...]:
         font_dict = {
             "-family": self.family,
             "-size": self.size,
@@ -358,7 +348,7 @@ class Font(
         return tuple(to_tcl(x) for x in _flatten(font_dict.items()))
 
     @classmethod
-    def from_tcl(cls, tcl_value: Tuple) -> Font:
+    def from_tcl(cls, tcl_value: tuple) -> Font:
         types = {
             "family": str,
             "size": int,
@@ -387,7 +377,7 @@ class Font(
         return cls(**result_dict)
 
     @classmethod
-    def get_families(cls, at_prefix: bool = False) -> List[str]:
+    def get_families(cls, at_prefix: bool = False) -> list[str]:
         result = sorted(set(get_tcl_interp()._tcl_call([str], "font", "families")))
         # i get a way longer list, if not convert it to set. e.g Ubuntu were 3 times
         if at_prefix:
@@ -395,11 +385,11 @@ class Font(
         return [family for family in result if not family.startswith("@")]
 
     @classproperty
-    def families(self) -> List[str]:
+    def families(self) -> list[str]:
         return self.get_families(True)
 
     @classproperty
-    def presets(self) -> List[str]:
+    def presets(self) -> list[str]:
         result = sorted(get_tcl_interp()._tcl_call([str], "font", "names"))
 
         for index, item in enumerate(result):
@@ -413,7 +403,7 @@ class Font(
     def measure(self, text: str) -> int:
         return get_tcl_interp()._tcl_call(int, "font", "measure", self, text)
 
-    def metrics(self) -> Dict[str, Union[int, bool]]:
+    def metrics(self) -> dict[str, int | bool]:
         result = get_tcl_interp()._tcl_call(
             {"-ascent": int, "-descent": int, "-linespace": int, "-fixed": bool},
             "font",
@@ -435,7 +425,7 @@ class Screen(metaclass=ClassPropertyMetaClass):
         return ScreenDistance(height)
 
     @classproperty
-    def size(cls) -> Tuple[ScreenDistance, ScreenDistance]:
+    def size(cls) -> tuple[ScreenDistance, ScreenDistance]:
         return (cls.width, cls.height)
 
     @classproperty
@@ -469,7 +459,7 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
 
         cls.dpi = Screen.dpi
 
-        return super(ScreenDistance, cls).__new__(cls, pixels)
+        return super(ScreenDistance, cls).__new__(cls, pixels)  # type: ignore
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(distance={self.distance}px))"
@@ -483,24 +473,24 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
 
     @property
     def px(self) -> float:
-        return round(self.distance, 4)
+        return round4(self.distance)
 
     @property
     def mm(self) -> float:
-        return round(self.distance / (self.dpi / 25.4), 4)
+        return round4(self.distance / (self.dpi / 25.4))
 
     @property
     def cm(self) -> float:
-        return round(self.distance / (self.dpi / 2.54), 4)
+        return round4(self.distance / (self.dpi / 2.54))
 
     @property
     def m(self) -> float:
-        return round(self.distance / (self.dpi / 0.0254), 4)
+        return round4(self.distance / (self.dpi / 0.0254))
 
     @property
     def inch(self) -> float:
-        return round(self.distance / self.dpi, 4)
+        return round4(self.distance / self.dpi)
 
     @property
     def ft(self) -> float:
-        return round(self.distance / (self.dpi * 12), 4)
+        return round4(self.distance / (self.dpi * 12))

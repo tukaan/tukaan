@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections.abc
 import contextlib
 from typing import Any, Callable, Dict, Iterator, Tuple, Type, Union
@@ -32,6 +34,8 @@ class MethodAndPropMixin:
     _tcl_call: Callable
     _keys: Dict[str, Any]
     tcl_path: str
+    parent: TukaanWidget
+    child_stats: ChildStatistics
 
     def __repr__(self) -> str:
         return (
@@ -158,6 +162,8 @@ class MethodAndPropMixin:
 
 class TukaanWidget(MethodAndPropMixin):
     """Base class for every Tukaan widget"""
+
+    layout: LayoutManager
 
     def __init__(self):
         self._children: Dict[str, Type] = {}

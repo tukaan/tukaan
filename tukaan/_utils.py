@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections.abc
 import itertools
 import numbers
@@ -5,14 +7,18 @@ import sys
 import traceback
 from collections import defaultdict
 from inspect import isclass
-from typing import Any, Callable, Dict, Type, Union
+from typing import TYPE_CHECKING, Any, Callable
+
+if TYPE_CHECKING:
+    from ._base import TukaanWidget
+    from .timeout import Timeout
 
 counts: defaultdict = defaultdict(lambda: itertools.count(1))
 
 
-_callbacks: Dict[str, Callable] = {}
-_timeouts: Dict[str, Type] = {}  # can't import Timeout
-_widgets: Dict[str, Type] = {}  # can't import TukaanWidget
+_callbacks: dict[str, Callable] = {}
+_timeouts: dict[str, Timeout] = {}
+_widgets: dict[str, TukaanWidget] = {}
 
 
 class TukaanError(Exception):
@@ -94,7 +100,7 @@ def create_command(func) -> str:
     return name
 
 
-def delete_command(name) -> None:
+def delete_command(name: str) -> None:
     del _callbacks[name]
     get_tcl_interp().app.deletecommand(name)
 
@@ -118,7 +124,7 @@ def py_to_tcl_arguments(**kwargs) -> tuple:
 
 
 def _pairs(sequence):
-    """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
+    """Source: https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
     return zip(sequence[0::2], sequence[1::2])
 
 
@@ -168,7 +174,7 @@ def from_tcl(type_spec, value) -> Any:
             # if all type is same, can shorten:
             # (str) -> ('1', 'hello')
             if len(type_spec) != len(items):
-                type_spec = type_spec * len(items)
+                type_spec *= len(items)
             return tuple(map(from_tcl, type_spec, items))
 
         if isinstance(type_spec, dict):
@@ -183,11 +189,11 @@ def from_tcl(type_spec, value) -> Any:
 def to_tcl(value: Any) -> Any:
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
 
-    if isinstance(value, str):
-        return value
-
     if value is None:
         return None
+
+    if isinstance(value, str):
+        return value
 
     if isinstance(value, bool):
         return "1" if value else "0"
@@ -210,7 +216,7 @@ class ClassPropertyDescriptor:
         self.fget = fget
         self.fset = fset
 
-    def __get__(self, obj, owner: Union[object, None] = None):
+    def __get__(self, obj, owner: object | None = None):
         return self.fget.__get__(obj, owner or type(obj))()
 
     def __set__(self, obj, value):
@@ -223,9 +229,7 @@ class ClassPropertyDescriptor:
             type_ = type(obj)
         return self.fset.__get__(obj, type_)(value)
 
-    def setter(
-        self, func: Union[Callable, classmethod]
-    ) -> "ClassPropertyDescriptor":  # mypy thinks classmethod is not Callable
+    def setter(self, func: Callable | classmethod) -> ClassPropertyDescriptor:
         if not isinstance(func, classmethod):
             func = classmethod(func)
         self.fset = func
@@ -243,7 +247,7 @@ class ClassPropertyMetaClass(type):
         return super(ClassPropertyMetaClass, self).__setattr__(key, value)
 
 
-def classproperty(func: Union[Callable, classmethod]) -> ClassPropertyDescriptor:
+def classproperty(func: Callable | classmethod) -> ClassPropertyDescriptor:
     if not isinstance(func, classmethod):
         func = classmethod(func)
 

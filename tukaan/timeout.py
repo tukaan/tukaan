@@ -1,10 +1,10 @@
-from typing import Callable, Union
+from typing import Callable
 
 from ._utils import _timeouts, counts, create_command, delete_command, get_tcl_interp
 
 
 class Timeout:
-    def __init__(self, time: Union[int, float], func: Callable) -> None:
+    def __init__(self, time: float, func: Callable) -> None:
         self._name = f"tukaan_timeout_{next(counts['timeout'])}"
 
         self._func = func
@@ -25,6 +25,7 @@ class Timeout:
         # in terms of performance this is a bad idea, but i need that fancy "state"
         self._func()
         self.state = "succesfully completed"
+        del _timeouts[self._name]
 
     def cancel(self) -> None:
         if self.state != "pending":
@@ -36,3 +37,4 @@ class Timeout:
         delete_command(after_id)
 
         self.state = "cancelled"
+        del _timeouts[self._name]
