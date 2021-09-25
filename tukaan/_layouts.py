@@ -1,5 +1,4 @@
 from __future__ import annotations
-from inspect import Attribute
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Optional, Tuple, Union
 
