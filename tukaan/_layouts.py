@@ -427,6 +427,17 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
     def remove(self):
         self._widget._tcl_call(None, self._get_manager(), "forget", self._widget)
 
+    def move(self, **kwargs) -> None:
+        for key, value in kwargs.items():
+            if value is not None:
+                try:
+                    value += getattr(self, key)
+                except (AttributeError, KeyError):
+                    raise TypeError(
+                        f"move() got an unexpected keyword argument {key!r}"
+                    )
+                setattr(self, key, value)
+
     def _config(self, _lm: Optional[Literal["grid", "place"]] = None, **kwargs) -> None:
         if _lm is None:
             _lm = self._get_manager()
@@ -452,14 +463,16 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
             "info",
             self._widget,
         )
-        if result["-width"] is None:
-            result["-width"] = self._widget.width
-        if result["-height"] is None:
-            result["-height"] = self._widget.height
         return {key.lstrip("-"): value for key, value in result.items()}
 
     def _get_lm_properties(self, what: str):
-        return self._info()[what]
+        try:
+            return self._info()[what]
+        except KeyError:
+            raise RuntimeError(
+                f"can't get {what!r}. This widget is managed by another layout manager,"
+                + f" which doesn't supports {what!r}"
+            )
 
     def _set_lm_properties(self, lm, key: str, value: Any) -> None:
         return self._config(_lm=lm, **{key: value})
