@@ -90,7 +90,7 @@ def create_command(func) -> str:
         try:
             return func(*args)
         except Exception:
-            # TODO: better error handling
+            # TODO: better error handling,
             # don't print the unrelevant lines
             tb, rest = traceback.format_exc().split("\n", 1)
             print(f"{tb}\n{stack_info}{rest}", end="", file=sys.stderr)

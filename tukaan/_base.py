@@ -30,21 +30,17 @@ class ChildStatistics:
         return list(self._widget._children.values())
 
     @property
-    def grid_managed_childs(self) -> tuple:
+    def grid_managed_children(self) -> tuple:
         return tuple(
-            map(
-                self._widget.from_tcl,
-                self._widget._tcl_call((str,), "grid", "slaves", self._widget),
-            )
+            self._widget.from_tcl(elem)
+            for elem in self._widget._tcl_call((str,), "grid", "slaves", self._widget)
         )
 
     @property
-    def position_managed_childs(self) -> tuple:
+    def position_managed_children(self) -> tuple:
         return tuple(
-            map(
-                self._widget.from_tcl,
-                self._widget._tcl_call((str,), "place", "slaves", self._widget),
-            )
+            self._widget.from_tcl(elem)
+            for elem in self._widget._tcl_call((str,), "place", "slaves", self._widget)
         )
 
 

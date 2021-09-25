@@ -1,4 +1,5 @@
 from __future__ import annotations
+from inspect import Attribute
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Optional, Tuple, Union
 
@@ -38,7 +39,8 @@ StickyValues: dict[tuple[HorAlignAlias, VertAlignAlias], str] = {
 
 class GridCells:
     _widget: TukaanWidget
-    cell_managed_widgets: dict[BaseWidget, str] = {}
+    _grid_cells: list[list[str]]
+    _cell_managed_children: dict[BaseWidget, str]
 
     @property
     def grid_cells(self) -> list[list[str]]:
@@ -47,12 +49,12 @@ class GridCells:
     @grid_cells.setter
     def grid_cells(self, cells_data: list[list[str]]) -> None:
         self._grid_cells = cells_data
-        self._grid_cells_values = self.__parse_grid_areas(cells_data)
+        self._grid_cells_values = self._parse_grid_cells(cells_data)
 
-        for widget in self.cell_managed_widgets.keys():
-            widget.layout._set_cell(self.cell_managed_widgets[widget])
+        for widget in self._cell_managed_children.keys():
+            widget.layout._set_cell(self._cell_managed_children[widget])
 
-    def __parse_grid_areas(
+    def _parse_grid_cells(
         self, areas_list: list[list[str]]
     ) -> dict[str, dict[str, int]]:
         result = {}
@@ -114,10 +116,9 @@ class GridTemplates:
 
 class Grid:
     _widget: BaseWidget
-    cell_managed_widgets: dict[BaseWidget, str]
+    _cell_managed_children: dict[BaseWidget, str]
     _get_lm_properties: Callable[[str], Any]
     _set_lm_properties: Callable[[str, str, Any], None]
-    config: Callable
     _info: Callable
 
     def grid(
@@ -134,7 +135,7 @@ class Grid:
         rowspan: Optional[int] = None,
         vert_align: VertAlignAlias = None,
     ) -> None:
-        padx, pady = self.__parse_margin(margin)
+        padx, pady = self._parse_margin(margin)
 
         if align and not any((hor_align, vert_align)):
             hor_align, vert_align = (align,) * 2  # type: ignore
@@ -144,6 +145,7 @@ class Grid:
         self._widget._tcl_call(
             None,
             "grid",
+            "configure",
             self._widget,
             *py_to_tcl_arguments(
                 column=col,
@@ -152,7 +154,7 @@ class Grid:
                 pady=pady,
                 row=row,
                 rowspan=rowspan,
-                sticky=self.__parse_sticky_values(hor_align, vert_align),
+                sticky=self._parse_sticky_values(hor_align, vert_align),
             ),
         )
         if cell:
@@ -166,40 +168,46 @@ class Grid:
             colspan = self._widget.parent.layout._grid_cells_values[cell]["colspan"]
         except KeyError:
             raise RuntimeError(f"cell {cell!r} doesn't exists")
-        self.config("grid", row=row, column=col, rowspan=rowspan, columnspan=colspan)
+        self._widget._tcl_call(
+            None,
+            "grid",
+            "configure",
+            self._widget,
+            *py_to_tcl_arguments(
+                row=row, column=col, rowspan=rowspan, columnspan=colspan
+            ),
+        )
 
-        self.cell_managed_widgets[self._widget] = cell
+        self._widget.parent.layout._cell_managed_children[self._widget] = cell
 
-    def __parse_margin(
-        self, to_parse
-    ) -> tuple[tuple[int, ...], ...] | tuple[None, ...]:
+    def _parse_margin(self, to_parse) -> tuple[tuple[int, ...], ...] | tuple[None, ...]:
         if isinstance(to_parse, int):
             return ((to_parse,) * 2,) * 2
 
         elif isinstance(to_parse, tuple) and len(to_parse) == 2:
-            return ((to_parse[1], to_parse[1]), (to_parse[0],) * 2)
+            return (to_parse[1], to_parse[1]), (to_parse[0],) * 2
 
         elif isinstance(to_parse, tuple) and len(to_parse) == 3:
-            return ((to_parse[1],) * 2, (to_parse[0], to_parse[2]))
+            return (to_parse[1],) * 2, (to_parse[0], to_parse[2])
 
         elif isinstance(to_parse, tuple) and len(to_parse) == 4:
-            return ((to_parse[3], to_parse[1]), (to_parse[0], to_parse[2]))
+            return (to_parse[3], to_parse[1]), (to_parse[0], to_parse[2])
 
         return None, None
 
-    def __parse_sticky_values(self, hor: HorAlignAlias, vert: VertAlignAlias) -> str:
+    def _parse_sticky_values(self, hor: HorAlignAlias, vert: VertAlignAlias) -> str:
         try:
             return StickyValues[(hor, vert)]
         except KeyError:
             raise RuntimeError(f"invalid alignment value: {(hor, vert)}")
 
-    def __get_sticky_values(self, key: str) -> tuple[HorAlignAlias, VertAlignAlias]:
+    def _get_sticky_values(self, key: str) -> tuple[HorAlignAlias, VertAlignAlias]:
         return reversed_dict(StickyValues)[key]
 
     @property
     def cell(self) -> str | None:
         try:
-            return self.cell_managed_widgets[self._widget]
+            return self._widget.parent.layout._cell_managed_children[self._widget]
         except KeyError:
             return None
 
@@ -241,27 +249,27 @@ class Grid:
 
     @property
     def hor_align(self) -> HorAlignAlias:
-        return self.__get_sticky_values(self._get_lm_properties("sticky"))[0]
+        return self._get_sticky_values(self._get_lm_properties("sticky"))[0]
 
     @hor_align.setter
     def hor_align(self, new_hor_align: HorAlignAlias) -> None:
         self._set_lm_properties(
-            "grid", "sticky", self.__parse_sticky_values(new_hor_align, self.vert_align)
+            "grid", "sticky", self._parse_sticky_values(new_hor_align, self.vert_align)
         )
 
     @property
     def vert_align(self) -> VertAlignAlias:
-        return self.__get_sticky_values(self._get_lm_properties("sticky"))[1]
+        return self._get_sticky_values(self._get_lm_properties("sticky"))[1]
 
     @vert_align.setter
     def vert_align(self, new_vert_align: VertAlignAlias) -> None:
         self._set_lm_properties(
-            "grid", "sticky", self.__parse_sticky_values(self.hor_align, new_vert_align)
+            "grid", "sticky", self._parse_sticky_values(self.hor_align, new_vert_align)
         )
 
     @property
     def align(self):
-        return self.__get_sticky_values(self._get_lm_properties("sticky"))
+        return self._get_sticky_values(self._get_lm_properties("sticky"))
 
     @align.setter
     def align(
@@ -273,7 +281,7 @@ class Grid:
         if not isinstance(new_alignment, tuple):
             new_alignment = (new_alignment,) * 2  # type: ignore
         self._set_lm_properties(
-            "grid", "sticky", self.__parse_sticky_values(*new_alignment)
+            "grid", "sticky", self._parse_sticky_values(*new_alignment)
         )
 
     @property
@@ -289,7 +297,7 @@ class Grid:
 
     @margin.setter
     def margin(self, new_margin: MrgnAlias) -> None:  # type: ignore
-        result = self.__parse_margin(new_margin)
+        result = self._parse_margin(new_margin)
         self._set_lm_properties("grid", "padx", result[0])
         self._set_lm_properties("grid", "pady", result[1])
 
@@ -305,21 +313,26 @@ class Position:
         anchor: AnchorAnnotation = None,
         height: ScrDstAlias = None,
         width: ScrDstAlias = None,
-        x: ScrDstAlias = None,
-        y: ScrDstAlias = None,
+        x: ScrDstAlias = 0,
+        y: ScrDstAlias = 0,
     ) -> None:
-        possibly_relative_values_dict = self.__parse_possibly_relative_values(
+        print("position")
+        possibly_relative_values_dict = self._parse_possibly_relative_values(
             ("x", "y", "width", "height"), (x, y, width, height)
         )
 
         self._widget._tcl_call(
             None,
             "place",
+            "configure",
             self._widget,
             *py_to_tcl_arguments(**possibly_relative_values_dict, anchor=anchor),
         )
 
-    def __parse_possibly_relative_values(
+        if self._widget in self._widget.parent.layout._cell_managed_children:
+            del self._widget.parent.layout._cell_managed_children[self._widget]
+
+    def _parse_possibly_relative_values(
         self, names: tuple[str, ...], values: tuple[ScrDstAlias, ...]
     ) -> ScrDstRtrnAlias:
         result_dict: ScrDstRtrnAlias = {}
@@ -372,25 +385,58 @@ class Position:
 class BaseLayoutManager(GridCells, GridTemplates):
     def __init__(self, widget):
         self._widget = widget
+        self._cell_managed_children = {}
+        self._grid_cells = []
 
 
 class LayoutManager(BaseLayoutManager, Grid, Position):
+    def _get_manager(self):
+        return self._widget._tcl_call(str, "winfo", "manager", self._widget)
+
     @property
     def manager(self):
-        result = self._widget._tcl_call(str, "winfo", "manager", self._widget)
+        result = self._get_manager()
         if result == "place":
             return "position"
         return result
 
-    def config(self, _lm: Optional[Literal["grid", "place"]] = None, **kwargs) -> None:
+    @manager.setter
+    def manager(self, new_manager: Literal["grid", "position"]) -> None:
+        try:
+            self.remove()
+            getattr(self, new_manager)()  # lol
+        except AttributeError:
+            raise RuntimeError(f"invalid lyaout manager: {new_manager}")
+
+    @property
+    def propagation(self):
+        lm = self._get_manager()
+        if lm == "place":
+            raise RuntimeError("widget not managed by grid, can't get propagation")
+        return self._widget._tcl_call(
+            bool, self._get_manager(), "propagate", self._widget
+        )
+
+    @propagation.setter
+    def propagation(self, new_propagation: bool):
+        lm = self._get_manager()
+        if lm == "place":
+            raise RuntimeError("widget not managed by grid, can't set propagation")
+        self._widget._tcl_call(
+            None, self._get_manager(), "propagate", self._widget, new_propagation
+        )
+
+    def remove(self):
+        self._widget._tcl_call(None, self._get_manager(), "forget", self._widget)
+
+    def _config(self, _lm: Optional[Literal["grid", "place"]] = None, **kwargs) -> None:
         if _lm is None:
-            _lm = self._widget._tcl_call(str, "winfo", "manager", self._widget)
+            _lm = self._get_manager()
         self._widget._tcl_call(
             None, _lm, "configure", self._widget, *py_to_tcl_arguments(**kwargs)
         )
 
     def _info(self):
-        lm = self._widget._tcl_call(str, "winfo", "manager", self._widget)
         result = self._widget._tcl_call(
             {
                 "-column": int,
@@ -404,14 +450,18 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
                 "-width": int,
                 "-height": int,
             },
-            lm,
+            self._get_manager(),
             "info",
             self._widget,
         )
+        if result["-width"] is None:
+            result["-width"] = self._widget.width
+        if result["-height"] is None:
+            result["-height"] = self._widget.height
         return {key.lstrip("-"): value for key, value in result.items()}
 
     def _get_lm_properties(self, what: str):
         return self._info()[what]
 
     def _set_lm_properties(self, lm, key: str, value: Any) -> None:
-        return self.config(_lm=lm, **{key: value})
+        return self._config(_lm=lm, **{key: value})
