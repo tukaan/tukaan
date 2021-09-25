@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 import contextlib
-from typing import Any, Callable, Dict, Iterator, Tuple, Type, Union
+from typing import Any, Callable, Iterator
 
 from ._layouts import LayoutManager
 from ._returntype import Callback, DictKey
@@ -46,7 +46,7 @@ class ChildStatistics:
 
 class MethodAndPropMixin:
     _tcl_call: Callable
-    _keys: Dict[str, Any]
+    _keys: dict[str, Any]
     tcl_path: str
     wm_path: str
     parent: TkWidget
@@ -225,8 +225,8 @@ class TkWidget(MethodAndPropMixin):
     layout: LayoutManager
 
     def __init__(self):
-        self._children: Dict[str, Type] = {}
-        self._child_type_count: Dict[Type, int] = {}
+        self._children: dict[str, TkWidget] = {}
+        self._child_type_count: dict[type, int] = {}
         _widgets[self.tcl_path] = self
         self.child_stats = ChildStatistics(self)
 
@@ -257,11 +257,9 @@ class StateSet(collections.abc.MutableSet):
 
 
 class BaseWidget(TkWidget):
-    _keys: dict[str, Union[Any, Tuple[Any, str]]]
+    _keys: dict[str, Any | tuple[Any, str]]
 
-    def __init__(
-        self, parent: Union[TkWidget, None], widget_name: str, **kwargs
-    ) -> None:
+    def __init__(self, parent: TkWidget | None, widget_name: str, **kwargs) -> None:
         self.parent = parent or get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
         self._tcl_call: Callable = get_tcl_interp()._tcl_call
@@ -309,3 +307,4 @@ class BaseWidget(TkWidget):
 
         self._tcl_call(None, "destroy", self.tcl_path)
         del self.parent._children[self.tcl_path]
+        del _widgets[self.tcl_path]
