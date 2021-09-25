@@ -1,13 +1,17 @@
 # Tukaan
+<p align="center">
+  <img src="big_logo.png" alt="Tukaan logo">
+</p>
+
 [![Code style: black](https://img.shields.io/badge/code%20style-black-1c1c1c.svg)](https://github.com/psf/black)
 
-Tukaan is the new, pythonic and colorful (like a keel-billed toucan) framework that aims to replace Tkinter.
-It has everything (on my computer, not at GitHub) that you need to develop cross-platform GUIs.
+Tukaan is the new pythonic, powerful and easy-to-use GUI framework that aims to replace Tkinter.
+It has everything (at least on my computer) that you need to develop cross-platform GUIs.
 
 
 ## WIP
 Although all the basic widgets and other classes already exist in my local repo, they are not yet ready to push them to GitHub.
-I only push things to GitHub that work and can be tried, but they are still in progress, so you shouldn’t use it in any project.
+I only push things to GitHub that work and could be used, but they are still in progress, so you shouldn’t use it in any project.
 
 
 ## The goal of Tukaan
@@ -100,8 +104,16 @@ print(screen.dpi)
 
 
 ## Credits
-Many thing in Tukaan is based on:
+- Logo design:
 
-- [Akuli's Teek](https://github.com/Akuli/teek) (TODO: which parts and why?)
-- [Ckyiu's TkZero](https://github.com/UnsignedArduino/TkZero)
-- one of my private Gists
+     Inspired by Tajulislam12's design: [`https://dribbble.com/shots/14487668-toucan-logo-design-Icon`](https://dribbble.com/shots/14487668-toucan-logo-design-Icon)
+
+- Logo font:
+
+     Stick No Bills by Mooniak: [`https://fonts.google.com/specimen/Stick+No+Bills`](https://fonts.google.com/specimen/Stick+No+Bills)
+
+- Many thing in Tukaan is based on:
+
+  - [Akuli's Teek](https://github.com/Akuli/teek) (TODO: which parts and why?)
+  - [Ckyiu's TkZero](https://github.com/UnsignedArduino/TkZero)
+  - one of my private Gists
