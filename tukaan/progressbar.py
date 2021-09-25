@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 
-from ._base import BaseWidget, TukaanWidget
+from ._base import BaseWidget, TkWidget
 
 
 class ProgressBar(BaseWidget):
@@ -14,7 +14,7 @@ class ProgressBar(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TukaanWidget] = None,
+        parent: Optional[TkWidget] = None,
         focusable: Optional[bool] = None,
         max: Optional[Literal["left", "center", "right"]] = None,
         mode: Optional[Literal["determinate", "indeterminate"]] = None,

@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 
-from ._base import BaseWidget, TukaanWidget
+from ._base import BaseWidget, TkWidget
 
 
 class Separator(BaseWidget):
@@ -8,7 +8,7 @@ class Separator(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TukaanWidget] = None,
+        parent: Optional[TkWidget] = None,
         orientation: Optional[Literal["horizontal", "vertical"]] = None,
     ) -> None:
         BaseWidget.__init__(self, parent, "ttk::separator", orient=orientation)

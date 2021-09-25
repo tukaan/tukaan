@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Optional, Tuple,
 
 if TYPE_CHECKING:
     # pyright won't complain
-    from ._base import TukaanWidget, BaseWidget
+    from ._base import TkWidget, BaseWidget
 
 from ._constants import AnchorAnnotation
 from ._misc import ScreenDistance
@@ -38,7 +38,7 @@ StickyValues: dict[tuple[HorAlignAlias, VertAlignAlias], str] = {
 
 
 class GridCells:
-    _widget: TukaanWidget
+    _widget: TkWidget
     _grid_cells: list[list[str]]
     _cell_managed_children: dict[BaseWidget, str]
 
@@ -87,7 +87,7 @@ class GridCells:
 
 
 class GridTemplates:
-    _widget: TukaanWidget
+    _widget: TkWidget
 
     @property
     def grid_row_template(self) -> tuple[int, ...]:
@@ -316,7 +316,6 @@ class Position:
         x: ScrDstAlias = 0,
         y: ScrDstAlias = 0,
     ) -> None:
-        print("position")
         possibly_relative_values_dict = self._parse_possibly_relative_values(
             ("x", "y", "width", "height"), (x, y, width, height)
         )

@@ -10,7 +10,7 @@ from inspect import isclass
 from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
-    from ._base import TukaanWidget
+    from ._base import TkWidget
     from .timeout import Timeout
 
 counts: defaultdict = defaultdict(lambda: itertools.count(1))
@@ -18,7 +18,7 @@ counts: defaultdict = defaultdict(lambda: itertools.count(1))
 
 _callbacks: dict[str, Callable] = {}
 _timeouts: dict[str, Timeout] = {}
-_widgets: dict[str, TukaanWidget] = {}
+_widgets: dict[str, TkWidget] = {}
 
 
 class TukaanError(Exception):

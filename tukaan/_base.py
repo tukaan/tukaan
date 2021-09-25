@@ -48,7 +48,8 @@ class MethodAndPropMixin:
     _tcl_call: Callable
     _keys: Dict[str, Any]
     tcl_path: str
-    parent: TukaanWidget
+    wm_path: str
+    parent: TkWidget
     child_stats: ChildStatistics
 
     def __repr__(self) -> str:
@@ -115,7 +116,7 @@ class MethodAndPropMixin:
         )
 
     @classmethod
-    def from_tcl(cls, tcl_value: str) -> TukaanWidget:
+    def from_tcl(cls, tcl_value: str) -> TkWidget:
         # unlike in teek, this method won't raise a TypeError,
         # if the return widget, and the class you call it on isn't the same
         # this could be annoying, but very useful if you don't know
@@ -167,16 +168,59 @@ class MethodAndPropMixin:
     def height(self) -> int:
         return self._tcl_call(int, "winfo", "height", self)
 
-    def destroy(self):
-        for child in self.child_stats.children:
-            child.destroy()
+    def hide(self):
+        if self.tcl_path == ".app" or self._class == "Toplevel":
+            self._tcl_call(None, "wm", "withdraw", self.wm_path)
+        else:
+            manager = self._tcl_call(str, "winfo", "manager", self)
+            self._temp_manager = manager
+            if manager == "grid":
+                self._tcl_call(None, "grid", "remove", self.tcl_path)
+            elif manager == "place":
+                self._temp_position_info = self._tcl_call(
+                    {
+                        "-x": int,
+                        "-y": int,
+                        "-anchor": str,
+                        "-width": int,
+                        "-height": int,
+                    },
+                    "place",
+                    "info",
+                    self.tcl_path,
+                )
+                self._tcl_call(None, "place", "forget", self.tcl_path)
 
-        self._tcl_call(None, "destroy", self.tcl_path)
-        del self.parent._children[self.tcl_path]
+    def unhide(self):
+        if self.tcl_path == ".app" or self._class == "Toplevel":
+            self._tcl_call(None, "wm", "deiconify", self.wm_path)
+        elif self._temp_manager == "grid":
+            self._tcl_call(None, "grid", "configure", self.tcl_path)
+        elif self._temp_manager == "place":
+            self._tcl_call(
+                None,
+                (
+                    "place",
+                    "configure",
+                    self.tcl_path,
+                    *(
+                        elem
+                        for key, value in self._temp_position_info.items()
+                        for elem in (key, value)
+                        if value is not None
+                    ),
+                ),
+            )
 
 
-class TukaanWidget(MethodAndPropMixin):
+class TukaanWidget:
     """Base class for every Tukaan widget"""
+
+    ...
+
+
+class TkWidget(MethodAndPropMixin):
+    """Base class for every Tk-based widget"""
 
     layout: LayoutManager
 
@@ -190,7 +234,7 @@ class TukaanWidget(MethodAndPropMixin):
 class StateSet(collections.abc.MutableSet):
     """Object that contains the state of the widget, though it inherits from MutableSet, it behaves like a list"""
 
-    def __init__(self, widget: TukaanWidget) -> None:
+    def __init__(self, widget: TkWidget) -> None:
         self._widget = widget
 
     def __repr__(self) -> str:
@@ -212,23 +256,24 @@ class StateSet(collections.abc.MutableSet):
         self._widget._tcl_call(None, self._widget, "state", f"!{state}")
 
 
-class BaseWidget(TukaanWidget):
-    _keys: Dict[str, Union[Any, Tuple[Any, str]]]
+class BaseWidget(TkWidget):
+    _keys: dict[str, Union[Any, Tuple[Any, str]]]
 
     def __init__(
-        self, parent: Union[TukaanWidget, None], widget_name: str, **kwargs
+        self, parent: Union[TkWidget, None], widget_name: str, **kwargs
     ) -> None:
         self.parent = parent or get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
         self._tcl_call: Callable = get_tcl_interp()._tcl_call
 
-        TukaanWidget.__init__(self)
+        TkWidget.__init__(self)
 
         self.parent._children[self.tcl_path] = self
 
         self._tcl_call(None, widget_name, self.tcl_path, *py_to_tcl_arguments(**kwargs))
 
         self.layout = LayoutManager(self)
+        self._temp_manager = None
 
         if self._class.startswith("ttk::"):
             self.state = StateSet(self)
@@ -256,6 +301,11 @@ class BaseWidget(TukaanWidget):
         count = self.parent._child_type_count.get(klass, 0) + 1
         self.parent._child_type_count[klass] = count
 
-        name: str = f"{self.parent.tcl_path}.{klass.__name__.lower()}_{count}"
+        return f"{self.parent.tcl_path}.{klass.__name__.lower()}_{count}"
 
-        return name
+    def destroy(self):
+        for child in self.child_stats.children:
+            child.destroy()
+
+        self._tcl_call(None, "destroy", self.tcl_path)
+        del self.parent._children[self.tcl_path]

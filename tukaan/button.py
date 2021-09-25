@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from ._base import BaseWidget, TukaanWidget
+from ._base import BaseWidget, TkWidget
 from ._returntype import Callback
 
 
@@ -17,7 +17,7 @@ class Button(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TukaanWidget] = None,
+        parent: Optional[TkWidget] = None,
         on_click: Optional[Callable] = None,
         default: Optional[str] = None,
         focusable: Optional[bool] = None,

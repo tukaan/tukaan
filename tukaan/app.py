@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 import _tkinter as tk
 
-from ._base import TukaanWidget
+from ._base import TkWidget
 from ._layouts import BaseLayoutManager
 from ._utils import TukaanError, from_tcl, to_tcl
 from ._window_mixin import WindowMixin
@@ -13,7 +13,7 @@ from ._window_mixin import WindowMixin
 tcl_interp = None
 
 
-class App(WindowMixin, TukaanWidget):
+class App(WindowMixin, TkWidget):
     wm_path = "."
     tcl_path = ".app"
 
@@ -28,7 +28,7 @@ class App(WindowMixin, TukaanWidget):
         theme: Optional[str] = "native",
     ) -> None:
 
-        TukaanWidget.__init__(self)
+        TkWidget.__init__(self)
 
         global tcl_interp
 
