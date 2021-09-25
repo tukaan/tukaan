@@ -6,7 +6,7 @@ from typing import Any, Optional
 import _tkinter as tk
 
 from ._base import TukaanWidget
-from ._layouts import WindowLayoutManager
+from ._layouts import BaseLayoutManager
 from ._utils import TukaanError, from_tcl, to_tcl
 from ._window_mixin import WindowMixin
 
@@ -47,7 +47,7 @@ class App(WindowMixin, TukaanWidget):
         )
         self.app.loadtk()
 
-        self.layout: WindowLayoutManager = WindowLayoutManager(self)
+        self.layout: BaseLayoutManager = BaseLayoutManager(self)
 
         tcl_interp = self
 
@@ -57,7 +57,7 @@ class App(WindowMixin, TukaanWidget):
         self.title = title
         self.topmost = topmost
         self.transparency = transparency
-        self.size = width, height  # type: ignore
+        self.size = width, height
         self.fullscreen = fullscreen
         self.theme = theme
 

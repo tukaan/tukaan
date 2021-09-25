@@ -26,8 +26,26 @@ class ChildStatistics:
             return 0
 
     @property
-    def children(cls) -> list:
-        return list(cls._widget._children.values())
+    def children(self) -> list:
+        return list(self._widget._children.values())
+
+    @property
+    def grid_managed_childs(self) -> tuple:
+        return tuple(
+            map(
+                self._widget.from_tcl,
+                self._widget._tcl_call((str,), "grid", "slaves", self._widget),
+            )
+        )
+
+    @property
+    def position_managed_childs(self) -> tuple:
+        return tuple(
+            map(
+                self._widget.from_tcl,
+                self._widget._tcl_call((str,), "place", "slaves", self._widget),
+            )
+        )
 
 
 class MethodAndPropMixin:
@@ -40,7 +58,8 @@ class MethodAndPropMixin:
     def __repr__(self) -> str:
         return (
             f"<tukaan.{type(self).__name__}"
-            + f" widget{': ' + self._repr_details() if self._repr_details() else ''}>"
+            + " widget,"
+            + f" id={self.tcl_path!r}{': ' + self._repr_details() if self._repr_details() else ''}>"
         )
 
     __str__ = __repr__
@@ -100,7 +119,7 @@ class MethodAndPropMixin:
         )
 
     @classmethod
-    def from_tcl(cls, tcl_value: str) -> "TukaanWidget":
+    def from_tcl(cls, tcl_value: str) -> TukaanWidget:
         # unlike in teek, this method won't raise a TypeError,
         # if the return widget, and the class you call it on isn't the same
         # this could be annoying, but very useful if you don't know

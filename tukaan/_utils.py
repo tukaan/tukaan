@@ -143,6 +143,8 @@ def from_tcl(type_spec, value) -> Any:
         return get_tcl_interp().get_boolean(value)
 
     if type_spec is int:
+        if value == "":
+            return None
         return int(value)
 
     if isinstance(type_spec, type):
@@ -188,7 +190,6 @@ def from_tcl(type_spec, value) -> Any:
 
 def to_tcl(value: Any) -> Any:
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
-
     if value is None:
         return None
 
