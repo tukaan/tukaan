@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 
-from ._base import BaseWidget, TukaanWidget
+from ._base import BaseWidget, TkWidget
 from ._constants import _anchors
 from ._returntype import DictKey
 
@@ -17,7 +17,7 @@ class Label(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TukaanWidget] = None,
+        parent: Optional[TkWidget] = None,
         anchor: Optional[str] = None,
         focusable: Optional[bool] = None,
         justify: Optional[Literal["left", "center", "right"]] = None,

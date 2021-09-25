@@ -1,6 +1,22 @@
-from typing import Any, Dict, Set
+from __future__ import annotations
 
-_anchors: Dict[Any, str] = {
+from typing import Any, Literal, Optional
+
+AnchorAnnotation = Optional[
+    Literal[
+        "bottom",
+        "bottom-left",
+        "bottom-right",
+        "center",
+        "left",
+        "right",
+        "top",
+        "top-left",
+        "top-right",
+    ]
+]
+
+_anchors: dict[Any, str] = {
     None: "",
     "bottom": "s",
     "bottom-left": "sw",
@@ -13,7 +29,7 @@ _anchors: Dict[Any, str] = {
     "top-right": "ne",
 }
 
-_window_pos: Set[str] = {
+_window_pos: set[str] = {
     "center",
     "top-left",
     "top-right",

@@ -1,6 +1,6 @@
 from typing import Callable, Literal, Optional, Union
 
-from ._base import BaseWidget, TukaanWidget
+from ._base import BaseWidget, TkWidget
 from ._misc import ScreenDistance
 from ._returntype import Callback
 
@@ -17,7 +17,7 @@ class Slider(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TukaanWidget] = None,
+        parent: Optional[TkWidget] = None,
         length: Optional[Union[int, ScreenDistance]] = None,
         max: Optional[int] = None,
         min: Optional[int] = None,

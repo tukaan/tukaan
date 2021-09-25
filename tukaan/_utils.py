@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections.abc
 import itertools
 import numbers
@@ -5,14 +7,18 @@ import sys
 import traceback
 from collections import defaultdict
 from inspect import isclass
-from typing import Any, Callable, Dict, Type, Union
+from typing import TYPE_CHECKING, Any, Callable
+
+if TYPE_CHECKING:
+    from ._base import TkWidget
+    from .timeout import Timeout
 
 counts: defaultdict = defaultdict(lambda: itertools.count(1))
 
 
-_callbacks: Dict[str, Callable] = {}
-_timeouts: Dict[str, Type] = {}  # can't import Timeout
-_widgets: Dict[str, Type] = {}  # can't import TukaanWidget
+_callbacks: dict[str, Callable] = {}
+_timeouts: dict[str, Timeout] = {}
+_widgets: dict[str, TkWidget] = {}
 
 
 class TukaanError(Exception):
@@ -84,7 +90,7 @@ def create_command(func) -> str:
         try:
             return func(*args)
         except Exception:
-            # TODO: better error handling
+            # TODO: better error handling,
             # don't print the unrelevant lines
             tb, rest = traceback.format_exc().split("\n", 1)
             print(f"{tb}\n{stack_info}{rest}", end="", file=sys.stderr)
@@ -94,13 +100,31 @@ def create_command(func) -> str:
     return name
 
 
-def delete_command(name) -> None:
+def delete_command(name: str) -> None:
     del _callbacks[name]
     get_tcl_interp().app.deletecommand(name)
 
 
+def py_to_tcl_arguments(**kwargs) -> tuple:
+    result = []
+
+    for key, value in kwargs.items():
+        if value is None:
+            continue
+
+        if key.endswith("_"):
+            key = key.rstrip("_")
+
+        if callable(value):
+            value = create_command(value)
+
+        result.extend([f"-{key}", value])
+
+    return tuple(result)
+
+
 def _pairs(sequence):
-    """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
+    """Source: https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
     return zip(sequence[0::2], sequence[1::2])
 
 
@@ -119,7 +143,7 @@ def from_tcl(type_spec, value) -> Any:
         return get_tcl_interp().get_boolean(value)
 
     if type_spec is int:
-        if not value:
+        if value == "":
             return None
         return int(value)
 
@@ -152,7 +176,7 @@ def from_tcl(type_spec, value) -> Any:
             # if all type is same, can shorten:
             # (str) -> ('1', 'hello')
             if len(type_spec) != len(items):
-                type_spec = type_spec * len(items)
+                type_spec *= len(items)
             return tuple(map(from_tcl, type_spec, items))
 
         if isinstance(type_spec, dict):
@@ -166,12 +190,11 @@ def from_tcl(type_spec, value) -> Any:
 
 def to_tcl(value: Any) -> Any:
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
+    if value is None:
+        return None
 
     if isinstance(value, str):
         return value
-
-    if value is None:
-        return None
 
     if isinstance(value, bool):
         return "1" if value else "0"
@@ -194,7 +217,7 @@ class ClassPropertyDescriptor:
         self.fget = fget
         self.fset = fset
 
-    def __get__(self, obj, owner: Union[object, None] = None):
+    def __get__(self, obj, owner: object | None = None):
         return self.fget.__get__(obj, owner or type(obj))()
 
     def __set__(self, obj, value):
@@ -207,9 +230,7 @@ class ClassPropertyDescriptor:
             type_ = type(obj)
         return self.fset.__get__(obj, type_)(value)
 
-    def setter(
-        self, func: Union[Callable, classmethod]
-    ) -> "ClassPropertyDescriptor":  # mypy thinks classmethod is not Callable
+    def setter(self, func: Callable | classmethod) -> ClassPropertyDescriptor:
         if not isinstance(func, classmethod):
             func = classmethod(func)
         self.fset = func
@@ -227,7 +248,7 @@ class ClassPropertyMetaClass(type):
         return super(ClassPropertyMetaClass, self).__setattr__(key, value)
 
 
-def classproperty(func: Union[Callable, classmethod]) -> ClassPropertyDescriptor:
+def classproperty(func: Callable | classmethod) -> ClassPropertyDescriptor:
     if not isinstance(func, classmethod):
         func = classmethod(func)
 

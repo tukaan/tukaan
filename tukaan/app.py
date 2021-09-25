@@ -5,14 +5,15 @@ from typing import Any, Optional
 
 import _tkinter as tk
 
-from ._base import TukaanWidget
+from ._base import TkWidget
+from ._layouts import BaseLayoutManager
 from ._utils import TukaanError, from_tcl, to_tcl
 from ._window_mixin import WindowMixin
 
 tcl_interp = None
 
 
-class App(WindowMixin, TukaanWidget):
+class App(WindowMixin, TkWidget):
     wm_path = "."
     tcl_path = ".app"
 
@@ -24,10 +25,10 @@ class App(WindowMixin, TukaanWidget):
         transparency: int = 1,
         topmost: bool = False,
         fullscreen: bool = False,
-        theme: Optional[str] = None,
+        theme: Optional[str] = "native",
     ) -> None:
 
-        TukaanWidget.__init__(self)
+        TkWidget.__init__(self)
 
         global tcl_interp
 
@@ -46,6 +47,8 @@ class App(WindowMixin, TukaanWidget):
         )
         self.app.loadtk()
 
+        self.layout: BaseLayoutManager = BaseLayoutManager(self)
+
         tcl_interp = self
 
         self._tcl_call(None, "ttk::frame", ".app")
@@ -54,21 +57,15 @@ class App(WindowMixin, TukaanWidget):
         self.title = title
         self.topmost = topmost
         self.transparency = transparency
-        self.size = width, height  # type: ignore
+        self.size = width, height
         self.fullscreen = fullscreen
-
-        if theme is None:
-            theme = (
-                "clam"
-                if self._tcl_call(str, "tk", "windowingsystem") == "x11"
-                else "native"
-            )
-
         self.theme = theme
 
     def _tcl_call(self, return_type: Any, *args) -> Any:
         try:
-            result = self.app.call(tuple(map(to_tcl, args)))
+            result = self.app.call(*map(to_tcl, args))
+            if return_type is None:
+                return
             return from_tcl(return_type, result)
         except tk.TclError:
             _, msg, tb = sys.exc_info()
@@ -109,6 +106,8 @@ class App(WindowMixin, TukaanWidget):
         There is no App.destroy, just App.quit,
         which also quits the entire tcl interpreter
         """
+        global tcl_interp
+
         for child in tuple(self._children.values()):
             child.destroy()
 
