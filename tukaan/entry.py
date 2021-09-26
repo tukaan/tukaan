@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-import warnings
+import warnings, re
 from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
 from ._misc import Color
+from ._utils import create_command
+
 
 EndAlias = Literal["end"]
+Regex = ...
 
 
 class Entry(BaseWidget):
@@ -30,11 +33,44 @@ class Entry(BaseWidget):
         hide_chars_with: Optional[str] = "•",
         justify: Optional[Literal["center", "left", "right"]] = None,
         style: Optional[str] = None,
+        validation: Optional[
+            Literal["int", "float", "email", "hex-color"] | Regex
+        ] = None,
         width: Optional[int] = None,
     ) -> None:
+
         self._prev_show_char = hide_chars_with
         if not hide_chars:
             hide_chars_with = None
+
+        vcmd = None
+
+        if validation == "int":
+            vcmd = (create_command(self._validate_int), "%S")
+        elif validation == "float":
+            vcmd = (
+                create_command(self._validate_int),
+                "%S",
+            )  # FIXME: it doesn't allow dots
+        #     self.bind(
+        #         ("<FocusIn>", "<FocusOut>"), self._validate_regex, args=r"[0-9\.]"
+        #     )
+        # elif validation == "email":
+        #     self.bind(
+        #         ("<FocusIn>", "<FocusOut>"),
+        #         self._validate_regex,
+        #         args=r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+        #     )
+        # elif validation == "hex-color":
+        #     self.bind(
+        #         ("<FocusIn>", "<FocusOut>"),
+        #         self._validate_regex,
+        #         args=r"^#(?:[0-9a-fA-F]{3}){1,2}$",
+        #     )
+        # else:
+        #     self.bind(
+        #         ("<FocusIn>", "<FocusOut>"), self._validate_regex, args=validation
+        #     )
 
         BaseWidget.__init__(
             self,
@@ -45,6 +81,8 @@ class Entry(BaseWidget):
             show=hide_chars_with,
             style=style,
             takefocus=focusable,
+            validatecommand=vcmd,
+            validate="all",
             width=width,
         )
 
@@ -60,6 +98,19 @@ class Entry(BaseWidget):
     def _repr_details(self) -> str:
         value = self.value
         return f"value='{value if len(value) <= 10 else value[:10] + '...'}'"
+
+    def _validate_int(self, newly_entered: str):
+        try:
+            int(newly_entered)
+            return True
+        except ValueError:
+            return False
+
+    def _validate_regex(self, regex: str):
+        if self.get() == "" or re.fullmatch(regex, self.get()):
+            self.state.discard("invalid")
+        else:
+            self.state.add("invalid")
 
     def clear(self) -> None:
         self._tcl_call(None, self, "delete", 0, "end")
