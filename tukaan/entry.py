@@ -1,20 +1,52 @@
 from __future__ import annotations
 
-from typing import Optional, Literal
 import warnings
+from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
+from ._misc import Color
 
 EndAlias = Literal["end"]
 
 
 class Entry(BaseWidget):
-    _keys = {}
+    _keys = {
+        "color": (Color, "foreground"),
+        "focusable": (bool, "takefocus"),
+        "hide_chars_with": (str, "show"),
+        "justify": str,
+        "style": str,
+    }
+
     start = 0
     end = "end"
 
-    def __init__(self, parent: Optional[TkWidget] = None) -> None:
-        BaseWidget.__init__(self, parent, "ttk::entry")
+    def __init__(
+        self,
+        parent: Optional[TkWidget] = None,
+        color: Optional[str | Color] = None,
+        focusable: Optional[bool] = None,
+        hide_chars: bool = False,
+        hide_chars_with: Optional[str] = "•",
+        justify: Optional[Literal["center", "left", "right"]] = None,
+        style: Optional[str] = None,
+        width: Optional[int] = None,
+    ) -> None:
+        self._prev_show_char = hide_chars_with
+        if not hide_chars:
+            hide_chars_with = None
+
+        BaseWidget.__init__(
+            self,
+            parent,
+            "ttk::entry",
+            foreground=color,
+            justify=justify,
+            show=hide_chars_with,
+            style=style,
+            takefocus=focusable,
+            width=width,
+        )
 
     def __len__(self):
         return len(self.get())
@@ -24,6 +56,10 @@ class Entry(BaseWidget):
 
     def __contains__(self, text: str):
         return text in self.get()
+
+    def _repr_details(self) -> str:
+        value = self.value
+        return f"value='{value if len(value) <= 10 else value[:10] + '...'}'"
 
     def clear(self) -> None:
         self._tcl_call(None, self, "delete", 0, "end")
@@ -53,6 +89,18 @@ class Entry(BaseWidget):
     def value(self, new_value: str) -> None:
         self.clear()
         self.insert(0, new_value)
+
+    @property
+    def hide_chars(self) -> bool:
+        return self.hide_chars_with != ""
+
+    @hide_chars.setter
+    def hide_chars(self, is_hidden: bool) -> None:
+        if is_hidden:
+            self._prev_show_char = self._cget("show")
+            self.config(show="")
+        else:
+            self.config(show=self._prev_show_char)
 
     @property
     def selection(self) -> str | None:
