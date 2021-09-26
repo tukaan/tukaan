@@ -10,8 +10,8 @@ from ._utils import (
     _widgets,
     get_tcl_interp,
     py_to_tcl_arguments,
-    update_before,
     reversed_dict,
+    update_before,
 )
 
 
