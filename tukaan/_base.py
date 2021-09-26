@@ -168,6 +168,9 @@ class MethodAndPropMixin:
     def height(self) -> int:
         return self._tcl_call(int, "winfo", "height", self)
 
+    def focus(self):
+        self._tcl_call(None, "focus", self)
+
     def hide(self):
         if self.tcl_path == ".app" or self._class == "Toplevel":
             self._tcl_call(None, "wm", "withdraw", self.wm_path)

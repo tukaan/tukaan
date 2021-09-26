@@ -7,3 +7,4 @@ from .progressbar import ProgressBar
 from .separator import Separator
 from .slider import Slider
 from .timeout import Timeout
+from .entry import Entry
