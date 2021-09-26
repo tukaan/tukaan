@@ -2,7 +2,6 @@ from typing import Callable, Literal, Optional, Union
 
 from ._base import BaseWidget, TkWidget
 from ._misc import ScreenDistance
-from ._returntype import Callback
 
 
 class Slider(BaseWidget):
@@ -10,7 +9,7 @@ class Slider(BaseWidget):
         "length": ScreenDistance,
         "max": (int, "to"),
         "min": (int, "from"),
-        "on_move": (Callback, "command"),
+        "on_move": ("func", "command"),
         "orientation": (str, "orient"),
         "value": float,
     }

@@ -5,13 +5,13 @@ import contextlib
 from typing import Any, Callable, Iterator
 
 from ._layouts import LayoutManager
-from ._returntype import Callback, DictKey
 from ._utils import (
     _callbacks,
     _widgets,
     get_tcl_interp,
     py_to_tcl_arguments,
     update_before,
+    reversed_dict,
 )
 
 
@@ -26,7 +26,7 @@ class ChildStatistics:
             return 0
 
     @property
-    def children(self) -> list:
+    def children(self) -> list[BaseWidget]:
         return list(self._widget._children.values())
 
     @property
@@ -94,14 +94,14 @@ class MethodAndPropMixin:
         else:
             type_spec = self._keys[key]
 
-        if type_spec is Callback:
+        if type_spec == "func":
             # return a callable func, not tcl name
             result = self._tcl_call(str, self, "cget", f"-{key}")
             return _callbacks[result]
 
-        if isinstance(type_spec, DictKey):
+        if isinstance(type_spec, dict):
             result = self._tcl_call(str, self, "cget", f"-{key}")
-            return type_spec[result]
+            return reversed_dict(type_spec)[result]
 
         return self._tcl_call(type_spec, self, "cget", f"-{key}")
 
@@ -225,7 +225,7 @@ class TkWidget(MethodAndPropMixin):
     layout: LayoutManager
 
     def __init__(self):
-        self._children: dict[str, TkWidget] = {}
+        self._children: dict[str, BaseWidget] = {}
         self._child_type_count: dict[type, int] = {}
         _widgets[self.tcl_path] = self
         self.child_stats = ChildStatistics(self)
