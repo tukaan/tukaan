@@ -115,9 +115,6 @@ def py_to_tcl_arguments(**kwargs) -> tuple:
         if key.endswith("_"):
             key = key.rstrip("_")
 
-        if callable(value):
-            value = create_command(value)
-
         result.extend([f"-{key}", value])
 
     return tuple(result)
@@ -207,6 +204,9 @@ def to_tcl(value: Any) -> Any:
 
     if isinstance(value, collections.abc.Mapping):
         return tuple(map(to_tcl, _flatten(value.items())))
+
+    if callable(value):
+        return create_command(value)
 
     return tuple(map(to_tcl, value))
 
