@@ -152,10 +152,10 @@ class Color:
             + f" blue={self.blue})"
         )
 
-    __str__ = __repr__
-
     def to_tcl(self) -> str:
         return self.hex
+
+    __str__ = to_tcl
 
     @classmethod
     def from_tcl(cls, tcl_value) -> Color:
@@ -436,6 +436,9 @@ class Screen(metaclass=ClassPropertyMetaClass):
     def dpi(cls) -> float:
         return get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", "1i")
 
+    def __str__(self) -> str:
+        return f"{self.width.px};{self.height.px}"
+
 
 class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
     """An object to convert between different screen distance units"""
@@ -464,11 +467,10 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
     def __repr__(self) -> str:
         return f"{type(self).__name__}(distance={self.distance}px))"
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}(distance={self.distance}px))"
-
     def to_tcl(self) -> str:
         return str(self.distance)
+
+    __str__ = to_tcl
 
     @classmethod
     def from_tcl(cls, tcl_value: int) -> ScreenDistance:

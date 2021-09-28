@@ -1,6 +1,6 @@
 from typing import Callable
 
-from ._utils import _timeouts, counts, create_command, delete_command, get_tcl_interp
+from ._utils import _timeouts, counts, delete_command, get_tcl_interp
 
 
 class Timeout:
@@ -8,10 +8,9 @@ class Timeout:
         self._name = f"tukaan_timeout_{next(counts['timeout'])}"
 
         self._func = func
-        self._callback = create_command(self._call_func)
 
         self.id = get_tcl_interp()._tcl_call(
-            str, "after", int(time * 1000), self._callback
+            str, "after", int(time * 1000), self._call_func
         )
 
         _timeouts[self._name] = self
@@ -19,7 +18,7 @@ class Timeout:
         self.state = "pending"
 
     def __repr__(self) -> str:
-        return f"<{self.state} {self._callback} timeout>"
+        return f"<{self.state} `{self._func.__name__}()` timeout>"
 
     def _call_func(self) -> None:
         # in terms of performance this is a bad idea, but i need that fancy "state"
