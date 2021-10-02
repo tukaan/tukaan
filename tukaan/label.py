@@ -40,4 +40,5 @@ class Label(BaseWidget):
             wraplength=max_line_length,
             style=style,
             text=text,
+            background="red",
         )
