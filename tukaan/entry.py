@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import warnings, re
+import re
+import warnings
 from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
 from ._misc import Color
 from ._utils import create_command
-
 
 EndAlias = Literal["end"]
 Regex = ...
