@@ -228,7 +228,8 @@ class MethodAndPropMixin:
         elif re.match(regex_str, sequence):
             search = re.search(regex_str, sequence)
             up_or_down = {"Down": "Press", "Up": "Release"}
-            tcl_sequence = f"<Key{up_or_down[search.group(1)]}-{_KEYSYMS[search.group(2)]}>"  # type: ignore
+            thing = search.group(2)  # type: ignore
+            tcl_sequence = f"<Key{up_or_down[search.group(1)]}-{_KEYSYMS[thing] if thing in _KEYSYMS else thing}>"  # type: ignore
 
         return tcl_sequence
 
@@ -246,16 +247,18 @@ class MethodAndPropMixin:
 
             for (_, type_, attr), string_value in zip(_BINDING_SUBSTS, args):
                 try:
+                    value = from_tcl(type_, string_value)
                     if attr == "keysymbol":
-                        value = reversed_dict(_KEYSYMS)[string_value]
-                    else:
-                        value = from_tcl(type_, string_value)
-                except (KeyError, ValueError, TukaanError):
+                        if value == "??":
+                            value = None
+                        elif value in _KEYSYMS.values():
+                            value = reversed_dict(_KEYSYMS)[string_value]
+                except (ValueError, TukaanError):
                     # ValueError when trying to int("??")
-                    # KeyError when key doesn't have keysym
                     value = None
 
                 setattr(event, attr, value)
+
             return func() if not sendevent else func(event)
 
         subst_str = " ".join(subs for subs, *_ in _BINDING_SUBSTS)
