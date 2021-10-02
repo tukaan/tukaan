@@ -4,6 +4,7 @@ from ._base import BaseWidget, TkWidget
 
 
 class ProgressBar(BaseWidget):
+    _tcl_class = "ttk::progressbar"
     _keys = {
         "focusable": (bool, "takefocus"),
         "max": int,
@@ -24,7 +25,6 @@ class ProgressBar(BaseWidget):
         BaseWidget.__init__(
             self,
             parent,
-            "ttk::progressbar",
             maximum=max,
             mode=mode,
             orient=orientation,
