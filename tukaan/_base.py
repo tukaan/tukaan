@@ -219,6 +219,19 @@ class MethodAndPropMixin:
                 ),
             )
 
+    def __parse_sequence(self, sequence: str) -> str:
+        tcl_sequence = sequence
+        regex_str = r"<Key(Down|Up):(.?)>"
+
+        if sequence in _VALID_BINDINGS:
+            tcl_sequence = _VALID_BINDINGS[sequence]
+        elif re.match(regex_str, sequence):
+            search = re.search(regex_str, sequence)
+            up_or_down = {"Down": "Press", "Up": "Release"}
+            tcl_sequence = f"<Key{up_or_down[search.group(1)]}-{_KEYSYMS[search.group(2)]}>"  # type: ignore
+
+        return tcl_sequence
+
     def _call_bind(
         self,
         widget_or_all: MethodAndPropMixin | Literal["all"],
@@ -228,19 +241,6 @@ class MethodAndPropMixin:
         sendevent: bool,
         data: Any,
     ) -> None:
-
-        tcl_sequence = sequence
-        regex_str = r"<Key(Down|Up):(.?)>"
-
-        if sequence in _VALID_BINDINGS:
-            tcl_sequence = _VALID_BINDINGS[sequence]
-        elif re.match(regex_str, sequence):
-            search = re.search(regex_str, sequence)
-            up_or_down = {"Down": "Press", "Up": "Release"}
-            tcl_sequence = (
-                f"<Key{up_or_down[search.group(1)]}-{_KEYSYMS[search.group(2)]}>"
-            )
-
         def _real_func(func: Callable, data: Any, sequence: str, *args):
             event = Event()
             event.data = data
@@ -267,12 +267,12 @@ class MethodAndPropMixin:
             None,
             "bind",
             widget_or_all,
-            tcl_sequence,
+            self.__parse_sequence(sequence),
             f"{'' if overwrite else '+'} if"
             + f" {{[{create_command(partial(_real_func, func, data, sequence))}"
             + f" {subst_str}] eq {{break}} }} {{ break }}"
             if callable(func)
-            else "",
+            else "",  # FIXME: this is disgustingly unreadable
         )
 
     def _bind(
