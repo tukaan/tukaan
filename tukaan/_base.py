@@ -2,14 +2,19 @@ from __future__ import annotations
 
 import collections.abc
 import contextlib
-from functools import partialmethod
+import re
+from functools import partial, partialmethod
 from typing import Any, Callable, Iterator, Literal
 
-from ._constants import _VALID_STATES
+from ._constants import _BINDING_ALIASES, _KEYSYMS, _VALID_STATES
+from ._event import Event
 from ._layouts import LayoutManager
+from ._misc import ScreenDistance, TukaanError
 from ._utils import (
     _callbacks,
     _widgets,
+    create_command,
+    from_tcl,
     get_tcl_interp,
     py_to_tcl_arguments,
     reversed_dict,
@@ -214,6 +219,88 @@ class MethodAndPropMixin:
                 ),
             )
 
+    def __parse_sequence(self, sequence: str) -> str:
+        tcl_sequence = sequence
+        regex_str = r"<Key(Down|Up):(.?)>"
+
+        if sequence in _BINDING_ALIASES:
+            tcl_sequence = _BINDING_ALIASES[sequence]
+        elif re.match(regex_str, sequence):
+            search = re.search(regex_str, sequence)
+            up_or_down = {"Down": "Press", "Up": "Release"}
+            thing = search.group(2)  # type: ignore
+            tcl_sequence = f"<Key{up_or_down[search.group(1)]}-{_KEYSYMS[thing] if thing in _KEYSYMS else thing}>"  # type: ignore
+
+        return tcl_sequence
+
+    def _call_bind(
+        self,
+        widget_or_all: MethodAndPropMixin | Literal["all"],
+        sequence: str,
+        func: Callable | Literal[""],
+        overwrite: bool,
+        sendevent: bool,
+        data: Any,
+    ) -> None:
+        def _real_func(func: Callable, data: Any, sequence: str, *args):
+            event = Event(sequence, func, data)
+
+            for (_, type_, attr), string_value in zip(_BINDING_SUBSTS, args):
+                try:
+                    value = from_tcl(type_, string_value)
+                    if attr == "keysymbol":
+                        if value == "??":
+                            value = None
+                        elif value in _KEYSYMS.values():
+                            value = reversed_dict(_KEYSYMS)[string_value]
+                except (ValueError, TukaanError):
+                    # ValueError when trying to int("??")
+                    value = None
+
+                setattr(event, attr, value)
+
+            return func() if not sendevent else func(event)
+
+        subst_str = " ".join(subs for subs, *_ in _BINDING_SUBSTS)
+
+        self._tcl_call(
+            None,
+            "bind",
+            widget_or_all,
+            self.__parse_sequence(sequence),
+            f"{'' if overwrite else '+'} if"
+            + f" {{[{create_command(partial(_real_func, func, data, sequence))}"
+            + f" {subst_str}] eq {{break}} }} {{ break }}"
+            if callable(func)
+            else "",  # FIXME: this is disgustingly unreadable
+        )
+
+    def _bind(
+        self,
+        what,
+        sequence: str,
+        func: Callable,
+        overwrite: bool = False,
+        sendevent: bool = False,
+        data=None,
+    ) -> None:
+        self._call_bind(
+            what if what == "all" else self, sequence, func, overwrite, sendevent, data
+        )
+
+    def _unbind(self, what, sequence: str):
+        self._call_bind(
+            what if what == "all" else self, sequence, "", True, False, None
+        )
+
+    def generate_event(self, sequence: str):
+        self._tcl_call(None, "event", "generate", self, self.__parse_sequence(sequence))
+
+    bind = partialmethod(_bind, "self")
+    unbind = partialmethod(_unbind, "self")
+    bind_global = partialmethod(_bind, "all")
+    unbind_global = partialmethod(_unbind, "all")
+
 
 class TukaanWidget:
     """Base class for every Tukaan widget"""
@@ -231,6 +318,20 @@ class TkWidget(MethodAndPropMixin):
         self._child_type_count: dict[type, int] = {}
         _widgets[self.tcl_path] = self
         self.child_stats = ChildStatistics(self)
+
+
+_BINDING_SUBSTS = (
+    ("%D", float, "delta"),
+    ("%K", str, "keysymbol"),
+    ("%k", str, "keycode"),
+    (r"%W", TkWidget, "widget"),
+    (r"%X", ScreenDistance, "rel_x"),
+    (r"%Y", ScreenDistance, "rel_y"),
+    (r"%height", ScreenDistance, "height"),
+    (r"%width", ScreenDistance, "width"),
+    (r"%x", ScreenDistance, "x"),
+    (r"%y", ScreenDistance, "y"),
+)
 
 
 class StateSet(collections.abc.MutableSet):
