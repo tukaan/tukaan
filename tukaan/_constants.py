@@ -46,19 +46,21 @@ _VALID_STATES: set[str] = {
     "invalid",
 }
 
-_VALID_BINDINGS = {
+_BINDING_ALIASES = {
+    "<KeyDown>": "<KeyPress>",
+    "<KeyUp>": "<KeyRelease>",
     "<MouseDown:Left>": "<ButtonPress-1>",
     "<MouseDown:Middle>": "<ButtonPress-2>",
     "<MouseDown:Right>": "<ButtonPress-3>",
     "<MouseDown>": "<ButtonPress>",
+    "<MouseEnter>": "<Enter>",
+    "<MouseLeave>": "<Leave>",
+    "<MouseMove>": "<Motion>",
     "<MouseUp:Left>": "<ButtonRelease-1>",
     "<MouseUp:Middle>": "<ButtonRelease-2>",
     "<MouseUp:Right>": "<ButtonRelease-3>",
     "<MouseUp>": "<ButtonRelease>",
     "<MouseWheelRotate>": "<MouseWheel>",
-    "<MouseMove>": "<Motion>",
-    "<KeyDown>": "<KeyPress>",
-    "<KeyUp>": "<KeyRelease>",
 }
 
 _KEYSYMS = {

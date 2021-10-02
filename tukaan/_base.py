@@ -6,7 +6,7 @@ import re
 from functools import partial, partialmethod
 from typing import Any, Callable, Iterator, Literal
 
-from ._constants import _KEYSYMS, _VALID_BINDINGS, _VALID_STATES
+from ._constants import _KEYSYMS, _BINDING_ALIASES, _VALID_STATES
 from ._event import Event
 from ._layouts import LayoutManager
 from ._misc import ScreenDistance, TukaanError
@@ -223,8 +223,8 @@ class MethodAndPropMixin:
         tcl_sequence = sequence
         regex_str = r"<Key(Down|Up):(.?)>"
 
-        if sequence in _VALID_BINDINGS:
-            tcl_sequence = _VALID_BINDINGS[sequence]
+        if sequence in _BINDING_ALIASES:
+            tcl_sequence = _BINDING_ALIASES[sequence]
         elif re.match(regex_str, sequence):
             search = re.search(regex_str, sequence)
             up_or_down = {"Down": "Press", "Up": "Release"}
