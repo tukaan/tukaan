@@ -242,10 +242,7 @@ class MethodAndPropMixin:
         data: Any,
     ) -> None:
         def _real_func(func: Callable, data: Any, sequence: str, *args):
-            event = Event()
-            event.data = data
-            event.callback = func
-            event.sequence = sequence
+            event = Event(sequence, func, data)
 
             for (_, type_, attr), string_value in zip(_BINDING_SUBSTS, args):
                 try:
