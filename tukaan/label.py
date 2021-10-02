@@ -5,6 +5,7 @@ from ._constants import _anchors
 
 
 class Label(BaseWidget):
+    _tcl_class = "ttk::label"
     _keys = {
         "anchor": _anchors,
         "focusable": (bool, "takefocus"),
@@ -33,7 +34,6 @@ class Label(BaseWidget):
         BaseWidget.__init__(
             self,
             parent,
-            "ttk::label",
             anchor=anchor,
             takefocus=focusable,
             justify=justify,

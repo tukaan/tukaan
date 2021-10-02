@@ -4,6 +4,7 @@ from ._base import BaseWidget, TkWidget
 
 
 class Button(BaseWidget):
+    _tcl_class = "ttk::button"
     _keys = {
         "on_click": ("func", "command"),
         "default": str,
@@ -28,7 +29,6 @@ class Button(BaseWidget):
         BaseWidget.__init__(
             self,
             parent,
-            "ttk::button",
             command=on_click,
             default=default,
             style=style,

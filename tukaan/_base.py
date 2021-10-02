@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import collections.abc
 import contextlib
-from typing import Any, Callable, Iterator
+from functools import partialmethod
+from typing import Any, Callable, Iterator, Literal
 
+from ._constants import _VALID_STATES
 from ._layouts import LayoutManager
 from ._utils import (
     _callbacks,
@@ -232,7 +234,10 @@ class TkWidget(MethodAndPropMixin):
 
 
 class StateSet(collections.abc.MutableSet):
-    """Object that contains the state of the widget, though it inherits from MutableSet, it behaves like a list"""
+    """
+    Object that contains the state of the widget,
+    though it inherits from MutableSet, it behaves like a list
+    """
 
     def __init__(self, widget: TkWidget) -> None:
         self._widget = widget
@@ -249,17 +254,22 @@ class StateSet(collections.abc.MutableSet):
     def __contains__(self, state: object) -> bool:
         return self._widget._tcl_call(bool, self._widget, "instate", state)
 
-    def add(self, state: str) -> None:
+    def add_or_discard(self, action: Literal["add", "discard"], state: str) -> None:
+        if state not in _VALID_STATES:
+            raise RuntimeError
+        if action == "discard":
+            state = f"!{state}"
+
         self._widget._tcl_call(None, self._widget, "state", state)
 
-    def discard(self, state: str) -> None:
-        self._widget._tcl_call(None, self._widget, "state", f"!{state}")
+    add: Callable[[str], None] = partialmethod(add_or_discard, "add")
+    discard: Callable[[str], None] = partialmethod(add_or_discard, "discard")
 
 
 class BaseWidget(TkWidget):
     _keys: dict[str, Any | tuple[Any, str]]
 
-    def __init__(self, parent: TkWidget | None, widget_name: str, **kwargs) -> None:
+    def __init__(self, parent: TkWidget | None, **kwargs) -> None:
         self.parent = parent or get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
         self._tcl_call: Callable = get_tcl_interp()._tcl_call
@@ -268,12 +278,14 @@ class BaseWidget(TkWidget):
 
         self.parent._children[self.tcl_path] = self
 
-        self._tcl_call(None, widget_name, self.tcl_path, *py_to_tcl_arguments(**kwargs))
+        self._tcl_call(
+            None, self._tcl_class, self.tcl_path, *py_to_tcl_arguments(**kwargs)
+        )
 
         self.layout = LayoutManager(self)
         self._temp_manager = None
 
-        if self._class.startswith("ttk::"):
+        if self._tcl_class.startswith("ttk::"):
             self.state = StateSet(self)
         # else:
         #     need to define separately for non-ttk widgets
