@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import collections
-from functools import singledispatchmethod
 import re
-from typing import cast, Tuple
+from functools import singledispatchmethod
+from typing import Tuple, cast
 
 from ._platform import Platform
 from ._utils import (
