@@ -2,12 +2,12 @@ from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
 from ._constants import _anchors
-from ._returntype import DictKey
 
 
 class Label(BaseWidget):
+    _tcl_class = "ttk::label"
     _keys = {
-        "anchor": DictKey(_anchors),
+        "anchor": _anchors,
         "focusable": (bool, "takefocus"),
         "justify": str,
         "max_line_length": (int, "wraplength"),
@@ -27,12 +27,13 @@ class Label(BaseWidget):
     ) -> None:
 
         if anchor is not None:
+            # can't use "" as anchor, so have to check if it's None
+            # ambiguous anchor "": must be ...
             anchor = _anchors[anchor]
 
         BaseWidget.__init__(
             self,
             parent,
-            "ttk::label",
             anchor=anchor,
             takefocus=focusable,
             justify=justify,

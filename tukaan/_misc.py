@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import collections
 import re
-from typing import cast
+from functools import singledispatchmethod
+from typing import Tuple, cast
 
 from ._platform import Platform
 from ._utils import (
@@ -33,7 +34,7 @@ class HEX:
     def from_hex(hex) -> tuple[int, ...]:
         int_value = int(hex.lstrip("#"), 16)
         return cast(
-            tuple[int, ...], (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF)
+            Tuple[int, ...], (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF)
         )
 
 
@@ -57,14 +58,14 @@ class HSV:
         elif high == b:
             h = (60 * ((r - g) / diff) + 240) % 360
 
-        return cast(tuple[int, ...], tuple(intround(x) for x in (h, s, v)))
+        return cast(Tuple[int, ...], tuple(intround(x) for x in (h, s, v)))
 
     @staticmethod
     def from_hsv(h, s, v) -> tuple[int, ...]:
         h, s, v = h / 360, s / 100, v / 100
 
         if s == 0.0:
-            return cast(tuple[int, ...], tuple(intround(x * 255) for x in (v, v, v)))
+            return cast(Tuple[int, ...], tuple(intround(x * 255) for x in (v, v, v)))
 
         i = intround(h * 6.0)
         f = (h * 6.0) - i
@@ -80,7 +81,7 @@ class HSV:
             (v, p, q),
         )[int(i % 6)]
 
-        return cast(tuple[int, ...], tuple(intround(x * 255) for x in (r, g, b)))
+        return cast(Tuple[int, ...], tuple(intround(x * 255) for x in (r, g, b)))
 
 
 class CMYK:
@@ -96,7 +97,7 @@ class CMYK:
         m = (m - k) / (1 - k)
         y = (y - k) / (1 - k)
 
-        return cast(tuple[int, ...], tuple(intround(x * 100) for x in (c, m, y, k)))
+        return cast(Tuple[int, ...], tuple(intround(x * 100) for x in (c, m, y, k)))
 
     @staticmethod
     def from_cmyk(c, m, y, k) -> tuple[int, ...]:
@@ -104,30 +105,34 @@ class CMYK:
         g = 1.0 - (m + k) / 100.0
         b = 1.0 - (y + k) / 100.0
 
-        return cast(tuple[int, ...], tuple(intround(x * 255) for x in (r, g, b)))
+        return cast(Tuple[int, ...], tuple(intround(x * 255) for x in (r, g, b)))
 
 
 # TODO: hsl, yiq
 class Color:
     _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk"}
 
-    def __init__(self, color: str | tuple[int, ...], space: str = "hex") -> None:
-        if space == "hex" and isinstance(color, str):
-            rgb = HEX.from_hex(color)
+    @singledispatchmethod
+    def __init__(self) -> None:
+        ...
 
-        elif space == "rgb" and isinstance(color, tuple) and len(color) == 3:
-            rgb = color
+    @__init__.register
+    def _(self, colorname: str) -> None:
+        self.red, self.green, self.blue = HEX.from_hex(colorname)
 
-        elif space == "hsv" and isinstance(color, tuple) and len(color) == 3:
-            rgb = HSV.from_hsv(*color)
-
-        elif space == "cmyk" and isinstance(color, tuple) and len(color) == 4:
-            rgb = CMYK.from_cmyk(*color)
-
-        else:
-            raise ColorError(self._what_is_the_problem(color, space))
-
-        self.red, self.green, self.blue = rgb
+    @__init__.register
+    def _(self, color: tuple, space: str = "rgb") -> None:
+        try:
+            if space == "rgb":
+                self.red, self.green, self.blue = color
+            elif space == "hsv":
+                self.red, self.green, self.blue = HSV.from_hsv(*color)
+            elif space == "cmyk":
+                self.red, self.green, self.blue = CMYK.from_cmyk(*color)
+            else:
+                raise ColorError
+        except (ValueError, ColorError):
+            raise ColorError(self._what_is_the_problem(color, space)) from None
 
     def _what_is_the_problem(self, color: str | tuple[int, ...], space: str) -> str:
         length_dict = {"rgb": 3, "hsv": 3, "cmyk": 4}
@@ -139,9 +144,15 @@ class Color:
         elif space in {"rgb", "hsv", "cmyk"} and not isinstance(color, tuple):
             return f"{color!r} is not a valid {space} color. A tuple is expected."
         elif space in {"rgb", "hsv", "cmyk"} and len(color) != length_dict[space]:
+            plus_str = ""
+            if len(color) in reversed_dict(length_dict):
+                plus_str = (
+                    f" You passed in a {reversed_dict(length_dict)[len(color)]} color."
+                )
             return (
                 f"{color!r} is not a valid {space} color. A tuple with length of"
                 + f" {length_dict[space]} is expected."
+                + plus_str
             )
 
         return "Not implemented tukaan.Color error."  # shouldn't get here
@@ -152,10 +163,10 @@ class Color:
             + f" blue={self.blue})"
         )
 
-    __str__ = __repr__
-
     def to_tcl(self) -> str:
         return self.hex
+
+    __str__ = to_tcl
 
     @classmethod
     def from_tcl(cls, tcl_value) -> Color:
@@ -436,6 +447,9 @@ class Screen(metaclass=ClassPropertyMetaClass):
     def dpi(cls) -> float:
         return get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", "1i")
 
+    def __str__(self) -> str:
+        return f"{self.width.px};{self.height.px}"
+
 
 class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
     """An object to convert between different screen distance units"""
@@ -464,11 +478,10 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
     def __repr__(self) -> str:
         return f"{type(self).__name__}(distance={self.distance}px))"
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}(distance={self.distance}px))"
-
     def to_tcl(self) -> str:
         return str(self.distance)
+
+    __str__ = to_tcl
 
     @classmethod
     def from_tcl(cls, tcl_value: int) -> ScreenDistance:

@@ -1,12 +1,12 @@
 from typing import Callable, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._returntype import Callback
 
 
 class Button(BaseWidget):
+    _tcl_class = "ttk::button"
     _keys = {
-        "on_click": (Callback, "command"),
+        "on_click": ("func", "command"),
         "default": str,
         "focusable": (bool, "takefocus"),
         "style": str,
@@ -29,7 +29,6 @@ class Button(BaseWidget):
         BaseWidget.__init__(
             self,
             parent,
-            "ttk::button",
             command=on_click,
             default=default,
             style=style,
