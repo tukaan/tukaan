@@ -50,13 +50,15 @@ _VALID_BINDINGS = {
     "<MouseDown:Left>": "<ButtonPress-1>",
     "<MouseDown:Middle>": "<ButtonPress-2>",
     "<MouseDown:Right>": "<ButtonPress-3>",
+    "<MouseDown>": "<ButtonPress>",
     "<MouseUp:Left>": "<ButtonRelease-1>",
     "<MouseUp:Middle>": "<ButtonRelease-2>",
     "<MouseUp:Right>": "<ButtonRelease-3>",
+    "<MouseUp>": "<ButtonRelease>",
     "<MouseWheelRotate>": "<MouseWheel>",
     "<MouseMove>": "<Motion>",
-    "<KeyDown:{}>": "<KeyPress-{}>",
-    "<KeyUp:{}>": "<KeyRelease-{}>",
+    "<KeyDown>": "<KeyPress>",
+    "<KeyUp>": "<KeyRelease>",
 }
 
 _KEYSYMS = {

@@ -253,8 +253,9 @@ class MethodAndPropMixin:
                         value = reversed_dict(_KEYSYMS)[string_value]
                     else:
                         value = from_tcl(type_, string_value)
-                except (ValueError, TukaanError):
-                    # happens when trying to int("??")
+                except (KeyError, ValueError, TukaanError):
+                    # ValueError when trying to int("??")
+                    # KeyError when key doesn't have keysym
                     value = None
 
                 setattr(event, attr, value)
