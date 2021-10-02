@@ -38,10 +38,14 @@ _window_pos: set[str] = {
 }
 
 _VALID_STATES: set[str] = {
+    "active",
+    "alternate",
+    "background",
     "disabled",
     "focus",
-    "active",
     "hover",
-    "alternate",
     "invalid",
+    "pressed",
+    "readonly",
+    "selected",
 }
