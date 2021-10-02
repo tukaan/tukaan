@@ -2,9 +2,9 @@ from typing import Any, Callable
 
 
 class Event:
+    callback: Callable
     data: Any
     sequence: str
-    callback: Callable
 
     def __init__(self, sequence: str, func: Callable, data: Any) -> None:
         self.sequence = sequence
@@ -13,7 +13,7 @@ class Event:
 
     def __repr__(self) -> str:
         ignored_values = {None, "??", -1, 0}
-        relevant_attrs = ("delta", "sequence", "keysymbol")
+        relevant_attrs = ("delta", "sequence", "keysymbol", "keycode")
         pairs = []
 
         for name in relevant_attrs:

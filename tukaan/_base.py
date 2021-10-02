@@ -6,7 +6,7 @@ import re
 from functools import partial, partialmethod
 from typing import Any, Callable, Iterator, Literal
 
-from ._constants import _KEYSYMS, _BINDING_ALIASES, _VALID_STATES
+from ._constants import _BINDING_ALIASES, _KEYSYMS, _VALID_STATES
 from ._event import Event
 from ._layouts import LayoutManager
 from ._misc import ScreenDistance, TukaanError
@@ -293,6 +293,9 @@ class MethodAndPropMixin:
             what if what == "all" else self, sequence, "", True, False, None
         )
 
+    def generate_event(self, sequence: str):
+        self._tcl_call(None, "event", "generate", self, self.__parse_sequence(sequence))
+
     bind = partialmethod(_bind, "self")
     unbind = partialmethod(_unbind, "self")
     bind_global = partialmethod(_bind, "all")
@@ -318,13 +321,16 @@ class TkWidget(MethodAndPropMixin):
 
 
 _BINDING_SUBSTS = (
-    (r"%W", TkWidget, "widget"),
-    ("%K", str, "keysymbol"),
     ("%D", float, "delta"),
+    ("%K", str, "keysymbol"),
+    ("%k", str, "keycode"),
+    (r"%W", TkWidget, "widget"),
+    (r"%X", ScreenDistance, "rel_x"),
+    (r"%Y", ScreenDistance, "rel_y"),
+    (r"%height", ScreenDistance, "height"),
+    (r"%width", ScreenDistance, "width"),
     (r"%x", ScreenDistance, "x"),
     (r"%y", ScreenDistance, "y"),
-    (r"%width", ScreenDistance, "width"),
-    (r"%height", ScreenDistance, "height"),
 )
 
 
