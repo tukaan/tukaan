@@ -5,7 +5,7 @@ import warnings
 from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._misc import Color
+from ._misc import Color, ScreenDistance
 from ._utils import py_to_tcl_arguments
 
 EndAlias = Literal["end"]
@@ -20,6 +20,7 @@ class Entry(BaseWidget):
         "justify": str,
         "style": str,
         "on_xscroll": ("func", "xscrollcommand"),
+        "width": ScreenDistance,
     }
 
     start = 0
@@ -35,7 +36,7 @@ class Entry(BaseWidget):
         justify: Optional[Literal["center", "left", "right"]] = None,
         style: Optional[str] = None,
         validation: Optional[
-            Literal["int", "float", "email", "hex-color"] | str
+            Literal["int", "float", "email", "hex-rgb", "hex-rgba"] | str
         ] = None,
         width: Optional[int] = None,
     ) -> None:
@@ -128,8 +129,14 @@ class Entry(BaseWidget):
         else:
             self.state.add("invalid")
 
-    def x_scroll(self, *args):
-        self._tcl_call(None, self, "xview", *args)
+    def char_bbox(self, index: int | EndAlias):
+        result = self._tcl_call((int,), self, "bbox", index)
+        return {
+            "left": result[0],
+            "right": result[0] + result[2],
+            "top": result[1],
+            "bottom": result[1] + result[3],
+        }
 
     def clear(self) -> None:
         self._tcl_call(None, self, "delete", 0, "end")
@@ -202,3 +209,6 @@ class Entry(BaseWidget):
     @validation.setter
     def validation(self, *_) -> None:
         warnings.warn("Can't update validation. This isn't a modifiable attribute.")
+
+    def x_scroll(self, *args):
+        self._tcl_call(None, self, "xview", *args)
