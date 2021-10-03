@@ -19,6 +19,7 @@ class Entry(BaseWidget):
         "hide_chars_with": (str, "show"),
         "justify": str,
         "style": str,
+        "on_xscroll": ("func", "xscrollcommand"),
     }
 
     start = 0
@@ -126,6 +127,9 @@ class Entry(BaseWidget):
             self.state.discard("invalid")
         else:
             self.state.add("invalid")
+
+    def x_scroll(self, *args):
+        self._tcl_call(None, self, "xview", *args)
 
     def clear(self) -> None:
         self._tcl_call(None, self, "delete", 0, "end")
