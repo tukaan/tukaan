@@ -4,6 +4,7 @@ from .app import App
 from .button import Button
 from .label import Label
 from .progressbar import ProgressBar
+from .scrollbar import Scrollbar
 from .separator import Separator
 from .slider import Slider
 from .timeout import Timeout
