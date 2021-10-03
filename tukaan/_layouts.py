@@ -159,6 +159,8 @@ class Grid:
         if cell:
             self._set_cell(cell)
 
+        self._real_manager = "grid"
+
     def _set_cell(self, cell: str) -> None:
         try:
             row = self._widget.parent.layout._grid_cells_values[cell]["row"]
@@ -330,6 +332,8 @@ class Position:
         if self._widget in self._widget.parent.layout._cell_managed_children:
             del self._widget.parent.layout._cell_managed_children[self._widget]
 
+        self._real_manager = "place"
+
     def _parse_possibly_relative_values(
         self, names: tuple[str, ...], values: tuple[ScrDstAlias, ...]
     ) -> ScrDstRtrnAlias:
@@ -388,6 +392,8 @@ class BaseLayoutManager(GridCells, GridTemplates):
 
 
 class LayoutManager(BaseLayoutManager, Grid, Position):
+    _real_manager: str
+
     def _get_manager(self):
         return self._widget._tcl_call(str, "winfo", "manager", self._widget)
 
@@ -438,9 +444,10 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
                     )
                 setattr(self, key, value)
 
-    def _config(self, _lm: Optional[Literal["grid", "place"]] = None, **kwargs) -> None:
+    def _config(self, _lm: Literal["grid", "place"] = None, **kwargs) -> None:
         if _lm is None:
             _lm = self._get_manager()
+        self._real_manager = _lm
         self._widget._tcl_call(
             None, _lm, "configure", self._widget, *py_to_tcl_arguments(**kwargs)
         )

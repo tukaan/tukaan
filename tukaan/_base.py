@@ -54,6 +54,7 @@ class ChildStatistics:
 class MethodAndPropMixin:
     _tcl_call: Callable
     _keys: dict[str, Any]
+    layout: LayoutManager
     tcl_path: str
     wm_path: str
     parent: TkWidget
@@ -175,35 +176,29 @@ class MethodAndPropMixin:
     def height(self) -> int:
         return self._tcl_call(int, "winfo", "height", self)
 
+    def focus(self):
+        self._tcl_call(None, "focus", self)
+
     def hide(self):
         if self.tcl_path == ".app" or self._class == "Toplevel":
             self._tcl_call(None, "wm", "withdraw", self.wm_path)
-        else:
-            manager = self._tcl_call(str, "winfo", "manager", self)
-            self._temp_manager = manager
-            if manager == "grid":
-                self._tcl_call(None, "grid", "remove", self.tcl_path)
-            elif manager == "place":
-                self._temp_position_info = self._tcl_call(
-                    {
-                        "-x": int,
-                        "-y": int,
-                        "-anchor": str,
-                        "-width": int,
-                        "-height": int,
-                    },
-                    "place",
-                    "info",
-                    self.tcl_path,
-                )
-                self._tcl_call(None, "place", "forget", self.tcl_path)
+        elif self.layout._real_manager == "grid":
+            self._tcl_call(None, "grid", "remove", self.tcl_path)
+        elif self.layout._real_manager == "place":
+            self._temp_position_info = self._tcl_call(
+                {"-x": int, "-y": int, "-anchor": str, "-width": int, "-height": int},
+                "place",
+                "info",
+                self.tcl_path,
+            )
+            self._tcl_call(None, "place", "forget", self.tcl_path)
 
     def unhide(self):
         if self.tcl_path == ".app" or self._class == "Toplevel":
             self._tcl_call(None, "wm", "deiconify", self.wm_path)
-        elif self._temp_manager == "grid":
+        elif self.layout._real_manager == "grid":
             self._tcl_call(None, "grid", "configure", self.tcl_path)
-        elif self._temp_manager == "place":
+        elif self.layout._real_manager == "place":
             self._tcl_call(
                 None,
                 (
@@ -221,7 +216,7 @@ class MethodAndPropMixin:
 
     def __parse_sequence(self, sequence: str) -> str:
         tcl_sequence = sequence
-        regex_str = r"<Key(Down|Up):(.?)>"
+        regex_str = r"<Key(Down|Up):(.*?)>"
 
         if sequence in _BINDING_ALIASES:
             tcl_sequence = _BINDING_ALIASES[sequence]

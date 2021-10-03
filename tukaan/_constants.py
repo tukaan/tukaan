@@ -131,4 +131,6 @@ _KEYSYMS = {
     "˛": "ogonek",
     "˝": "doubleacute",
     '"': "quotedbl",
+    "Backspace": "BackSpace",
+    "Enter": "Return",
 }
