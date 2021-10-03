@@ -4,6 +4,7 @@ from ._base import BaseWidget, TkWidget
 
 
 class Scrollbar(BaseWidget):
+    _tcl_class = "ttk::scrollbar"
     _keys = {
         "focusable": (bool, "takefocus"),
         "orientation": (str, "orient"),
@@ -19,9 +20,7 @@ class Scrollbar(BaseWidget):
     ) -> None:
         self._auto_hide = auto_hide
 
-        BaseWidget.__init__(
-            self, parent, "ttk::scrollbar", orient=orientation, takefocus=focusable
-        )
+        BaseWidget.__init__(self, parent, orient=orientation, takefocus=focusable)
 
     @property
     def auto_hide(self):
