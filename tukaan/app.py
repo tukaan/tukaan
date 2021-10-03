@@ -19,12 +19,12 @@ class App(WindowMixin, TkWidget):
 
     def __init__(
         self,
-        title: str = "Tukaan window",
+        title: Optional[str] = "Tukaan window",
         width: int = 200,
         height: int = 200,
-        transparency: int = 1,
-        topmost: bool = False,
-        fullscreen: bool = False,
+        transparency: Optional[int] = None,
+        topmost: Optional[bool] = None,
+        fullscreen: Optional[bool] = None,
         theme: Optional[str] = "native",
     ) -> None:
 
@@ -45,6 +45,7 @@ class App(WindowMixin, TkWidget):
             False,
             None,
         )
+
         self.app.loadtk()
 
         self.layout: BaseLayoutManager = BaseLayoutManager(self)
@@ -54,11 +55,16 @@ class App(WindowMixin, TkWidget):
         self._tcl_call(None, "ttk::frame", ".app")
         self._tcl_call(None, "pack", ".app", "-expand", "1", "-fill", "both")
 
-        self.title = title
-        self.topmost = topmost
-        self.transparency = transparency
+        if title is not None:
+            self.title = title
+        if topmost is not None:
+            self.topmost = topmost
+        if transparency is not None:
+            self.transparency = transparency
+        if fullscreen is not None:
+            self.fullscreen = fullscreen
+
         self.size = width, height
-        self.fullscreen = fullscreen
         self.theme = theme
 
     def _tcl_call(self, return_type: Any, *args) -> Any:
