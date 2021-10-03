@@ -6,7 +6,7 @@ from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
 from ._misc import Color
-from ._utils import create_command, py_to_tcl_arguments
+from ._utils import py_to_tcl_arguments
 
 EndAlias = Literal["end"]
 
@@ -66,6 +66,7 @@ class Entry(BaseWidget):
         return text in self.get()
 
     def __set_validation(self, validation):
+        self._validation = validation
         vcmd = None
         strict_regex = None
         regex = None
@@ -189,3 +190,11 @@ class Entry(BaseWidget):
                 + " None to clear the selection",
                 stacklevel=3,
             )
+
+    @property
+    def validation(self) -> None:
+        return self._validation
+
+    @validation.setter
+    def validation(self, *_) -> None:
+        warnings.warn("Can't update validation. This isn't a modifiable attribute.")
