@@ -239,7 +239,7 @@ class MethodAndPropMixin:
     def _call_bind(
         self,
         widget_or_all: MethodAndPropMixin | Literal["all"],
-        sequence: str,
+        sequence_s: tuple[str, ...] | str,
         func: Callable | Literal[""],
         overwrite: bool,
         sendevent: bool,
@@ -266,22 +266,25 @@ class MethodAndPropMixin:
 
         subst_str = " ".join(subs for subs, *_ in _BINDING_SUBSTS)
 
-        self._tcl_call(
-            None,
-            "bind",
-            widget_or_all,
-            self.__parse_sequence(sequence),
-            f"{'' if overwrite else '+'} if"
-            + f" {{[{create_command(partial(_real_func, func, data, sequence))}"
-            + f" {subst_str}] eq {{break}} }} {{ break }}"
-            if callable(func)
-            else "",  # FIXME: this is disgustingly unreadable
-        )
+        if isinstance(sequence_s, str):
+            sequence_s = (sequence_s,)
+        for sequence in sequence_s:
+            self._tcl_call(
+                None,
+                "bind",
+                widget_or_all,
+                self.__parse_sequence(sequence),
+                f"{'' if overwrite else '+'} if"
+                + f" {{[{create_command(partial(_real_func, func, data, sequence))}"
+                + f" {subst_str}] eq {{break}} }} {{ break }}"
+                if callable(func)
+                else "",  # FIXME: this is disgustingly unreadable
+            )
 
     def _bind(
         self,
         what,
-        sequence: str,
+        sequence: tuple[str, ...] | str,
         func: Callable,
         overwrite: bool = False,
         sendevent: bool = False,
