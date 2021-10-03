@@ -196,6 +196,9 @@ def to_tcl(value: Any) -> Any:
     if isinstance(value, bool):
         return "1" if value else "0"
 
+    if hasattr(value, "tcl_path"):
+        return value.tcl_path
+
     if hasattr(value, "to_tcl"):
         return value.to_tcl()
 
