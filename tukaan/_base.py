@@ -224,7 +224,7 @@ class MethodAndPropMixin:
 
     def __parse_sequence(self, sequence: str) -> str:
         tcl_sequence = sequence
-        regex_str = r"<Key(Down|Up):(.?)>"
+        regex_str = r"<Key(Down|Up):(.*?)>"
 
         if sequence in _BINDING_ALIASES:
             tcl_sequence = _BINDING_ALIASES[sequence]

@@ -6,13 +6,13 @@ from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
 from ._misc import Color
-from ._utils import create_command
+from ._utils import create_command, py_to_tcl_arguments
 
 EndAlias = Literal["end"]
-Regex = ...
 
 
 class Entry(BaseWidget):
+    _tcl_class = "ttk::entry"
     _keys = {
         "color": (Color, "foreground"),
         "focusable": (bool, "takefocus"),
@@ -34,7 +34,7 @@ class Entry(BaseWidget):
         justify: Optional[Literal["center", "left", "right"]] = None,
         style: Optional[str] = None,
         validation: Optional[
-            Literal["int", "float", "email", "hex-color"] | Regex
+            Literal["int", "float", "email", "hex-color"] | str
         ] = None,
         width: Optional[int] = None,
     ) -> None:
@@ -43,48 +43,18 @@ class Entry(BaseWidget):
         if not hide_chars:
             hide_chars_with = None
 
-        vcmd = None
-
-        if validation == "int":
-            vcmd = (create_command(self._validate_int), "%S")
-        elif validation == "float":
-            vcmd = (
-                create_command(self._validate_int),
-                "%S",
-            )  # FIXME: it doesn't allow dots
-        #     self.bind(
-        #         ("<FocusIn>", "<FocusOut>"), self._validate_regex, args=r"[0-9\.]"
-        #     )
-        # elif validation == "email":
-        #     self.bind(
-        #         ("<FocusIn>", "<FocusOut>"),
-        #         self._validate_regex,
-        #         args=r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
-        #     )
-        # elif validation == "hex-color":
-        #     self.bind(
-        #         ("<FocusIn>", "<FocusOut>"),
-        #         self._validate_regex,
-        #         args=r"^#(?:[0-9a-fA-F]{3}){1,2}$",
-        #     )
-        # else:
-        #     self.bind(
-        #         ("<FocusIn>", "<FocusOut>"), self._validate_regex, args=validation
-        #     )
-
         BaseWidget.__init__(
             self,
             parent,
-            "ttk::entry",
             foreground=color,
             justify=justify,
             show=hide_chars_with,
             style=style,
             takefocus=focusable,
-            validatecommand=vcmd,
-            validate="all",
             width=width,
         )
+
+        self.__set_validation(validation)
 
     def __len__(self):
         return len(self.get())
@@ -95,18 +65,62 @@ class Entry(BaseWidget):
     def __contains__(self, text: str):
         return text in self.get()
 
+    def __set_validation(self, validation):
+        vcmd = None
+        strict_regex = None
+        regex = None
+
+        if validation == "int":
+            strict_regex = r"[0-9]"
+        elif validation == "float":
+            strict_regex = r"[0-9\.]"
+            self.bind(
+                ("<FocusIn>", "<FocusOut>", "<KeyUp>", "<KeyUp:Enter>"),
+                self._validate_float,
+            )
+        elif validation == "email":
+            regex = r"""(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"""
+        elif validation == "hex-rgb":
+            regex = r"^#(?:[a-fA-F0-9]{3}){1,2}$|#(?:[a-fA-F0-9]{4}){1,2}$"
+        elif validation == "hex-rgba":
+            regex = r"^#(?:[a-fA-F0-9]{3}){1,2}$"
+        elif validation:
+            regex = validation
+
+        if regex is not None:
+            self.bind(
+                ("<FocusIn>", "<FocusOut>", "<KeyUp:Enter>"),
+                lambda: self._validate_regex(regex),
+            )
+        if strict_regex is not None:
+            vcmd = (lambda string: self._strict_regex(strict_regex, string), "%S")
+
+        if vcmd is not None:
+            self._tcl_call(
+                None,
+                self,
+                "config",
+                *py_to_tcl_arguments(validatecommand=vcmd, validate="all"),
+            )
+
     def _repr_details(self) -> str:
         value = self.value
         return f"value='{value if len(value) <= 10 else value[:10] + '...'}'"
 
-    def _validate_int(self, newly_entered: str):
-        try:
-            int(newly_entered)
-            return True
-        except ValueError:
-            return False
+    def _strict_regex(self, regex: str, newly_entered: str) -> bool:
+        return bool(re.match(regex, newly_entered))
 
-    def _validate_regex(self, regex: str):
+    def _validate_float(self) -> None:
+        if self.get() == "":
+            return self.state.discard("invalid")
+        try:
+            float(self.get())
+        except ValueError:
+            self.state.add("invalid")
+        else:
+            self.state.discard("invalid")
+
+    def _validate_regex(self, regex: str) -> None:
         if self.get() == "" or re.fullmatch(regex, self.get()):
             self.state.discard("invalid")
         else:
@@ -163,7 +177,7 @@ class Entry(BaseWidget):
     def selection(
         self, new_selection_range: tuple[int | EndAlias, int | EndAlias] | None  # type: ignore
     ) -> None:
-        # it's guite a bad practice that the getter returns a str, but the setter expects a tuple
+        # it's quite a bad thing that the getter returns a str, but the setter expects a tuple
         if isinstance(new_selection_range, tuple) and len(new_selection_range) == 2:
             start, end = new_selection_range
             self._tcl_call((int,), self, "selection", "range", start, end)
