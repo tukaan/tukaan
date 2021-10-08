@@ -38,11 +38,7 @@ class MyApp(tukaan.App):
 
         self.button = tukaan.Button(self, text="Button")
         self.button.callback = lambda: print("ok")
-
-        self.pack_widgets()
-	
-    def pack_widgets(self):
-        self.button.pack()
+        self.button.layout.grid(row=0, column=0, margin=(1, 2, 3, 4))
 
 
 def main():
@@ -52,10 +48,91 @@ if __name__ == "__main__":
     main() 
 ```
 
-### Some very nice things in tukaan
+## Some very nice things in tukaan
 
-#### Get clipboard content
+### Lay out widgets in a griddy system
+You can specify cells for the grid layout in a list of sublists to set rows, columns, rowspans, and columnspans for the widgets, making it super easy and apparent what the layout will look like. 
+```python
+import tukaan
 
+
+class MyApp(tukaan.App):
+    def __init__(self):
+        tukaan.App.__init__(self)
+
+        self.layout.grid_cells = [["button", "button"], ["label", "entry"]]
+
+        self.button = tukaan.Button(self, text="Button")
+        self.label = tukaan.Label(self, text="Label")
+        self.entry = tukaan.Entry(self)
+
+        self.button.layout.grid(cell="button", align="stretch")
+        self.label.layout.grid(cell="label", align="stretch")
+        self.entry.layout.grid(cell="entry", align="stretch")
+        
+
+
+def main():
+    MyApp().run()
+
+
+if __name__ == "__main__":
+    main()
+```
+Extending widgets isn’t that hard, so you just need to template the rows or columns, and you need to set *stretchiness* on the widget.
+```python
+import tukaan
+
+
+class MyApp(tukaan.App):
+    def __init__(self):
+        tukaan.App.__init__(self)
+
+        self.layout.grid_col_template = (1, 0, 2)
+
+        for col, (name, text) in enumerate(zip(
+            ("button_1", "button_2", "button_3"),
+            ("Button 1", "Button 2", "Button 3")
+        )):
+            setattr(self, name, tukaan.Button(self, text=text))
+            getattr(self, name).layout.grid(row=0, col=col, align="stretch")
+
+
+def main():
+    MyApp().run()
+
+
+if __name__ == "__main__":
+    main()
+```
+
+You can easily set margins for your widgets ...\
+*the same for every side*
+```python
+widget.layout.grid(cell="some_cell", margin=(2))
+```
+*different horizontal and vertical*
+```python
+widget.layout.grid(cell="some_cell", margin=(2, 10))
+```
+*2 on top, 10 on right, 6 on bottom and 10 on left*
+```python
+widget.layout.grid(cell="some_cell", margin=(2, 10, 6))
+```
+*2 on top, 10 on top, 6 on right, 4 on left*
+```python
+widget.layout.grid(cell="some_cell", margin=(2, 10, 6, 4))
+```
+... and you can simply modify any attributes
+```python
+widget.layout.cell = "other_cell"
+```
+```python
+widget.layout.config(margin=0)
+```
+
+### Get clipboard content
+TODO: currently not working with images
 ```python
 print(tukaan.Clipboard.get())
 
@@ -64,22 +141,20 @@ print(tukaan.Clipboard.get())
 print(tukaan.Clipboard.content)
 ```
 
-#### When was the user last active on the computer
-
+### When was the user last active on the computer
 ```python
 print("User last active", tukaan.App().user_last_active, "seconds ago.")
 ```
 
-#### Centering a window on the screen
-For some reason it doesn't work sometimes
+### Centering a window on the screen
+FIXME: For some reason it doesn't work sometimes
 
 ```python
 app = tukaan.App()
 app.position = "center"
 ```
 
-#### Color conversions
-
+### Color conversions
 ```python
 color = tukaan.Color("#007fff")
 print(color.rgb)
@@ -90,9 +165,9 @@ print(color.cmyk)
 >>> (100, 50, 0, 0)
 ```
 
-#### Screen information
+### Screen information
 ```python
-screen = tukaan.Screen()
+screen = tukaan.Screen()  # you don't need to instanciate it
 print(screen.width)
 >>> 1920
 print(screen.height)
@@ -101,16 +176,28 @@ print(screen.dpi)
 >>> 72
 ```
 
+### Cursor stuff
+```python
+cursor = tukaan.Cursor  # not instanciate it, just have a reference
+print(cursor.x)
+>>> 123
+print(cursor.y)
+>>> 456
+cursor.x = 456  # cursor moved
+print(cursor.position)
+>>> (456, 456)
+```
+
 
 
 ## Credits
 - Logo design:
 
-     Inspired by Tajulislam12's design: [`https://dribbble.com/shots/14487668-toucan-logo-design-Icon`](https://dribbble.com/shots/14487668-toucan-logo-design-Icon)
+    Inspired by Tajulislam12's design: [`https://dribbble.com/shots/14487668-toucan-logo-design-Icon`](https://dribbble.com/shots/14487668-toucan-logo-design-Icon)
 
 - Logo font:
 
-     Stick No Bills by Mooniak: [`https://fonts.google.com/specimen/Stick+No+Bills`](https://fonts.google.com/specimen/Stick+No+Bills)
+    Stick No Bills by Mooniak: [`https://fonts.google.com/specimen/Stick+No+Bills`](https://fonts.google.com/specimen/Stick+No+Bills)
 
 - Many thing in Tukaan is based on:
 
