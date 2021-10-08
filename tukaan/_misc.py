@@ -18,7 +18,7 @@ from ._utils import (
     get_tcl_interp,
     reversed_dict,
     to_tcl,
-    update_before,
+    update_after,
 )
 
 intround = lambda x: int(round(x, 0))
@@ -283,10 +283,20 @@ class Cursor(
         return get_tcl_interp()._tcl_call(int, "winfo", "pointerx", ".")
 
     @x.setter
-    @update_before
+    @update_after
     def x(cls, new_x: int) -> None:
         get_tcl_interp()._tcl_call(
-            None, "event", "generate", ".", "<Motion>", "-warp", "1", "-x", new_x
+            None,
+            "event",
+            "generate",
+            ".",
+            "<Motion>",
+            "-warp",
+            "1",
+            "-x",
+            new_x,
+            "-y",
+            cls.y,
         )
 
     @classproperty
@@ -294,18 +304,28 @@ class Cursor(
         return get_tcl_interp()._tcl_call(int, "winfo", "pointery", ".")
 
     @y.setter
-    @update_before
+    @update_after
     def y(cls, new_y: int) -> None:
         get_tcl_interp()._tcl_call(
-            None, "event", "generate", ".", "<Motion>", "-warp", "1", "-y", new_y
+            None,
+            "event",
+            "generate",
+            ".",
+            "<Motion>",
+            "-warp",
+            "1",
+            "-y",
+            new_y,
+            "-x",
+            cls.x,
         )
 
     @classproperty
     def position(cls) -> tuple[int, int]:  # type: ignore
-        return (cls.x(), cls.y())
+        return (cls.x, cls.y)
 
     @position.setter
-    @update_before
+    @update_after
     def position(cls, new_pos: int | tuple[int, int] | list[int]) -> None:
         if isinstance(new_pos, (tuple, list)) and len(new_pos) > 1:
             x, y = new_pos
