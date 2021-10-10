@@ -1,7 +1,4 @@
 # Tukaan
-<p align="center">
-  <img src="big_logo.png" alt="Tukaan logo">
-</p>
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-1c1c1c.svg)](https://github.com/psf/black)
 
