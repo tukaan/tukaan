@@ -9,9 +9,7 @@ class Timeout:
 
         self._func = func
 
-        self.id = get_tcl_interp()._tcl_call(
-            str, "after", int(time * 1000), self._call_func
-        )
+        self.id = get_tcl_interp()._tcl_call(str, "after", int(time * 1000), self._call_func)
 
         _timeouts[self._name] = self
 

@@ -33,9 +33,7 @@ class HEX:
     @staticmethod
     def from_hex(hex) -> tuple[int, ...]:
         int_value = int(hex.lstrip("#"), 16)
-        return cast(
-            Tuple[int, ...], (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF)
-        )
+        return cast(Tuple[int, ...], (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF))
 
 
 class HSV:
@@ -72,14 +70,9 @@ class HSV:
 
         p, q, t = (v * (1.0 - s), v * (1.0 - s * f), v * (1.0 - s * (1.0 - f)))
 
-        r, g, b = (  # fmt: off
-            (v, t, p),
-            (q, v, p),
-            (p, v, t),
-            (p, q, v),
-            (t, p, v),
-            (v, p, q),
-        )[int(i % 6)]
+        r, g, b = ((v, t, p), (q, v, p), (p, v, t), (p, q, v), (t, p, v), (v, p, q))[  # fmt: off
+            int(i % 6)
+        ]
 
         return cast(Tuple[int, ...], tuple(intround(x * 255) for x in (r, g, b)))
 
@@ -146,9 +139,7 @@ class Color:
         elif space in {"rgb", "hsv", "cmyk"} and len(color) != length_dict[space]:
             plus_str = ""
             if len(color) in reversed_dict(length_dict):
-                plus_str = (
-                    f" You passed in a {reversed_dict(length_dict)[len(color)]} color."
-                )
+                plus_str = f" You passed in a {reversed_dict(length_dict)[len(color)]} color."
             return (
                 f"{color!r} is not a valid {space} color. A tuple with length of"
                 + f" {length_dict[space]} is expected."
@@ -158,10 +149,7 @@ class Color:
         return "Not implemented tukaan.Color error."  # shouldn't get here
 
     def __repr__(self) -> str:
-        return (
-            f"{type(self).__name__}(red={self.red}, green={self.green},"
-            + f" blue={self.blue})"
-        )
+        return f"{type(self).__name__}(red={self.red}, green={self.green}," + f" blue={self.blue})"
 
     def to_tcl(self) -> str:
         return self.hex
@@ -231,9 +219,7 @@ class Clipboard(metaclass=ClassPropertyMetaClass):
         cls.set(new_content)
 
 
-class Cursor(
-    collections.namedtuple("Cursor", "cursor"), metaclass=ClassPropertyMetaClass
-):
+class Cursor(collections.namedtuple("Cursor", "cursor"), metaclass=ClassPropertyMetaClass):
     """An object to use cross-platform, and human-understandable cursor names,
     and to get and set the mouse cursor position"""
 
@@ -286,17 +272,7 @@ class Cursor(
     @update_after
     def x(cls, new_x: int) -> None:
         get_tcl_interp()._tcl_call(
-            None,
-            "event",
-            "generate",
-            ".",
-            "<Motion>",
-            "-warp",
-            "1",
-            "-x",
-            new_x,
-            "-y",
-            cls.y,
+            None, "event", "generate", ".", "<Motion>", "-warp", "1", "-x", new_x, "-y", cls.y
         )
 
     @classproperty
@@ -307,17 +283,7 @@ class Cursor(
     @update_after
     def y(cls, new_y: int) -> None:
         get_tcl_interp()._tcl_call(
-            None,
-            "event",
-            "generate",
-            ".",
-            "<Motion>",
-            "-warp",
-            "1",
-            "-y",
-            new_y,
-            "-x",
-            cls.x,
+            None, "event", "generate", ".", "<Motion>", "-warp", "1", "-y", new_y, "-x", cls.x
         )
 
     @classproperty
@@ -343,6 +309,18 @@ class Font(
     collections.namedtuple("Font", "family size bold italic underline strikethrough"),
     metaclass=ClassPropertyMetaClass,
 ):
+    _presets = {
+        'caption-font': 'TkCaptionFont',
+        'default-font': 'TkDefaultFont',
+        'fixed-font': 'TkFixedFont',
+        'heading-font': 'TkHeadingFont',
+        'icon-font': 'TkIconFont',
+        'menu-font': 'TkMenuFont',
+        'small-caption-font': 'TkSmallCaptionFont',
+        'text-font': 'TkTextFont',
+        'tooltip-font': 'TkTooltipFont',
+    }
+
     def __new__(
         cls,
         family: str = "default-font",
@@ -353,11 +331,15 @@ class Font(
         strikethrough: bool = False,
     ) -> Font:
 
-        if family in cls.presets:
+        if family in cls._presets:
             # small-caption-font -> TkSmallCaptionFont
-            family = f"Tk{family.title().replace('-', '')}"
+            family = cls._presets[family]
 
-        if family not in cls.families:  # presets are already checked
+        if (
+            family not in cls.families
+            and family not in tuple(cls._presets.values())
+            and family != "monospace"
+        ):
             raise FontError(
                 f"the font family {family!r} is not found, or is not a valid font name."
             )
@@ -379,32 +361,40 @@ class Font(
         return tuple(to_tcl(x) for x in _flatten(font_dict.items()))
 
     @classmethod
-    def from_tcl(cls, tcl_value: tuple) -> Font:
-        types = {
-            "family": str,
-            "size": int,
-            "bold": bool,
-            "italic": bool,
-            "underline": bool,
-            "strikethrough": bool,
-        }
-
+    def from_tcl(cls, tcl_value: str) -> Font:
+        print(type(tcl_value))
         result_dict = {}
+        tcl_value: tuple = get_tcl_interp().split_list(tcl_value)
+        try:
+            types = {
+                "family": str,
+                "size": int,
+                "bold": bool,
+                "italic": bool,
+                "underline": bool,
+                "strikethrough": bool,
+            }
+            for key, value in _pairs(tcl_value):
+                key = key.lstrip("-")
 
-        for key, value in _pairs(tcl_value):
-            key = key.lstrip("-")
+                if key == "weight":
+                    value = value == "bold"
+                    key = "bold"
+                elif key == "slant":
+                    value = value == "italic"
+                    key = "italic"
+                elif key == "overstrike":
+                    key = "strikethrough"
 
-            if key == "weight":
-                value = value == "bold"
-                key = "bold"
-            elif key == "slant":
-                value = value == "italic"
-                key = "italic"
-            elif key == "overstrike":
-                key = "strikethrough"
+                result_dict[key] = from_tcl(types[key], value)
 
-            result_dict[key] = from_tcl(types[key], value)
-
+        except Exception:
+            result_dict["family"] = from_tcl(str, tcl_value[0])
+            result_dict["size"] = from_tcl(int, tcl_value[1])
+            result_dict["bold"] = "bold" in tcl_value
+            result_dict["italic"] = "italic" in tcl_value
+            result_dict["underline"] = "underline" in tcl_value
+            result_dict["strikethrough"] = "overstrike" in tcl_value
         return cls(**result_dict)
 
     @classmethod
@@ -421,15 +411,7 @@ class Font(
 
     @classproperty
     def presets(self) -> list[str]:
-        result = sorted(get_tcl_interp()._tcl_call([str], "font", "names"))
-
-        for index, item in enumerate(result):
-            #  TkSmallCaptionFont -> small-caption-font
-            result[index] = "-".join(
-                re.findall(r".[^A-Z]*", item.replace("Tk", ""))
-            ).lower()
-
-        return result
+        return list(self._presets.values())
 
     def measure(self, text: str) -> int:
         return get_tcl_interp()._tcl_call(int, "font", "measure", self, text)
@@ -480,9 +462,7 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
         if unit != "px":
             distance = f"{distance}{cls._tcl_units[unit]}"
 
-            pixels = get_tcl_interp()._tcl_call(
-                float, "winfo", "fpixels", ".", distance
-            )
+            pixels = get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", distance)
 
             if unit == "m":
                 pixels *= 100

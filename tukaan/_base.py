@@ -119,9 +119,7 @@ class MethodAndPropMixin:
                 # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
                 kwargs[self._keys[key][1]] = kwargs.pop(key)
 
-        get_tcl_interp()._tcl_call(
-            None, self, "configure", *py_to_tcl_arguments(**kwargs)
-        )
+        get_tcl_interp()._tcl_call(None, self, "configure", *py_to_tcl_arguments(**kwargs))
 
     @classmethod
     def from_tcl(cls, tcl_value: str) -> TkWidget:
@@ -282,14 +280,10 @@ class MethodAndPropMixin:
         sendevent: bool = False,
         data=None,
     ) -> None:
-        self._call_bind(
-            what if what == "all" else self, sequence, func, overwrite, sendevent, data
-        )
+        self._call_bind(what if what == "all" else self, sequence, func, overwrite, sendevent, data)
 
     def _unbind(self, what, sequence: str):
-        self._call_bind(
-            what if what == "all" else self, sequence, "", True, False, None
-        )
+        self._call_bind(what if what == "all" else self, sequence, "", True, False, None)
 
     def generate_event(self, sequence: str):
         self._tcl_call(None, "event", "generate", self, self.__parse_sequence(sequence))
@@ -377,9 +371,7 @@ class BaseWidget(TkWidget):
 
         self.parent._children[self.tcl_path] = self
 
-        self._tcl_call(
-            None, self._tcl_class, self.tcl_path, *py_to_tcl_arguments(**kwargs)
-        )
+        self._tcl_call(None, self._tcl_class, self.tcl_path, *py_to_tcl_arguments(**kwargs))
 
         self.layout = LayoutManager(self)
         self._temp_manager = None

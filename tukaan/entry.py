@@ -35,9 +35,7 @@ class Entry(BaseWidget):
         hide_chars_with: Optional[str] = "•",
         justify: Optional[Literal["center", "left", "right"]] = None,
         style: Optional[str] = None,
-        validation: Optional[
-            Literal["int", "float", "email", "hex-rgb", "hex-rgba"] | str
-        ] = None,
+        validation: Optional[Literal["int", "float", "email", "hex-rgb", "hex-rgba"] | str] = None,
         width: Optional[int] = None,
     ) -> None:
 
