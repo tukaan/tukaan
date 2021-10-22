@@ -67,10 +67,10 @@ class Tag(metaclass=ClassPropertyMetaClass):
 
         wrap = _wraps[wrap]
 
+        _font = self._widget.font
+        
         if font is None:
-            font = self._widget.font
-
-        font = Font(font.family, font.size, bold, italic, underline, strikethrough)
+            font = Font(_font.family, _font.size, bold, italic, underline, strikethrough)
 
         self._call_tag_subcommand(
             None,
@@ -267,7 +267,9 @@ class TextBox(BaseWidget):
     _tcl_class = "text"
     _keys = {"font": Font, "wrap": _wraps}
 
-    def __init__(self, parent: Optional[TkWidget] = None, wrap=None, font=("monospace", 10)):
+    def __init__(
+        self, parent: Optional[TkWidget] = None, wrap=None, font=("monospace", 10)
+    ) -> None:
         assert wrap in _wraps, f"wrapping must be one of {tuple(_wraps.keys())}"
         wrap = _wraps[wrap]
 
@@ -280,27 +282,27 @@ class TextBox(BaseWidget):
             setattr(attr, "_widget", self)
 
     @property
-    def start(self):
+    def start(self) -> TextIndex:
         return self.index()
 
     @property
     def end(self) -> TextIndex:
-        return self._tcl_call(self.index, self.tcl_path, "index", "end - 1 char")
+        return self._tcl_call(self.index, self, "index", "end - 1 char")
 
     def insert(self, index: TextIndex, content: str) -> None:
-        self._tcl_call(None, self.tcl_path, "insert", index, content)
+        self._tcl_call(None, self, "insert", index, content)
 
-    def delete(self, start=None, end=None):
+    def delete(self, start: TextIndex = None, end: TextIndex = None):
         start = self.start if start is None else start
         end = self.end if end is None else end
 
-        return self._tcl_call(str, self.tcl_path, "delete", start, end)
+        return self._tcl_call(str, self, "delete", start, end)
 
-    def get(self, start=None, end=None):
+    def get(self, start: TextIndex = None, end: TextIndex = None):
         start = self.start if start is None else start
         end = self.end if end is None else end
 
-        return self._tcl_call(str, self.tcl_path, "get", start, end)
+        return self._tcl_call(str, self, "get", start, end)
 
     def scroll_to(self, index: TextIndex) -> None:
         self._tcl_call(None, self, "see", index)
@@ -312,5 +314,4 @@ class TextBox(BaseWidget):
     @content.setter
     def content(self, new_content):
         self.delete()
-
         self.insert(self.end, new_content)
