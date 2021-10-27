@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 from collections import abc, namedtuple
-from typing import Iterator, Optional, Any
+from typing import Any, Iterator, Optional
 
 from ._base import BaseWidget, TkWidget
 from ._constants import _wraps
 from ._misc import Color, Font, ScreenDistance
 from ._utils import (
-    TukaanError,
-    counts,
-    classproperty,
     ClassPropertyMetaClass,
+    TukaanError,
+    _callbacks,
+    classproperty,
+    counts,
     py_to_tcl_arguments,
     reversed_dict,
-    _callbacks,
 )
 
 
@@ -60,17 +60,9 @@ class Tag(metaclass=ClassPropertyMetaClass):
         underline: bool = False,
         wrap=None,
     ) -> None:
-        if _name is None:
-            self._name = f"{self._widget.tcl_path}:tag_{next(counts['textbox_tag'])}"
-        else:
-            self._name = _name
-
-        wrap = _wraps[wrap]
-
-        _font = self._widget.font
-        
-        if font is None:
-            font = Font(_font.family, _font.size, bold, italic, underline, strikethrough)
+        self._name = (
+            f"{self._widget.tcl_path}:tag_{next(counts['textbox_tag'])}" if _name is None else _name
+        )
 
         self._call_tag_subcommand(
             None,
@@ -88,7 +80,7 @@ class Tag(metaclass=ClassPropertyMetaClass):
             spacing2=space_before_wrapped_line,
             spacing3=space_after_paragraph,
             tabs=tab_stops,
-            wrap=wrap,
+            wrap=_wraps[wrap],
         )
 
     def __repr__(self) -> str:
@@ -157,41 +149,30 @@ class Tag(metaclass=ClassPropertyMetaClass):
 
         self._call_tag_subcommand(None, "remove", start, end)
 
+    @property
+    def ranges(self):
+        flat_pairs = map(self._widget.index.from_tcl, self._call_tag_subcommand((str,), "ranges"))
+        return list(zip(flat_pairs, flat_pairs))
+
     @classproperty
     def hidden(cls) -> Tag:
         return cls(_name="hidden", hidden=True)
-
-    @classproperty
-    def bold(cls) -> Tag:
-        return cls(_name="underline", bold=True)
-
-    @classproperty
-    def italic(cls) -> Tag:
-        return cls(_name="strikethrough", italic=True)
-
-    @classproperty
-    def underline(cls) -> Tag:
-        return cls(_name="underline", underline=True)
-
-    @classproperty
-    def strikethrough(cls) -> Tag:
-        return cls(_name="strikethrough", strikethrough=True)
 
 
 class TextIndex(namedtuple("TextIndex", "line column")):
     _widget: TextBox
 
-    def __new__(cls, line: int = 1, column: int = 1) -> TextIndex:
+    def __new__(cls, line: int = 1, column: int = 0) -> TextIndex:
         return super(TextIndex, cls).__new__(cls, line, column)  # type: ignore
 
     def to_tcl(self) -> str:
-        return f"{self.line}.{self.column - 1}"
+        return f"{self.line}.{self.column}"
 
     @classmethod
     def from_tcl(cls, string: str) -> TextIndex:
         result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", string)
         line, column = tuple(map(int, result.split(".")))
-        return cls(line, column + 1)
+        return cls(line, column)
 
     @property
     def between_start_end(self) -> TextIndex:
