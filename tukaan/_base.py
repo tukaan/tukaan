@@ -364,8 +364,11 @@ class StateSet(collections.abc.MutableSet):
 
         self._widget._tcl_call(None, self._widget, "state", state)
 
-    add: Callable[[str], None] = partialmethod(add_or_discard, "add")
-    discard: Callable[[str], None] = partialmethod(add_or_discard, "discard")
+    def add(self, state: str) -> None:
+        self.add_or_discard("add", state)
+
+    def discard(self, state: str) -> None:
+        self.add_or_discard("discard", state)
 
 
 class BaseWidget(TkWidget):
