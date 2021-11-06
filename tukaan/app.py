@@ -66,6 +66,14 @@ class App(WindowMixin, TkWidget):
         self.size = width, height
         self.theme = theme
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, _):
+        if exc_type is None:
+            return self.run()
+        raise exc_type(exc_value) from None
+
     def _tcl_call(self, return_type: Any, *args) -> Any:
         try:
             result = self.app.call(*map(to_tcl, args))
