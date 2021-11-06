@@ -5,7 +5,7 @@ from ._misc import ScreenDistance
 
 
 class Slider(BaseWidget):
-    _tcl_class = "ttk::slider"
+    _tcl_class = "ttk::scale"
     _keys = {
         "length": ScreenDistance,
         "max": (int, "to"),
@@ -28,7 +28,6 @@ class Slider(BaseWidget):
         BaseWidget.__init__(
             self,
             parent,
-            "ttk::scale",
             command=on_move,
             from_=min,
             length=length,
