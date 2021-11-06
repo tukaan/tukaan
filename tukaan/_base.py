@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import collections.abc
+import collections
 import contextlib
+import itertools
 import re
 from functools import partial, partialmethod
-from typing import Any, Callable, Iterator, Literal
+from typing import Any, Callable, DefaultDict, Iterator, Literal, Type
 
 from ._constants import _BINDING_ALIASES, _KEYSYMS, _VALID_STATES
 from ._event import Event
@@ -313,7 +314,9 @@ class TkWidget(MethodAndPropMixin):
 
     def __init__(self):
         self._children: dict[str, BaseWidget] = {}
-        self._child_type_count: dict[type, int] = {}
+        self._child_type_count: DefaultDict[
+            Type[BaseWidget], Iterator[int]
+        ] = collections.defaultdict(lambda: itertools.count(1))
         _widgets[self.tcl_path] = self
         self.child_stats = ChildStatistics(self)
 
@@ -403,12 +406,7 @@ class BaseWidget(TkWidget):
 
     def _give_me_a_name(self) -> str:
         klass = type(self)
-
-        # FIXME: more elegant way to count child types
-        # itertools.count isn't good, because we need plain ints
-
-        count = self.parent._child_type_count.get(klass, 0) + 1
-        self.parent._child_type_count[klass] = count
+        count = next(self.parent._child_type_count[klass])
 
         return f"{self.parent.tcl_path}.{klass.__name__.lower()}_{count}"
 
