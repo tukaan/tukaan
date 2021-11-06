@@ -1,13 +1,12 @@
 import os
 import sys
-import types
 from typing import Any, Optional
 
 import _tkinter as tk
 
 from ._base import TkWidget
 from ._layouts import BaseLayoutManager
-from ._utils import TukaanError, from_tcl, to_tcl
+from ._utils import TclError, from_tcl, to_tcl
 from ._window_mixin import WindowMixin
 
 tcl_interp = None
@@ -33,7 +32,7 @@ class App(WindowMixin, TkWidget):
         global tcl_interp
 
         if tcl_interp is self:
-            raise TukaanError("can't create multiple App objects use a Window instead")
+            raise TclError("can't create multiple App objects use a Window instead")
 
         self.app = tk.create(
             None,
@@ -75,15 +74,27 @@ class App(WindowMixin, TkWidget):
             return from_tcl(return_type, result)
         except tk.TclError:
             _, msg, tb = sys.exc_info()
-            back_frame: types.FrameType = tb.tb_frame.f_back  # type: ignore
+            msg = str(msg)
 
-            back_tb = types.TracebackType(
-                tb_next=None,
-                tb_frame=back_frame,
-                tb_lasti=back_frame.f_lasti,
-                tb_lineno=back_frame.f_lineno,
+            print(
+                f"Exception in Tcl callback in {tb.tb_frame.f_back.f_code.co_filename}"
+                f":{tb.tb_frame.f_back.f_lineno}",
+                file=sys.stderr,
             )
-            raise TukaanError(msg).with_traceback(back_tb) from None
+
+            if msg.startswith("couldn't read file"):
+                # FileNotFoundError is a bit more pythonic than TclError: couldn't read file
+                path = msg.split('"')[1]  # path is between ""
+                sys.tracebacklimit = 0
+                raise FileNotFoundError(
+                    f"No such file or directory: {path!r}"
+                ) from None
+            else:
+                print(
+                    f"tukaan.{TclError.__name__}: {msg}",  # tukaan.{TclError.__name__} XDD
+                    file=sys.stderr,
+                )
+                sys.exit()
 
     def tcl_eval(self, return_type: Any, code: str) -> Any:
         result = self.app.eval(code)

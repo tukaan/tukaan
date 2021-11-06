@@ -5,7 +5,7 @@ from typing import Any, Callable, Literal, cast
 
 from ._constants import _window_pos
 from ._platform import Platform
-from ._utils import TukaanError
+from ._utils import TclError
 
 # This module can't use anything that relies on get_tcl_interp,
 # so it has its own each of those, which isn't a good thing (update decoratos) :(
@@ -305,7 +305,7 @@ class WindowMixin:
         try:
             width, height = resize_dict[direction]
         except KeyError:
-            raise TukaanError(
+            raise TclError(
                 f"invalid resizable value: {direction!r}. Allowed values: 'none',"
                 + " 'horizontal' 'vertical', 'both'"
             )
