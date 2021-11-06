@@ -88,29 +88,38 @@ class GridCells:
 class GridTemplates:
     _widget: TkWidget
 
+    def _grid_or_col_template(
+        self, which: str, template: int | tuple[int, ...]
+    ) -> None:
+        attr, command = {
+            "row": ("_row_template", "rowconfigure"),
+            "col": ("_col_template", "columnconfigure"),
+        }[which]
+
+        if isinstance(template, int):
+            template = (template,)
+
+        setattr(self, attr, template)
+        for index, weight in enumerate(template):
+            self._widget._tcl_call(
+                None, "grid", command, self._widget, index, "-weight", weight
+            )
+
     @property
     def grid_row_template(self) -> tuple[int, ...]:
         return self._row_template
 
     @grid_row_template.setter
-    def grid_row_template(self, new_row_template) -> None:
-        self._row_template = new_row_template
-        for index, weight in enumerate(new_row_template):
-            self._widget._tcl_call(
-                None, "grid", "rowconfigure", self._widget, index, "-weight", weight
-            )
+    def grid_row_template(self, new_row_template: int | tuple[int, ...]) -> None:
+        self._grid_or_col_template("row", new_row_template)
 
     @property
     def grid_col_template(self) -> tuple[int, ...]:
         return self._col_template
 
     @grid_col_template.setter
-    def grid_col_template(self, new_col_template) -> None:
-        self._col_template = new_col_template
-        for index, weight in enumerate(new_col_template):
-            self._widget._tcl_call(
-                None, "grid", "columnconfigure", self._widget, index, "-weight", weight
-            )
+    def grid_col_template(self, new_col_template: int | tuple[int, ...]) -> None:
+        self._grid_or_col_template("col", new_col_template)
 
 
 class Grid:
