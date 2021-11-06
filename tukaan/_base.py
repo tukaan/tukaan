@@ -9,7 +9,7 @@ from typing import Any, Callable, Iterator, Literal
 from ._constants import _BINDING_ALIASES, _KEYSYMS, _VALID_STATES
 from ._event import Event
 from ._layouts import LayoutManager
-from ._misc import ScreenDistance, TukaanError
+from ._misc import ScreenDistance, TclError
 from ._utils import (
     _callbacks,
     _widgets,
@@ -248,7 +248,7 @@ class MethodAndPropMixin:
                             value = None
                         elif value in _KEYSYMS.values():
                             value = reversed_dict(_KEYSYMS)[string_value]
-                except (ValueError, TukaanError):
+                except (ValueError, TclError):
                     # ValueError when trying to int("??")
                     value = None
 

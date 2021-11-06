@@ -10,7 +10,7 @@ from ._utils import (
     ClassPropertyMetaClass,
     ColorError,
     FontError,
-    TukaanError,
+    TclError,
     _flatten,
     _pairs,
     classproperty,
@@ -213,7 +213,7 @@ class Clipboard(metaclass=ClassPropertyMetaClass):
     def get(cls) -> str:
         try:
             return get_tcl_interp()._tcl_call(str, "clipboard", "get")
-        except TukaanError:
+        except TclError:
             # implement clipboard image with PIL.ImageGrab.grabclipboard
             return ""
 

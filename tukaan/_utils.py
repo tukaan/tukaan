@@ -3,7 +3,6 @@ from __future__ import annotations
 import collections.abc
 import itertools
 import numbers
-import sys
 import traceback
 from collections import defaultdict
 from inspect import isclass
@@ -21,7 +20,7 @@ _timeouts: dict[str, Timeout] = {}
 _widgets: dict[str, TkWidget] = {}
 
 
-class TukaanError(Exception):
+class TclError(Exception):
     ...
 
 
@@ -71,7 +70,7 @@ def get_tcl_interp():
         try:
             tcl_interp = App()
         except Exception as e:
-            raise TukaanError(e)
+            raise TclError(e)
 
     return tcl_interp
 
@@ -80,21 +79,18 @@ _flatten = itertools.chain.from_iterable
 
 
 def create_command(func) -> str:
-    stack_info = "".join(traceback.format_stack())
-
     name = f"tukaan_command_{next(counts['commands'])}"
-
     _callbacks[name] = func
 
     def real_func(*args):
         try:
             return func(*args)
         except Exception:
-            # TODO: better error handling,
-            # don't print the unrelevant lines
-            tb, rest = traceback.format_exc().split("\n", 1)
-            print(f"{tb}\n{stack_info}{rest}", end="", file=sys.stderr)
-            return ""
+            # remove unnecessary lines:
+            # File "/home/.../_utils.py", line 88, in real_func
+            # return func(*args)
+            tb = traceback.format_exc().split("\n")[3:]
+            print("Traceback (most recent call last):", "\n".join(tb), sep="\n")
 
     get_tcl_interp().app.createcommand(name, real_func)
     return name
