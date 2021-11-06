@@ -2,7 +2,6 @@ from typing import Any, Callable
 
 
 class Event:
-    callback: Callable
     data: Any
     sequence: str
 

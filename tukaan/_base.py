@@ -9,7 +9,7 @@ from typing import Any, Callable, DefaultDict, Iterator, Literal, Type
 
 from ._constants import _BINDING_ALIASES, _KEYSYMS, _VALID_STATES
 from ._event import Event
-from ._layouts import LayoutManager
+from ._layouts import BaseLayoutManager, LayoutManager
 from ._misc import ScreenDistance, TclError
 from ._utils import (
     _callbacks,
@@ -55,7 +55,7 @@ class ChildStatistics:
 class MethodAndPropMixin:
     _tcl_call: Callable
     _keys: dict[str, Any]
-    layout: LayoutManager
+    layout: BaseLayoutManager
     tcl_path: str
     wm_path: str
     parent: TkWidget
@@ -310,7 +310,7 @@ class TukaanWidget:
 class TkWidget(MethodAndPropMixin):
     """Base class for every Tk-based widget"""
 
-    layout: LayoutManager
+    layout: BaseLayoutManager
 
     def __init__(self):
         self._children: dict[str, BaseWidget] = {}

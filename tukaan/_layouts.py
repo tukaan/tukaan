@@ -39,7 +39,7 @@ StickyValues: dict[tuple[HorAlignAlias, VertAlignAlias], str] = {
 class GridCells:
     _widget: TkWidget
     _grid_cells: list[list[str]]
-    _cell_managed_children: dict[BaseWidget, str]
+    _cell_managed_children: dict[TkWidget, str]
 
     @property
     def grid_cells(self) -> list[list[str]]:
@@ -56,7 +56,7 @@ class GridCells:
     def _parse_grid_cells(
         self, areas_list: list[list[str]]
     ) -> dict[str, dict[str, int]]:
-        result = {}
+        result: dict[str, dict[str, int | bool]] = {}
         for row_index, row_list in enumerate(areas_list):
             for col_index, cell_name in enumerate(row_list):
                 if cell_name is None:
@@ -78,6 +78,8 @@ class GridCells:
                         "rowspan": 1,
                         "colspan": 1,
                     }
+
+        print(result)
         for value in result.values():
             value.pop("cols_counted", "")
             value.pop("rows_counted", "")
@@ -87,6 +89,8 @@ class GridCells:
 
 class GridTemplates:
     _widget: TkWidget
+    _row_template: tuple
+    _col_template: tuple
 
     def _grid_or_col_template(
         self, which: str, template: int | tuple[int, ...]
@@ -123,10 +127,10 @@ class GridTemplates:
 
 
 class Grid:
-    _widget: BaseWidget
-    _cell_managed_children: dict[BaseWidget, str]
-    _get_lm_properties: Callable[[str], Any]
-    _set_lm_properties: Callable[[str, str, Any], None]
+    _widget: TkWidget
+    _cell_managed_children: dict[TkWidget, str]
+    _get_lm_properties: Callable[[Grid, str], Any]
+    _set_lm_properties: Callable[[Grid, str, str, Any], None]
     _info: Callable
 
     def grid(
@@ -313,10 +317,9 @@ class Grid:
 
 
 class Position:
-    _widget: BaseWidget
-    _get_lm_properties: Callable[[str], Any]
-    _set_lm_properties: Callable[[str, str, Any], None]
-    config: Callable
+    _widget: TkWidget
+    _get_lm_properties: Callable[[Position, str], Any]
+    _set_lm_properties: Callable[[Position, str, str, Any], None]
 
     def position(
         self,
@@ -481,7 +484,7 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
         )
         return {key.lstrip("-"): value for key, value in result.items()}
 
-    def _get_lm_properties(self, what: str):
+    def _get_lm_properties(self: Grid, what: str) -> Any:
         try:
             return self._info()[what]
         except KeyError:

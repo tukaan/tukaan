@@ -124,9 +124,6 @@ widget.layout.grid(cell="some_cell", margin=(2, 10, 6, 4))
 ```python
 widget.layout.cell = "other_cell"
 ```
-```python
-widget.layout.config(margin=0)
-```
 
 ### Use tukaan with `with`
 ```python

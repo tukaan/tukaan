@@ -111,8 +111,11 @@ class CMYK:
 # TODO: hsl, yiq
 class Color:
     _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk"}
+    red: int
+    green: int
+    blue: int
 
-    @singledispatchmethod
+    @singledispatchmethod  # type: ignore
     def __init__(self) -> None:
         ...
 
@@ -223,7 +226,7 @@ class Clipboard(metaclass=ClassPropertyMetaClass):
         get_tcl_interp()._tcl_call(None, "clipboard", "append", new_content)
 
     @classproperty
-    def content(cls) -> str:  # type: ignore
+    def content(cls) -> str:
         return cls.get()
 
     @content.setter
@@ -279,7 +282,7 @@ class Cursor(
         return cls(reversed_dict(cls._cursor_dict)[tcl_value])
 
     @classproperty
-    def x(cls) -> int:  # type: ignore
+    def x(cls) -> int:
         return get_tcl_interp()._tcl_call(int, "winfo", "pointerx", ".")
 
     @x.setter
@@ -300,7 +303,7 @@ class Cursor(
         )
 
     @classproperty
-    def y(cls) -> int:  # type: ignore
+    def y(cls) -> int:
         return get_tcl_interp()._tcl_call(int, "winfo", "pointery", ".")
 
     @y.setter
@@ -321,7 +324,7 @@ class Cursor(
         )
 
     @classproperty
-    def position(cls) -> tuple[int, int]:  # type: ignore
+    def position(cls) -> tuple[int, int]:
         return (cls.x, cls.y)
 
     @position.setter
