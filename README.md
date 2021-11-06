@@ -128,6 +128,16 @@ widget.layout.cell = "other_cell"
 widget.layout.config(margin=0)
 ```
 
+### Use tukaan with `with`
+```python
+import tukaan
+
+
+with tukaan.App(title="tukaan.App with context manager") as app:
+    button = tukaan.Button(app, text="Button", on_click=lambda: print("stuff"))
+    button.layout.grid()
+```
+
 ### Get clipboard content
 TODO: currently not working with images
 ```python
