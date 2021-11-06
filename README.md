@@ -112,11 +112,11 @@ widget.layout.grid(cell="some_cell", margin=(2))
 ```python
 widget.layout.grid(cell="some_cell", margin=(2, 10))
 ```
-*2 on top, 10 on right, 6 on bottom and 10 on left*
+*2 on top, 10 horizontally, 6 on bottom*
 ```python
 widget.layout.grid(cell="some_cell", margin=(2, 10, 6))
 ```
-*2 on top, 10 on top, 6 on right, 4 on left*
+*2 on top, 10 on right, 6 on bottom and 4 on left*
 ```python
 widget.layout.grid(cell="some_cell", margin=(2, 10, 6, 4))
 ```
