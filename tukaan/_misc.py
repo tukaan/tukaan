@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections
 import re
 from functools import singledispatchmethod
-from typing import Tuple, cast
+from typing import Tuple, cast, Callable
 
 from ._platform import Platform
 from ._utils import (
@@ -19,8 +19,8 @@ from ._utils import (
 )
 from .exceptions import ColorError, FontError, TclError
 
-intround = lambda x: int(round(x, 0))
-round4 = lambda x: round(x, 4)
+intround: Callable[[float], int] = lambda x: int(round(x, 0))
+round4: Callable[[float], float] = lambda x: round(x, 4)
 
 
 class HEX:
