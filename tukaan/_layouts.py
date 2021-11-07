@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     # pyright won't complain
-    from ._base import TkWidget, BaseWidget
+    from ._base import TkWidget
 
 from ._constants import AnchorAnnotation
 from ._misc import ScreenDistance
-from ._utils import py_to_tcl_arguments, reversed_dict
+from ._utils import py_to_tcl_arguments
 
 HorAlignAlias = Optional[Literal["left", "right", "stretch"]]
 MrgnAlias = Optional[Union[int, Tuple[int, ...]]]
@@ -16,24 +17,24 @@ ScrDstAlias = Optional[Union[int, str, ScreenDistance]]
 ScrDstRtrnAlias = Dict[str, Union[float, ScreenDistance]]
 VertAlignAlias = Optional[Literal["bottom", "stretch", "top"]]
 
-StickyValues: dict[tuple[HorAlignAlias, VertAlignAlias], str] = {
-    ("left", "bottom"): "sw",
-    ("left", "stretch"): "nsw",
-    ("left", "top"): "nw",
-    ("left", None): "w",
-    ("right", "bottom"): "es",
-    ("right", "stretch"): "nes",
-    ("right", "top"): "ne",
-    ("right", None): "e",
-    ("stretch", "bottom"): "esw",
-    ("stretch", "stretch"): "nesw",
-    ("stretch", "top"): "new",
-    ("stretch", None): "ew",
-    (None, "bottom"): "s",
-    (None, "stretch"): "ns",
-    (None, "top"): "n",
-    (None, None): "",
-}
+
+class StickyValues(enum.Enum):
+    SW = ("left", "bottom")
+    NSW = ("left", "stretch")
+    NW = ("left", "top")
+    W = ("left", None)
+    ES = ("right", "bottom")
+    NES = ("right", "stretch")
+    NE = ("right", "top")
+    E = ("right", None)
+    ESW = ("stretch", "bottom")
+    NESW = ("stretch", "stretch")
+    NEW = ("stretch", "top")
+    EW = ("stretch", None)
+    S = (None, "bottom")
+    NS = (None, "stretch")
+    N = (None, "top")
+    NONE = (None, None)
 
 
 class GridCells:
@@ -79,7 +80,6 @@ class GridCells:
                         "colspan": 1,
                     }
 
-        print(result)
         for value in result.values():
             value.pop("cols_counted", "")
             value.pop("rows_counted", "")
@@ -182,6 +182,8 @@ class Grid:
             colspan = self._widget.parent.layout._grid_cells_values[cell]["colspan"]
         except KeyError:
             raise RuntimeError(f"cell {cell!r} doesn't exists")
+        except AttributeError:
+            raise RuntimeError(f"{self._widget.parent} has no cell layout set up")
         self._widget._tcl_call(
             None,
             "grid",
@@ -211,12 +213,14 @@ class Grid:
 
     def _parse_sticky_values(self, hor: HorAlignAlias, vert: VertAlignAlias) -> str:
         try:
-            return StickyValues[(hor, vert)]
+            return StickyValues((hor, vert)).name.lower()
         except KeyError:
             raise RuntimeError(f"invalid alignment value: {(hor, vert)}")
 
     def _get_sticky_values(self, key: str) -> tuple[HorAlignAlias, VertAlignAlias]:
-        return reversed_dict(StickyValues)[key]
+        if key == "":
+            key = "NONE"
+        return StickyValues[key].value
 
     @property
     def cell(self) -> str | None:
