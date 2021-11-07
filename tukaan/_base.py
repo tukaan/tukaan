@@ -7,6 +7,7 @@ import re
 from functools import partial, partialmethod
 from typing import Any, Callable, DefaultDict, Iterator, Literal, Type
 
+from .exceptions import TclError
 from ._constants import _BINDING_ALIASES, _KEYSYMS, _VALID_STATES
 from ._event import Event
 from ._layouts import BaseLayoutManager, LayoutManager
@@ -224,7 +225,7 @@ class MethodAndPropMixin:
         elif re.match(regex_str, sequence):
             search = re.search(regex_str, sequence)
             up_or_down = {"Down": "Press", "Up": "Release"}
-            thing = search.group(2)  # type: ignore
+            thing = search.group(2)
             tcl_sequence = f"<Key{up_or_down[search.group(1)]}-{_KEYSYMS[thing] if thing in _KEYSYMS else thing}>"  # type: ignore
 
         return tcl_sequence
