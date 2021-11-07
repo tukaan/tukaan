@@ -173,11 +173,11 @@ def from_tcl(type_spec, value) -> Any:
 
 def to_tcl(value: Any) -> Any:
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
-    if value is None:
-        return None
-
     if isinstance(value, str):
         return value
+
+    if value is None:
+        return ""
 
     if isinstance(value, bool):
         return "1" if value else "0"
