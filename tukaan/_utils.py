@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import collections
 import collections.abc
 import itertools
 import numbers
 import traceback
-from collections import defaultdict
 from inspect import isclass
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
 from .exceptions import TclError
 
@@ -14,7 +14,26 @@ if TYPE_CHECKING:
     from ._base import TkWidget
     from .timeout import Timeout
 
-counts: defaultdict = defaultdict(lambda: itertools.count(1))
+
+class count:
+    """Simplified itertools.count"""
+
+    def __init__(self, start: int = 0) -> None:
+        self._count = start
+
+    def __next__(self) -> int:
+        self._count += 1
+        return self._count
+
+    def __iter__(self) -> Iterator[int]:
+        # function only for mypy
+        yield self._count
+
+    def __int__(self) -> int:
+        return self._count
+
+
+counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count(1))
 
 
 _callbacks: dict[str, Callable] = {}

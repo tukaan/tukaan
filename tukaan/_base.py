@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import collections
 import contextlib
-import itertools
 import re
 from functools import partial, partialmethod
 from typing import Any, Callable, DefaultDict, Iterator, Literal, Type
@@ -21,6 +20,7 @@ from ._utils import (
     py_to_tcl_arguments,
     reversed_dict,
     update_before,
+    count
 )
 
 
@@ -30,7 +30,7 @@ class ChildStatistics:
 
     def number_of_type(self, type) -> int:
         try:
-            return self._widget._child_type_count[type]
+            return int(self._widget._child_type_count[type])
         except KeyError:
             return 0
 
@@ -317,7 +317,7 @@ class TkWidget(MethodAndPropMixin):
         self._children: dict[str, BaseWidget] = {}
         self._child_type_count: DefaultDict[
             Type[BaseWidget], Iterator[int]
-        ] = collections.defaultdict(lambda: itertools.count(1))
+        ] = collections.defaultdict(lambda: count())
         _widgets[self.tcl_path] = self
         self.child_stats = ChildStatistics(self)
 
