@@ -6,7 +6,6 @@ import re
 from functools import partial, partialmethod
 from typing import Any, Callable, DefaultDict, Iterator, Literal, Type
 
-from .exceptions import TclError
 from ._constants import _BINDING_ALIASES, _KEYSYMS, _VALID_STATES
 from ._event import Event
 from ._layouts import BaseLayoutManager, LayoutManager
@@ -14,14 +13,15 @@ from ._misc import ScreenDistance
 from ._utils import (
     _callbacks,
     _widgets,
+    count,
     create_command,
     from_tcl,
     get_tcl_interp,
     py_to_tcl_arguments,
     reversed_dict,
     update_before,
-    count
 )
+from .exceptions import TclError
 
 
 class ChildStatistics:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections
 import re
 from functools import singledispatchmethod
-from typing import Tuple, cast, Callable
+from typing import Callable, Tuple, cast
 
 from ._platform import Platform
 from ._utils import (
