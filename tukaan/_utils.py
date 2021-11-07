@@ -8,6 +8,8 @@ from collections import defaultdict
 from inspect import isclass
 from typing import TYPE_CHECKING, Any, Callable
 
+from .exceptions import TclError
+
 if TYPE_CHECKING:
     from ._base import TkWidget
     from .timeout import Timeout
@@ -18,18 +20,6 @@ counts: defaultdict = defaultdict(lambda: itertools.count(1))
 _callbacks: dict[str, Callable] = {}
 _timeouts: dict[str, Timeout] = {}
 _widgets: dict[str, TkWidget] = {}
-
-
-class TclError(Exception):
-    ...
-
-
-class ColorError(Exception):
-    ...
-
-
-class FontError(Exception):
-    ...
 
 
 def updated(func: Callable) -> Callable:

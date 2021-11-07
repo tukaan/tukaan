@@ -8,9 +8,6 @@ from typing import Tuple, cast
 from ._platform import Platform
 from ._utils import (
     ClassPropertyMetaClass,
-    ColorError,
-    FontError,
-    TclError,
     _flatten,
     _pairs,
     classproperty,
@@ -20,6 +17,7 @@ from ._utils import (
     to_tcl,
     update_after,
 )
+from .exceptions import ColorError, FontError, TclError
 
 intround = lambda x: int(round(x, 0))
 round4 = lambda x: round(x, 4)

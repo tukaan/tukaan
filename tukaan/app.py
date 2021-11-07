@@ -6,8 +6,9 @@ import _tkinter as tk
 
 from ._base import TkWidget
 from ._layouts import BaseLayoutManager
-from ._utils import TclError, from_tcl, to_tcl
+from ._utils import from_tcl, to_tcl
 from ._window_mixin import WindowMixin
+from .exceptions import TclError
 
 tcl_interp = None
 

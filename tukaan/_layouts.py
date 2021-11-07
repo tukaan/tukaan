@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 from ._constants import AnchorAnnotation
 from ._misc import ScreenDistance
 from ._utils import py_to_tcl_arguments
+from .exceptions import CellNotFoundError, LayoutError
 
 HorAlignAlias = Optional[Literal["left", "right", "stretch"]]
 MrgnAlias = Optional[Union[int, Tuple[int, ...]]]
@@ -152,7 +153,7 @@ class Grid:
         if align and not any((hor_align, vert_align)):
             hor_align, vert_align = (align,) * 2  # type: ignore
         elif align:
-            raise RuntimeError("both align and hor_align and/or vert_align given")
+            raise LayoutError("both align and hor_align and/or vert_align given")
 
         self._widget._tcl_call(
             None,
@@ -181,9 +182,9 @@ class Grid:
             rowspan = self._widget.parent.layout._grid_cells_values[cell]["rowspan"]
             colspan = self._widget.parent.layout._grid_cells_values[cell]["colspan"]
         except KeyError:
-            raise RuntimeError(f"cell {cell!r} doesn't exists")
+            raise CellNotFoundError(f"cell {cell!r} doesn't exists")
         except AttributeError:
-            raise RuntimeError(f"{self._widget.parent} has no cell layout set up")
+            raise CellNotFoundError(f"{self._widget.parent} has no cell layout set up")
         self._widget._tcl_call(
             None,
             "grid",
@@ -215,7 +216,7 @@ class Grid:
         try:
             return StickyValues((hor, vert)).name.lower()
         except KeyError:
-            raise RuntimeError(f"invalid alignment value: {(hor, vert)}")
+            raise LayoutError(f"invalid alignment value: {(hor, vert)}")
 
     def _get_sticky_values(self, key: str) -> tuple[HorAlignAlias, VertAlignAlias]:
         if key == "":
@@ -426,13 +427,13 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
             self.remove()
             getattr(self, new_manager)()  # lol
         except AttributeError:
-            raise RuntimeError(f"invalid lyaout manager: {new_manager}")
+            raise LayoutError(f"invalid lyaout manager: {new_manager}")
 
     @property
     def propagation(self):
         lm = self._get_manager()
         if lm == "place":
-            raise RuntimeError("widget not managed by grid, can't get propagation")
+            raise LayoutError("widget not managed by grid, can't get propagation")
         return self._widget._tcl_call(
             bool, self._get_manager(), "propagate", self._widget
         )
@@ -441,7 +442,7 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
     def propagation(self, new_propagation: bool):
         lm = self._get_manager()
         if lm == "place":
-            raise RuntimeError("widget not managed by grid, can't set propagation")
+            raise LayoutError("widget not managed by grid, can't set propagation")
         self._widget._tcl_call(
             None, self._get_manager(), "propagate", self._widget, new_propagation
         )
@@ -492,7 +493,7 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
         try:
             return self._info()[what]
         except KeyError:
-            raise RuntimeError(
+            raise LayoutError(
                 f"can't get {what!r}. This widget is managed by another layout manager,"
                 + f" which doesn't supports {what!r}"
             )

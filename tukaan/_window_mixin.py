@@ -5,7 +5,7 @@ from typing import Any, Callable, Literal, cast
 
 from ._constants import _window_pos
 from ._platform import Platform
-from ._utils import TclError
+from .exception import TclError
 
 # This module can't use anything that relies on get_tcl_interp,
 # so it has its own each of those, which isn't a good thing (update decoratos) :(

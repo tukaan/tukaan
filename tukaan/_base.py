@@ -10,7 +10,7 @@ from typing import Any, Callable, DefaultDict, Iterator, Literal, Type
 from ._constants import _BINDING_ALIASES, _KEYSYMS, _VALID_STATES
 from ._event import Event
 from ._layouts import BaseLayoutManager, LayoutManager
-from ._misc import ScreenDistance, TclError
+from ._misc import ScreenDistance
 from ._utils import (
     _callbacks,
     _widgets,
