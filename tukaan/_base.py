@@ -224,6 +224,7 @@ class MethodAndPropMixin:
             tcl_sequence = _BINDING_ALIASES[sequence]
         elif re.match(regex_str, sequence):
             search = re.search(regex_str, sequence)
+            assert search is not None  # mypy grrr
             up_or_down = {"Down": "Press", "Up": "Release"}
             thing = search.group(2)
             tcl_sequence = f"<Key{up_or_down[search.group(1)]}-{_KEYSYMS[thing] if thing in _KEYSYMS else thing}>"  # type: ignore
