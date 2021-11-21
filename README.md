@@ -35,7 +35,7 @@ class MyApp(tukaan.App):
 
         self.button = tukaan.Button(self, text="Button")
         self.button.callback = lambda: print("ok")
-        self.button.layout.grid(row=0, column=0, margin=(1, 2, 3, 4))
+        self.button.layout.grid(row=0, col=0, margin=(1, 2, 3, 4))
 
 
 def main():
