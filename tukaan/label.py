@@ -39,5 +39,5 @@ class Label(BaseWidget):
             justify=align_text,
             wraplength=max_line_length,
             style=style,
-            text=text,
         )
+        self.config(text=text)

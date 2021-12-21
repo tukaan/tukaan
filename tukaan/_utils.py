@@ -13,6 +13,7 @@ from .exceptions import TclError
 if TYPE_CHECKING:
     from ._base import TkWidget
     from .timeout import Timeout
+    from ._variables import _TclVariable
 
 
 class count:
@@ -33,11 +34,12 @@ class count:
         return self._count
 
 
-counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count(1))
+counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count())
 
 
 _callbacks: dict[str, Callable] = {}
 _timeouts: dict[str, Timeout] = {}
+_variables: dict[str, _TclVariable] = {}
 _widgets: dict[str, TkWidget] = {}
 
 

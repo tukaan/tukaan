@@ -22,6 +22,7 @@ from ._utils import (
     update_before,
 )
 from .exceptions import TclError
+from ._variables import String
 
 
 class ChildStatistics:
@@ -116,10 +117,16 @@ class MethodAndPropMixin:
         return self._tcl_call(type_spec, self, "cget", f"-{key}")
 
     def config(self, **kwargs) -> None:
-        for key in tuple(kwargs.keys()):
+        for key, value in tuple(kwargs.items()):
             if isinstance(self._keys[key], tuple):
                 # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
                 kwargs[self._keys[key][1]] = kwargs.pop(key)
+
+            if key == "text":
+                if isinstance(value, String):
+                    kwargs["textvariable"] = kwargs.pop("text")
+                else:
+                    kwargs["textvariable"] = ""
 
         get_tcl_interp()._tcl_call(
             None, self, "configure", *py_to_tcl_arguments(**kwargs)
