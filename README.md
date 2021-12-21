@@ -1,19 +1,14 @@
 # Tukaan
-
 [![Code style: black](https://img.shields.io/badge/code%20style-black-1c1c1c.svg)](https://github.com/psf/black)
 
-Tukaan is the new pythonic, powerful and easy-to-use GUI framework that aims to replace Tkinter.
-It has everything (at least on my computer) that you need to develop cross-platform GUIs.
-
-
 ## WIP
-Although all the basic widgets and other classes already exist in my local repo, they are not yet ready to push them to GitHub.
-I only push things to GitHub that work and could be used, but they are still in progress, so you shouldn’t use it in any project.
-
+This is a work-in-progress project. Although all the basic widgets and other classes already exist in my local repo, they are not yet ready to push them to GitHub. Anything that's here on GitHub, could be changed, so you shouldn't use it in any of your projects.
 
 ## The goal of Tukaan
-The goal of Tukaan is to be an easy-to-use, powerful and pythonic alternative to Tkinter.
+The goal of Tukaan is to be an easy-to-use, powerful and pythonic GUI framework.\
+In the beginning I just wanted to create a alternative framework to Tkinter, so I don't have to use it. Now it's a much bigger project, I want to make it a full, modern GUI framework.
 
+### Why not tkinter?
 Tkinter is just a wrapper around Tk, that is so thin, that you can see through it, and even has holes on it. If you have ever used Tkinter, you know, it's kinda dumb. There are a lot of things not implemented in Tkinter, you can only access them with Tcl calls. Tukaan has everything you could need, and maybe even more.
 
 In Tcl almost everything is represented as strings, and Tkinter doesn't convert them to Python objects, so you have to do that yourself. If you mess something up, it won't raise a Python exception, but Tcl a error, which you don't know what's wrong even if you know the Tcl language.
@@ -198,10 +193,6 @@ print(cursor.position)
 - Logo design:
 
     Inspired by Tajulislam12's design: [`https://dribbble.com/shots/14487668-toucan-logo-design-Icon`](https://dribbble.com/shots/14487668-toucan-logo-design-Icon)
-
-- Logo font:
-
-    Stick No Bills by Mooniak: [`https://fonts.google.com/specimen/Stick+No+Bills`](https://fonts.google.com/specimen/Stick+No+Bills)
 
 - Many thing in Tukaan is based on:
 
