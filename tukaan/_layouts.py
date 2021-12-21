@@ -43,17 +43,20 @@ class GridCells:
     _grid_cells: list[list[str]]
     _cell_managed_children: dict[TkWidget, str]
 
+    def set_grid_cells(self, cells_data: list[list[str]]) -> None:
+        self._grid_cells = cells_data
+        self._grid_cells_values = self._parse_grid_cells(cells_data)
+
+        for widget in self._cell_managed_children.keys():
+            widget.layout._set_cell(self._cell_managed_children[widget])
+
     @property
     def grid_cells(self) -> list[list[str]]:
         return self._grid_cells
 
     @grid_cells.setter
     def grid_cells(self, cells_data: list[list[str]]) -> None:
-        self._grid_cells = cells_data
-        self._grid_cells_values = self._parse_grid_cells(cells_data)
-
-        for widget in self._cell_managed_children.keys():
-            widget.layout._set_cell(self._cell_managed_children[widget])
+        self.set_grid_cells(cells_data)
 
     def _parse_grid_cells(
         self, areas_list: list[list[str]]
