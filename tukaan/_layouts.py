@@ -80,7 +80,7 @@ class GridCells:
                     result[cell_name] = {
                         "row": row_index,
                         "col": col_index,
-                        "rowspan": 1,
+                        "rowspan": 1,  # reset to 1 when modifying the cell layout
                         "colspan": 1,
                     }
 
