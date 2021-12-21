@@ -12,8 +12,8 @@ from .exceptions import TclError
 
 if TYPE_CHECKING:
     from ._base import TkWidget
-    from .timeout import Timeout
     from ._variables import _TclVariable
+    from .timeout import Timeout
 
 
 class count:

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from ._utils import counts, _variables, get_tcl_interp
+from ._utils import _variables, counts, get_tcl_interp
 
 
 class _TclVariable:
     _type_spec: type
-    
+
     def __init__(self, value, name=None):
         if name is None:
             name = f"tukaan_{self._type_spec.__name__}_var_{next(counts['variable'])}"
@@ -15,7 +15,7 @@ class _TclVariable:
         self.set(value)
 
     def __repr__(self):
-        return str(self.get())
+        return f"tukaan.{type(self).__name__} control variable, value={self.get()!r}"
 
     __str__ = __repr__
 
@@ -49,6 +49,19 @@ class _TclVariable:
 
 class String(_TclVariable):
     _type_spec = str
+
+    def __iadd__(self, string: str) -> String:
+        # ???
+        self.set(self.get() + string)
+        return self
+
+
+class Integer(_TclVariable):
+    _type_spec = int
+
+
+class Boolean(_TclVariable):
+    _type_spec = bool
 
     def __iadd__(self, string: str) -> String:
         # ???

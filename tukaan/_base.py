@@ -21,8 +21,8 @@ from ._utils import (
     reversed_dict,
     update_before,
 )
-from .exceptions import TclError
 from ._variables import String
+from .exceptions import TclError
 
 
 class ChildStatistics:

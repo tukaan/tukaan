@@ -143,11 +143,11 @@ class Grid:
         | HorAlignAlias
         | VertAlignAlias = None,
         cell: Optional[str] = None,
-        col: Optional[int] = None,
+        col: Optional[int] = 0,
         colspan: Optional[int] = None,
         hor_align: HorAlignAlias = None,
         margin: MrgnAlias = None,
-        row: Optional[int] = None,
+        row: Optional[int] = 0,
         rowspan: Optional[int] = None,
         vert_align: VertAlignAlias = None,
     ) -> None:
