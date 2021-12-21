@@ -7,9 +7,9 @@ from ._constants import _anchors
 class Label(BaseWidget):
     _tcl_class = "ttk::label"
     _keys = {
-        "anchor": _anchors,
+        "align_content": _anchors,
         "focusable": (bool, "takefocus"),
-        "justify": str,
+        "align_text": str,
         "max_line_length": (int, "wraplength"),
         "style": str,
         "text": str,
@@ -18,25 +18,25 @@ class Label(BaseWidget):
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
-        anchor: Optional[str] = None,
+        align_content: Optional[str] = None,
         focusable: Optional[bool] = None,
-        justify: Optional[Literal["left", "center", "right"]] = None,
+        align_text: Optional[Literal["left", "center", "right"]] = None,
         max_line_length: Optional[int] = None,
         style: Optional[str] = None,
         text: Optional[str] = None,
     ) -> None:
 
-        if anchor is not None:
+        if align_content is not None:
             # can't use "" as anchor, so have to check if it's None
-            # ambiguous anchor "": must be ...
-            anchor = _anchors[anchor]
+            # error: ambiguous anchor "": must be ...
+            align_content = _anchors[align_content]
 
         BaseWidget.__init__(
             self,
             parent,
-            anchor=anchor,
+            anchor=align_content,
             takefocus=focusable,
-            justify=justify,
+            justify=align_text,
             wraplength=max_line_length,
             style=style,
             text=text,
