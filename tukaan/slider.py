@@ -8,6 +8,7 @@ from ._variables import Float
 class Slider(BaseWidget):
     _tcl_class = "ttk::scale"
     _keys = {
+        "focusable": (bool, "takefocus"),
         "length": ScreenDistance,
         "max": (float, "to"),
         "min": (float, "from"),
@@ -21,6 +22,7 @@ class Slider(BaseWidget):
         self,
         parent: Optional[TkWidget] = None,
         length: Optional[Union[int, ScreenDistance]] = None,
+        focusable: Optional[bool] = None,
         max: Optional[int] = 100,
         min: Optional[int] = 0,
         on_move: Optional[Callable] = None,
@@ -37,7 +39,8 @@ class Slider(BaseWidget):
             orient=orientation,
             to=max,
             value=value,
-            variable=variable
+            variable=variable,
+            takefocus=focusable,
         )
 
     def _repr_details(self):
