@@ -58,12 +58,16 @@ class RadioGroup(BaseWidget):
     ) -> None:
         BaseWidget.__init__(self, parent)
 
-        self.value = String(items[0][1])
+        self.variable = String(items[0][1])
 
         for index, item in enumerate(items):
             RadioButton(
-                self, variable=self.value, value=item[1], text=item[0]
+                self, variable=self.variable, value=item[1], text=item[0]
             ).layout.grid(row=index)
 
     def select(self, value: str) -> None:
-        self.value.set(value)
+        self.variable.set(value)
+
+    @property
+    def value(self):
+        return self.variable.get()
