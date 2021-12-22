@@ -33,10 +33,10 @@ class Button(BaseWidget):
             default=default,
             style=style,
             takefocus=focusable,
-            text=text,
             width=width,
             underline=underline,
         )
+        self.config(text=text)
 
     def invoke(self):
         self._tcl_call(None, self, "invoke")

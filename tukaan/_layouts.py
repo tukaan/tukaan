@@ -4,8 +4,7 @@ import enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Optional, Tuple, Union
 
 if TYPE_CHECKING:
-    # pyright won't complain
-    from ._base import TkWidget
+    from ._base import BaseWidget, TkWidget
 
 from ._constants import AnchorAnnotation
 from ._misc import ScreenDistance
@@ -41,7 +40,14 @@ class StickyValues(enum.Enum):
 class GridCells:
     _widget: TkWidget
     _grid_cells: list[list[str]]
-    _cell_managed_children: dict[TkWidget, str]
+    _cell_managed_children: dict[BaseWidget, str]
+
+    def set_grid_cells(self, cells_data: list[list[str]]) -> None:
+        self._grid_cells = cells_data
+        self._grid_cells_values = self._parse_grid_cells(cells_data)
+
+        for widget in self._cell_managed_children.keys():
+            widget.layout._set_cell(self._cell_managed_children[widget])
 
     @property
     def grid_cells(self) -> list[list[str]]:
@@ -49,11 +55,7 @@ class GridCells:
 
     @grid_cells.setter
     def grid_cells(self, cells_data: list[list[str]]) -> None:
-        self._grid_cells = cells_data
-        self._grid_cells_values = self._parse_grid_cells(cells_data)
-
-        for widget in self._cell_managed_children.keys():
-            widget.layout._set_cell(self._cell_managed_children[widget])
+        self.set_grid_cells(cells_data)
 
     def _parse_grid_cells(
         self, areas_list: list[list[str]]
@@ -77,7 +79,7 @@ class GridCells:
                     result[cell_name] = {
                         "row": row_index,
                         "col": col_index,
-                        "rowspan": 1,
+                        "rowspan": 1,  # reset to 1 when modifying the cell layout
                         "colspan": 1,
                     }
 
@@ -128,8 +130,8 @@ class GridTemplates:
 
 
 class Grid:
-    _widget: TkWidget
-    _cell_managed_children: dict[TkWidget, str]
+    _widget: BaseWidget
+    _cell_managed_children: dict[BaseWidget, str]
     _get_lm_properties: Callable[[Grid, str], Any]
     _set_lm_properties: Callable[[Grid, str, str, Any], None]
     _info: Callable
@@ -140,11 +142,11 @@ class Grid:
         | HorAlignAlias
         | VertAlignAlias = None,
         cell: Optional[str] = None,
-        col: Optional[int] = None,
+        col: Optional[int] = 0,
         colspan: Optional[int] = None,
         hor_align: HorAlignAlias = None,
         margin: MrgnAlias = None,
-        row: Optional[int] = None,
+        row: Optional[int] = 0,
         rowspan: Optional[int] = None,
         vert_align: VertAlignAlias = None,
     ) -> None:
@@ -323,7 +325,7 @@ class Grid:
 
 
 class Position:
-    _widget: TkWidget
+    _widget: BaseWidget
     _get_lm_properties: Callable[[Position, str], Any]
     _set_lm_properties: Callable[[Position, str, str, Any], None]
 
@@ -411,6 +413,8 @@ class BaseLayoutManager(GridCells, GridTemplates):
 
 class LayoutManager(BaseLayoutManager, Grid, Position):
     _real_manager: str
+    _cell_managed_children: dict[BaseWidget, str]
+    _widget: BaseWidget
 
     def _get_manager(self):
         return self._widget._tcl_call(str, "winfo", "manager", self._widget)
@@ -490,7 +494,7 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
         )
         return {key.lstrip("-"): value for key, value in result.items()}
 
-    def _get_lm_properties(self: Grid, what: str) -> Any:
+    def _get_lm_properties(self, what: str) -> Any:
         try:
             return self._info()[what]
         except KeyError:

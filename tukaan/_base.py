@@ -21,6 +21,7 @@ from ._utils import (
     reversed_dict,
     update_before,
 )
+from ._variables import String
 from .exceptions import TclError
 
 
@@ -65,8 +66,8 @@ class MethodAndPropMixin:
     def __repr__(self) -> str:
         return (
             f"<tukaan.{type(self).__name__}"
-            + " widget,"
-            + f" id={self.tcl_path!r}{': ' + self._repr_details() if self._repr_details() else ''}>"
+            + " widget:"
+            + f" tcl_name={self.tcl_path!r}{', ' + self._repr_details() if self._repr_details() else ''}>"
         )
 
     __str__ = __repr__
@@ -116,10 +117,16 @@ class MethodAndPropMixin:
         return self._tcl_call(type_spec, self, "cget", f"-{key}")
 
     def config(self, **kwargs) -> None:
-        for key in tuple(kwargs.keys()):
+        for key, value in tuple(kwargs.items()):
             if isinstance(self._keys[key], tuple):
                 # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
                 kwargs[self._keys[key][1]] = kwargs.pop(key)
+
+            if key == "text":
+                if isinstance(value, String):
+                    kwargs["textvariable"] = kwargs.pop("text")
+                else:
+                    kwargs["textvariable"] = ""
 
         get_tcl_interp()._tcl_call(
             None, self, "configure", *py_to_tcl_arguments(**kwargs)
@@ -135,7 +142,7 @@ class MethodAndPropMixin:
         # teek.Button.from_tcl(teek.Label().to_tcl())
         # >>> TypeError: blablabla
 
-        # tukaan.Button.from_tcl(teek.tukaan().to_tcl())
+        # tukaan.Button.from_tcl(tukaan.Label().to_tcl())
         # >>> '.app.label_1'
 
         if tcl_value == ".":
@@ -183,10 +190,14 @@ class MethodAndPropMixin:
 
     def hide(self):
         if self.tcl_path == ".app" or self._class == "Toplevel":
+            # object is a window
             self._tcl_call(None, "wm", "withdraw", self.wm_path)
         elif self.layout._real_manager == "grid":
+            # widget managed by grid
             self._tcl_call(None, "grid", "remove", self.tcl_path)
         elif self.layout._real_manager == "place":
+            # widget managed by position (place)
+            # unfortunately there's no 'place remove' so it's kinda pain to keep the attributes
             self._temp_position_info = self._tcl_call(
                 {"-x": int, "-y": int, "-anchor": str, "-width": int, "-height": int},
                 "place",
@@ -197,10 +208,13 @@ class MethodAndPropMixin:
 
     def unhide(self):
         if self.tcl_path == ".app" or self._class == "Toplevel":
+            # object is a window
             self._tcl_call(None, "wm", "deiconify", self.wm_path)
         elif self.layout._real_manager == "grid":
+            # widget managed by grid
             self._tcl_call(None, "grid", "configure", self.tcl_path)
         elif self.layout._real_manager == "place":
+            # widget managed by position (place)
             self._tcl_call(
                 None,
                 (
@@ -375,6 +389,7 @@ class StateSet(collections.abc.MutableSet):
 
 class BaseWidget(TkWidget):
     _keys: dict[str, Any | tuple[Any, str]]
+    layout: LayoutManager
 
     def __init__(self, parent: TkWidget | None, **kwargs) -> None:
         self.parent = parent or get_tcl_interp()
