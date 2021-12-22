@@ -15,7 +15,7 @@ class _TclVariable:
         self.set(value)
 
     def __repr__(self):
-        return f"tukaan.{type(self).__name__} control variable, value={self.get()!r}"
+        return f"tukaan.{type(self).__name__} control variable: tcl_name={self.name}, value={self.get()!r}"
 
     __str__ = __repr__
 

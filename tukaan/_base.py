@@ -66,8 +66,8 @@ class MethodAndPropMixin:
     def __repr__(self) -> str:
         return (
             f"<tukaan.{type(self).__name__}"
-            + " widget,"
-            + f" id={self.tcl_path!r}{': ' + self._repr_details() if self._repr_details() else ''}>"
+            + " widget:"
+            + f" tcl_name={self.tcl_path!r}{', ' + self._repr_details() if self._repr_details() else ''}>"
         )
 
     __str__ = __repr__

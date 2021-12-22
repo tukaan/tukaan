@@ -57,13 +57,11 @@ class RadioGroup(BaseWidget):
         self, parent: Optional[TkWidget] = None, *, items: list[tuple[str, str]]
     ) -> None:
         BaseWidget.__init__(self, parent)
-
         self.variable = String(items[0][1])
+        self.items = items
 
-        for index, item in enumerate(items):
-            RadioButton(
-                self, variable=self.variable, value=item[1], text=item[0]
-            ).layout.grid(row=index)
+    def _repr_details(self) -> str:
+        return f"number_of_items={len(self._items)}, selected={self.selected_item!r}"
 
     def select(self, value: str) -> None:
         self.variable.set(value)
@@ -71,3 +69,25 @@ class RadioGroup(BaseWidget):
     @property
     def value(self):
         return self.variable.get()
+
+    @property
+    def selected_item(self):
+        for radio in self._items:
+            if radio[1] == self.variable.get():
+                return radio
+
+    @property
+    def items(self) -> list[tuple[str, str]]:
+        return self._items
+
+    @items.setter
+    def items(self, new_items: list[tuple[str, str]]) -> None:
+        self._items = new_items
+
+        for item in self._tcl_call([str], "winfo", "children", self):
+            self._tcl_call(None, "destroy", item)
+
+        for index, item in enumerate(new_items):
+            RadioButton(
+                self, variable=self.variable, value=item[1], text=item[0]
+            ).layout.grid(row=index)
