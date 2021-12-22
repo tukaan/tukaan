@@ -29,7 +29,7 @@ class CheckBox(BaseWidget):
         width: Optional[int] = None,
     ) -> None:
         self._variable = Boolean(value)
-        
+
         BaseWidget.__init__(
             self,
             parent,
