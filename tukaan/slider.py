@@ -44,7 +44,7 @@ class Slider(BaseWidget):
         )
 
     def _repr_details(self):
-        return f"value={self.value!r}"
+        return f"min={self.min!r}, max={self.max!r}, value={self.value!r}"
 
     def get(self) -> float:
         return self._tcl_call(float, self, "get")
