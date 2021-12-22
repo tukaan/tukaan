@@ -60,6 +60,10 @@ class Integer(_TclVariable):
     _type_spec = int
 
 
+class Float(_TclVariable):
+    _type_spec = float
+
+
 class Boolean(_TclVariable):
     _type_spec = bool
 

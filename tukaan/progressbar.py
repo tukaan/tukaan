@@ -1,26 +1,29 @@
 from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
+from ._variables import Float
 
 
 class ProgressBar(BaseWidget):
     _tcl_class = "ttk::progressbar"
     _keys = {
         "focusable": (bool, "takefocus"),
-        "max": int,
+        "max": float,
         "mode": str,
         "orientation": (str, "orient"),
-        "value": int,
+        "value": float,
+        "variable": Float
     }
 
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
         focusable: Optional[bool] = None,
-        max: Optional[Literal["left", "center", "right"]] = None,
+        max: Optional[int] = 100,
         mode: Optional[Literal["determinate", "indeterminate"]] = None,
         orientation: Optional[Literal["horizontal", "vertical"]] = None,
         value: Optional[int] = None,
+        variable: Optional[Float] = None
     ) -> None:
         BaseWidget.__init__(
             self,
@@ -30,6 +33,7 @@ class ProgressBar(BaseWidget):
             orient=orientation,
             takefocus=focusable,
             value=value,
+            variable=variable
         )
 
     def _repr_details(self):

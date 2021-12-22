@@ -2,28 +2,31 @@ from typing import Callable, Literal, Optional, Union
 
 from ._base import BaseWidget, TkWidget
 from ._misc import ScreenDistance
+from ._variables import Float
 
 
 class Slider(BaseWidget):
     _tcl_class = "ttk::scale"
     _keys = {
         "length": ScreenDistance,
-        "max": (int, "to"),
-        "min": (int, "from"),
+        "max": (float, "to"),
+        "min": (float, "from"),
         "on_move": ("func", "command"),
         "orientation": (str, "orient"),
         "value": float,
+        "variable": Float
     }
 
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
         length: Optional[Union[int, ScreenDistance]] = None,
-        max: Optional[int] = None,
-        min: Optional[int] = None,
+        max: Optional[int] = 100,
+        min: Optional[int] = 0,
         on_move: Optional[Callable] = None,
         orientation: Optional[Literal["horizontal", "vertical"]] = None,
         value: Optional[float] = None,
+        variable: Optional[Float] = None
     ) -> None:
         BaseWidget.__init__(
             self,
@@ -34,6 +37,7 @@ class Slider(BaseWidget):
             orient=orientation,
             to=max,
             value=value,
+            variable=variable
         )
 
     def _repr_details(self):
