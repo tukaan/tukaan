@@ -79,13 +79,13 @@ class RadioGroup(BaseWidget):
 
     def get_item(self, item: str) -> BaseWidget:
         for radio in self.child_stats.children:
-            if radio._item_id == item:
+            if radio.item_id == item:
                 return radio
         raise RuntimeError(f"item with id {item!r} is not in this RadioGroup")
 
     def destroy_item(self, item: str) -> None:
         for radio in self.child_stats.children:
-            if radio._item_id == item:
+            if radio.item_id == item:
                 radio.destroy()
         raise RuntimeError(f"item with id {item!r} is not in this RadioGroup")
 
@@ -116,5 +116,5 @@ class RadioGroup(BaseWidget):
             radio = RadioButton(
                 self, variable=self.variable, value=item[1], text=item[0]
             )
-            radio._item_id = item[1]
+            radio.item_id = item[1]
             radio.layout.grid(row=index)
