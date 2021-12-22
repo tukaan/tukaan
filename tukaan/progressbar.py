@@ -12,7 +12,7 @@ class ProgressBar(BaseWidget):
         "mode": str,
         "orientation": (str, "orient"),
         "value": float,
-        "variable": Float
+        "variable": Float,
     }
 
     def __init__(
@@ -23,7 +23,7 @@ class ProgressBar(BaseWidget):
         mode: Optional[Literal["determinate", "indeterminate"]] = None,
         orientation: Optional[Literal["horizontal", "vertical"]] = None,
         value: Optional[int] = None,
-        variable: Optional[Float] = None
+        variable: Optional[Float] = None,
     ) -> None:
         BaseWidget.__init__(
             self,
@@ -33,7 +33,7 @@ class ProgressBar(BaseWidget):
             orient=orientation,
             takefocus=focusable,
             value=value,
-            variable=variable
+            variable=variable,
         )
 
     def _repr_details(self):

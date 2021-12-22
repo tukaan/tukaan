@@ -1,6 +1,6 @@
 from ._misc import Clipboard, Color, Cursor, Font, Screen, ScreenDistance
 from ._platform import Platform
-from ._variables import Boolean, Integer, String, Float
+from ._variables import Boolean, Float, Integer, String
 from .app import App
 from .button import Button
 from .checkbox import CheckBox

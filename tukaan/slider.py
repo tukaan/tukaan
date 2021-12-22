@@ -15,20 +15,20 @@ class Slider(BaseWidget):
         "on_move": ("func", "command"),
         "orientation": (str, "orient"),
         "value": float,
-        "variable": Float
+        "variable": Float,
     }
 
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
-        length: Optional[Union[int, ScreenDistance]] = None,
         focusable: Optional[bool] = None,
+        length: Optional[Union[int, ScreenDistance]] = None,
         max: Optional[int] = 100,
         min: Optional[int] = 0,
         on_move: Optional[Callable] = None,
         orientation: Optional[Literal["horizontal", "vertical"]] = None,
         value: Optional[float] = None,
-        variable: Optional[Float] = None
+        variable: Optional[Float] = None,
     ) -> None:
         BaseWidget.__init__(
             self,
@@ -37,10 +37,10 @@ class Slider(BaseWidget):
             from_=min,
             length=length,
             orient=orientation,
+            takefocus=focusable,
             to=max,
             value=value,
             variable=variable,
-            takefocus=focusable,
         )
 
     def _repr_details(self):
