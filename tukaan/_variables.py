@@ -32,7 +32,7 @@ class _TclVariable:
     def set(self, new_value) -> None:
         get_tcl_interp()._tcl_call(None, "set", self._name, new_value)
 
-    def get(self) -> None:
+    def get(self):
         return get_tcl_interp()._tcl_call(self._type_spec, "set", self._name)
 
     @property
@@ -66,8 +66,3 @@ class Float(_TclVariable):
 
 class Boolean(_TclVariable):
     _type_spec = bool
-
-    def __iadd__(self, string: str) -> String:
-        # ???
-        self.set(self.get() + string)
-        return self

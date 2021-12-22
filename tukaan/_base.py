@@ -389,6 +389,7 @@ class StateSet(collections.abc.MutableSet):
 
 class BaseWidget(TkWidget):
     _keys: dict[str, Any | tuple[Any, str]]
+    layout: LayoutManager
 
     def __init__(self, parent: TkWidget | None, **kwargs) -> None:
         self.parent = parent or get_tcl_interp()
