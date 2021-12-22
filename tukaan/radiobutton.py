@@ -51,7 +51,7 @@ class RadioButton(BaseWidget):
 
 class RadioGroup(BaseWidget):
     _tcl_class = "ttk::frame"
-    _keys = {}
+    _keys: dict[str, Any | tuple[Any, str]] = {}
 
     def __init__(
         self, parent: Optional[TkWidget] = None, *, items: list[tuple[str, str]]
@@ -63,18 +63,33 @@ class RadioGroup(BaseWidget):
     def _repr_details(self) -> str:
         return f"number_of_items={len(self._items)}, selected={self.selected_item!r}"
 
-    def select(self, value: str) -> None:
-        self.variable.set(value)
-
     @property
     def value(self):
         return self.variable.get()
 
-    @property
-    def selected_item(self):
-        for radio in self._items:
-            if radio[1] == self.variable.get():
+    def get_item(self, item: str) -> BaseWidget:
+        for radio in self.child_stats.children:
+            if radio._item_id == item:
                 return radio
+        raise RuntimeError(f"item with id {item!r} is not in this RadioGroup")
+
+    def destroy_item(self, item: str) -> None:
+        for radio in self.child_stats.children:
+            if radio._item_id == item:
+                radio.destroy()
+        raise RuntimeError(f"item with id {item!r} is not in this RadioGroup")
+
+    @property
+    def selected_item(self) -> BaseWidget | None:
+        value = self.variable.get()
+        for radio in self._items:
+            if radio[1] == value:
+                return self.get_item(radio[1])
+        return None
+
+    @selected_item.setter
+    def selected_item(self, value: str) -> None:
+        self.variable.set(value)
 
     @property
     def items(self) -> list[tuple[str, str]]:
@@ -84,10 +99,12 @@ class RadioGroup(BaseWidget):
     def items(self, new_items: list[tuple[str, str]]) -> None:
         self._items = new_items
 
-        for item in self._tcl_call([str], "winfo", "children", self):
-            self._tcl_call(None, "destroy", item)
+        for child in self.child_stats.children:
+            child.destroy()
 
         for index, item in enumerate(new_items):
-            RadioButton(
+            radio = RadioButton(
                 self, variable=self.variable, value=item[1], text=item[0]
-            ).layout.grid(row=index)
+            )
+            radio._item_id = item[1]
+            radio.layout.grid(row=index)
