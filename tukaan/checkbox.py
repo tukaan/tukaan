@@ -14,7 +14,6 @@ class CheckBox(BaseWidget):
         "style": str,
         "text": str,
         "underline": int,
-        "variable": Boolean,
         "width": int,
     }
 
@@ -26,9 +25,11 @@ class CheckBox(BaseWidget):
         style: Optional[str] = None,
         text: Optional[str] = None,
         underline: Optional[int] = None,
-        variable: Optional[Boolean] = None,
+        value: bool = False,
         width: Optional[int] = None,
     ) -> None:
+        self._variable = Boolean(value)
+        
         BaseWidget.__init__(
             self,
             parent,
@@ -38,11 +39,29 @@ class CheckBox(BaseWidget):
             style=style,
             takefocus=focusable,
             underline=underline,
-            variable=variable,
+            variable=self._variable,
             width=width,
         )
         self.config(text=text)
 
-    def toggle(self):
-        """Also invokes the on_click command"""
+    def invoke(self):
         self._tcl_call(None, self, "invoke")
+
+    def select(self):
+        self._variable.set(True)
+
+    def deselect(self):
+        self._variable.set(False)
+
+    def toggle(self):
+        self._variable.set(not self._variable.get())
+
+    @property
+    def is_selected(self) -> bool:
+        return self._variable.get()
+
+    @is_selected.setter
+    def is_selected(self, is_selected: bool) -> None:
+        self._variable.set(is_selected)
+
+    value = is_selected  # for consistency with RadioButton

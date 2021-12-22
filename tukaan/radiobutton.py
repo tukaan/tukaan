@@ -44,9 +44,19 @@ class RadioButton(BaseWidget):
         )
         self.config(text=text)
 
-    def select(self):
-        """Also invokes the on_click command"""
+    def invoke(self):
         self._tcl_call(None, self, "invoke")
+
+    def select(self):
+        self.variable.set(self.value)
+
+    @property
+    def is_selected(self) -> bool:
+        return self.variable.get() == self.value
+
+    @is_selected.setter
+    def is_selected(self, _: bool) -> bool:
+        raise AttributeError("RadioButton.is_selected is read-only")
 
 
 class RadioGroup(BaseWidget):
