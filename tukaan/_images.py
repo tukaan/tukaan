@@ -16,6 +16,7 @@ from ._utils import (
     get_tcl_interp,
     py_to_tcl_arguments,
 )
+from ._misc import HEX
 from .exceptions import TclError
 
 
@@ -178,3 +179,40 @@ class Icon:
     @classmethod
     def from_tcl(cls, value):
         return _icons[value]
+
+    def config(self, **kwargs):
+        get_tcl_interp()._tcl_call(
+            None, self._name, "configure", *py_to_tcl_arguments(**kwargs)
+        )
+
+
+class IconFactory:
+    def __init__(self, light_theme: str, dark_theme: str):
+        self._light_icons_dir = dark_theme
+        self._dark_icons_dir = light_theme
+        self._current_dir = dark_theme
+        self.cache: dict[str, Icon] = {}
+
+        get_tcl_interp()._tcl_call(
+            None, "bind", ".app", "<<ThemeChanged>>", create_command(self.change_theme)
+        )
+
+    def change_theme(self):
+        dark_theme = sum(HEX.from_hex(get_tcl_interp()._tcl_call(str, "ttk::style", "lookup", "TLabel.label", "-foreground"))) / 3 > 127
+        
+        self._current_dir = (
+            self._light_icons_dir if dark_theme else self._dark_icons_dir
+        )
+
+        for icon_name, icon in tuple(self.cache.items()):
+            icon.config(file=Path(self._current_dir) / (icon_name + ".png"))
+
+    def __getitem__(self, icon_name: str) -> Icon:
+        if icon_name in self.cache:
+            return self.cache[icon_name]
+
+        icon = Icon(file=Path(self._current_dir) / (icon_name + ".png"))
+        self.cache[icon_name] = icon
+        return icon
+
+    get = __getitem__

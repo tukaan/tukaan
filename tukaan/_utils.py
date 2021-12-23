@@ -5,6 +5,7 @@ import collections.abc
 import itertools
 import numbers
 import traceback
+from pathlib import Path
 from inspect import isclass
 from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
@@ -223,6 +224,9 @@ def to_tcl(value: Any) -> Any:
 
     if callable(value):
         return create_command(value)
+
+    if isinstance(value, Path):
+        return str(value.resolve())
 
     return tuple(map(to_tcl, value))
 
