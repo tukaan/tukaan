@@ -51,6 +51,7 @@ class App(WindowMixin, TkWidget):
         self.layout: BaseLayoutManager = BaseLayoutManager(self)
 
         tcl_interp = self
+        self.tcl_interp_address = self.app.interpaddr()  # only for PIL
 
         self._tcl_call(None, "ttk::frame", ".app")
         self._tcl_call(None, "pack", ".app", "-expand", "1", "-fill", "both")

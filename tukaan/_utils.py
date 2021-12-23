@@ -11,7 +11,10 @@ from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 from .exceptions import TclError
 
 if TYPE_CHECKING:
+    from PIL import Image
+
     from ._base import TkWidget
+    from ._images import Icon
     from ._variables import _TclVariable
     from .timeout import Timeout
 
@@ -38,6 +41,8 @@ counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count(
 
 
 _callbacks: dict[str, Callable] = {}
+_images: dict[str, Image] = {}
+_icons: dict[str, Icon] = {}
 _timeouts: dict[str, Timeout] = {}
 _variables: dict[str, _TclVariable] = {}
 _widgets: dict[str, TkWidget] = {}
