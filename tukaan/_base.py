@@ -54,7 +54,42 @@ class ChildStatistics:
         )
 
 
-class MethodAndPropMixin:
+class CgetAndConfigure:
+    _keys: dict[str, Any | tuple[Any, str]]
+
+    def _cget(self, key: str) -> Any:
+        if isinstance(self._keys[key], tuple):
+            type_spec, key = self._keys[key]
+        else:
+            type_spec = self._keys[key]
+
+        if type_spec == "func":
+            # return a callable func, not tcl name
+            result = self._tcl_call(str, self, "cget", f"-{key}")
+            return _callbacks[result]
+
+        if isinstance(type_spec, dict):
+            result = self._tcl_call(str, self, "cget", f"-{key}")
+            return reversed_dict(type_spec)[result]
+
+        return self._tcl_call(type_spec, self, "cget", f"-{key}")
+
+    def config(self, **kwargs) -> None:
+        for key, value in tuple(kwargs.items()):
+            if isinstance(self._keys[key], tuple):
+                # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
+                kwargs[self._keys[key][1]] = kwargs.pop(key)
+
+            if key == "text":
+                if isinstance(value, String):
+                    kwargs["textvariable"] = kwargs.pop("text")
+                else:
+                    kwargs["textvariable"] = ""
+
+        self._tcl_call(None, self, "configure", *py_to_tcl_arguments(**kwargs))
+
+
+class CommonMethods:
     _tcl_call: Callable
     _keys: dict[str, Any]
     layout: BaseLayoutManager
@@ -98,39 +133,6 @@ class MethodAndPropMixin:
     @property
     def id(self) -> int:
         return self._tcl_call(int, "winfo", "id", self.tcl_path)
-
-    def _cget(self, key: str) -> Any:
-        if isinstance(self._keys[key], tuple):
-            type_spec, key = self._keys[key]
-        else:
-            type_spec = self._keys[key]
-
-        if type_spec == "func":
-            # return a callable func, not tcl name
-            result = self._tcl_call(str, self, "cget", f"-{key}")
-            return _callbacks[result]
-
-        if isinstance(type_spec, dict):
-            result = self._tcl_call(str, self, "cget", f"-{key}")
-            return reversed_dict(type_spec)[result]
-
-        return self._tcl_call(type_spec, self, "cget", f"-{key}")
-
-    def config(self, **kwargs) -> None:
-        for key, value in tuple(kwargs.items()):
-            if isinstance(self._keys[key], tuple):
-                # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
-                kwargs[self._keys[key][1]] = kwargs.pop(key)
-
-            if key == "text":
-                if isinstance(value, String):
-                    kwargs["textvariable"] = kwargs.pop("text")
-                else:
-                    kwargs["textvariable"] = ""
-
-        get_tcl_interp()._tcl_call(
-            None, self, "configure", *py_to_tcl_arguments(**kwargs)
-        )
 
     @classmethod
     def from_tcl(cls, tcl_value: str) -> TkWidget:
@@ -323,7 +325,7 @@ class TukaanWidget:
     ...
 
 
-class TkWidget(MethodAndPropMixin):
+class TkWidget(TukaanWidget, CgetAndConfigure, CommonMethods):
     """Base class for every Tk-based widget"""
 
     layout: BaseLayoutManager
@@ -388,7 +390,6 @@ class StateSet(collections.abc.MutableSet):
 
 
 class BaseWidget(TkWidget):
-    _keys: dict[str, Any | tuple[Any, str]]
     layout: LayoutManager
 
     def __init__(self, parent: TkWidget | None, **kwargs) -> None:

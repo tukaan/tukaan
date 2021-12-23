@@ -6,12 +6,16 @@ import itertools
 import numbers
 import traceback
 from inspect import isclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
 from .exceptions import TclError
 
 if TYPE_CHECKING:
+    from PIL import Image
+
     from ._base import TkWidget
+    from ._images import Icon, _image_converter_class
     from ._variables import _TclVariable
     from .timeout import Timeout
 
@@ -38,6 +42,9 @@ counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count(
 
 
 _callbacks: dict[str, Callable] = {}
+_images: dict[str, _image_converter_class] = {}
+_pil_images: dict[str, Image] = {}
+_icons: dict[str, Icon] = {}
 _timeouts: dict[str, Timeout] = {}
 _variables: dict[str, _TclVariable] = {}
 _widgets: dict[str, TkWidget] = {}
@@ -191,6 +198,9 @@ def from_tcl(type_spec, value) -> Any:
                 result[key] = from_tcl(type_spec.get(key, str), value)
             return result
 
+    if isinstance(type_spec, Path):
+        return Path(value).resolve()
+
 
 def to_tcl(value: Any) -> Any:
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
@@ -217,6 +227,9 @@ def to_tcl(value: Any) -> Any:
 
     if callable(value):
         return create_command(value)
+
+    if isinstance(value, Path):
+        return str(value.resolve())
 
     return tuple(map(to_tcl, value))
 
