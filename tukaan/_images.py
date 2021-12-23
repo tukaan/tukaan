@@ -28,7 +28,7 @@ class _image_converter_class:
             for key, value in tuple(_pil_images.items()):
                 if value is image:
                     self._name = key
-            return
+                    return
 
         try:
             _animated = image.is_animated
