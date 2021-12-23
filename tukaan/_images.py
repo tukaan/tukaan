@@ -22,7 +22,8 @@ from .exceptions import TclError
 class _image_converter_class:
     def __init__(self, image):
         if image in tuple(_pil_images.values()):
-            # without this hack Tk gets full with photoimages, and makes them grayscale
+            # Tk gets full with photoimages, and makes them grayscale
+            # this is a solution when a PIL image is used multiple times
             for key, value in tuple(_pil_images.items()):
                 if value is image:
                     self._name = key
