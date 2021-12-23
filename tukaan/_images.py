@@ -6,7 +6,7 @@ from typing import Optional
 
 from PIL import Image as PIL_Image
 
-from ._base import BaseWidget
+from ._base import BaseWidget, CgetAndConfigure
 from ._utils import (
     _icons,
     _images,
@@ -159,12 +159,17 @@ class Image(BaseWidget):
         BaseWidget.__init__(self, parent, image=image)
 
 
-class Icon:
+class Icon(CgetAndConfigure):
+    _keys = {
+        "data": str, "file": Path}
+    
     def __init__(self, file: Optional[str | Path] = None, data: Optional[str] = None):
+        self._tcl_call = get_tcl_interp()._tcl_call  # for CgetAndConfigure
+        
         self._name = f"tukaan_icon_{next(counts['icons'])}"
         _icons[self._name] = self
 
-        get_tcl_interp()._tcl_call(
+        self._tcl_call(
             None,
             "image",
             "create",
@@ -179,11 +184,6 @@ class Icon:
     @classmethod
     def from_tcl(cls, value):
         return _icons[value]
-
-    def config(self, **kwargs):
-        get_tcl_interp()._tcl_call(
-            None, self._name, "configure", *py_to_tcl_arguments(**kwargs)
-        )
 
 
 class IconFactory:

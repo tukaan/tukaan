@@ -198,6 +198,9 @@ def from_tcl(type_spec, value) -> Any:
                 result[key] = from_tcl(type_spec.get(key, str), value)
             return result
 
+    if isinstance(type_spec, Path):
+        return Path(value).resolve()
+
 
 def to_tcl(value: Any) -> Any:
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
