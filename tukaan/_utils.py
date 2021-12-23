@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from PIL import Image
 
     from ._base import TkWidget
-    from ._images import Icon
+    from ._images import Icon, _image_converter_class
     from ._variables import _TclVariable
     from .timeout import Timeout
 
@@ -41,7 +41,8 @@ counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count(
 
 
 _callbacks: dict[str, Callable] = {}
-_images: dict[str, Image] = {}
+_images: dict[str, _image_converter_class] = {}
+_pil_images: dict[str, Image] = {}
 _icons: dict[str, Icon] = {}
 _timeouts: dict[str, Timeout] = {}
 _variables: dict[str, _TclVariable] = {}

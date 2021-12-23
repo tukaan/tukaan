@@ -10,6 +10,7 @@ from ._base import BaseWidget
 from ._utils import (
     _icons,
     _images,
+    _pil_images,
     counts,
     create_command,
     get_tcl_interp,
@@ -20,17 +21,26 @@ from .exceptions import TclError
 
 class _image_converter_class:
     def __init__(self, image):
+        if image in tuple(_pil_images.values()):
+            # without this hack Tk gets full with photoimages, and makes them grayscale
+            for key, value in tuple(_pil_images.items()):
+                if value is image:
+                    self._name = key
+            return
+
         try:
-            self.is_animated = image.is_animated
+            _animated = image.is_animated
         except AttributeError:
-            self.is_animated = False
+            _animated = False
 
         self.current_frame = 0
         self._image = image
+        self._name = f"tukaan_image_{next(counts['images'])}"
 
-        self._name = f"tukaan_image_{next(counts['image'])}"
         get_tcl_interp()._tcl_call(None, "image", "create", "photo", self._name)
-        _images[self._name] = self
+
+        _images[self._name] = self  # gc
+        _pil_images[self._name] = image
 
         try:
             from PIL import _imagingtk
@@ -39,14 +49,16 @@ class _image_converter_class:
         except (ImportError, AttributeError, TclError) as e:
             raise e
 
-        if self.is_animated:
+        if _animated:
             self.image_frames = []
             self.show_frames_command = create_command(self.show_frame)
             self.start_animation()
         else:
-            threading.Thread(target=self.create_tcl_image, args=(self._image,)).start()
+            threading.Thread(
+                target=self.create_tcl_image, args=(self._name, self._image)
+            ).start()
 
-    def get_image_mode(self, image):
+    def get_image_mode(self, image) -> tuple[str, PIL_Image.Image]:
         # currently this is a copy/pasta from PIL.ImageTk
         if hasattr(image, "mode") and hasattr(image, "size"):
             mode = image.mode
@@ -65,14 +77,13 @@ class _image_converter_class:
 
         return mode, image
 
-    def create_tcl_image(self, image, frame: int | None = None):
-        name = self._name
-        if frame is not None:
-            name = f"{self._name}_frame_{frame}"
-
+    def create_tcl_image(self, name: str, image: PIL_Image.Image) -> None:
         get_tcl_interp()._tcl_call(None, "image", "create", "photo", name)
 
         self._mode, image = self.get_image_mode(image)
+        if image is None:
+            return
+
         image.load()
 
         size = image.size
@@ -88,28 +99,27 @@ class _image_converter_class:
 
         get_tcl_interp()._tcl_call(None, "PyImagingPhoto", name, block.id)
 
-        return name
-
-    def start_animation(self):
+    def start_animation(self) -> None:
         frame_count = 0
         try:
             while True:
                 self._image.seek(frame_count)
-                frame = self.create_tcl_image(self._image, frame=frame_count)
+                name = f"{self._name}_frame_{frame_count}"
+                self.create_tcl_image(name, self._image)
 
                 try:
-                    delay = self._image.info["duration"]
+                    duration = self._image.info["duration"]
                 except:
-                    delay = 100
+                    duration = 100
 
-                self.image_frames.append((frame, delay))
+                self.image_frames.append((name, duration))
                 frame_count += 1
         except EOFError:
             pass
 
         self.show_frame()
 
-    def show_frame(self):
+    def show_frame(self) -> None:
         frame_data = self.image_frames[self.current_frame]
 
         get_tcl_interp()._tcl_call(
@@ -124,12 +134,19 @@ class _image_converter_class:
             None, "after", int(frame_data[1]), self.show_frames_command
         )
 
-    def to_tcl(self):
+    def to_tcl(self) -> str:
         return self._name
 
     @classmethod
-    def from_tcl(cls, value):
-        return _images[value]
+    def from_tcl(cls, value: str) -> PIL_Image.Image:
+        return _pil_images[value]
+
+
+def pil_image_to_tcl(self):
+    return _image_converter_class(self).to_tcl()
+
+
+PIL_Image.Image.to_tcl = pil_image_to_tcl
 
 
 class Image(BaseWidget):
@@ -137,16 +154,7 @@ class Image(BaseWidget):
     _tcl_class = "ttk::label"
 
     def __init__(self, parent=None, image=None):
-        if isinstance(image, PIL_Image.Image):
-            image = _image_converter_class(image)
         BaseWidget.__init__(self, parent, image=image)
-
-    def config(self, **kwargs):
-        image = kwargs.pop("image", None)
-        if image:
-            if isinstance(image, PIL_Image.Image):
-                image = _image_converter_class(image)
-            BaseWidget.config(self, image=image)
 
 
 class Icon:
