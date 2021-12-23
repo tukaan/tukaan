@@ -197,17 +197,11 @@ class IconFactory:
         )
 
     def change_theme(self):
-        dark_theme = (
-            sum(
-                HEX.from_hex(
-                    get_tcl_interp()._tcl_call(
-                        str, "ttk::style", "lookup", "TLabel.label", "-foreground"
-                    )
-                )
-            )
-            / 3
-            > 127
-        )
+        # fmt: off
+        dark_theme = sum(
+            HEX.from_hex(get_tcl_interp()._tcl_call(str, "ttk::style", "lookup", "TLabel.label", "-foreground")
+        )) / 3 > 127
+        # fmt: on
 
         self._current_dir = (
             self._light_icons_dir if dark_theme else self._dark_icons_dir
