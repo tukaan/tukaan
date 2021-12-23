@@ -5,8 +5,8 @@ import collections.abc
 import itertools
 import numbers
 import traceback
-from pathlib import Path
 from inspect import isclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
 from .exceptions import TclError

@@ -1,4 +1,4 @@
-from ._images import Icon, Image, IconFactory
+from ._images import Icon, IconFactory, Image
 from ._misc import Clipboard, Color, Cursor, Font, Screen, ScreenDistance
 from ._platform import Platform
 from ._variables import Boolean, Float, Integer, String

@@ -7,6 +7,7 @@ from typing import Optional
 from PIL import Image as PIL_Image
 
 from ._base import BaseWidget, CgetAndConfigure
+from ._misc import HEX
 from ._utils import (
     _icons,
     _images,
@@ -16,7 +17,6 @@ from ._utils import (
     get_tcl_interp,
     py_to_tcl_arguments,
 )
-from ._misc import HEX
 from .exceptions import TclError
 
 
@@ -160,12 +160,11 @@ class Image(BaseWidget):
 
 
 class Icon(CgetAndConfigure):
-    _keys = {
-        "data": str, "file": Path}
-    
+    _keys = {"data": str, "file": Path}
+
     def __init__(self, file: Optional[str | Path] = None, data: Optional[str] = None):
         self._tcl_call = get_tcl_interp()._tcl_call  # for CgetAndConfigure
-        
+
         self._name = f"tukaan_icon_{next(counts['icons'])}"
         _icons[self._name] = self
 
@@ -198,8 +197,18 @@ class IconFactory:
         )
 
     def change_theme(self):
-        dark_theme = sum(HEX.from_hex(get_tcl_interp()._tcl_call(str, "ttk::style", "lookup", "TLabel.label", "-foreground"))) / 3 > 127
-        
+        dark_theme = (
+            sum(
+                HEX.from_hex(
+                    get_tcl_interp()._tcl_call(
+                        str, "ttk::style", "lookup", "TLabel.label", "-foreground"
+                    )
+                )
+            )
+            / 3
+            > 127
+        )
+
         self._current_dir = (
             self._light_icons_dir if dark_theme else self._dark_icons_dir
         )

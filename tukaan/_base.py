@@ -53,9 +53,10 @@ class ChildStatistics:
             for elem in self._widget._tcl_call((str,), "place", "slaves", self._widget)
         )
 
+
 class CgetAndConfigure:
     _keys: dict[str, Any | tuple[Any, str]]
-    
+
     def _cget(self, key: str) -> Any:
         if isinstance(self._keys[key], tuple):
             type_spec, key = self._keys[key]
@@ -85,9 +86,7 @@ class CgetAndConfigure:
                 else:
                     kwargs["textvariable"] = ""
 
-        self._tcl_call(
-            None, self, "configure", *py_to_tcl_arguments(**kwargs)
-        )
+        self._tcl_call(None, self, "configure", *py_to_tcl_arguments(**kwargs))
 
 
 class CommonMethods:
