@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import collections
 import re
-from functools import singledispatchmethod
 from typing import Callable, Tuple, cast
 
 from ._platform import Platform
@@ -91,19 +90,24 @@ class CMYK:
         c, m, y = (1 - x / 255 for x in (r, g, b))
 
         k = min(c, m, y)
-        c = (c - k) / (1 - k)
-        m = (m - k) / (1 - k)
-        y = (y - k) / (1 - k)
+        c = (c - k) 
+        m = (m - k) 
+        y = (y - k)
 
         return cast(Tuple[int, ...], tuple(intround(x * 100) for x in (c, m, y, k)))
 
     @staticmethod
     def from_cmyk(c, m, y, k) -> tuple[int, ...]:
-        r = 1.0 - (c + k) / 100.0
-        g = 1.0 - (m + k) / 100.0
-        b = 1.0 - (y + k) / 100.0
+        c = c / 100.0
+        m = m / 100.0
+        y = y / 100.0
+        k = k / 100.0
+        
+        r = 255.0 - ((min(1.0, c * (1.0 - k) + k)) * 255.0)
+        g = 255.0 - ((min(1.0, m * (1.0 - k) + k)) * 255.0)
+        b = 255.0 - ((min(1.0, y * (1.0 - k) + k)) * 255.0)
 
-        return cast(Tuple[int, ...], tuple(intround(x * 255) for x in (r, g, b)))
+        return cast(Tuple[int, ...], tuple(intround(x) for x in (r, g, b)))
 
 
 # TODO: hsl, yiq
@@ -113,23 +117,32 @@ class Color:
     green: int
     blue: int
 
-    @singledispatchmethod  # type: ignore
-    def __init__(self) -> None:
-        ...
-
-    @__init__.register
-    def _(self, colorname: str) -> None:
-        self.red, self.green, self.blue = HEX.from_hex(colorname)
-
-    @__init__.register
-    def _(self, color: tuple, space: str = "rgb") -> None:
+    def __init__(self, color: tuple, space: str = "rgb") -> None:
         try:
-            if space == "rgb":
+            if space == "hex":
+                if not re.match(r"^#[0-9a-fA-F]{6}$", color):
+                    raise ColorError
+                self.red, self.green, self.blue = HEX.from_hex(color)
+
+            elif space == "rgb":
+                if len(color) != 3 or color < (0, 0, 0) or color > (255, 255, 255):
+                    raise ColorError
                 self.red, self.green, self.blue = color
+
             elif space == "hsv":
+                if len(color) != 3 or color < (0, 0, 0) or color > (360, 100, 100):
+                    raise ColorError
                 self.red, self.green, self.blue = HSV.from_hsv(*color)
+
             elif space == "cmyk":
+                if (
+                    len(color) != 4
+                    or color < (0, 0, 0, 0)
+                    or color > (100, 100, 100, 100)
+                ):
+                    raise ColorError
                 self.red, self.green, self.blue = CMYK.from_cmyk(*color)
+
             else:
                 raise ColorError
         except (ValueError, ColorError):
@@ -140,21 +153,51 @@ class Color:
 
         if space not in self._supported_color_spaces:
             return f"{space!r} is not a supported color space for tukaan.Color."
-        elif space == "hex":
-            return f"{color!r} is not a valid hexadecimal color name."
-        elif space in {"rgb", "hsv", "cmyk"} and not isinstance(color, tuple):
-            return f"{color!r} is not a valid {space} color. A tuple is expected."
-        elif space in {"rgb", "hsv", "cmyk"} and len(color) != length_dict[space]:
-            plus_str = ""
-            if len(color) in reversed_dict(length_dict):
-                plus_str = (
-                    f" You passed in a {reversed_dict(length_dict)[len(color)]} color."
+
+        if space == "hex":
+            return f"{color!r} is not a valid hexadecimal color code."
+
+        if space in {"rgb", "hsv", "cmyk"}:
+            if not isinstance(color, tuple):
+                return f"{color!r} is not a valid {space} color. A tuple is expected."
+
+            else:
+                color_passed, expected_length = "", ""
+
+                if len(color) in length_dict.values():
+
+                    if len(color) == 4 and (0, 0, 0, 0) <= color <= (
+                        100,
+                        100,
+                        100,
+                        100,
+                    ):
+                        color_space = "a cmyk"
+
+                    elif len(color) == 3 and (0, 0, 0) <= color <= (255, 100, 100):
+                        color_space = "either a rgb or a hsv"
+
+                    elif len(color) == 3 and (0, 0, 0) <= color <= (255, 255, 255):
+                        color_space = "a rgb"
+
+                    elif len(color) == 3 and (0, 0, 0) <= color <= (360, 100, 100):
+                        color_space = "a hsv"
+
+                    else:
+                        color_space = "an invalid"
+
+                    color_passed = f" You passed in {color_space} color."
+
+                if len(color) != length_dict[space]:
+                    expected_length = (
+                        f"A tuple with length of {length_dict[space]} is expected."
+                    )
+
+                return (
+                    f"{color!r} is not a valid {space} color."
+                    + expected_length
+                    + color_passed
                 )
-            return (
-                f"{color!r} is not a valid {space} color. A tuple with length of"
-                + f" {length_dict[space]} is expected."
-                + plus_str
-            )
 
         return "Not implemented tukaan.Color error."  # shouldn't get here
 
@@ -179,6 +222,11 @@ class Color:
         self.blue = 255 - self.blue
 
         return self
+
+    @property
+    def is_dark(self):
+        # https://www.w3schools.com/lib/w3color.js line 82
+        return ((self.red * 299 + self.green * 587 + self.blue * 114) / 1000) < 128
 
     @property
     def hex(self) -> str:
