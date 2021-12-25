@@ -2,14 +2,17 @@ from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
 from ._constants import _anchors
+from PIL import Image
+from ._images import _image_converter_class
 
 
 class Label(BaseWidget):
     _tcl_class = "ttk::label"
     _keys = {
         "align_content": _anchors,
-        "focusable": (bool, "takefocus"),
         "align_text": str,
+        "focusable": (bool, "takefocus"),
+        "image": _image_converter_class,
         "max_line_length": (int, "wraplength"),
         "style": str,
         "text": str,
@@ -19,8 +22,9 @@ class Label(BaseWidget):
         self,
         parent: Optional[TkWidget] = None,
         align_content: Optional[str] = None,
-        focusable: Optional[bool] = None,
         align_text: Optional[Literal["left", "center", "right"]] = None,
+        focusable: Optional[bool] = None,
+        image: Optional[Image.Image] = None,
         max_line_length: Optional[int] = None,
         style: Optional[str] = None,
         text: Optional[str] = None,
@@ -35,9 +39,10 @@ class Label(BaseWidget):
             self,
             parent,
             anchor=align_content,
-            takefocus=focusable,
+            image=image,
             justify=align_text,
-            wraplength=max_line_length,
             style=style,
+            takefocus=focusable,
+            wraplength=max_line_length,
         )
         self.config(text=text)

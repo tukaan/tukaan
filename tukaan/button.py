@@ -1,14 +1,17 @@
 from typing import Callable, Optional
 
 from ._base import BaseWidget, TkWidget
+from ._images import _image_converter_class
+from PIL import Image
 
 
 class Button(BaseWidget):
     _tcl_class = "ttk::button"
     _keys = {
-        "on_click": ("func", "command"),
         "default": str,
         "focusable": (bool, "takefocus"),
+        "image": _image_converter_class,
+        "on_click": ("func", "command"),
         "style": str,
         "text": str,
         "underline": int,
@@ -18,9 +21,10 @@ class Button(BaseWidget):
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
-        on_click: Optional[Callable] = None,
         default: Optional[str] = None,
         focusable: Optional[bool] = None,
+        image: Optional[Image.Image] = None,
+        on_click: Optional[Callable] = None,
         style: Optional[str] = None,
         text: Optional[str] = None,
         underline: Optional[int] = None,
@@ -31,10 +35,11 @@ class Button(BaseWidget):
             parent,
             command=on_click,
             default=default,
+            image=image,
             style=style,
             takefocus=focusable,
-            width=width,
             underline=underline,
+            width=width,
         )
         self.config(text=text)
 
