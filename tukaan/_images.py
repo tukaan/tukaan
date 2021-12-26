@@ -35,6 +35,10 @@ class _image_converter_class:
         except AttributeError:
             _animated = False
 
+        self._transparent = False
+        if "transparency" in image.info:
+            self._transparent = True
+
         self.current_frame = 0
         self._image = image
         self._name = f"tukaan_image_{next(counts['images'])}"
@@ -56,6 +60,9 @@ class _image_converter_class:
             self.show_frames_command = create_command(self.show_frame)
             self.start_animation()
         else:
+            if self._transparent:
+                self._image = self._image.convert("RGBA")
+
             threading.Thread(
                 target=self.create_tcl_image, args=(self._name, self._image)
             ).start()
@@ -106,8 +113,15 @@ class _image_converter_class:
         try:
             while True:
                 self._image.seek(frame_count)
+
                 name = f"{self._name}_frame_{frame_count}"
-                self.create_tcl_image(name, self._image)
+                image = self._image
+
+                if self._transparent:
+                    # we have to convert every frame to rgba one by one
+                    image = self._image.convert("RGBA")
+
+                self.create_tcl_image(name, image)
 
                 try:
                     duration = self._image.info["duration"]
