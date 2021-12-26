@@ -3,32 +3,28 @@ from __future__ import annotations
 from collections import abc, namedtuple
 from typing import Any, Iterator, Optional
 
-from ._base import BaseWidget, TkWidget
+from PIL import Image
+
+from ._base import BaseWidget, CgetAndConfigure, TkWidget
 from ._constants import _wraps
+from ._images import Icon
 from ._misc import Color, Font, ScreenDistance
-from ._utils import (
-    ClassPropertyMetaClass,
-    TukaanError,
-    _callbacks,
-    classproperty,
-    counts,
-    py_to_tcl_arguments,
-    reversed_dict,
-)
+from ._utils import ClassPropertyMetaClass, classproperty, counts, py_to_tcl_arguments
+from .exceptions import TclError
 
 
-class Tag(metaclass=ClassPropertyMetaClass):
+class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
     _widget: TextBox
     _keys = {
-        "background": Color,
+        "bg_color": (Color, "background"),
+        "color": (Color, "foreground"),
         "first_line_margin": (ScreenDistance, "lmargin1"),
         "font": Font,
-        "foreground": Color,
         "hanging_line_margin": (ScreenDistance, "lmargin2"),
         "hidden": (bool, "elide"),
         "justify": str,
         "offset": ScreenDistance,
-        "right_side_margin": (ScreenDistance, "rmargin"),
+        "right_margin": (ScreenDistance, "rmargin"),
         "space_after_paragraph": (ScreenDistance, "spacing3"),
         "space_before_paragraph": (ScreenDistance, "spacing1"),
         "space_before_wrapped_line": (ScreenDistance, "spacing2"),
@@ -41,17 +37,18 @@ class Tag(metaclass=ClassPropertyMetaClass):
     def __init__(
         self,
         _name: str = None,
-        background=None,
+        *,
+        bg_color=None,
         bold=False,
         first_line_margin=None,
         font=None,
-        foreground=None,
+        color=None,
         hanging_line_margin=None,
         hidden: Optional[bool] = None,
         italic=False,
         justify=None,
         offset=None,
-        right_side_margin=None,
+        right_margin=None,
         space_after_paragraph=None,
         space_before_paragraph=None,
         space_before_wrapped_line=None,
@@ -64,18 +61,19 @@ class Tag(metaclass=ClassPropertyMetaClass):
             f"{self._widget.tcl_path}:tag_{next(counts['textbox_tag'])}" if _name is None else _name
         )
 
-        self._call_tag_subcommand(
+        self._tcl_call(
             None,
+            self,
             "configure",
-            background=background,
+            background=bg_color,
             elide=hidden,
             font=font,
-            foreground=foreground,
+            foreground=color,
             justify=justify,
             lmargin1=first_line_margin,
             lmargin2=hanging_line_margin,
             offset=offset,
-            rmargin=right_side_margin,
+            rmargin=right_margin,
             spacing1=space_before_paragraph,
             spacing2=space_before_wrapped_line,
             spacing3=space_after_paragraph,
@@ -84,7 +82,7 @@ class Tag(metaclass=ClassPropertyMetaClass):
         )
 
     def __repr__(self) -> str:
-        return f"<tukaan.TextBox tag named {self._name!r}>"
+        return f"<tukaan.TextBox.Tag named {self._name!r}>"
 
     def __setattr__(self, key: str, value: Any) -> None:
         if key in self._keys.keys():
@@ -98,32 +96,7 @@ class Tag(metaclass=ClassPropertyMetaClass):
         else:
             return super().__getattribute__(key)
 
-    def _cget(self, key: str) -> Any:
-        if isinstance(self._keys[key], tuple):
-            type_spec, key = self._keys[key]
-        else:
-            type_spec = self._keys[key]
-
-        if type_spec == "func":
-            # return a callable func, not tcl name
-            result = self._call_tag_subcommand(str, "cget", f"-{key}")
-            return _callbacks[result]
-
-        if isinstance(type_spec, dict):
-            result = self._call_tag_subcommand(str, "cget", f"-{key}")
-            return reversed_dict(type_spec)[result]
-
-        return self._call_tag_subcommand(type_spec, "cget", f"-{key}")
-
-    def config(self, **kwargs) -> None:
-        for key in tuple(kwargs.keys()):
-            if isinstance(self._keys[key], tuple):
-                # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
-                kwargs[self._keys[key][1]] = kwargs.pop(key)
-
-        self._call_tag_subcommand(None, "configure", *py_to_tcl_arguments(**kwargs))
-
-    def _call_tag_subcommand(self, returntype: Any, subcommand: str, *args, **kwargs) -> Any:
+    def _tcl_call(self, returntype: Any, _dumb_self, subcommand: str, *args, **kwargs) -> Any:
         return self._widget._tcl_call(
             returntype,
             self._widget,
@@ -138,20 +111,20 @@ class Tag(metaclass=ClassPropertyMetaClass):
         start = self._widget.start if start is None else start
         end = self._widget.end if end is None else end
 
-        self._call_tag_subcommand(None, "add", start, end)
+        self._tcl_call(None, self, "add", start, end)
 
     def delete(self) -> None:
-        self._call_tag_subcommand(None, "delete")
+        self._tcl_call(None, self, "delete")
 
     def remove(self, start: TextIndex = None, end: TextIndex = None) -> None:
         start = self._widget.start if start is None else start
         end = self._widget.end if end is None else end
 
-        self._call_tag_subcommand(None, "remove", start, end)
+        self._tcl_call(None, self, "remove", start, end)
 
     @property
     def ranges(self):
-        flat_pairs = map(self._widget.index.from_tcl, self._call_tag_subcommand((str,), "ranges"))
+        flat_pairs = map(self._widget.index.from_tcl, self._tcl_call((str,), self, "ranges"))
         return list(zip(flat_pairs, flat_pairs))
 
     @classproperty
@@ -240,7 +213,7 @@ class Marks(abc.MutableMapping):
 
     def __delitem__(self, name: str) -> None:
         if name == "insert":
-            raise TukaanError("can't delete insertion cursor")
+            raise TclError("can't delete insertion cursor")
         self._widget._tcl_call(None, self._widget.tcl_path, "mark", "unset", name)
 
 
@@ -271,7 +244,10 @@ class TextBox(BaseWidget):
         return self._tcl_call(self.index, self, "index", "end - 1 char")
 
     def insert(self, index: TextIndex, content: str) -> None:
-        self._tcl_call(None, self, "insert", index, content)
+        if isinstance(content, (Image.Image, Icon)):
+            self._tcl_call(None, self, "image", "create", index, "-image", content)
+        else:
+            self._tcl_call(None, self, "insert", index, content)
 
     def delete(self, start: TextIndex = None, end: TextIndex = None):
         start = self.start if start is None else start
@@ -296,3 +272,11 @@ class TextBox(BaseWidget):
     def content(self, new_content):
         self.delete()
         self.insert(self.end, new_content)
+
+    @property
+    def cursor_pos(self):
+        return self.marks["insert"]
+
+    @cursor_pos.setter
+    def cursor_pos(self, new_pos: TextBox.index):
+        self.marks["insert"] = new_pos
