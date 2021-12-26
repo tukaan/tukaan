@@ -9,12 +9,7 @@ from ._base import BaseWidget, CgetAndConfigure, TkWidget
 from ._constants import _wraps
 from ._images import Icon
 from ._misc import Color, Font, ScreenDistance
-from ._utils import (
-    ClassPropertyMetaClass,
-    classproperty,
-    counts,
-    py_to_tcl_arguments,
-)
+from ._utils import ClassPropertyMetaClass, classproperty, counts, py_to_tcl_arguments
 from .exceptions import TclError
 
 
@@ -202,7 +197,7 @@ class Marks(abc.MutableMapping):
     def __len__(self) -> int:
         return len(self.__get_names())
 
-    def __contains__(self, mark: str) -> bool:
+    def __contains__(self, mark: object) -> bool:
         return mark in self.__get_names()
 
     def __setitem__(self, name: str, index: TextIndex) -> None:
@@ -258,11 +253,15 @@ class TextBox(BaseWidget):
                 elif len(margin) == 2:
                     padx, pady = margin
                 else:
-                    raise ValueError("unfortunately 4 side margins aren't supported for embedded images")
-            
+                    raise ValueError(
+                        "unfortunately 4 side margins aren't supported for embedded images"
+                    )
+
             align = kwargs.pop("align", None)
-            
+
+            # fmt: off
             to_call = ("image", "create", index, *py_to_tcl_arguments(image=content, padx=padx, pady=pady, align=align))
+            # fmt: on
         elif isinstance(content, TkWidget):
             margin = kwargs.pop("margin", None)
             padx = pady = None
@@ -272,15 +271,19 @@ class TextBox(BaseWidget):
                 elif len(margin) == 2:
                     padx, pady = margin
                 else:
-                    raise ValueError("unfortunately 4 side margins aren't supported for embedded widgets")
-            
+                    raise ValueError(
+                        "unfortunately 4 side margins aren't supported for embedded widgets"
+                    )
+
             align = kwargs.pop("align", None)
             stretch = False
             if align == "stretch":
                 stretch = True
                 align = None
 
+            # fmt: off
             to_call = ("window", "create", index, *py_to_tcl_arguments(window=content, padx=padx, pady=pady, align=align, stretch=stretch))
+            # fmt: on
         else:
             to_call = ("insert", index, content)
 
@@ -317,5 +320,5 @@ class TextBox(BaseWidget):
         return self.marks["insert"]
 
     @cursor_pos.setter
-    def cursor_pos(self, new_pos: TextBox.index):
+    def cursor_pos(self, new_pos: TextIndex):
         self.marks["insert"] = new_pos

@@ -56,6 +56,7 @@ class ChildStatistics:
 
 class CgetAndConfigure:
     _keys: dict[str, Any | tuple[Any, str]]
+    _tcl_call: Callable
 
     def _cget(self, key: str) -> Any:
         if isinstance(self._keys[key], tuple):

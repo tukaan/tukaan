@@ -20,8 +20,8 @@ class App(WindowMixin, TkWidget):
     def __init__(
         self,
         title: Optional[str] = "Tukaan window",
-        width: int = 200,
-        height: int = 200,
+        width: Optional[int] = 200,
+        height: Optional[int] = 200,
         transparency: Optional[int] = None,
         topmost: Optional[bool] = None,
         fullscreen: Optional[bool] = None,
@@ -97,7 +97,7 @@ class App(WindowMixin, TkWidget):
                 )
                 sys.exit()
 
-    def tcl_eval(self, return_type: Any, code: str) -> Any:
+    def _tcl_eval(self, return_type: Any, code: str) -> Any:
         result = self.app.eval(code)
         return from_tcl(return_type, result)
 
