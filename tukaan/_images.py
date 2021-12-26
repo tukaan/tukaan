@@ -63,9 +63,7 @@ class _image_converter_class:
             if self._transparent:
                 self._image = self._image.convert("RGBA")
 
-            threading.Thread(
-                target=self.create_tcl_image, args=(self._name, self._image)
-            ).start()
+            threading.Thread(target=self.create_tcl_image, args=(self._name, self._image)).start()
 
     def get_image_mode(self, image) -> tuple[str, PIL_Image.Image]:
         # currently this is a copy/pasta from PIL.ImageTk
@@ -146,9 +144,7 @@ class _image_converter_class:
         if self.current_frame == len(self.image_frames):
             self.current_frame = 0
 
-        get_tcl_interp()._tcl_call(
-            None, "after", int(frame_data[1]), self.show_frames_command
-        )
+        get_tcl_interp()._tcl_call(None, "after", int(frame_data[1]), self.show_frames_command)
 
     def to_tcl(self) -> str:
         return self._name
@@ -217,9 +213,7 @@ class IconFactory:
         )) / 3 > 127
         # fmt: on
 
-        self._current_dir = (
-            self._light_icons_dir if dark_theme else self._dark_icons_dir
-        )
+        self._current_dir = self._light_icons_dir if dark_theme else self._dark_icons_dir
 
         for icon_name, icon in tuple(self.cache.items()):
             icon.config(file=Path(self._current_dir) / (icon_name + ".png"))

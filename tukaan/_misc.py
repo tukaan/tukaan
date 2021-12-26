@@ -30,9 +30,7 @@ class HEX:
     @staticmethod
     def from_hex(hex) -> tuple[int, ...]:
         int_value = int(hex.lstrip("#"), 16)
-        return cast(
-            Tuple[int, ...], (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF)
-        )
+        return cast(Tuple[int, ...], (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF))
 
 
 class HSV:
@@ -64,12 +62,14 @@ class HSV:
         if s == 0.0:
             return cast(Tuple[int, ...], tuple(intround(x * 255) for x in (v, v, v)))
 
-        i = intround(h * 6.0)
+        i = int(h * 6.0)
         f = (h * 6.0) - i
 
-        p, q, t = (v * (1.0 - s), v * (1.0 - s * f), v * (1.0 - s * (1.0 - f)))
+        p = v * (1.0 - s)
+        q = v * (1.0 - s * f)
+        t = v * (1.0 - s * (1.0 - f))
 
-        r, g, b = (  # fmt: off
+        r, g, b = (
             (v, t, p),
             (q, v, p),
             (p, v, t),
@@ -135,11 +135,7 @@ class Color:
                 self.red, self.green, self.blue = HSV.from_hsv(*color)
 
             elif space == "cmyk":
-                if (
-                    len(color) != 4
-                    or color < (0, 0, 0, 0)
-                    or color > (100, 100, 100, 100)
-                ):
+                if len(color) != 4 or color < (0, 0, 0, 0) or color > (100, 100, 100, 100):
                     raise ColorError
                 self.red, self.green, self.blue = CMYK.from_cmyk(*color)
 
@@ -189,23 +185,14 @@ class Color:
                     color_passed = f" You passed in {color_space} color."
 
                 if len(color) != length_dict[space]:
-                    expected_length = (
-                        f"A tuple with length of {length_dict[space]} is expected."
-                    )
+                    expected_length = f"A tuple with length of {length_dict[space]} is expected."
 
-                return (
-                    f"{color!r} is not a valid {space} color."
-                    + expected_length
-                    + color_passed
-                )
+                return f"{color!r} is not a valid {space} color." + expected_length + color_passed
 
         return "Not implemented tukaan.Color error."  # shouldn't get here
 
     def __repr__(self) -> str:
-        return (
-            f"{type(self).__name__}(red={self.red}, green={self.green},"
-            + f" blue={self.blue})"
-        )
+        return f"{type(self).__name__}(red={self.red}, green={self.green}," + f" blue={self.blue})"
 
     def to_tcl(self) -> str:
         return self.hex
@@ -280,9 +267,7 @@ class Clipboard(metaclass=ClassPropertyMetaClass):
         cls.set(new_content)
 
 
-class Cursor(
-    collections.namedtuple("Cursor", "cursor"), metaclass=ClassPropertyMetaClass
-):
+class Cursor(collections.namedtuple("Cursor", "cursor"), metaclass=ClassPropertyMetaClass):
     """An object to use cross-platform, and human-understandable cursor names,
     and to get and set the mouse cursor position"""
 
@@ -474,9 +459,7 @@ class Font(
 
         for index, item in enumerate(result):
             #  TkSmallCaptionFont -> small-caption-font
-            result[index] = "-".join(
-                re.findall(r".[^A-Z]*", item.replace("Tk", ""))
-            ).lower()
+            result[index] = "-".join(re.findall(r".[^A-Z]*", item.replace("Tk", ""))).lower()
 
         return result
 
@@ -529,9 +512,7 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
         if unit != "px":
             distance = f"{distance}{cls._tcl_units[unit]}"
 
-            pixels = get_tcl_interp()._tcl_call(
-                float, "winfo", "fpixels", ".", distance
-            )
+            pixels = get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", distance)
 
             if unit == "m":
                 pixels *= 100

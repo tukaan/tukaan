@@ -12,5 +12,5 @@ from .radiobutton import RadioButton, RadioGroup
 from .scrollbar import Scrollbar
 from .separator import Separator
 from .slider import Slider
-from .timeout import Timeout
 from .textbox import TextBox
+from .timeout import Timeout

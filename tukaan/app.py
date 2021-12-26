@@ -89,9 +89,7 @@ class App(WindowMixin, TkWidget):
                 # FileNotFoundError is a bit more pythonic than TclError: couldn't read file
                 path = msg.split('"')[1]  # path is between ""
                 sys.tracebacklimit = 0
-                raise FileNotFoundError(
-                    f"No such file or directory: {path!r}"
-                ) from None
+                raise FileNotFoundError(f"No such file or directory: {path!r}") from None
             else:
                 print(
                     f"tukaan.{TclError.__name__}: {msg}",  # tukaan.{TclError.__name__} XDD

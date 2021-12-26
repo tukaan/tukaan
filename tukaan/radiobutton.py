@@ -63,9 +63,7 @@ class RadioGroup(BaseWidget):
     _tcl_class = "ttk::frame"
     _keys: dict[str, Any | tuple[Any, str]] = {}
 
-    def __init__(
-        self, parent: Optional[TkWidget] = None, *, items: list[tuple[str, str]]
-    ) -> None:
+    def __init__(self, parent: Optional[TkWidget] = None, *, items: list[tuple[str, str]]) -> None:
         BaseWidget.__init__(self, parent)
         self.variable = String(items[0][1])
         self.items = items
@@ -113,8 +111,6 @@ class RadioGroup(BaseWidget):
             child.destroy()
 
         for index, item in enumerate(new_items):
-            radio = RadioButton(
-                self, variable=self.variable, value=item[1], text=item[0]
-            )
+            radio = RadioButton(self, variable=self.variable, value=item[1], text=item[0])
             radio.item_id = item[1]
             radio.layout.grid(row=index)
