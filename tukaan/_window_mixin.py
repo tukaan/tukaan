@@ -74,7 +74,7 @@ class WindowMixin:
     @update_before
     def size(self) -> tuple[int, int]:
         return cast(
-            tuple[int, int],
+            Tuple[int, int],
             tuple(
                 map(
                     int,
