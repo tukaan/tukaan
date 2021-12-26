@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import abc, namedtuple
 from typing import Any, Iterator, Optional
+from pathlib import Path
 
 from PIL import Image
 
@@ -239,7 +240,7 @@ class TextBox(BaseWidget):
         self,
         parent: Optional[TkWidget] = None,
         font=("monospace", 10),
-        overflow: Optional[tuple[bool | str, bool | str]] = None,
+        overflow: tuple[bool | str, bool | str] = ("auto", "auto"),
         wrap=None,
     ) -> None:
         assert wrap in _wraps, f"wrapping must be one of {tuple(_wraps.keys())}"
@@ -327,6 +328,9 @@ class TextBox(BaseWidget):
             # fmt: off
             to_call = ("window", "create", index, *py_to_tcl_arguments(window=content, padx=padx, pady=pady, align=align, stretch=stretch))
             # fmt: on
+        elif isinstance(content, Path):
+            with open(str(content.resolve())) as file:
+                to_call = ("insert", index, file.read())
         else:
             to_call = ("insert", index, content)
 
