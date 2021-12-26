@@ -79,23 +79,13 @@ class App(WindowMixin, TkWidget):
             _, msg, tb = sys.exc_info()
             msg = str(msg)
 
-            print(
-                f"Exception in Tcl callback in {tb.tb_frame.f_back.f_code.co_filename}"
-                f":{tb.tb_frame.f_back.f_lineno}",
-                file=sys.stderr,
-            )
-
             if msg.startswith("couldn't read file"):
                 # FileNotFoundError is a bit more pythonic than TclError: couldn't read file
                 path = msg.split('"')[1]  # path is between ""
                 sys.tracebacklimit = 0
                 raise FileNotFoundError(f"No such file or directory: {path!r}") from None
             else:
-                print(
-                    f"tukaan.{TclError.__name__}: {msg}",  # tukaan.{TclError.__name__} XDD
-                    file=sys.stderr,
-                )
-                sys.exit()
+                raise TclError(msg) from None
 
     def _tcl_eval(self, return_type: Any, code: str) -> Any:
         result = self.app.eval(code)

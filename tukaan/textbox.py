@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import warnings
 from collections import abc, namedtuple
-from typing import Any, Iterator, Optional
 from pathlib import Path
+from typing import Any, Iterator, Optional
 
 from PIL import Image
 
@@ -219,6 +220,52 @@ class Marks(abc.MutableMapping):
         self._widget._tcl_call(None, self._widget.tcl_path, "mark", "unset", name)
 
 
+class TextHistory:
+    def call_subcommand(self, *args):
+        if self._widget.track_history is False:
+            warnings.warn(
+                "undoing is disabled on this textbox widget. Use `track_history=True` to enable it.",
+                stacklevel=3,
+            )
+        return self._widget._tcl_call(bool, self._widget, "edit", *args)
+
+    @property
+    def can_redo(self):
+        return self.call_subcommand("canredo")
+
+    @property
+    def can_undo(self):
+        return self.call_subcommand("canundo")
+
+    def redo(self, number=1):
+        try:
+            for i in range(number):
+                self.call_subcommand("redo")
+        except TclError:
+            return
+
+    def undo(self, number=1):
+        try:
+            for i in range(number):
+                self.call_subcommand("undo")
+        except TclError:
+            return
+
+    def clear(self):
+        self.call_subcommand("reset")
+
+    def add_sep(self):
+        self.call_subcommand("separator")
+
+    @property
+    def limit(self) -> int:
+        return self._widget._tcl_call(int, self._widget, "cget", "-maxundo")
+
+    @limit.setter
+    def limit(self, new_limit: int) -> None:
+        self._widget._tcl_call(None, self._widget, "configure", "-maxundo", new_limit)
+
+
 class _textbox_frame(BaseWidget):
     _tcl_class = "ttk::frame"
     _keys = {}
@@ -233,6 +280,7 @@ class TextBox(BaseWidget):
         "font": Font,
         "on_xscroll": ("func", "xscrollcommand"),
         "on_yscroll": ("func", "yscrollcommand"),
+        "track_history": (bool, "undo"),
         "wrap": _wraps,
     }
 
@@ -241,6 +289,7 @@ class TextBox(BaseWidget):
         parent: Optional[TkWidget] = None,
         font=("monospace", 10),
         overflow: tuple[bool | str, bool | str] = ("auto", "auto"),
+        track_history=False,
         wrap=None,
     ) -> None:
         assert wrap in _wraps, f"wrapping must be one of {tuple(_wraps.keys())}"
@@ -249,7 +298,14 @@ class TextBox(BaseWidget):
         self._frame = _textbox_frame(parent)
 
         BaseWidget.__init__(
-            self, self._frame, highlightthickness=0, relief="flat", font=font, wrap=wrap
+            self,
+            self._frame,
+            autoseparators=True,
+            font=font,
+            highlightthickness=0,
+            relief="flat",
+            undo=track_history,
+            wrap=wrap,
         )
         self._tcl_eval(
             None,
@@ -264,7 +320,8 @@ class TextBox(BaseWidget):
         self.index = TextIndex
         self.Tag = Tag
         self.marks = Marks()
-        for attr in (self.index, self.marks, self.Tag):
+        self.history = TextHistory()
+        for attr in (self.index, self.Tag, self.marks, self.history):
             setattr(attr, "_widget", self)
 
         self.layout = self._frame.layout
