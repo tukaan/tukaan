@@ -29,13 +29,9 @@ _anchors: dict[Any, str] = {
     "top-right": "ne",
 }
 
-_window_pos: set[str] = {
-    "center",
-    "top-left",
-    "top-right",
-    "bottom-left",
-    "bottom-right",
-}
+_wraps = {"word": "word", "letter": "char", None: "none"}
+
+_window_pos: set[str] = {"center", "top-left", "top-right", "bottom-left", "bottom-right"}
 
 _VALID_STATES: set[str] = {
     "active",
@@ -68,7 +64,7 @@ _BINDING_ALIASES = {
 }
 
 _KEYSYMS = {
-    " ": "space",
+    "Space": "space",
     "!": "exclam",
     "#": "numbersign",
     "$": "dollar",

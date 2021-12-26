@@ -68,9 +68,7 @@ class WindowMixin:
     @fullscreen.setter
     def fullscreen(self, is_fullscreen) -> None:
         # todo: bind f11
-        self._tcl_call(
-            None, "wm", "attributes", self.wm_path, "-fullscreen", is_fullscreen
-        )
+        self._tcl_call(None, "wm", "attributes", self.wm_path, "-fullscreen", is_fullscreen)
 
     @property  # type: ignore
     @update_before
@@ -80,9 +78,7 @@ class WindowMixin:
             tuple(
                 map(
                     int,
-                    re.split(
-                        r"x|\+", self._tcl_call(str, "wm", "geometry", self.wm_path)
-                    )[:2],
+                    re.split(r"x|\+", self._tcl_call(str, "wm", "geometry", self.wm_path))[:2],
                 )
             ),
         )
@@ -112,9 +108,7 @@ class WindowMixin:
             tuple(
                 map(
                     int,
-                    re.split(
-                        r"x|\+", self._tcl_call(str, "wm", "geometry", self.wm_path)
-                    )[2:],
+                    re.split(r"x|\+", self._tcl_call(str, "wm", "geometry", self.wm_path))[2:],
                 )
             ),
         )
@@ -141,26 +135,14 @@ class WindowMixin:
             elif position == "top-left":
                 x = y = 0
             elif position == "top-right":
-                x = int(
-                    self._tcl_call(int, "winfo", "screenwidth", self.wm_path)
-                    - self.width
-                )
+                x = int(self._tcl_call(int, "winfo", "screenwidth", self.wm_path) - self.width)
                 y = 0
             elif position == "bottom-left":
                 x = 0
-                y = int(
-                    self._tcl_call(int, "winfo", "screenheight", self.wm_path)
-                    - self.height
-                )
+                y = int(self._tcl_call(int, "winfo", "screenheight", self.wm_path) - self.height)
             elif position == "bottom-right":
-                x = int(
-                    self._tcl_call(int, "winfo", "screenwidth", self.wm_path)
-                    - self.width
-                )
-                y = int(
-                    self._tcl_call(int, "winfo", "screenheight", self.wm_path)
-                    - self.height
-                )
+                x = int(self._tcl_call(int, "winfo", "screenwidth", self.wm_path) - self.width)
+                y = int(self._tcl_call(int, "winfo", "screenheight", self.wm_path) - self.height)
         elif isinstance(position, (tuple, list)) and len(position) > 1:
             x, y = position
         elif isinstance(position, int):
@@ -353,6 +335,4 @@ class WindowMixin:
 
     @theme.setter
     def theme(self, theme) -> None:
-        self._tcl_call(
-            None, "ttk::style", "theme", "use", self._get_theme_aliases()[theme]
-        )
+        self._tcl_call(None, "ttk::style", "theme", "use", self._get_theme_aliases()[theme])

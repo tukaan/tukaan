@@ -36,14 +36,7 @@ class App(WindowMixin, TkWidget):
             raise TclError("can't create multiple App objects use a Window instead")
 
         self.app = tk.create(
-            None,
-            os.path.basename(sys.argv[0]),
-            "Tukaan window",
-            True,
-            True,
-            True,
-            False,
-            None,
+            None, os.path.basename(sys.argv[0]), "Tukaan window", True, True, True, False, None
         )
 
         self.app.loadtk()
