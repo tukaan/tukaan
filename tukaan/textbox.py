@@ -9,7 +9,12 @@ from ._base import BaseWidget, CgetAndConfigure, TkWidget
 from ._constants import _wraps
 from ._images import Icon
 from ._misc import Color, Font, ScreenDistance
-from ._utils import ClassPropertyMetaClass, classproperty, counts, py_to_tcl_arguments
+from ._utils import (
+    ClassPropertyMetaClass,
+    classproperty,
+    counts,
+    py_to_tcl_arguments,
+)
 from .exceptions import TclError
 
 
@@ -243,11 +248,45 @@ class TextBox(BaseWidget):
     def end(self) -> TextIndex:
         return self._tcl_call(self.index, self, "index", "end - 1 char")
 
-    def insert(self, index: TextIndex, content: str) -> None:
+    def insert(self, index: TextIndex, content: str, **kwargs) -> None:
         if isinstance(content, (Image.Image, Icon)):
-            self._tcl_call(None, self, "image", "create", index, "-image", content)
+            margin = kwargs.pop("margin", None)
+            padx = pady = None
+            if margin:
+                if isinstance(margin, int) or len(margin) == 1:
+                    padx = pady = margin
+                elif len(margin) == 2:
+                    padx, pady = margin
+                else:
+                    raise ValueError("unfortunately 4 side margins aren't supported for embedded images")
+            
+            align = kwargs.pop("align", None)
+            
+            to_call = ("image", "create", index, *py_to_tcl_arguments(image=content, padx=padx, pady=pady, align=align))
+        elif isinstance(content, TkWidget):
+            margin = kwargs.pop("margin", None)
+            padx = pady = None
+            if margin:
+                if isinstance(margin, int) or len(margin) == 1:
+                    padx = pady = margin
+                elif len(margin) == 2:
+                    padx, pady = margin
+                else:
+                    raise ValueError("unfortunately 4 side margins aren't supported for embedded widgets")
+            
+            align = kwargs.pop("align", None)
+            stretch = False
+            if align == "stretch":
+                stretch = True
+                align = None
+
+            to_call = ("window", "create", index, *py_to_tcl_arguments(window=content, padx=padx, pady=pady, align=align, stretch=stretch))
         else:
-            self._tcl_call(None, self, "insert", index, content)
+            to_call = ("insert", index, content)
+
+        if kwargs:
+            raise TypeError(f"insert() got unexpected keyword argument(s): {tuple(kwargs.keys())}")
+        self._tcl_call(None, self, *to_call)
 
     def delete(self, start: TextIndex = None, end: TextIndex = None):
         start = self.start if start is None else start
