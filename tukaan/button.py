@@ -1,8 +1,9 @@
 from typing import Callable, Optional
 
+from PIL import Image
+
 from ._base import BaseWidget, TkWidget
 from ._images import _image_converter_class
-from PIL import Image
 
 
 class Button(BaseWidget):

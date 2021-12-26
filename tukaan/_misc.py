@@ -90,9 +90,9 @@ class CMYK:
         c, m, y = (1 - x / 255 for x in (r, g, b))
 
         k = min(c, m, y)
-        c = (c - k) 
-        m = (m - k) 
-        y = (y - k)
+        c = c - k
+        m = m - k
+        y = y - k
 
         return cast(Tuple[int, ...], tuple(intround(x * 100) for x in (c, m, y, k)))
 
@@ -102,7 +102,7 @@ class CMYK:
         m = m / 100.0
         y = y / 100.0
         k = k / 100.0
-        
+
         r = 255.0 - ((min(1.0, c * (1.0 - k) + k)) * 255.0)
         g = 255.0 - ((min(1.0, m * (1.0 - k) + k)) * 255.0)
         b = 255.0 - ((min(1.0, y * (1.0 - k) + k)) * 255.0)

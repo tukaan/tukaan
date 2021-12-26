@@ -1,8 +1,9 @@
 from typing import Literal, Optional
 
+from PIL import Image
+
 from ._base import BaseWidget, TkWidget
 from ._constants import _anchors
-from PIL import Image
 from ._images import _image_converter_class
 
 
