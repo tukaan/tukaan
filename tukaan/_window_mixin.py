@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, Literal, cast
+from typing import Any, Callable, Literal, cast, Tuple
 
 from ._constants import _window_pos
 from ._platform import Platform
@@ -85,26 +85,18 @@ class WindowMixin:
 
     @size.setter  # type: ignore
     @update_after
-    def size(self, size: int | tuple[int, int] | list[int]) -> None:
-        if isinstance(size, int):
+    def size(self, size: tuple[int, int] | list[int]) -> None:
+        if len(size) == 1:
             width = height = size
-        elif isinstance(size, (tuple, list)) and len(size) > 1:
+        elif len(size) == 2:
             width, height = size
-        else:
-            raise RuntimeError
-        width, height = tuple(
-            map(
-                lambda a: self._tcl_call(int, "winfo", "pixels", ".", a),
-                (width, height),
-            )
-        )
         self._tcl_call(None, "wm", "geometry", self.wm_path, f"{width}x{height}")
 
     @property  # type: ignore
     @update_before
     def position(self) -> tuple[int, int]:
         return cast(
-            tuple[int, int],
+            Tuple[int, int],
             tuple(
                 map(
                     int,
