@@ -393,6 +393,7 @@ class BaseWidget(TkWidget):
         self.parent = parent or get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
         self._tcl_call: Callable = get_tcl_interp()._tcl_call
+        self._tcl_eval: Callable = get_tcl_interp()._tcl_eval
 
         TkWidget.__init__(self)
 

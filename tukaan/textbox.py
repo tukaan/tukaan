@@ -11,6 +11,7 @@ from ._images import Icon
 from ._misc import Color, Font, ScreenDistance
 from ._utils import ClassPropertyMetaClass, classproperty, counts, py_to_tcl_arguments
 from .exceptions import TclError
+from .scrollbar import Scrollbar
 
 
 class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
@@ -217,23 +218,65 @@ class Marks(abc.MutableMapping):
         self._widget._tcl_call(None, self._widget.tcl_path, "mark", "unset", name)
 
 
+class _textbox_frame(BaseWidget):
+    _tcl_class = "ttk::frame"
+    _keys = {}
+
+    def __init__(self, parent) -> None:
+        BaseWidget.__init__(self, parent)
+
+
 class TextBox(BaseWidget):
     _tcl_class = "text"
-    _keys = {"font": Font, "wrap": _wraps}
+    _keys = {
+        "font": Font,
+        "on_xscroll": ("func", "xscrollcommand"),
+        "on_yscroll": ("func", "yscrollcommand"),
+        "wrap": _wraps,
+    }
 
     def __init__(
-        self, parent: Optional[TkWidget] = None, wrap=None, font=("monospace", 10)
+        self,
+        parent: Optional[TkWidget] = None,
+        font=("monospace", 10),
+        overflow: Optional[tuple[bool | str, bool | str]] = None,
+        wrap=None,
     ) -> None:
         assert wrap in _wraps, f"wrapping must be one of {tuple(_wraps.keys())}"
         wrap = _wraps[wrap]
 
-        BaseWidget.__init__(self, parent, highlightthickness=0, relief="flat", font=font, wrap=wrap)
+        self._frame = _textbox_frame(parent)
+
+        BaseWidget.__init__(
+            self, self._frame, highlightthickness=0, relief="flat", font=font, wrap=wrap
+        )
+        self._tcl_eval(
+            None,
+            f"grid rowconfigure {self._frame.tcl_path} 0 -weight 1 \n"
+            + f"grid columnconfigure {self._frame.tcl_path} 0 -weight 1 \n"
+            + f"grid {self.tcl_path} -row 0 -column 0 -sticky nsew",
+        )
+
+        if overflow is not None:
+            self.overflow = overflow
 
         self.index = TextIndex
         self.Tag = Tag
         self.marks = Marks()
         for attr in (self.index, self.marks, self.Tag):
             setattr(attr, "_widget", self)
+
+        self.layout = self._frame.layout
+
+    def _make_hor_scroll(self, hide=True):
+        self._h_scroll = Scrollbar(self._frame, orientation="horizontal", auto_hide=hide)
+        self._h_scroll.attach(self)
+        self._h_scroll.layout.grid(row=1, hor_align="stretch")
+
+    def _make_vert_scroll(self, hide=True):
+        self._v_scroll = Scrollbar(self._frame, orientation="vertical", auto_hide=hide)
+        self._v_scroll.attach(self)
+        self._v_scroll.layout.grid(col=1, vert_align="stretch")
 
     @property
     def start(self) -> TextIndex:
@@ -305,6 +348,53 @@ class TextBox(BaseWidget):
 
     def scroll_to(self, index: TextIndex) -> None:
         self._tcl_call(None, self, "see", index)
+
+    def x_scroll(self, subcommand, fraction):
+        self._tcl_call(None, self, "xview", subcommand, fraction)
+
+    def y_scroll(self, subcommand, fraction):
+        self._tcl_call(None, self, "yview", subcommand, fraction)
+
+    @property
+    def overflow(self):
+        return self._overflow
+
+    @overflow.setter
+    def overflow(self, new_overflow: tuple[str, str]):
+        if hasattr(self, "_h_scroll"):
+            self._h_scroll.destroy()
+        if hasattr(self, "_v_scroll"):
+            self._v_scroll.destroy()
+
+        if len(new_overflow) == 1:
+            new_overflow = new_overflow * 2
+
+        if new_overflow == (False, False):
+            pass
+        elif new_overflow == (True, False):
+            self._make_hor_scroll(False)
+        elif new_overflow == (False, True):
+            self._make_vert_scroll(False)
+        elif new_overflow == (True, True):
+            self._make_hor_scroll(False)
+            self._make_vert_scroll(False)
+        elif new_overflow == ("auto", False):
+            self._make_hor_scroll()
+        elif new_overflow == (False, "auto"):
+            self._make_vert_scroll()
+        elif new_overflow == ("auto", True):
+            self._make_hor_scroll()
+            self._make_vert_scroll(False)
+        elif new_overflow == (True, "auto"):
+            self._make_hor_scroll(False)
+            self._make_vert_scroll()
+        elif new_overflow == ("auto", "auto"):
+            self._make_hor_scroll()
+            self._make_vert_scroll()
+        else:
+            raise ValueError(f"invalid overflow value: {new_overflow}")
+
+        self._overflow = new_overflow
 
     @property
     def content(self):
