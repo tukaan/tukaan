@@ -163,6 +163,24 @@ class TextIndex(namedtuple("TextIndex", "line column")):
     def from_tcl(cls, string: str) -> TextIndex:
         return cls(string)
 
+    def _compare(self, first: TextIndex, second: TextIndex, operator: str) -> bool:
+        return self._widget._tcl_call(bool, self._widget, "compare", first, operator, second)
+
+    def __eq__(self, other: TextIndex) -> bool:
+        return self._compare(self, other, "==")
+
+    def __lt__(self, other: TextIndex) -> bool:
+        return self._compare(self, other, "<")
+
+    def __gt__(self, other: TextIndex) -> bool:
+        return self._compare(self, other, ">")
+
+    def __le__(self, other: TextIndex) -> bool:
+        return self._compare(self, other, "<=")
+
+    def __ge__(self, other: TextIndex) -> bool:
+        return self._compare(self, other, ">=")
+    
     @property
     def between_start_end(self) -> TextIndex:
         if self < self._widget.start:
