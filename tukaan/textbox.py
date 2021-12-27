@@ -3,6 +3,7 @@ from __future__ import annotations
 import warnings
 from collections import abc, namedtuple
 from pathlib import Path
+from functools import partialmethod
 from typing import Any, Iterator, Optional
 
 from PIL import Image
@@ -60,9 +61,7 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         underline: bool = False,
         wrap=None,
     ) -> None:
-        self._name = (
-            f"{self._widget.tcl_path}:tag_{next(counts['textbox_tag'])}" if _name is None else _name
-        )
+        self._name = _name or f"{self._widget.tcl_path}:tag_{next(counts['textbox_tag'])}"
 
         self._tcl_call(
             None,
@@ -130,8 +129,24 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
 
     @property
     def ranges(self):
-        flat_pairs = map(self._widget.index.from_tcl, self._tcl_call((str,), self, "ranges"))
-        return list(zip(flat_pairs, flat_pairs))
+        result = self._tcl_call((self._widget.index,), self, "ranges")
+
+        for start, end in zip(result[0::2], result[1::2]):
+            yield self._widget.range(start, end)
+
+    def _prev_next_range(self, direction: str, start: TextIndex, end: Optional[TextIndex] = None) -> None | TextRange:
+        if end is None:
+            end = {"prev": self._widget.start, "next": self._widget.end}[direction]
+
+        result = self._tcl_call((self._widget.index,), self, f"{direction}range", start, end)
+        
+        if not result:
+            return None
+
+        return self._widget.range(*result)
+
+    prev_range = partialmethod(_prev_next_range, "prev")
+    next_range = partialmethod(_prev_next_range, "next")
 
     @classproperty
     def hidden(cls) -> Tag:
