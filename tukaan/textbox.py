@@ -99,6 +99,9 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         else:
             return super().__getattribute__(key)
 
+    def to_tcl(self):
+        return self._name
+
     def _tcl_call(self, returntype: Any, _dumb_self, subcommand: str, *args, **kwargs) -> Any:
         return self._widget._tcl_call(
             returntype,
@@ -138,6 +141,9 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
 class TextRange(namedtuple("TextRange", "start end")):
     def get(self):
         return self._widget.get(self)
+
+    def __contains__(self, x):
+        return self.start <= x <= self.end
 
 
 class TextIndex(namedtuple("TextIndex", "line column")):
@@ -464,6 +470,19 @@ class TextBox(BaseWidget):
 
         return self._tcl_call(str, self, "get", start, end)
 
+    def replace(self, *args, tag: Optional[Tag] = None) -> None:
+        if isinstance(args[0], TextRange) and isinstance(args[1], str):
+            text = args[1]
+            start, end = args[0]
+        elif len(args) == 3 and isinstance(args[0], TextIndex) and isinstance(args[1], TextIndex) and isinstance(args[2], str):
+            text = args[2]
+            start = self.start if args[0] is None else args[0]
+            end = self.end if args[1] is None else args[1]
+        else:
+            raise ValueError("invalid arguments. See help(TextBox.replace).")
+
+        self._tcl_call(None, self, "replace", start, end, text, tag)
+
     def search(
         self,
         pattern,
@@ -478,6 +497,10 @@ class TextBox(BaseWidget):
         forwards=False,
         regex=False,
     ):
+
+        if stop == self.end:
+            stop = "end - 1 chars"
+        
         to_call = []
 
         if forwards:
