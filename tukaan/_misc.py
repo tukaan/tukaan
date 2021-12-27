@@ -528,6 +528,12 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
     def __repr__(self) -> str:
         return f"{type(self).__name__}(distance={self.distance}px))"
 
+    def __int__(self):
+        return intround(self.distance)
+
+    def __float__(self):
+        return round4(self.distance)
+
     def to_tcl(self) -> str:
         return str(self.distance)
 

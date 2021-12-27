@@ -138,7 +138,22 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
 class TextIndex(namedtuple("TextIndex", "line column")):
     _widget: TextBox
 
-    def __new__(cls, line: int = 1, column: int = 0) -> TextIndex:
+    def __new__(cls, first: int | None = None, second: int | None = None, *, x: int | None = None, y: int | None = None) -> TextIndex:
+        result = None
+        
+        if isinstance(first, int) and isinstance(second, int):
+            # line and column numbers
+            line, column = first, second
+        elif isinstance(first, (str, Icon, Image.Image, TkWidget)) and second is None and x is None and y is None:
+            # string from from_tcl() OR mark name, image name or widget name
+            result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", first)
+        elif isinstance(x, (int, float, ScreenDistance)) and isinstance(y, (int, float, ScreenDistance)):
+            # x and y
+            result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", f"@{x},{y}")
+
+        if result:
+            line, column = tuple(map(int, result.split(".")))
+        
         return super(TextIndex, cls).__new__(cls, line, column)  # type: ignore
 
     def to_tcl(self) -> str:
@@ -146,9 +161,7 @@ class TextIndex(namedtuple("TextIndex", "line column")):
 
     @classmethod
     def from_tcl(cls, string: str) -> TextIndex:
-        result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", string)
-        line, column = tuple(map(int, result.split(".")))
-        return cls(line, column)
+        return cls(string)
 
     @property
     def between_start_end(self) -> TextIndex:
@@ -338,7 +351,7 @@ class TextBox(BaseWidget):
 
     @property
     def start(self) -> TextIndex:
-        return self.index()
+        return self.index(1, 0)
 
     @property
     def end(self) -> TextIndex:
