@@ -189,7 +189,7 @@ class TextIndex(namedtuple("TextIndex", "line column")):
         if len(args) == 2:
             # line and column numbers
             line, column = args
-        elif isinstance(args[1], (str, Icon, Image.Image, TkWidget)):
+        elif isinstance(args[0], (str, Icon, Image.Image, TkWidget)):
             # string from from_tcl() OR mark name, image name or widget name
             result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", args[0])
         elif isinstance(x, (int, float, ScreenDistance)) and isinstance(
