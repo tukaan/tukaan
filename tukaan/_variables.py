@@ -5,10 +5,14 @@ from ._utils import _variables, counts, get_tcl_interp
 
 class _TclVariable:
     _type_spec: type
+    _default: float | str | bool
 
-    def __init__(self, value, name=None):
+    def __init__(self, value=None, name=None):
         if name is None:
             name = f"tukaan_{self._type_spec.__name__}_var_{next(counts['variable'])}"
+
+        if value is None:
+            value = self._default
 
         self._name = name
         _variables[name] = self
@@ -49,6 +53,7 @@ class _TclVariable:
 
 class String(_TclVariable):
     _type_spec = str
+    _default = ""
 
     def __iadd__(self, string: str) -> String:
         # ???
@@ -58,11 +63,14 @@ class String(_TclVariable):
 
 class Integer(_TclVariable):
     _type_spec = int
+    _default = 0
 
 
 class Float(_TclVariable):
     _type_spec = float
+    _default = 0.0
 
 
 class Boolean(_TclVariable):
     _type_spec = bool
+    _default = False

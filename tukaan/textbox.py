@@ -23,6 +23,7 @@ from ._utils import (
 )
 from .exceptions import TclError
 from .scrollbar import Scrollbar
+from ._variables import Integer
 
 
 class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
@@ -521,46 +522,52 @@ class TextBox(BaseWidget):
         self,
         pattern,
         start,
-        stop=None,
+        stop="end",
         *,
         backwards=False,
         case_sensitive=True,
-        variable=None,
         count_hidden=False,
         exact=False,
         forwards=False,
+        match_newline=False,
         regex=False,
+        strict_limits=False,
+        variable=None,
     ):
 
         if stop == self.end:
             stop = "end - 1 chars"
 
+        if variable is None:
+            variable = Integer()
+
         to_call = []
 
-        if forwards:
-            to_call.append("-forwards")
         if backwards:
             to_call.append("-backwards")
-        if exact:
-            to_call.append("-exact")
-        if regex:
-            to_call.append("-regexp")
         if not case_sensitive:
             to_call.append("-nocase")
         if count_hidden:
             to_call.append("-elide")
-        if variable:
-            to_call.append("-count")
-            to_call.append(variable)
+        if exact:
+            to_call.append("-exact")
+        if forwards:
+            to_call.append("-forwards")
+        if match_newline:
+            to_call.append("-nolinestop")
+        if regex:
+            to_call.append("-regexp")
+        if strict_limits:
+            to_call.append("-strictlimits")
 
         if pattern and pattern[0] == "-":
             to_call.append("--")
 
         while True:
-            result = self._tcl_call(str, self.tcl_path, "search", *to_call, pattern, start, stop)
+            result = self._tcl_call(str, self.tcl_path, "search", "-count", variable, *to_call, pattern, start, stop)
             if not result:
                 break
-            yield self.range(self.index(result), self.index(result).forward(chars=len(pattern)))
+            yield self.range(self.index(result), self.index(result).forward(chars=variable.get()))
             start = result + "+ 1 chars"
 
     def scroll_to(self, index: TextIndex) -> None:
