@@ -180,25 +180,18 @@ class TextIndex(namedtuple("TextIndex", "line column")):
 
     def __new__(
         cls,
-        first: int | None = None,
-        second: int | None = None,
-        *,
+        *args,
         x: int | None = None,
         y: int | None = None,
     ) -> TextIndex:
         result = None
 
-        if isinstance(first, int) and isinstance(second, int):
+        if len(args) == 2:
             # line and column numbers
-            line, column = first, second
-        elif (
-            isinstance(first, (str, Icon, Image.Image, TkWidget))
-            and second is None
-            and x is None
-            and y is None
-        ):
+            line, column = args
+        elif isinstance(args[1], (str, Icon, Image.Image, TkWidget)):
             # string from from_tcl() OR mark name, image name or widget name
-            result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", first)
+            result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", args[0])
         elif isinstance(x, (int, float, ScreenDistance)) and isinstance(
             y, (int, float, ScreenDistance)
         ):
@@ -220,19 +213,21 @@ class TextIndex(namedtuple("TextIndex", "line column")):
     def _compare(self, first: TextIndex, second: TextIndex, operator: str) -> bool:
         return self._widget._tcl_call(bool, self._widget, "compare", first, operator, second)
 
-    def __eq__(self, other: TextIndex) -> bool:
+    def __eq__(self, other: TextIndex) -> bool:  # type: ignore[override]
+        if not isinstance(other, TextIndex):
+            return NotImplemented
         return self._compare(self, other, "==")
 
-    def __lt__(self, other: TextIndex) -> bool:
+    def __lt__(self, other: TextIndex) -> bool:  # type: ignore[override]
         return self._compare(self, other, "<")
 
-    def __gt__(self, other: TextIndex) -> bool:
+    def __gt__(self, other: TextIndex) -> bool:  # type: ignore[override]
         return self._compare(self, other, ">")
 
-    def __le__(self, other: TextIndex) -> bool:
+    def __le__(self, other: TextIndex) -> bool:  # type: ignore[override]
         return self._compare(self, other, "<=")
 
-    def __ge__(self, other: TextIndex) -> bool:
+    def __ge__(self, other: TextIndex) -> bool:  # type: ignore[override]
         return self._compare(self, other, ">=")
 
     @property
@@ -304,6 +299,8 @@ class Marks(abc.MutableMapping):
 
 
 class TextHistory:
+    _widget: TextBox
+    
     def call_subcommand(self, *args):
         if self._widget.track_history is False:
             warnings.warn(
@@ -351,7 +348,7 @@ class TextHistory:
 
 class _textbox_frame(BaseWidget):
     _tcl_class = "ttk::frame"
-    _keys = {}
+    _keys: dict[str, Any | tuple[Any, str]] = {}
 
     def __init__(self, parent) -> None:
         BaseWidget.__init__(self, parent)
@@ -479,7 +476,7 @@ class TextBox(BaseWidget):
             raise TypeError(f"insert() got unexpected keyword argument(s): {tuple(kwargs.keys())}")
         self._tcl_call(None, self, *to_call)
 
-    def delete(self, start: TextIndex | TextRange = None, end: TextIndex = None):
+    def delete(self, start: TextIndex | TextRange, end: TextIndex):
         if isinstance(start, TextRange):
             start, end = start
         else:
@@ -630,7 +627,7 @@ class TextBox(BaseWidget):
 
     @property
     def content(self) -> list[tuple[TextIndex, str | Tag | Icon | Image.Image | TkWidget]]:
-        result = []
+        result = []  # type: ignore
         unclosed_tags = {}
 
         def add_item(type, value, index):

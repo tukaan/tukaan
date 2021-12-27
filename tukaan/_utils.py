@@ -15,9 +15,10 @@ if TYPE_CHECKING:
     from PIL import Image
 
     from ._base import TkWidget
-    from ._images import Icon, _image_converter_class
+    from ._images import _image_converter_class
     from ._variables import _TclVariable
     from .timeout import Timeout
+    from .textbox import Tag
 
 
 class count:
@@ -46,7 +47,7 @@ _images: dict[str, _image_converter_class] = {}
 _pil_images: dict[str, Image] = {}
 _timeouts: dict[str, Timeout] = {}
 _variables: dict[str, _TclVariable] = {}
-_text_tags: dict[str, TkWidget] = {}
+_text_tags: dict[str, Tag] = {}
 _widgets: dict[str, TkWidget] = {}
 
 
