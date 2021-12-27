@@ -44,11 +44,9 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         "space_after_paragraph": (ScreenDistance, "spacing3"),
         "space_before_paragraph": (ScreenDistance, "spacing1"),
         "space_before_wrapped_line": (ScreenDistance, "spacing2"),
-        "strikethrough": (bool, "overstrike"),
         "strikethrough_color": (Color, "overstrikefg"),
         "tab_stops": (str, "tabs"),
         "tab_style": (str, "tabstyle"),
-        "underline": bool,
         "underline_color": (Color, "underlinefg"),
         "wrap": _wraps,
     }
@@ -72,16 +70,17 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         space_after_paragraph: Optional[int | ScreenDistance] = None,
         space_before_paragraph: Optional[int | ScreenDistance] = None,
         space_before_wrapped_line: Optional[int | ScreenDistance] = None,
-        strikethrough: Optional[bool] = None,
         strikethrough_color: Optional[Color] = None,
         tab_stops: Optional[tuple[str | int, ...]] = None,
         tab_style: Optional[str] = None,
-        underline: Optional[bool] = None,
         underline_color: Optional[Color] = None,
         wrap: Optional[str] = None,
     ) -> None:
         self._name = _name or f"{self._widget.tcl_path}:tag_{next(counts['textbox_tag'])}"
         _text_tags[self._name] = self
+
+        if not font:
+            font = Font()
 
         self._tcl_call(
             None,
@@ -95,7 +94,6 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
             lmargin1=first_line_margin,
             lmargin2=hanging_line_margin,
             offset=offset,
-            overstrike=strikethrough,
             overstrikefg=strikethrough_color,
             rmargin=right_margin,
             rmargincolor=right_margin_bg,
@@ -106,7 +104,6 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
             spacing3=space_after_paragraph,
             tabs=tab_stops,
             tabstyle=tab_style,
-            underline=underline,
             underlinefg=underline_color,
             wrap=_wraps[wrap],
         )
@@ -416,7 +413,7 @@ class TextBox(BaseWidget):
         cursor_width: Optional[int, ScreenDistance] = None,
         fg_color: Optional[Color] = None,
         focusable: Optional[bool] = None,
-        font=("monospace", 10),
+        font: Optional[Font] = None,
         height: Optional[int, ScreenDistance] = None,
         inactive_cursor_style: Optional[str] = None,
         inactive_selection_bg: Optional[Color] = None,
@@ -434,6 +431,10 @@ class TextBox(BaseWidget):
         width: Optional[int, ScreenDistance] = None,
         wrap: Optional[str] = None,
     ) -> None:
+        
+        if not font:
+            font = Font()
+            
         padx = pady = None
         if padding is not None:
             if isinstance(padding, int) or len(padding) == 1:

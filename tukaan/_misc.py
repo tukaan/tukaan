@@ -391,13 +391,13 @@ class Font(
             # small-caption-font -> TkSmallCaptionFont
             family = f"Tk{family.title().replace('-', '')}"
 
-        if family not in cls.families:  # presets are already checked
+        elif family not in cls.families:  # presets are already checked
             raise FontError(
                 f"the font family {family!r} is not found, or is not a valid font name."
             )
 
         return super(Font, cls).__new__(
-            cls, family, size, bold, italic, underline, strikethrough
+            cls, family, int(size), bold, italic, underline, strikethrough
         )  # type: ignore
 
     def to_tcl(self) -> tuple[int, ...]:
