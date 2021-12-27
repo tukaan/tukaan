@@ -9,7 +9,7 @@ from typing import Any, Iterator, Optional
 from PIL import Image
 
 from ._base import BaseWidget, CgetAndConfigure, TkWidget
-from ._constants import _wraps
+from ._constants import _cursor_styles, _inactive_cursor_styles, _wraps
 from ._images import Icon
 from ._misc import Color, Font, ScreenDistance
 from ._utils import (
@@ -21,16 +21,16 @@ from ._utils import (
     py_to_tcl_arguments,
     update_before,
 )
+from ._variables import Integer
 from .exceptions import TclError
 from .scrollbar import Scrollbar
-from ._variables import Integer
 
 
 class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
     _widget: TextBox
     _keys = {
         "bg_color": (Color, "background"),
-        "color": (Color, "foreground"),
+        "fg_color": (Color, "foreground"),
         "first_line_margin": (ScreenDistance, "lmargin1"),
         "font": Font,
         "hanging_line_margin": (ScreenDistance, "lmargin2"),
@@ -38,12 +38,18 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         "justify": str,
         "offset": ScreenDistance,
         "right_margin": (ScreenDistance, "rmargin"),
+        "right_margin_bg": (ScreenDistance, "rmargincolor"),
+        "selection_bg": (Color, "selectbackground"),
+        "selection_fg": (Color, "selectforeground"),
         "space_after_paragraph": (ScreenDistance, "spacing3"),
         "space_before_paragraph": (ScreenDistance, "spacing1"),
         "space_before_wrapped_line": (ScreenDistance, "spacing2"),
         "strikethrough": (bool, "overstrike"),
+        "strikethrough_color": (Color, "overstrikefg"),
         "tab_stops": (str, "tabs"),
+        "tab_style": (str, "tabstyle"),
         "underline": bool,
+        "underline_color": (Color, "underlinefg"),
         "wrap": _wraps,
     }
 
@@ -51,24 +57,28 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         self,
         _name: str = None,
         *,
-        bg_color=None,
-        bold=False,
-        first_line_margin=None,
-        font=None,
-        color=None,
-        hanging_line_margin=None,
+        bg_color: Optional[Color] = None,
+        fg_color: Optional[Color] = None,
+        first_line_margin: Optional[int | ScreenDistance] = None,
+        font: Optional[Font] = None,
+        hanging_line_margin: Optional[int | ScreenDistance] = None,
         hidden: Optional[bool] = None,
-        italic=False,
-        justify=None,
-        offset=None,
-        right_margin=None,
-        space_after_paragraph=None,
-        space_before_paragraph=None,
-        space_before_wrapped_line=None,
-        strikethrough: bool = False,
-        tab_stops=None,
-        underline: bool = False,
-        wrap=None,
+        justify: Optional[str] = None,
+        offset: Optional[int | ScreenDistance] = None,
+        right_margin: Optional[int | ScreenDistance] = None,
+        right_margin_bg: Optional[Color] = None,
+        selection_bg: Optional[Color] = None,
+        selection_fg: Optional[Color] = None,
+        space_after_paragraph: Optional[int | ScreenDistance] = None,
+        space_before_paragraph: Optional[int | ScreenDistance] = None,
+        space_before_wrapped_line: Optional[int | ScreenDistance] = None,
+        strikethrough: Optional[bool] = None,
+        strikethrough_color: Optional[Color] = None,
+        tab_stops: Optional[tuple[str | int, ...]] = None,
+        tab_style: Optional[str] = None,
+        underline: Optional[bool] = None,
+        underline_color: Optional[Color] = None,
+        wrap: Optional[str] = None,
     ) -> None:
         self._name = _name or f"{self._widget.tcl_path}:tag_{next(counts['textbox_tag'])}"
         _text_tags[self._name] = self
@@ -80,16 +90,24 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
             background=bg_color,
             elide=hidden,
             font=font,
-            foreground=color,
+            foreground=fg_color,
             justify=justify,
             lmargin1=first_line_margin,
             lmargin2=hanging_line_margin,
             offset=offset,
+            overstrike=strikethrough,
+            overstrikefg=strikethrough_color,
             rmargin=right_margin,
+            rmargincolor=right_margin_bg,
+            selectbackground=selection_bg,
+            selectforeground=selection_fg,
             spacing1=space_before_paragraph,
             spacing2=space_before_wrapped_line,
             spacing3=space_after_paragraph,
             tabs=tab_stops,
+            tabstyle=tab_style,
+            underline=underline,
+            underlinefg=underline_color,
             wrap=_wraps[wrap],
         )
 
@@ -359,23 +377,79 @@ class _textbox_frame(BaseWidget):
 class TextBox(BaseWidget):
     _tcl_class = "text"
     _keys = {
+        "bg_color": (Color, "background"),
+        "cursor_color": (Color, "insertbackground"),
+        "cursor_offtime": (int, "insertofftime"),
+        "cursor_ontime": (int, "insertontime"),
+        "cursor_style": (_cursor_styles, "blockcursor"),
+        "cursor_width": (ScreenDistance, "insertwidth"),
+        "fg_color": (Color, "foreground"),
+        "focusable": (bool, "takefocus"),
         "font": Font,
+        "height": ScreenDistance,
+        "inactive_cursor_style": (_inactive_cursor_styles, "insertunfocussed"),
+        "inactive_selection_bg": (Color, "inactiveselectbackground"),
         "on_xscroll": ("func", "xscrollcommand"),
         "on_yscroll": ("func", "yscrollcommand"),
+        "resize_along_chars": (bool, "setgrid"),
+        "selection_bg": (Color, "selectbackground"),
+        "selection_fg": (Color, "selectforeground"),
+        "space_after_paragraph": (ScreenDistance, "spacing3"),
+        "space_before_paragraph": (ScreenDistance, "spacing1"),
+        "space_before_wrapped_line": (ScreenDistance, "spacing2"),
+        "tab_stops": (str, "tabs"),
+        "tab_style": (str, "tabstyle"),
         "track_history": (bool, "undo"),
+        "width": ScreenDistance,
         "wrap": _wraps,
     }
+    # todo: padding cget, configure
 
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
+        bg_color: Optional[Color] = None,
+        cursor_color: Optional[Color] = None,
+        cursor_offtime: Optional[int] = None,
+        cursor_ontime: Optional[int] = None,
+        cursor_style: Optional[str] = "normal",
+        cursor_width: Optional[int, ScreenDistance] = None,
+        fg_color: Optional[Color] = None,
+        focusable: Optional[bool] = None,
         font=("monospace", 10),
+        height: Optional[int, ScreenDistance] = None,
+        inactive_cursor_style: Optional[str] = None,
+        inactive_selection_bg: Optional[Color] = None,
         overflow: tuple[bool | str, bool | str] = ("auto", "auto"),
-        track_history=False,
-        wrap=None,
+        padding: Optional[int, tuple[int], tuple[int, int]] = None,
+        resize_along_chars: Optional[bool] = None,
+        selection_bg: Optional[Color] = None,
+        selection_fg: Optional[Color] = None,
+        space_after_paragraph: Optional[int, ScreenDistance] = None,
+        space_before_paragraph: Optional[int, ScreenDistance] = None,
+        space_before_wrapped_line: Optional[int, ScreenDistance] = None,
+        tab_stops: Optional[tuple[str | int, ...]] = None,
+        tab_style: Optional[str] = None,
+        track_history: Optional[bool] = None,
+        width: Optional[int, ScreenDistance] = None,
+        wrap: Optional[str] = None,
     ) -> None:
-        assert wrap in _wraps, f"wrapping must be one of {tuple(_wraps.keys())}"
-        wrap = _wraps[wrap]
+        padx = pady = None
+        if padding is not None:
+            if isinstance(padding, int) or len(padding) == 1:
+                padx = pady = padding
+            elif len(padding) == 2:
+                padx, pady = padding
+            else:
+                raise ValueError(
+                    "unfortunately 4 side paddings aren't supported for TextBox padding"
+                )
+
+        if cursor_offtime is not None:
+            cursor_offtime = int(1000 * cursor_offtime)
+
+        if cursor_ontime is not None:
+            cursor_ontime = int(1000 * cursor_ontime)
 
         self._frame = _textbox_frame(parent)
 
@@ -383,11 +457,33 @@ class TextBox(BaseWidget):
             self,
             self._frame,
             autoseparators=True,
-            font=font,
             highlightthickness=0,
             relief="flat",
+            background=bg_color,
+            blockcursor=_cursor_styles[cursor_style],
+            font=font,
+            foreground=fg_color,
+            height=height,
+            inactiveselectbackground=inactive_selection_bg,
+            insertbackground=cursor_color,
+            insertofftime=cursor_offtime,
+            insertontime=cursor_ontime,
+            insertunfocussed=_inactive_cursor_styles[inactive_cursor_style],
+            insertwidth=cursor_width,
+            padx=padx,
+            pady=pady,
+            selectbackground=selection_bg,
+            selectforeground=selection_fg,
+            setgrid=resize_along_chars,
+            spacing1=space_before_paragraph,
+            spacing2=space_before_wrapped_line,
+            spacing3=space_after_paragraph,
+            tabs=tab_stops,
+            tabstyle=tab_style,
+            takefocus=focusable,
             undo=track_history,
-            wrap=wrap,
+            width=width,
+            wrap=_wraps[wrap],
         )
         self._tcl_eval(
             None,
@@ -449,7 +545,7 @@ class TextBox(BaseWidget):
         elif isinstance(content, TkWidget):
             margin = kwargs.pop("margin", None)
             padx = pady = None
-            if margin:
+            if margin is not None:
                 if isinstance(margin, int) or len(margin) == 1:
                     padx = pady = margin
                 elif len(margin) == 2:
@@ -564,7 +660,9 @@ class TextBox(BaseWidget):
             to_call.append("--")
 
         while True:
-            result = self._tcl_call(str, self.tcl_path, "search", "-count", variable, *to_call, pattern, start, stop)
+            result = self._tcl_call(
+                str, self.tcl_path, "search", "-count", variable, *to_call, pattern, start, stop
+            )
             if not result:
                 break
             yield self.range(self.index(result), self.index(result).forward(chars=variable.get()))

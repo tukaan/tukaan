@@ -31,6 +31,10 @@ _anchors: dict[Any, str] = {
 
 _wraps = {"word": "word", "letter": "char", None: "none"}
 
+_cursor_styles = {"block": True, "normal": False}
+
+_inactive_cursor_styles = {"hollow": "hollow", "solid": "solid", None: "none"}
+
 _window_pos: set[str] = {"center", "top-left", "top-right", "bottom-left", "bottom-right"}
 
 _VALID_STATES: set[str] = {
