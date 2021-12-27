@@ -19,6 +19,7 @@ from ._utils import (
     classproperty,
     counts,
     py_to_tcl_arguments,
+    update_before,
 )
 from .exceptions import TclError
 from .scrollbar import Scrollbar
@@ -300,7 +301,7 @@ class Marks(abc.MutableMapping):
 
 class TextHistory:
     _widget: TextBox
-    
+
     def call_subcommand(self, *args):
         if self._widget.track_history is False:
             warnings.warn(
@@ -476,16 +477,20 @@ class TextBox(BaseWidget):
             raise TypeError(f"insert() got unexpected keyword argument(s): {tuple(kwargs.keys())}")
         self._tcl_call(None, self, *to_call)
 
-    def delete(self, start: TextIndex | TextRange, end: TextIndex):
+    def delete(
+        self, start: Optional[TextIndex | TextRange] = None, end: Optional[TextIndex] = None
+    ) -> None:
         if isinstance(start, TextRange):
             start, end = start
         else:
             start = self.start if start is None else start
             end = self.end if end is None else end
 
-        return self._tcl_call(str, self, "delete", start, end)
+        self._tcl_call(None, self, "delete", start, end)
 
-    def get(self, start: TextIndex | TextRange = None, end: TextIndex = None):
+    def get(
+        self, start: Optional[TextIndex | TextRange] = None, end: Optional[TextIndex] = None
+    ) -> str:
         if isinstance(start, TextRange):
             start, end = start
         else:
@@ -659,3 +664,53 @@ class TextBox(BaseWidget):
 
         self._tcl_call(str, self, "dump", "-all", "-command", add_item, "1.0", "end - 1 chars")
         return result
+
+    @update_before
+    def line_info(self, index: TextIndex) -> dict[str, ScreenDistance]:
+        """Returns the accurate height only if the TextBox widget has already laid out"""
+        keys = ("x_1", "y_1", "x_2", "y_2", "baseline")
+        result = self._tcl_call(
+            (ScreenDistance, ScreenDistance, ScreenDistance, ScreenDistance, ScreenDistance),
+            self,
+            "dlineinfo",
+            index,
+        )
+
+        return {key: value for key, value in zip(keys, result)}
+
+    def count(
+        self, start: Optional[TextIndex | TextRange] = None, end: Optional[TextIndex] = None
+    ) -> dict[str, int | ScreenDistance]:
+        if isinstance(start, TextRange):
+            start, end = start
+        else:
+            start = self.start if start is None else start
+            end = self.end if end is None else end
+
+        keys = (
+            "chars",
+            "displayed_chars",
+            "displayed_indices",
+            "displayed_lines",
+            "indices",
+            "lines",
+            "width",
+            "height",
+        )
+        result = self._tcl_call(
+            (int, int, int, int, int, int, ScreenDistance, ScreenDistance),
+            self,
+            "count",
+            "-chars",
+            "-displaychars",
+            "-displayindices",
+            "-displaylines",
+            "-indices",
+            "-lines",
+            "-xpixels",
+            "-ypixels",
+            start,
+            end,
+        )
+
+        return {key: value for key, value in zip(keys, result)}

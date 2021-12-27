@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     from ._base import TkWidget
     from ._images import _image_converter_class
     from ._variables import _TclVariable
-    from .timeout import Timeout
     from .textbox import Tag
+    from .timeout import Timeout
 
 
 class count:
