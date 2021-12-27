@@ -135,25 +135,44 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         return cls(_name="hidden", hidden=True)
 
 
+class TextRange(namedtuple("TextRange", "start end")):
+    def get(self):
+        return self._widget.get(self)
+
+
 class TextIndex(namedtuple("TextIndex", "line column")):
     _widget: TextBox
 
-    def __new__(cls, first: int | None = None, second: int | None = None, *, x: int | None = None, y: int | None = None) -> TextIndex:
+    def __new__(
+        cls,
+        first: int | None = None,
+        second: int | None = None,
+        *,
+        x: int | None = None,
+        y: int | None = None,
+    ) -> TextIndex:
         result = None
-        
+
         if isinstance(first, int) and isinstance(second, int):
             # line and column numbers
             line, column = first, second
-        elif isinstance(first, (str, Icon, Image.Image, TkWidget)) and second is None and x is None and y is None:
+        elif (
+            isinstance(first, (str, Icon, Image.Image, TkWidget))
+            and second is None
+            and x is None
+            and y is None
+        ):
             # string from from_tcl() OR mark name, image name or widget name
             result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", first)
-        elif isinstance(x, (int, float, ScreenDistance)) and isinstance(y, (int, float, ScreenDistance)):
+        elif isinstance(x, (int, float, ScreenDistance)) and isinstance(
+            y, (int, float, ScreenDistance)
+        ):
             # x and y
             result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", f"@{x},{y}")
 
         if result:
             line, column = tuple(map(int, result.split(".")))
-        
+
         return super(TextIndex, cls).__new__(cls, line, column)  # type: ignore
 
     def to_tcl(self) -> str:
@@ -180,7 +199,7 @@ class TextIndex(namedtuple("TextIndex", "line column")):
 
     def __ge__(self, other: TextIndex) -> bool:
         return self._compare(self, other, ">=")
-    
+
     @property
     def between_start_end(self) -> TextIndex:
         if self < self._widget.start:
@@ -349,10 +368,11 @@ class TextBox(BaseWidget):
             self.overflow = overflow
 
         self.index = TextIndex
+        self.range = TextRange
         self.Tag = Tag
         self.marks = Marks()
         self.history = TextHistory()
-        for attr in (self.index, self.Tag, self.marks, self.history):
+        for attr in (self.index, self.range, self.Tag, self.marks, self.history):
             setattr(attr, "_widget", self)
 
         self.layout = self._frame.layout
@@ -426,17 +446,65 @@ class TextBox(BaseWidget):
             raise TypeError(f"insert() got unexpected keyword argument(s): {tuple(kwargs.keys())}")
         self._tcl_call(None, self, *to_call)
 
-    def delete(self, start: TextIndex = None, end: TextIndex = None):
-        start = self.start if start is None else start
-        end = self.end if end is None else end
+    def delete(self, start: TextIndex | TextRange = None, end: TextIndex = None):
+        if isinstance(start, TextRange):
+            start, end = start
+        else:
+            start = self.start if start is None else start
+            end = self.end if end is None else end
 
         return self._tcl_call(str, self, "delete", start, end)
 
-    def get(self, start: TextIndex = None, end: TextIndex = None):
-        start = self.start if start is None else start
-        end = self.end if end is None else end
+    def get(self, start: TextIndex | TextRange = None, end: TextIndex = None):
+        if isinstance(start, TextRange):
+            start, end = start
+        else:
+            start = self.start if start is None else start
+            end = self.end if end is None else end
 
         return self._tcl_call(str, self, "get", start, end)
+
+    def search(
+        self,
+        pattern,
+        start,
+        stop=None,
+        *,
+        backwards=False,
+        case_sensitive=True,
+        variable=None,
+        count_hidden=False,
+        exact=False,
+        forwards=False,
+        regex=False,
+    ):
+        to_call = []
+
+        if forwards:
+            to_call.append("-forwards")
+        if backwards:
+            to_call.append("-backwards")
+        if exact:
+            to_call.append("-exact")
+        if regex:
+            to_call.append("-regexp")
+        if not case_sensitive:
+            to_call.append("-nocase")
+        if count_hidden:
+            to_call.append("-elide")
+        if variable:
+            to_call.append("-count")
+            to_call.append(variable)
+
+        if pattern and pattern[0] == "-":
+            to_call.append("--")
+
+        while True:
+            result = self._tcl_call(str, self.tcl_path, "search", *to_call, pattern, start, stop)
+            if not result:
+                break
+            yield self.range(self.index(result), self.index(result).forward(chars=len(pattern)))
+            start = result + "+ 1 chars"
 
     def scroll_to(self, index: TextIndex) -> None:
         self._tcl_call(None, self, "see", index)
