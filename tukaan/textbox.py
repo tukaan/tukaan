@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import warnings
 from collections import abc, namedtuple
-from pathlib import Path
 from functools import partialmethod
+from pathlib import Path
 from typing import Any, Iterator, Optional
 
 from PIL import Image
@@ -12,7 +12,14 @@ from ._base import BaseWidget, CgetAndConfigure, TkWidget
 from ._constants import _wraps
 from ._images import Icon
 from ._misc import Color, Font, ScreenDistance
-from ._utils import ClassPropertyMetaClass, classproperty, counts, py_to_tcl_arguments
+from ._utils import (
+    ClassPropertyMetaClass,
+    _images,
+    _text_tags,
+    classproperty,
+    counts,
+    py_to_tcl_arguments,
+)
 from .exceptions import TclError
 from .scrollbar import Scrollbar
 
@@ -62,6 +69,7 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         wrap=None,
     ) -> None:
         self._name = _name or f"{self._widget.tcl_path}:tag_{next(counts['textbox_tag'])}"
+        _text_tags[self._name] = self
 
         self._tcl_call(
             None,
@@ -101,6 +109,10 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
     def to_tcl(self):
         return self._name
 
+    @classmethod
+    def from_tcl(cls, value: str) -> Tag:
+        return _text_tags[value]
+
     def _tcl_call(self, returntype: Any, _dumb_self, subcommand: str, *args, **kwargs) -> Any:
         return self._widget._tcl_call(
             returntype,
@@ -134,12 +146,14 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         for start, end in zip(result[0::2], result[1::2]):
             yield self._widget.range(start, end)
 
-    def _prev_next_range(self, direction: str, start: TextIndex, end: Optional[TextIndex] = None) -> None | TextRange:
+    def _prev_next_range(
+        self, direction: str, start: TextIndex, end: Optional[TextIndex] = None
+    ) -> None | TextRange:
         if end is None:
             end = {"prev": self._widget.start, "next": self._widget.end}[direction]
 
         result = self._tcl_call((self._widget.index,), self, f"{direction}range", start, end)
-        
+
         if not result:
             return None
 
@@ -281,9 +295,7 @@ class Marks(abc.MutableMapping):
         if name not in self:
             raise KeyError(f"Mark {name!r} doesn't exists in {self._widget}")
 
-        return self._widget.index.from_tcl(
-            self._widget._tcl_call(str, self._widget.tcl_path, "index", name)
-        )
+        return self._widget.index(name)
 
     def __delitem__(self, name: str) -> None:
         if name == "insert":
@@ -489,7 +501,12 @@ class TextBox(BaseWidget):
         if isinstance(args[0], TextRange) and isinstance(args[1], str):
             text = args[1]
             start, end = args[0]
-        elif len(args) == 3 and isinstance(args[0], TextIndex) and isinstance(args[1], TextIndex) and isinstance(args[2], str):
+        elif (
+            len(args) == 3
+            and isinstance(args[0], TextIndex)
+            and isinstance(args[1], TextIndex)
+            and isinstance(args[2], str)
+        ):
             text = args[2]
             start = self.start if args[0] is None else args[0]
             end = self.end if args[1] is None else args[1]
@@ -515,7 +532,7 @@ class TextBox(BaseWidget):
 
         if stop == self.end:
             stop = "end - 1 chars"
-        
+
         to_call = []
 
         if forwards:
@@ -595,13 +612,13 @@ class TextBox(BaseWidget):
         self._overflow = new_overflow
 
     @property
-    def content(self):
+    def text(self):
         return self.get()
 
-    @content.setter
-    def content(self, new_content):
+    @text.setter
+    def text(self, new_text):
         self.delete()
-        self.insert(self.end, new_content)
+        self.insert(self.end, new_text)
 
     @property
     def cursor_pos(self):
@@ -610,3 +627,38 @@ class TextBox(BaseWidget):
     @cursor_pos.setter
     def cursor_pos(self, new_pos: TextIndex):
         self.marks["insert"] = new_pos
+
+    @property
+    def content(self) -> list[tuple[TextIndex, str | Tag | Icon | Image.Image | TkWidget]]:
+        result = []
+        unclosed_tags = {}
+
+        def add_item(type, value, index):
+            nonlocal result
+            nonlocal unclosed_tags
+
+            if type == "tagon":
+                unclosed_tags[value] = (index, len(result))
+                return
+            elif type == "tagoff":
+                if value in unclosed_tags:
+                    result.insert(
+                        unclosed_tags[value][1],
+                        (
+                            self.range(self.index(unclosed_tags[value][0]), self.index(index)),
+                            Tag.from_tcl(value),
+                        ),
+                    )
+                    return
+
+            convert = {
+                "image": lambda x: _images[x],
+                "mark": lambda x: f"TextBox.marks[{x!r}]",
+                "text": str,
+                "window": TkWidget.from_tcl,
+            }[type]
+
+            result.append((self.index(index), convert(value)))
+
+        self._tcl_call(str, self, "dump", "-all", "-command", add_item, "1.0", "end - 1 chars")
+        return result

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import threading
 from pathlib import Path
 from typing import Optional
 
@@ -9,7 +8,6 @@ from PIL import Image as PIL_Image
 from ._base import BaseWidget, CgetAndConfigure
 from ._misc import HEX
 from ._utils import (
-    _icons,
     _images,
     _pil_images,
     counts,
@@ -176,7 +174,7 @@ class Icon(CgetAndConfigure):
         self._tcl_call = get_tcl_interp()._tcl_call  # for CgetAndConfigure
 
         self._name = f"tukaan_icon_{next(counts['icons'])}"
-        _icons[self._name] = self
+        _images[self._name] = self
 
         self._tcl_call(
             None,
@@ -192,7 +190,7 @@ class Icon(CgetAndConfigure):
 
     @classmethod
     def from_tcl(cls, value):
-        return _icons[value]
+        return _images[value]
 
 
 class IconFactory:

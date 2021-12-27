@@ -44,9 +44,9 @@ counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count(
 _callbacks: dict[str, Callable] = {}
 _images: dict[str, _image_converter_class] = {}
 _pil_images: dict[str, Image] = {}
-_icons: dict[str, Icon] = {}
 _timeouts: dict[str, Timeout] = {}
 _variables: dict[str, _TclVariable] = {}
+_text_tags: dict[str, TkWidget] = {}
 _widgets: dict[str, TkWidget] = {}
 
 
