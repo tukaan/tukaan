@@ -15,8 +15,10 @@ if TYPE_CHECKING:
     from PIL import Image
 
     from ._base import TkWidget
-    from ._images import Icon, _image_converter_class
+    from ._images import _image_converter_class
+    from ._misc import NamedFont
     from ._variables import _TclVariable
+    from .textbox import Tag
     from .timeout import Timeout
 
 
@@ -44,10 +46,11 @@ counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count(
 _callbacks: dict[str, Callable] = {}
 _images: dict[str, _image_converter_class] = {}
 _pil_images: dict[str, Image] = {}
-_icons: dict[str, Icon] = {}
 _timeouts: dict[str, Timeout] = {}
 _variables: dict[str, _TclVariable] = {}
+_text_tags: dict[str, Tag] = {}
 _widgets: dict[str, TkWidget] = {}
+_fonts: dict[str, NamedFont] = {}
 
 
 def updated(func: Callable) -> Callable:
@@ -167,12 +170,7 @@ def from_tcl(type_spec, value) -> Any:
             return type_spec(string)  # type: ignore
 
         if hasattr(type_spec, "from_tcl"):
-            string = from_tcl(str, value)
-
-            if not string:
-                return None
-
-            return type_spec.from_tcl(string)  # type: ignore
+            return type_spec.from_tcl(value)  # type: ignore
 
     if isinstance(type_spec, (list, tuple, dict)):
         items = get_tcl_interp().split_list(value)

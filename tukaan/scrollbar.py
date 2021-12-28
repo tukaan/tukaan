@@ -35,9 +35,7 @@ class Scrollbar(BaseWidget):
             try:
                 widget.config(on_yscroll=self.set)
             except KeyError:
-                raise RuntimeError(
-                    f"can't attach scrollbar, {widget} is not scrollable vertically"
-                )
+                raise RuntimeError(f"can't attach scrollbar, {widget} is not scrollable vertically")
             self.config(scrollcommand=widget.y_scroll)
         elif self.orientation == "horizontal":
             try:

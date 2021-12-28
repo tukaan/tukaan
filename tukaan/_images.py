@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import threading
 from pathlib import Path
 from typing import Optional
 
@@ -9,7 +8,6 @@ from PIL import Image as PIL_Image
 from ._base import BaseWidget, CgetAndConfigure
 from ._misc import HEX
 from ._utils import (
-    _icons,
     _images,
     _pil_images,
     counts,
@@ -43,7 +41,10 @@ class _image_converter_class:
         self._image = image
         self._name = f"tukaan_image_{next(counts['images'])}"
 
-        get_tcl_interp()._tcl_call(None, "image", "create", "photo", self._name)
+        self._tcl_call = get_tcl_interp()._tcl_call
+        self._tcl_eval = get_tcl_interp()._tcl_eval
+
+        self._tcl_call(None, "image", "create", "photo", self._name)
 
         _images[self._name] = self  # gc
         _pil_images[self._name] = image
@@ -63,9 +64,7 @@ class _image_converter_class:
             if self._transparent:
                 self._image = self._image.convert("RGBA")
 
-            threading.Thread(
-                target=self.create_tcl_image, args=(self._name, self._image)
-            ).start()
+            self.create_tcl_image(self._name, self._image)
 
     def get_image_mode(self, image) -> tuple[str, PIL_Image.Image]:
         # currently this is a copy/pasta from PIL.ImageTk
@@ -87,8 +86,6 @@ class _image_converter_class:
         return mode, image
 
     def create_tcl_image(self, name: str, image: PIL_Image.Image) -> None:
-        get_tcl_interp()._tcl_call(None, "image", "create", "photo", name)
-
         self._mode, image = self.get_image_mode(image)
         if image is None:
             return
@@ -106,7 +103,7 @@ class _image_converter_class:
             block = image.new_block(self._mode, size)
             image.convert2(block, image)
 
-        get_tcl_interp()._tcl_call(None, "PyImagingPhoto", name, block.id)
+        self._tcl_eval(None, f"image create photo {name}\nPyImagingPhoto {name} {block.id}")
 
     def start_animation(self) -> None:
         frame_count = 0
@@ -138,16 +135,13 @@ class _image_converter_class:
     def show_frame(self) -> None:
         frame_data = self.image_frames[self.current_frame]
 
-        get_tcl_interp()._tcl_call(
-            None, self._name, "copy", frame_data[0], "-compositingrule", "set"
-        )
-
         self.current_frame += 1
         if self.current_frame == len(self.image_frames):
             self.current_frame = 0
 
-        get_tcl_interp()._tcl_call(
-            None, "after", int(frame_data[1]), self.show_frames_command
+        self._tcl_eval(
+            None,
+            f"{self._name} copy {frame_data[0]} -compositingrule set\nafter {int(frame_data[1])} {self.show_frames_command}",
         )
 
     def to_tcl(self) -> str:
@@ -180,7 +174,7 @@ class Icon(CgetAndConfigure):
         self._tcl_call = get_tcl_interp()._tcl_call  # for CgetAndConfigure
 
         self._name = f"tukaan_icon_{next(counts['icons'])}"
-        _icons[self._name] = self
+        _images[self._name] = self
 
         self._tcl_call(
             None,
@@ -196,7 +190,7 @@ class Icon(CgetAndConfigure):
 
     @classmethod
     def from_tcl(cls, value):
-        return _icons[value]
+        return _images[value]
 
 
 class IconFactory:
@@ -217,9 +211,7 @@ class IconFactory:
         )) / 3 > 127
         # fmt: on
 
-        self._current_dir = (
-            self._light_icons_dir if dark_theme else self._dark_icons_dir
-        )
+        self._current_dir = self._light_icons_dir if dark_theme else self._dark_icons_dir
 
         for icon_name, icon in tuple(self.cache.items()):
             icon.config(file=Path(self._current_dir) / (icon_name + ".png"))

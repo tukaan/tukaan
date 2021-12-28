@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, Literal, cast
+from typing import Any, Callable
 
 from ._constants import _window_pos
-from ._platform import Platform
 from .exceptions import TclError
 
 # This module can't use anything that relies on get_tcl_interp,
@@ -40,17 +39,18 @@ def update_after(func: Callable) -> Callable:
 
 class WindowMixin:
     _tcl_call: Callable
+    _tcl_eval: Callable
     wm_path: str
     tcl_path: str
 
     def maximize(self) -> None:
-        if self._tcl_call(None, "tk", "windowingsystem") == "win32":
+        if self._tcl_call(str, "tk", "windowingsystem") == "win32":
             self._tcl_call(None, "wm", "state", self.wm_path, "zoomed")
         else:
             self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", True)
 
     def restore(self) -> None:
-        if self._tcl_call(None, "tk", "windowingsystem") == "win32":
+        if self._tcl_call(str, "tk", "windowingsystem") == "win32":
             self._tcl_call(None, "wm", "state", self.wm_path, "normal")
         else:
             self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", False)
@@ -68,105 +68,61 @@ class WindowMixin:
     @fullscreen.setter
     def fullscreen(self, is_fullscreen) -> None:
         # todo: bind f11
-        self._tcl_call(
-            None, "wm", "attributes", self.wm_path, "-fullscreen", is_fullscreen
-        )
+        self._tcl_call(None, "wm", "attributes", self.wm_path, "-fullscreen", is_fullscreen)
 
     @property  # type: ignore
     @update_before
     def size(self) -> tuple[int, int]:
-        return cast(
-            tuple[int, int],
-            tuple(
-                map(
-                    int,
-                    re.split(
-                        r"x|\+", self._tcl_call(str, "wm", "geometry", self.wm_path)
-                    )[:2],
-                )
-            ),
+        return tuple(
+            map(int, re.split(r"x|\+", self._tcl_call(str, "wm", "geometry", self.wm_path))[:2])
         )
 
     @size.setter  # type: ignore
     @update_after
-    def size(self, size: int | tuple[int, int] | list[int]) -> None:
-        if isinstance(size, int):
+    def size(self, size: tuple[int, int] | list[int]) -> None:
+        if len(size) == 1:
             width = height = size
-        elif isinstance(size, (tuple, list)) and len(size) > 1:
+        elif len(size) == 2:
             width, height = size
-        else:
-            raise RuntimeError
-        width, height = tuple(
-            map(
-                lambda a: self._tcl_call(int, "winfo", "pixels", ".", a),
-                (width, height),
-            )
-        )
         self._tcl_call(None, "wm", "geometry", self.wm_path, f"{width}x{height}")
 
     @property  # type: ignore
     @update_before
     def position(self) -> tuple[int, int]:
-        return cast(
-            tuple[int, int],
-            tuple(
-                map(
-                    int,
-                    re.split(
-                        r"x|\+", self._tcl_call(str, "wm", "geometry", self.wm_path)
-                    )[2:],
-                )
-            ),
+        return tuple(
+            map(int, re.split(r"x|\+", self._tcl_call(str, "wm", "geometry", self.wm_path))[2:])
         )
 
     @position.setter  # type: ignore
     @update_after
-    def position(
-        self,
-        position: int
-        | tuple[int, int]
-        | list[int]
-        | Literal["center", "top-left", "top-right", "bottom-left", "bottom-right"],
-    ) -> None:
+    def position(self, position: str | tuple[int, int] | list[int]) -> None:
+        width = self._tcl_call(int, "winfo", "width", self.wm_path)
+        height = self._tcl_call(int, "winfo", "height", self.wm_path)
+        screenwidth = self._tcl_call(int, "winfo", "screenwidth", self.wm_path)
+        screenheight = self._tcl_call(int, "winfo", "screenheight", self.wm_path)
+
         if position in _window_pos:
             if position == "center":
-                x = int(
-                    (self._tcl_call(int, "winfo", "screenwidth", self.wm_path) / 2)
-                    - (self.width / 2)
-                )
-                y = int(
-                    (self._tcl_call(int, "winfo", "screenheight", self.wm_path) / 2)
-                    - (self.height / 2)
-                )
+                x = screenwidth // 2 - width // 2
+                y = screenheight // 2 - height // 2
             elif position == "top-left":
                 x = y = 0
             elif position == "top-right":
-                x = int(
-                    self._tcl_call(int, "winfo", "screenwidth", self.wm_path)
-                    - self.width
-                )
+                x = screenwidth - width
                 y = 0
             elif position == "bottom-left":
                 x = 0
-                y = int(
-                    self._tcl_call(int, "winfo", "screenheight", self.wm_path)
-                    - self.height
-                )
+                y = screenheight - height
             elif position == "bottom-right":
-                x = int(
-                    self._tcl_call(int, "winfo", "screenwidth", self.wm_path)
-                    - self.width
-                )
-                y = int(
-                    self._tcl_call(int, "winfo", "screenheight", self.wm_path)
-                    - self.height
-                )
-        elif isinstance(position, (tuple, list)) and len(position) > 1:
-            x, y = position
-        elif isinstance(position, int):
+                x = screenwidth - width
+                y = screenwidth - height
+        elif len(position) == 1:
             x = y = position
+        elif len(position) == 2:
+            x, y = position
         else:
             raise RuntimeError
+
         self._tcl_call(None, "wm", "geometry", self.wm_path, f"+{x}+{y}")
 
     @property  # type: ignore
@@ -240,10 +196,10 @@ class WindowMixin:
 
     @minsize.setter  # type: ignore
     @update_after
-    def minsize(self, size: int | tuple[int, int] | list[int]) -> None:
-        if isinstance(size, int):
+    def minsize(self, size: tuple[int, int] | list[int]) -> None:
+        if len(size) == 1:
             width = height = size
-        elif isinstance(size, (tuple, list)) and len(size) > 1:
+        elif len(size) == 2:
             width, height = size
         else:
             raise RuntimeError
@@ -256,10 +212,10 @@ class WindowMixin:
 
     @maxsize.setter  # type: ignore
     @update_after
-    def maxsize(self, size: int | tuple[int, int] | list[int]) -> None:
-        if isinstance(size, int):
+    def maxsize(self, size: tuple[int, int] | list[int]) -> None:
+        if len(size) == 1:
             width = height = size
-        elif isinstance(size, (tuple, list)) and len(size) > 1:
+        elif len(size) == 2:
             width, height = size
         else:
             raise RuntimeError
@@ -287,15 +243,16 @@ class WindowMixin:
 
     @transparency.setter
     def transparency(self, alpha: float = 1) -> None:
-        self._tcl_call(None, "tkwait", "visibility", self.wm_path)
-        self._tcl_call(None, "wm", "attributes", self.wm_path, "-alpha", alpha)
+        self._tcl_eval(
+            None, f"tkwait visibility {self.wm_path} wm attributes {self.wm_path} -alpha {alpha}"
+        )
 
     @property
     def resizable(self) -> str:
         return self._resizable
 
     @resizable.setter
-    def resizable(self, direction: Literal["none", "horizontal", "vertical", "both"]):
+    def resizable(self, direction: str):
         resize_dict = {
             "none": (False, False),
             "horizontal": (True, False),
@@ -306,9 +263,8 @@ class WindowMixin:
             width, height = resize_dict[direction]
         except KeyError:
             raise TclError(
-                f"invalid resizable value: {direction!r}. Allowed values: 'none',"
-                + " 'horizontal' 'vertical', 'both'"
-            )
+                f"invalid resizable value: {direction!r}. Allowed values: {str(tuple(resize_dict.keys()))[1:-1]}"
+            ) from None
         self._resizable = direction
         self._tcl_call(None, "wm", "resizable", self.wm_path, width, height)
 
@@ -328,7 +284,7 @@ class WindowMixin:
         # available_themes property should use this
         theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
 
-        wm = Platform.windowing_system
+        wm = self._tcl_call(str, "tk", "windowingsystem")
 
         if wm == "win32":
             theme_dict["native"] = "vista"
@@ -341,18 +297,15 @@ class WindowMixin:
     def theme(self) -> str:
         theme_dict = {"clam": "clam", "default": "legacy"}
 
-        wm = Platform.windowing_system
+        wm = self._tcl_call(str, "tk", "windowingsystem")
 
         if wm == "win32":
             theme_dict["vista"] = "native"
         elif wm == "aqua":
             theme_dict["aqua"] = "native"
 
-        result = self._tcl_call(str, "ttk::style", "theme", "use")
-        return theme_dict[result]
+        return theme_dict[self._tcl_call(str, "ttk::style", "theme", "use")]
 
     @theme.setter
     def theme(self, theme) -> None:
-        self._tcl_call(
-            None, "ttk::style", "theme", "use", self._get_theme_aliases()[theme]
-        )
+        self._tcl_call(None, "ttk::style", "theme", "use", self._get_theme_aliases()[theme])

@@ -20,8 +20,8 @@ class App(WindowMixin, TkWidget):
     def __init__(
         self,
         title: Optional[str] = "Tukaan window",
-        width: int = 200,
-        height: int = 200,
+        width: Optional[int] = 200,
+        height: Optional[int] = 200,
         transparency: Optional[int] = None,
         topmost: Optional[bool] = None,
         fullscreen: Optional[bool] = None,
@@ -36,14 +36,7 @@ class App(WindowMixin, TkWidget):
             raise TclError("can't create multiple App objects use a Window instead")
 
         self.app = tk.create(
-            None,
-            os.path.basename(sys.argv[0]),
-            "Tukaan window",
-            True,
-            True,
-            True,
-            False,
-            None,
+            None, os.path.basename(sys.argv[0]), "Tukaan window", True, True, True, False, None
         )
 
         self.app.loadtk()
@@ -86,27 +79,15 @@ class App(WindowMixin, TkWidget):
             _, msg, tb = sys.exc_info()
             msg = str(msg)
 
-            print(
-                f"Exception in Tcl callback in {tb.tb_frame.f_back.f_code.co_filename}"
-                f":{tb.tb_frame.f_back.f_lineno}",
-                file=sys.stderr,
-            )
-
             if msg.startswith("couldn't read file"):
                 # FileNotFoundError is a bit more pythonic than TclError: couldn't read file
                 path = msg.split('"')[1]  # path is between ""
                 sys.tracebacklimit = 0
-                raise FileNotFoundError(
-                    f"No such file or directory: {path!r}"
-                ) from None
+                raise FileNotFoundError(f"No such file or directory: {path!r}") from None
             else:
-                print(
-                    f"tukaan.{TclError.__name__}: {msg}",  # tukaan.{TclError.__name__} XDD
-                    file=sys.stderr,
-                )
-                sys.exit()
+                raise TclError(msg) from None
 
-    def tcl_eval(self, return_type: Any, code: str) -> Any:
+    def _tcl_eval(self, return_type: Any, code: str) -> Any:
         result = self.app.eval(code)
         return from_tcl(return_type, result)
 

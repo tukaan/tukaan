@@ -57,9 +57,7 @@ class GridCells:
     def grid_cells(self, cells_data: list[list[str]]) -> None:
         self.set_grid_cells(cells_data)
 
-    def _parse_grid_cells(
-        self, areas_list: list[list[str]]
-    ) -> dict[str, dict[str, int]]:
+    def _parse_grid_cells(self, areas_list: list[list[str]]) -> dict[str, dict[str, int]]:
         result: dict[str, dict[str, int | bool]] = {}
         for row_index, row_list in enumerate(areas_list):
             for col_index, cell_name in enumerate(row_list):
@@ -71,9 +69,7 @@ class GridCells:
                         result[cell_name]["cols_counted"] = True
 
                     if not result[cell_name].get("rows_counted", False):
-                        result[cell_name]["rowspan"] = sum(
-                            cell_name in item for item in areas_list
-                        )
+                        result[cell_name]["rowspan"] = sum(cell_name in item for item in areas_list)
                         result[cell_name]["rows_counted"] = True
                 else:
                     result[cell_name] = {
@@ -95,9 +91,7 @@ class GridTemplates:
     _row_template: tuple
     _col_template: tuple
 
-    def _grid_or_col_template(
-        self, which: str, template: int | tuple[int, ...]
-    ) -> None:
+    def _grid_or_col_template(self, which: str, template: int | tuple[int, ...]) -> None:
         attr, command = {
             "row": ("_row_template", "rowconfigure"),
             "col": ("_col_template", "columnconfigure"),
@@ -108,9 +102,7 @@ class GridTemplates:
 
         setattr(self, attr, template)
         for index, weight in enumerate(template):
-            self._widget._tcl_call(
-                None, "grid", command, self._widget, index, "-weight", weight
-            )
+            self._widget._tcl_call(None, "grid", command, self._widget, index, "-weight", weight)
 
     @property
     def grid_row_template(self) -> tuple[int, ...]:
@@ -138,9 +130,7 @@ class Grid:
 
     def grid(
         self,
-        align: tuple[HorAlignAlias, VertAlignAlias]
-        | HorAlignAlias
-        | VertAlignAlias = None,
+        align: tuple[HorAlignAlias, VertAlignAlias] | HorAlignAlias | VertAlignAlias = None,
         cell: Optional[str] = None,
         col: Optional[int] = 0,
         colspan: Optional[int] = None,
@@ -192,9 +182,7 @@ class Grid:
             "grid",
             "configure",
             self._widget,
-            *py_to_tcl_arguments(
-                row=row, column=col, rowspan=rowspan, columnspan=colspan
-            ),
+            *py_to_tcl_arguments(row=row, column=col, rowspan=rowspan, columnspan=colspan),
         )
 
         self._widget.parent.layout._cell_managed_children[self._widget] = cell
@@ -296,15 +284,11 @@ class Grid:
     @align.setter
     def align(
         self,
-        new_alignment: tuple[HorAlignAlias, VertAlignAlias]
-        | HorAlignAlias
-        | VertAlignAlias,
+        new_alignment: tuple[HorAlignAlias, VertAlignAlias] | HorAlignAlias | VertAlignAlias,
     ):
         if not isinstance(new_alignment, tuple):
             new_alignment = (new_alignment,) * 2  # type: ignore
-        self._set_lm_properties(
-            "grid", "sticky", self._parse_sticky_values(*new_alignment)
-        )
+        self._set_lm_properties("grid", "sticky", self._parse_sticky_values(*new_alignment))
 
     @property
     def margin(self) -> tuple[int, ...]:
@@ -439,9 +423,7 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
         lm = self._get_manager()
         if lm == "place":
             raise LayoutError("widget not managed by grid, can't get propagation")
-        return self._widget._tcl_call(
-            bool, self._get_manager(), "propagate", self._widget
-        )
+        return self._widget._tcl_call(bool, self._get_manager(), "propagate", self._widget)
 
     @propagation.setter
     def propagation(self, new_propagation: bool):
@@ -461,18 +443,14 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
                 try:
                     value += getattr(self, key)
                 except (AttributeError, KeyError):
-                    raise TypeError(
-                        f"move() got an unexpected keyword argument {key!r}"
-                    )
+                    raise TypeError(f"move() got an unexpected keyword argument {key!r}")
                 setattr(self, key, value)
 
     def _config(self, _lm: Literal["grid", "place"] = None, **kwargs) -> None:
         if _lm is None:
             _lm = self._get_manager()
         self._real_manager = _lm
-        self._widget._tcl_call(
-            None, _lm, "configure", self._widget, *py_to_tcl_arguments(**kwargs)
-        )
+        self._widget._tcl_call(None, _lm, "configure", self._widget, *py_to_tcl_arguments(**kwargs))
 
     def _info(self):
         result = self._widget._tcl_call(

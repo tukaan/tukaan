@@ -56,6 +56,7 @@ class ChildStatistics:
 
 class CgetAndConfigure:
     _keys: dict[str, Any | tuple[Any, str]]
+    _tcl_call: Callable
 
     def _cget(self, key: str) -> Any:
         if isinstance(self._keys[key], tuple):
@@ -301,14 +302,10 @@ class CommonMethods:
         sendevent: bool = False,
         data=None,
     ) -> None:
-        self._call_bind(
-            what if what == "all" else self, sequence, func, overwrite, sendevent, data
-        )
+        self._call_bind(what if what == "all" else self, sequence, func, overwrite, sendevent, data)
 
     def _unbind(self, what, sequence: str):
-        self._call_bind(
-            what if what == "all" else self, sequence, "", True, False, None
-        )
+        self._call_bind(what if what == "all" else self, sequence, "", True, False, None)
 
     def generate_event(self, sequence: str):
         self._tcl_call(None, "event", "generate", self, self.__parse_sequence(sequence))
@@ -392,18 +389,22 @@ class StateSet(collections.abc.MutableSet):
 class BaseWidget(TkWidget):
     layout: LayoutManager
 
-    def __init__(self, parent: TkWidget | None, **kwargs) -> None:
+    def __init__(
+        self, parent: TkWidget | None, creation_cmd: tuple[TkWidget | str, ...] = None, **kwargs
+    ) -> None:
         self.parent = parent or get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
         self._tcl_call: Callable = get_tcl_interp()._tcl_call
+        self._tcl_eval: Callable = get_tcl_interp()._tcl_eval
 
         TkWidget.__init__(self)
 
         self.parent._children[self.tcl_path] = self
 
-        self._tcl_call(
-            None, self._tcl_class, self.tcl_path, *py_to_tcl_arguments(**kwargs)
-        )
+        if not creation_cmd:
+            self._tcl_call(None, self._tcl_class, self.tcl_path, *py_to_tcl_arguments(**kwargs))
+        else:
+            self._tcl_call(None, *creation_cmd, *py_to_tcl_arguments(**kwargs))
 
         self.layout = LayoutManager(self)
         self._temp_manager = None
