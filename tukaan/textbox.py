@@ -19,7 +19,6 @@ from ._utils import (
     _text_tags,
     classproperty,
     counts,
-    get_tcl_interp,
     py_to_tcl_arguments,
     update_before,
 )
