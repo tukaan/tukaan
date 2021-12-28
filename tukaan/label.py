@@ -4,7 +4,7 @@ from PIL import Image
 
 from ._base import BaseWidget, TkWidget
 from ._constants import _anchors
-from ._images import _image_converter_class
+from ._images import _image_converter_class, Icon
 
 
 class Label(BaseWidget):
@@ -25,7 +25,7 @@ class Label(BaseWidget):
         align_content: Optional[str] = None,
         align_text: Optional[Literal["left", "center", "right"]] = None,
         focusable: Optional[bool] = None,
-        image: Optional[Image.Image] = None,
+        image: Optional[Image.Image | Icon] = None,
         max_line_length: Optional[int] = None,
         style: Optional[str] = None,
         text: Optional[str] = None,

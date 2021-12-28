@@ -3,7 +3,7 @@ from typing import Callable, Optional
 from PIL import Image
 
 from ._base import BaseWidget, TkWidget
-from ._images import _image_converter_class
+from ._images import _image_converter_class, Icon
 
 
 class Button(BaseWidget):
@@ -24,7 +24,7 @@ class Button(BaseWidget):
         parent: Optional[TkWidget] = None,
         default: Optional[str] = None,
         focusable: Optional[bool] = None,
-        image: Optional[Image.Image] = None,
+        image: Optional[Image.Image | Icon] = None,
         on_click: Optional[Callable] = None,
         style: Optional[str] = None,
         text: Optional[str] = None,
