@@ -8,15 +8,18 @@ from ._platform import Platform
 from ._utils import (
     ClassPropertyMetaClass,
     _flatten,
+    _fonts,
     _pairs,
     classproperty,
+    counts,
     from_tcl,
     get_tcl_interp,
+    py_to_tcl_arguments,
     reversed_dict,
     to_tcl,
     update_after,
 )
-from .exceptions import ColorError, FontError, TclError
+from .exceptions import ColorError, TclError
 
 intround: Callable[[float], int] = lambda x: int(round(x, 0))
 round4: Callable[[float], float] = lambda x: round(x, 4)
@@ -373,47 +376,91 @@ class Cursor(collections.namedtuple("Cursor", "cursor"), metaclass=ClassProperty
         )
 
 
-class Font(
-    collections.namedtuple("Font", "family size bold italic underline strikethrough"),
-    metaclass=ClassPropertyMetaClass,
-):
+_preset_fonts = {
+    "TkCaptionFont",
+    "TkDefaultFont",
+    "TkFixedFont",
+    "TkHeadingFont",
+    "TkIconFont",
+    "TkMenuFont",
+    "TkSmallCaptionFont",
+    "TkTextFont",
+    "TkTooltipFont",
+}
+
+
+class Font(metaclass=ClassPropertyMetaClass):
     def __new__(
         cls,
-        family: str = "default-font",
+        family: str = "TkDefaultFont",
         size: int = 10,
         bold: bool = False,
         italic: bool = False,
         underline: bool = False,
         strikethrough: bool = False,
-    ) -> Font:
+    ) -> Font | NamedFont:
+        _description = {
+            "family": family,
+            "size": size,
+            "bold": bold,
+            "italic": italic,
+            "underline": underline,
+            "strikethrough": strikethrough,
+        }
 
-        if family in cls.presets:
-            # small-caption-font -> TkSmallCaptionFont
-            family = f"Tk{family.title().replace('-', '')}"
+        if not issubclass(cls, NamedFont):
+            try:
+                get_tcl_interp()._tcl_call(None, "font", "configure", family)
+            except TclError:
+                pass
+            else:
+                return NamedFont(**_description)
 
-        elif family not in cls.families:  # presets are already checked
-            raise FontError(
-                f"the font family {family!r} is not found, or is not a valid font name."
-            )
+        return super(Font, cls).__new__(cls)
 
-        return super(Font, cls).__new__(
-            cls, family, int(size), bold, italic, underline, strikethrough
-        )  # type: ignore
+    def __init__(
+        self,
+        family: str = "TkDefaultFont",
+        size: int = 10,
+        bold: bool = False,
+        italic: bool = False,
+        underline: bool = False,
+        strikethrough: bool = False,
+    ):
 
-    def to_tcl(self) -> tuple[int, ...]:
+        self._description = {
+            "family": family,
+            "size": size,
+            "bold": bold,
+            "italic": italic,
+            "underline": underline,
+            "strikethrough": strikethrough,
+        }
+
+        print("create")
+
+    def to_tcl(self) -> tuple[str | int | bool, ...]:
         font_dict = {
-            "-family": self.family,
-            "-size": self.size,
-            "-weight": "bold" if self.bold else "normal",
-            "-slant": "italic" if self.italic else "roman",
-            "-underline": self.underline,
-            "-overstrike": self.strikethrough,
+            "-family": self._description["family"],
+            "-size": self._description["size"],
+            "-weight": "bold" if self._description["bold"] else "normal",
+            "-slant": "italic" if self._description["italic"] else "roman",
+            "-underline": self._description["underline"],
+            "-overstrike": self._description["strikethrough"],
         }
 
         return tuple(to_tcl(x) for x in _flatten(font_dict.items()))
 
     @classmethod
-    def from_tcl(cls, tcl_value: tuple) -> Font:
+    def from_tcl(cls, tcl_value):
+        if tcl_value in _preset_fonts:
+            return NamedFont(family=tcl_value)
+
+        if tcl_value in _fonts:
+            return _fonts[tcl_value]
+
+        tcl_value = from_tcl((str,), tcl_value)
+
         types = {
             "family": str,
             "size": int,
@@ -441,31 +488,55 @@ class Font(
 
         return cls(**result_dict)
 
-    @classmethod
-    def get_families(cls, at_prefix: bool = False) -> list[str]:
-        result = sorted(set(get_tcl_interp()._tcl_call([str], "font", "families")))
-        # i get a way longer list, if not convert it to set. e.g Ubuntu were 3 times
-        if at_prefix:
-            return result
-        return [family for family in result if not family.startswith("@")]
+    def anonym_copy(self):
+        return Font(**self._description)
+
+    def named_copy(self):
+        return NamedFont(**self._description)
+
+    def getter(self, type_spec, option):
+        return get_tcl_interp()._tcl_call(type_spec, "font", "actual", self, f"-{option}")
+
+    @property
+    def properties(self):
+        return self._description
+
+    @property
+    def family(self):
+        return self.getter(str, "family")
+
+    @property
+    def size(self):
+        return self.getter(int, "size")
+
+    @property
+    def bold(self):
+        return self.getter(str, "weight") == "bold"
+
+    @property
+    def italic(self):
+        return self.getter(str, "slant") == "italic"
+
+    @property
+    def underline(self):
+        return self.getter(bool, "underline")
+
+    @property
+    def strikethrough(self):
+        return self.getter(bool, "overstrike")
 
     @classproperty
-    def families(self) -> list[str]:
-        return self.get_families(True)
+    def named_fonts(cls):
+        return get_tcl_interp()._tcl_call((Font,), "font", "names")
 
     @classproperty
-    def presets(self) -> list[str]:
-        result = sorted(get_tcl_interp()._tcl_call([str], "font", "names"))
-
-        for index, item in enumerate(result):
-            #  TkSmallCaptionFont -> small-caption-font
-            result[index] = "-".join(re.findall(r".[^A-Z]*", item.replace("Tk", ""))).lower()
-
-        return result
+    def families(cls):
+        return list(set(get_tcl_interp()._tcl_call([str], "font", "families"))).sort()
 
     def measure(self, text: str) -> int:
         return get_tcl_interp()._tcl_call(int, "font", "measure", self, text)
 
+    @property
     def metrics(self) -> dict[str, int | bool]:
         result = get_tcl_interp()._tcl_call(
             {"-ascent": int, "-descent": int, "-linespace": int, "-fixed": bool},
@@ -474,6 +545,80 @@ class Font(
             self,
         )
         return {key.lstrip("-"): value for key, value in result.items()}
+
+
+class NamedFont(Font):
+    def __init__(
+        self,
+        family: str = "TkDefaultFont",
+        size: int = 10,
+        bold: bool = False,
+        italic: bool = False,
+        underline: bool = False,
+        strikethrough: bool = False,
+        _name=None,
+    ):
+        if _name:
+            self._name = _name
+        elif family in _preset_fonts:
+            self._name = family
+        else:
+            self._name = f"tukaan_font_{next(counts['fonts'])}"
+        _fonts[self._name] = self
+
+        args = py_to_tcl_arguments(
+            family=family,
+            size=size,
+            weight="bold" if bold else "normal",
+            slant="italic" if italic else "roman",
+            underline=underline,
+            overstrike=strikethrough,
+        )
+
+        try:
+            get_tcl_interp()._tcl_call(None, "font", "create", self._name, *args)
+        except TclError:
+            # font already exists in tcl
+            get_tcl_interp()._tcl_call(None, "font", "configure", self._name, *args)
+
+        super().__init__(self._name)
+
+    def __repr__(self):
+        return f"<tukaan.NamedFont object: name={self._name!r}>"
+
+    def to_tcl(self):
+        return self._name
+
+    def setter(self, option, value):
+        get_tcl_interp()._tcl_call(None, "font", "configure", self._name, f"-{option}", value)
+
+    @Font.family.setter
+    def family(self, value):
+        return self.setter("family", value)
+
+    @Font.size.setter
+    def size(self, value):
+        return self.setter("size", value)
+
+    @Font.bold.setter
+    def bold(self, value):
+        return self.setter("weight", "bold" if value else "normal")
+
+    @Font.italic.setter
+    def italic(self, value):
+        return self.setter("slant", "italic" if value else "roman")
+
+    @Font.underline.setter
+    def underline(self, value):
+        return self.setter("underline", value)
+
+    @Font.strikethrough.setter
+    def strikethrough(self, value):
+        return self.setter("overstrike", value)
+
+    def delete(self):
+        get_tcl_interp()._tcl_call(None, "font", "delete", self._name)
+        del _fonts[self._name]
 
 
 class Screen(metaclass=ClassPropertyMetaClass):

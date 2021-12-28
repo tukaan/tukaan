@@ -1,5 +1,5 @@
 from ._images import Icon, IconFactory, Image
-from ._misc import Clipboard, Color, Cursor, Font, Screen, ScreenDistance
+from ._misc import Clipboard, Color, Cursor, Font, NamedFont, Screen, ScreenDistance
 from ._platform import Platform
 from ._variables import Boolean, Float, Integer, String
 from .app import App

@@ -6,12 +6,13 @@ from functools import partialmethod
 from pathlib import Path
 from typing import Any, Iterator, Optional
 
+import _tkinter as tk
 from PIL import Image
 
 from ._base import BaseWidget, CgetAndConfigure, TkWidget
 from ._constants import _cursor_styles, _inactive_cursor_styles, _wraps
 from ._images import Icon
-from ._misc import Color, Font, ScreenDistance
+from ._misc import Color, Font, NamedFont, ScreenDistance
 from ._utils import (
     ClassPropertyMetaClass,
     _images,
@@ -80,7 +81,7 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         _text_tags[self._name] = self
 
         if not font:
-            font = Font()
+            font = self._widget.font.named_copy()
 
         self._tcl_call(
             None,
@@ -183,6 +184,30 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
     def hidden(cls) -> Tag:
         return cls(_name="hidden", hidden=True)
 
+    @classproperty
+    def bold(cls) -> Tag:
+        font = cls._widget.font.named_copy()
+        font.bold = True
+        return cls(font=font)
+
+    @classproperty
+    def italic(cls) -> Tag:
+        font = cls._widget.font.named_copy()
+        font.italic = True
+        return cls(font=font)
+
+    @classproperty
+    def underline(cls) -> Tag:
+        font = cls._widget.font.named_copy()
+        font.underline = True
+        return cls(font=font)
+
+    @classproperty
+    def strikethrough(cls) -> Tag:
+        font = cls._widget.font.named_copy()
+        font.strikethrough = True
+        return cls(font=font)
+
 
 class TextRange(namedtuple("TextRange", "start end")):
     def get(self):
@@ -206,6 +231,9 @@ class TextIndex(namedtuple("TextIndex", "line column")):
         if len(args) == 2:
             # line and column numbers
             line, column = args
+        elif isinstance(args[0], tk.Tcl_Obj):
+            # Tcl_Obj from _utils.from_tcl()
+            result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", str(args[0]))
         elif isinstance(args[0], (str, Icon, Image.Image, TkWidget)):
             # string from from_tcl() OR mark name, image name or widget name
             result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", args[0])
@@ -363,6 +391,22 @@ class TextHistory:
         self._widget._tcl_call(None, self._widget, "configure", "-maxundo", new_limit)
 
 
+LineInfo = namedtuple("LineInfo", ["x", "y", "width", "height", "baseline"])
+RangeInfo = namedtuple(
+    "RangeInfo",
+    [
+        "chars",
+        "displayed_chars",
+        "displayed_indices",
+        "displayed_lines",
+        "indices",
+        "lines",
+        "width",
+        "height",
+    ],
+)
+
+
 class _textbox_frame(BaseWidget):
     _tcl_class = "ttk::frame"
     _keys: dict[str, Any | tuple[Any, str]] = {}
@@ -431,10 +475,10 @@ class TextBox(BaseWidget):
         width: Optional[int, ScreenDistance] = None,
         wrap: Optional[str] = None,
     ) -> None:
-        
+
         if not font:
-            font = Font()
-            
+            font = NamedFont("monospace")
+
         padx = pady = None
         if padding is not None:
             if isinstance(padding, int) or len(padding) == 1:
@@ -774,7 +818,6 @@ class TextBox(BaseWidget):
     @update_before
     def line_info(self, index: TextIndex) -> dict[str, ScreenDistance]:
         """Returns the accurate height only if the TextBox widget has already laid out"""
-        keys = ("x_1", "y_1", "x_2", "y_2", "baseline")
         result = self._tcl_call(
             (ScreenDistance, ScreenDistance, ScreenDistance, ScreenDistance, ScreenDistance),
             self,
@@ -782,9 +825,9 @@ class TextBox(BaseWidget):
             index,
         )
 
-        return {key: value for key, value in zip(keys, result)}
+        return LineInfo(*result)
 
-    def count(
+    def range_info(
         self, start: Optional[TextIndex | TextRange] = None, end: Optional[TextIndex] = None
     ) -> dict[str, int | ScreenDistance]:
         if isinstance(start, TextRange):
@@ -793,16 +836,6 @@ class TextBox(BaseWidget):
             start = self.start if start is None else start
             end = self.end if end is None else end
 
-        keys = (
-            "chars",
-            "displayed_chars",
-            "displayed_indices",
-            "displayed_lines",
-            "indices",
-            "lines",
-            "width",
-            "height",
-        )
         result = self._tcl_call(
             (int, int, int, int, int, int, ScreenDistance, ScreenDistance),
             self,
@@ -819,4 +852,4 @@ class TextBox(BaseWidget):
             end,
         )
 
-        return {key: value for key, value in zip(keys, result)}
+        return RangeInfo(*result)
