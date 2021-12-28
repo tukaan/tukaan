@@ -19,6 +19,7 @@ from ._utils import (
     _text_tags,
     classproperty,
     counts,
+    get_tcl_interp,
     py_to_tcl_arguments,
     update_before,
 )
@@ -474,6 +475,7 @@ class TextBox(BaseWidget):
         track_history: Optional[bool] = None,
         width: Optional[int, ScreenDistance] = None,
         wrap: Optional[str] = None,
+        _peer_of: Optional[str] = None,
     ) -> None:
 
         if not font:
@@ -496,47 +498,58 @@ class TextBox(BaseWidget):
         if cursor_ontime is not None:
             cursor_ontime = int(1000 * cursor_ontime)
 
-        self._frame = _textbox_frame(parent)
+        self.peer_of = _peer_of
 
-        BaseWidget.__init__(
-            self,
-            self._frame,
-            autoseparators=True,
-            highlightthickness=0,
-            relief="flat",
-            background=bg_color,
-            blockcursor=_cursor_styles[cursor_style],
-            font=font,
-            foreground=fg_color,
-            height=height,
-            inactiveselectbackground=inactive_selection_bg,
-            insertbackground=cursor_color,
-            insertofftime=cursor_offtime,
-            insertontime=cursor_ontime,
-            insertunfocussed=_inactive_cursor_styles[inactive_cursor_style],
-            insertwidth=cursor_width,
-            padx=padx,
-            pady=pady,
-            selectbackground=selection_bg,
-            selectforeground=selection_fg,
-            setgrid=resize_along_chars,
-            spacing1=space_before_paragraph,
-            spacing2=space_before_wrapped_line,
-            spacing3=space_after_paragraph,
-            tabs=tab_stops,
-            tabstyle=tab_style,
-            takefocus=focusable,
-            undo=track_history,
-            width=width,
-            wrap=_wraps[wrap],
-        )
+        to_call = {
+            "autoseparators": True,
+            "highlightthickness": 0,
+            "relief": "flat",
+            "background": bg_color,
+            "blockcursor": _cursor_styles[cursor_style],
+            "font": font,
+            "foreground": fg_color,
+            "height": height,
+            "inactiveselectbackground": inactive_selection_bg,
+            "insertbackground": cursor_color,
+            "insertofftime": cursor_offtime,
+            "insertontime": cursor_ontime,
+            "insertunfocussed": _inactive_cursor_styles[inactive_cursor_style],
+            "insertwidth": cursor_width,
+            "padx": padx,
+            "pady": pady,
+            "selectbackground": selection_bg,
+            "selectforeground": selection_fg,
+            "setgrid": resize_along_chars,
+            "spacing1": space_before_paragraph,
+            "spacing2": space_before_wrapped_line,
+            "spacing3": space_after_paragraph,
+            "tabs": tab_stops,
+            "tabstyle": tab_style,
+            "takefocus": focusable,
+            "undo": track_history,
+            "width": width,
+            "wrap": _wraps[wrap],
+        }
+
+        if _peer_of is None:
+            self._frame = _textbox_frame(parent)
+            BaseWidget.__init__(self, self._frame, **to_call)
+        else:
+            self._frame = _textbox_frame(_peer_of._frame.parent)
+            tcl_path = f"{self._frame.tcl_path}.textbox_peer_{_peer_of.peer_count}_of_{_peer_of.tcl_path.split('.')[-1]}"
+            BaseWidget.__init__(
+                self, self._frame, creation_cmd=(_peer_of, "peer", "create", tcl_path), **to_call
+            )
+            self.tcl_path = tcl_path
+
+        self.peer_count = 0
+
         self._tcl_eval(
             None,
             f"grid rowconfigure {self._frame.tcl_path} 0 -weight 1 \n"
             + f"grid columnconfigure {self._frame.tcl_path} 0 -weight 1 \n"
             + f"grid {self.tcl_path} -row 0 -column 0 -sticky nsew",
         )
-
         if overflow is not None:
             self.overflow = overflow
 
@@ -559,6 +572,13 @@ class TextBox(BaseWidget):
         self._v_scroll = Scrollbar(self._frame, orientation="vertical", auto_hide=hide)
         self._v_scroll.attach(self)
         self._v_scroll.layout.grid(col=1, vert_align="stretch")
+
+    def Peer(self, **kwargs):
+        if self.peer_of is None:
+            self.peer_count += 1
+            return TextBox(_peer_of=self, **kwargs)
+        else:
+            raise RuntimeError("can't create a peer of a peer")
 
     @property
     def start(self) -> TextIndex:

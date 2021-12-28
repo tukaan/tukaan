@@ -389,7 +389,9 @@ class StateSet(collections.abc.MutableSet):
 class BaseWidget(TkWidget):
     layout: LayoutManager
 
-    def __init__(self, parent: TkWidget | None, **kwargs) -> None:
+    def __init__(
+        self, parent: TkWidget | None, creation_cmd: tuple[TkWidget | str, ...] = None, **kwargs
+    ) -> None:
         self.parent = parent or get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
         self._tcl_call: Callable = get_tcl_interp()._tcl_call
@@ -399,7 +401,10 @@ class BaseWidget(TkWidget):
 
         self.parent._children[self.tcl_path] = self
 
-        self._tcl_call(None, self._tcl_class, self.tcl_path, *py_to_tcl_arguments(**kwargs))
+        if not creation_cmd:
+            self._tcl_call(None, self._tcl_class, self.tcl_path, *py_to_tcl_arguments(**kwargs))
+        else:
+            self._tcl_call(None, *creation_cmd, *py_to_tcl_arguments(**kwargs))
 
         self.layout = LayoutManager(self)
         self._temp_manager = None
