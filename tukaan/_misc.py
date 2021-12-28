@@ -437,8 +437,6 @@ class Font(metaclass=ClassPropertyMetaClass):
             "strikethrough": strikethrough,
         }
 
-        print("create")
-
     def to_tcl(self) -> tuple[str | int | bool, ...]:
         font_dict = {
             "-family": self._description["family"],

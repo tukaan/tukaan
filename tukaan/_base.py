@@ -250,7 +250,7 @@ class CommonMethods:
 
     def _call_bind(
         self,
-        widget_or_all: MethodAndPropMixin | Literal["all"],
+        widget_or_all: TkWidget | str,
         sequence_s: tuple[str, ...] | str,
         func: Callable | Literal[""],
         overwrite: bool,
@@ -281,17 +281,13 @@ class CommonMethods:
         if isinstance(sequence_s, str):
             sequence_s = (sequence_s,)
         for sequence in sequence_s:
-            self._tcl_call(
-                None,
-                "bind",
-                widget_or_all,
-                self.__parse_sequence(sequence),
-                f"{'' if overwrite else '+'} if"
-                + f" {{[{create_command(partial(_real_func, func, data, sequence))}"
-                + f" {subst_str}] eq {{break}} }} {{ break }}"
-                if callable(func)
-                else "",  # FIXME: this is disgustingly unreadable
-            )
+            cmd = create_command(partial(_real_func, func, data, sequence))
+            if callable(func):
+                # if callback returned False: break
+                script_str = f"{'' if overwrite else '+'} if {{[{cmd} {subst_str}] == 0}} break"  # tcl: {+ if {[command %subst] == 0} break}
+            else:
+                script_str = func  # func is "" when unbinding
+            self._tcl_call(None, "bind", widget_or_all, self.__parse_sequence(sequence), script_str)
 
     def _bind(
         self,
@@ -343,8 +339,8 @@ _BINDING_SUBSTS = (
     (r"%W", TkWidget, "widget"),
     (r"%X", ScreenDistance, "rel_x"),
     (r"%Y", ScreenDistance, "rel_y"),
-    (r"%height", ScreenDistance, "height"),
-    (r"%width", ScreenDistance, "width"),
+    (r"%h", ScreenDistance, "height"),
+    (r"%w", ScreenDistance, "width"),
     (r"%x", ScreenDistance, "x"),
     (r"%y", ScreenDistance, "y"),
 )
