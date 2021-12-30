@@ -166,7 +166,7 @@ app.position = "center"
 
 ### Screen information
 ```python
->>> screen = tukaan.Screen()  # you don't need to instanciate it
+>>> screen = tukaan.Screen()  # you don't need to instantiate it
 >>> print(screen.width)
 1920
 >>> print(screen.height)
@@ -177,7 +177,7 @@ app.position = "center"
 
 ### Cursor stuff
 ```python
->>> cursor = tukaan.Cursor  # not instanciate it, just have a reference
+>>> cursor = tukaan.Cursor  # not instantiate it, just have a reference
 >>> print(cursor.x)
 123
 >>> print(cursor.y)
