@@ -155,36 +155,36 @@ app.position = "center"
 
 ### Color conversions
 ```python
-color = tukaan.Color("#007fff")
-print(color.rgb)
->>> (0, 127, 255)
-print(color.hsv)
->>> (210, 100, 100)
-print(color.cmyk)
->>> (100, 50, 0, 0)
+>>> color = tukaan.Color("#007fff")
+>>> print(color.rgb)
+(0, 127, 255)
+>>> print(color.hsv)
+(210, 100, 100)
+>>> print(color.cmyk)
+(100, 50, 0, 0)
 ```
 
 ### Screen information
 ```python
-screen = tukaan.Screen()  # you don't need to instanciate it
-print(screen.width)
->>> 1920
-print(screen.height)
->>> 1080
-print(screen.dpi)
->>> 72
+>>> screen = tukaan.Screen()  # you don't need to instanciate it
+>>> print(screen.width)
+1920
+>>> print(screen.height)
+1080
+>>> print(screen.dpi)
+72
 ```
 
 ### Cursor stuff
 ```python
-cursor = tukaan.Cursor  # not instanciate it, just have a reference
-print(cursor.x)
->>> 123
-print(cursor.y)
->>> 456
-cursor.x = 456  # cursor moved
-print(cursor.position)
->>> (456, 456)
+>>> cursor = tukaan.Cursor  # not instanciate it, just have a reference
+>>> print(cursor.x)
+123
+>>> print(cursor.y)
+456
+>>> cursor.x = 456  # cursor moved
+>>> print(cursor.position)
+(456, 456)
 ```
 
 
