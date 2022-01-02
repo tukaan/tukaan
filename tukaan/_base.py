@@ -388,7 +388,9 @@ class BaseWidget(TkWidget):
     def __init__(
         self, parent: TkWidget | None, creation_cmd: tuple[TkWidget | str, ...] = None, **kwargs
     ) -> None:
-        self.parent = parent or get_tcl_interp()
+        self.parent = parent
+        if self.parent is None:
+            self.parent = get_tcl_interp()
         self.tcl_path = self._give_me_a_name()
         self._tcl_call: Callable = get_tcl_interp()._tcl_call
         self._tcl_eval: Callable = get_tcl_interp()._tcl_eval
