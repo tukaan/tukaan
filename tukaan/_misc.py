@@ -4,6 +4,7 @@ import collections
 import re
 from typing import Callable, Tuple, cast
 
+from fractions import Fraction
 from ._platform import Platform
 from ._utils import (
     ClassPropertyMetaClass,
@@ -116,83 +117,95 @@ class CMYK:
 # TODO: hsl, yiq
 class Color:
     _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk"}
+    _length_dict = {"rgb": 3, "hsv": 3, "cmyk": 4}
+    _maximum_values = {"rgb": (255,) * 3, "hsv": (360, 100, 100), "cmyk": (100,) * 4}
+
     red: int
     green: int
     blue: int
 
-    def __init__(self, color: tuple, space: str = "rgb") -> None:
+    def __init__(self, name: str = None, **kwargs) -> None:
+        if len(kwargs) > 1:
+            raise ValueError("too many keyword arguments. 1 expected.")
+
+        if name and kwargs:
+            raise ValueError("a single color name, OR a keyword argument is expected.")
+
+        color = name or tuple(kwargs.values())[0]
+        if name:
+            space = "hex"
+        else:
+            space = tuple(kwargs.keys())[0]
+
         try:
             if space == "hex":
                 if not re.match(r"^#[0-9a-fA-F]{6}$", color):
                     raise ColorError
                 self.red, self.green, self.blue = HEX.from_hex(color)
-
-            elif space == "rgb":
-                if len(color) != 3 or color < (0, 0, 0) or color > (255, 255, 255):
-                    raise ColorError
-                self.red, self.green, self.blue = color
-
-            elif space == "hsv":
-                if len(color) != 3 or color < (0, 0, 0) or color > (360, 100, 100):
-                    raise ColorError
-                self.red, self.green, self.blue = HSV.from_hsv(*color)
-
-            elif space == "cmyk":
-                if len(color) != 4 or color < (0, 0, 0, 0) or color > (100, 100, 100, 100):
-                    raise ColorError
-                self.red, self.green, self.blue = CMYK.from_cmyk(*color)
-
+            elif len(color) == self._length_dict[space] and self._check_in_range(
+                space, color, opt="str"
+            ):
+                if space == "rgb":
+                    self.red, self.green, self.blue = color
+                elif space == "hsv":
+                    self.red, self.green, self.blue = HSV.from_hsv(*color)
+                elif space == "cmyk":
+                    self.red, self.green, self.blue = CMYK.from_cmyk(*color)
             else:
                 raise ColorError
-        except (ValueError, ColorError):
-            raise ColorError(self._what_is_the_problem(color, space)) from None
 
-    def _what_is_the_problem(self, color: str | tuple[int, ...], space: str) -> str:
-        length_dict = {"rgb": 3, "hsv": 3, "cmyk": 4}
+        except (ColorError, KeyError):
+            # error checking is still too boilerplaty
+            raise ColorError(self._what_is_the_problem(name, kwargs)) from None
+
+    def _check_in_range(self, space, color, opt=None):
+        for limit, number in zip(self._maximum_values[space], color):
+            if not (0 <= number <= limit):
+                return False
+        return True
+
+    def _what_is_the_problem(self, str_name, kwargs) -> str:
+
+        if str_name and not kwargs:
+            return f"invalid color name: {str_name!r}"
+
+        color = tuple(kwargs.values())[0]
+        space = tuple(kwargs.keys())[0]
 
         if space not in self._supported_color_spaces:
-            return f"{space!r} is not a supported color space for tukaan.Color."
+            return f"unknown keywords argument: {space}"
 
-        if space == "hex":
-            return f"{color!r} is not a valid hexadecimal color code."
+        elif not isinstance(color, tuple):
+            return f"{color!r} is not a valid {space} color. A tuple is expected."
 
-        if space in {"rgb", "hsv", "cmyk"}:
-            if not isinstance(color, tuple):
-                return f"{color!r} is not a valid {space} color. A tuple is expected."
+        else:
+            color_passed, expected_length = "", ""
 
-            else:
-                color_passed, expected_length = "", ""
+            if len(color) in self._length_dict.values():
 
-                if len(color) in length_dict.values():
+                if len(color) == 4 and self._check_in_range("cmyk", color):
+                    color_space = "a cmyk"
 
-                    if len(color) == 4 and (0, 0, 0, 0) <= color <= (
-                        100,
-                        100,
-                        100,
-                        100,
-                    ):
-                        color_space = "a cmyk"
+                elif len(color) == 3 and (0,) * 3 <= color <= (255, 100, 100):
+                    color_space = "either a rgb or a hsv"
 
-                    elif len(color) == 3 and (0, 0, 0) <= color <= (255, 100, 100):
-                        color_space = "either a rgb or a hsv"
+                elif len(color) == 3 and self._check_in_range("rgb", color):
+                    color_space = "a rgb"
 
-                    elif len(color) == 3 and (0, 0, 0) <= color <= (255, 255, 255):
-                        color_space = "a rgb"
+                elif len(color) == 3 and self._check_in_range("hsv", color):
+                    color_space = "a hsv"
 
-                    elif len(color) == 3 and (0, 0, 0) <= color <= (360, 100, 100):
-                        color_space = "a hsv"
+                else:
+                    color_space = "an invalid"
 
-                    else:
-                        color_space = "an invalid"
+                color_passed = f" You passed in {color_space} color."
 
-                    color_passed = f" You passed in {color_space} color."
+            if len(color) != self._length_dict[space]:
+                expected_length = f"A tuple of length of {self._length_dict[space]} is expected."
 
-                if len(color) != length_dict[space]:
-                    expected_length = f"A tuple with length of {length_dict[space]} is expected."
+            return f"{color!r} is not a valid {space} color." + expected_length + color_passed
 
-                return f"{color!r} is not a valid {space} color." + expected_length + color_passed
-
-        return "Not implemented tukaan.Color error."  # shouldn't get here
+        return "not implemented tukaan.Color error."  # shouldn't get here
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(red={self.red}, green={self.green}," + f" blue={self.blue})"
@@ -212,6 +225,23 @@ class Color:
         self.blue = 255 - self.blue
 
         return self
+
+    def mix(self, other, ratio):
+        if not isinstance(other, Color):
+            raise TypeError
+
+        a, b = Fraction.from_float(ratio).as_integer_ratio()
+        amount_of_clr_1 = 1 / (a + b) * a
+        amount_of_clr_2 = 1 / (a + b) * b
+
+        r, g, b = (
+            round(amount_of_clr_1 * value1 + amount_of_clr_2 * value2)
+            for value1, value2 in zip(self.rgb, other.rgb)
+        )
+        return Color(rgb=(r, g, b))
+
+    def __or__(self, other):
+        return self.mix(other, 1 / 1)
 
     @property
     def is_dark(self):
@@ -619,28 +649,114 @@ class NamedFont(Font):
         del _fonts[self._name]
 
 
+common_resolution_standards = {
+    (320, 200): "CGA",
+    (320, 240): "QVGA",
+    (640, 480): "VGA",
+    (768, 576): "PAL",
+    (800, 600): "SVGA",
+    (1024, 768): "XGA",
+    (1280, 1024): "SXGA",
+    (1400, 1050): "SXGA+",
+    (1600, 1200): "UXGA",
+    (2048, 1536): "QXGA",
+    (2560, 2048): "QSXGA",
+    (2560, 1600): "WQXGA",
+    (1920, 1200): "WUXGA",
+    (2048, 1080): "2K",
+    (1920, 1080): "HD 1080",
+    (1680, 1050): "WSXGA+",
+    (1280, 800): "WXGA",
+    (1280, 768): "WXGA",
+    (1280, 720): "HD 720",
+    (1024, 600): "WSVGA",
+    (854, 480): "FWVGA",
+    (800, 480): "WVGA",
+}
+
+common_aspect_ratios = {
+    16 / 10: "16:10",
+    16 / 9: "16:9",
+    4 / 3: "4:3",
+    3 / 2: "3:2",
+    5 / 4: "5:4",
+    5 / 3: "5:3",
+    17 / 9: "17:9",
+}
+
+common_color_depths = {
+    1: "monochrome",
+    15: "high color",
+    16: "high color",
+    24: "true color",
+    30: "deep color",
+    36: "deep color",
+    48: "deep color",
+}
+
+
 class Screen(metaclass=ClassPropertyMetaClass):
     @classproperty
+    def _width(cls) -> ScreenDistance:
+        return get_tcl_interp()._tcl_call(int, "winfo", "screenwidth", ".")
+
+    @classproperty
+    def _height(cls) -> ScreenDistance:
+        return get_tcl_interp()._tcl_call(int, "winfo", "screenheight", ".")
+
+    @classproperty
     def width(cls) -> ScreenDistance:
-        width = get_tcl_interp()._tcl_call(int, "winfo", "screenwidth", ".")
-        return ScreenDistance(width)
+        return ScreenDistance(cls._width)
 
     @classproperty
     def height(cls) -> ScreenDistance:
-        height = get_tcl_interp()._tcl_call(int, "winfo", "screenheight", ".")
-        return ScreenDistance(height)
+        return ScreenDistance(cls._height)
 
     @classproperty
     def size(cls) -> tuple[ScreenDistance, ScreenDistance]:
-        return (cls.width, cls.height)
+        return (ScreenDistance(cls._width), ScreenDistance(cls._height))
 
     @classproperty
-    def depth(cls) -> str:
-        return get_tcl_interp()._tcl_call(str, "winfo", "screendepth", ".")
+    def area(cls) -> int:
+        return ScreenDistance(cls._width * cls._height)
+
+    @classproperty
+    def aspect_ratio(cls) -> int:
+        try:
+            return common_aspect_ratios[cls._width / cls._height]
+        except KeyError:
+            fraction = Fraction(cls._width, cls._height)
+            return f"{fraction.numerator}:{fraction.denominator}"
+
+    @classproperty
+    def resolution_standard(cls) -> int:
+        try:
+            return common_resolution_standards[(cls._width, cls._height)]
+        except KeyError:
+            return ""
+
+    @classproperty
+    def diagonal(cls) -> int:
+        return ScreenDistance((cls._width ** 2 + cls._height ** 2) ** 0.5)  # pythagoras
+
+    @classproperty
+    def color_depth(cls) -> int:
+        return get_tcl_interp()._tcl_call(int, "winfo", "screendepth", ".")
+
+    @classproperty
+    def color_depth_alias(cls) -> str:
+        try:
+            return common_color_depths[cls.color_depth]
+        except KeyError:
+            return ""
 
     @classproperty
     def dpi(cls) -> float:
         return get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", "1i")
+
+    @classproperty
+    def ppi(cls) -> float:
+        return self.dpi
 
     def __str__(self) -> str:
         return f"{self.width.px};{self.height.px}"
@@ -664,7 +780,7 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
         else:
             pixels = float(distance)
 
-        cls.dpi = Screen.dpi
+        cls.dpi = Screen.ppi
 
         return super(ScreenDistance, cls).__new__(cls, pixels)  # type: ignore
 
