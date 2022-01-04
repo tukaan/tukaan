@@ -815,13 +815,5 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
         return round4(self.distance / (self.dpi / 2.54))
 
     @property
-    def m(self) -> float:
-        return round4(self.distance / (self.dpi / 0.0254))
-
-    @property
     def inch(self) -> float:
         return round4(self.distance / self.dpi)
-
-    @property
-    def ft(self) -> float:
-        return round4(self.distance / (self.dpi * 12))
