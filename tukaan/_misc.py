@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import collections
 import re
+from fractions import Fraction
 from typing import Callable, Tuple, cast
 
-from fractions import Fraction
 from ._platform import Platform
 from ._utils import (
     ClassPropertyMetaClass,
@@ -35,6 +35,63 @@ class HEX:
     def from_hex(hex) -> tuple[int, ...]:
         int_value = int(hex.lstrip("#"), 16)
         return cast(Tuple[int, ...], (int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF))
+
+
+class HSL:
+    @staticmethod
+    def to_hsl(r, g, b) -> tuple[int, ...]:
+        r, g, b = r / 255, g / 255, b / 255
+        min_value = min(r, g, b)
+        max_value = max(r, g, b)
+
+        l = (min_value + max_value) / 2
+
+        if min_value == max_value:
+            return (0, 0, intround(l * 100))
+
+        if l <= 0.5:
+            s = (max_value - min_value) / (max_value + min_value)
+        elif l > 0.5:
+            s = (max_value - min_value) / (2.0 - max_value - min_value)
+
+        if max_value == r:
+            h = (g - b) / (max_value - min_value)
+        elif max_value == g:
+            h = 2.0 + (b - g) / (max_value - min_value)
+        elif max_value == b:
+            h = 4.0 + (r - g) / (max_value - min_value)
+
+        return tuple(intround(x) for x in (h * 60, s * 100, l * 100))
+
+    @staticmethod
+    def from_hsl(h, s, l) -> tuple[int, ...]:
+        h, s, l = h / 360, s / 100, l / 100
+
+        if s == 0:
+            return (intround(l * 255),) * 3
+
+        if l >= 0.5:
+            tmp_1 = l + s - l * s
+        elif l < 0.5:
+            tmp_1 = l * (1 + s)
+
+        tmp_2 = 2 * l - tmp_1
+
+        def func(h):
+            h = h % 1
+            if h < 1 / 6:
+                return tmp_2 + (tmp_1 - tmp_2) * h * 6
+            if h < 0.5:
+                return tmp_1
+            if h < 2 / 3:
+                return tmp_2 + (tmp_1 - tmp_2) * (2 / 3 - h) * 6
+            return tmp_2
+
+        r = func(h + 1 / 3)
+        g = func(h)
+        b = func(h - 1 / 3)
+
+        return tuple(intround(x) for x in (r * 255, g * 255, b * 255))
 
 
 class HSV:
@@ -116,22 +173,33 @@ class CMYK:
 
 # TODO: hsl, yiq
 class Color:
-    _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk"}
-    _length_dict = {"rgb": 3, "hsv": 3, "cmyk": 4}
-    _maximum_values = {"rgb": (255,) * 3, "hsv": (360, 100, 100), "cmyk": (100,) * 4}
+    _supported_color_spaces = {"hex", "rgb", "hsv", "cmyk", "hsl"}
+    _length_dict = {"rgb": 3, "hsv": 3, "cmyk": 4, "hsl": 3}
+    _maximum_values = {
+        "rgb": (255,) * 3,
+        "hsv": (360, 100, 100),
+        "hsl": (360, 100, 100),
+        "cmyk": (100,) * 4,
+    }
 
     red: int
     green: int
     blue: int
 
     def __init__(self, name: str = None, **kwargs) -> None:
+        # FIXME: this is a HUGE mess
         if len(kwargs) > 1:
             raise ValueError("too many keyword arguments. 1 expected.")
 
         if name and kwargs:
             raise ValueError("a single color name, OR a keyword argument is expected.")
 
-        color = name or tuple(kwargs.values())[0]
+        color: tuple | str
+        if name is None:
+            color = tuple(kwargs.values())[0]
+        else:
+            color = name
+
         if name:
             space = "hex"
         else:
@@ -147,6 +215,8 @@ class Color:
             ):
                 if space == "rgb":
                     self.red, self.green, self.blue = color
+                elif space == "hsl":
+                    self.red, self.green, self.blue = HSL.from_hsl(*color)
                 elif space == "hsv":
                     self.red, self.green, self.blue = HSV.from_hsv(*color)
                 elif space == "cmyk":
@@ -187,13 +257,13 @@ class Color:
                     color_space = "a cmyk"
 
                 elif len(color) == 3 and (0,) * 3 <= color <= (255, 100, 100):
-                    color_space = "either a rgb or a hsv"
+                    color_space = "either a rgb, a hsl or a hsv"
 
                 elif len(color) == 3 and self._check_in_range("rgb", color):
                     color_space = "a rgb"
 
-                elif len(color) == 3 and self._check_in_range("hsv", color):
-                    color_space = "a hsv"
+                elif len(color) == 3 and (0,) * 3 <= color <= (360, 100, 100):
+                    color_space = "either a hsl or a hsv"
 
                 else:
                     color_space = "an invalid"
@@ -650,38 +720,38 @@ class NamedFont(Font):
 
 
 common_resolution_standards = {
+    (1024, 600): "WSVGA",
+    (1024, 768): "XGA",
+    (1280, 1024): "SXGA",
+    (1280, 720): "HD 720",
+    (1280, 768): "WXGA",
+    (1280, 800): "WXGA",
+    (1400, 1050): "SXGA+",
+    (1600, 1200): "UXGA",
+    (1680, 1050): "WSXGA+",
+    (1920, 1080): "HD 1080",
+    (1920, 1200): "WUXGA",
+    (2048, 1080): "2K",
+    (2048, 1536): "QXGA",
+    (2560, 1600): "WQXGA",
+    (2560, 2048): "QSXGA",
     (320, 200): "CGA",
     (320, 240): "QVGA",
     (640, 480): "VGA",
     (768, 576): "PAL",
-    (800, 600): "SVGA",
-    (1024, 768): "XGA",
-    (1280, 1024): "SXGA",
-    (1400, 1050): "SXGA+",
-    (1600, 1200): "UXGA",
-    (2048, 1536): "QXGA",
-    (2560, 2048): "QSXGA",
-    (2560, 1600): "WQXGA",
-    (1920, 1200): "WUXGA",
-    (2048, 1080): "2K",
-    (1920, 1080): "HD 1080",
-    (1680, 1050): "WSXGA+",
-    (1280, 800): "WXGA",
-    (1280, 768): "WXGA",
-    (1280, 720): "HD 720",
-    (1024, 600): "WSVGA",
-    (854, 480): "FWVGA",
     (800, 480): "WVGA",
+    (800, 600): "SVGA",
+    (854, 480): "FWVGA",
 }
 
 common_aspect_ratios = {
     16 / 10: "16:10",
     16 / 9: "16:9",
-    4 / 3: "4:3",
-    3 / 2: "3:2",
-    5 / 4: "5:4",
-    5 / 3: "5:3",
     17 / 9: "17:9",
+    3 / 2: "3:2",
+    4 / 3: "4:3",
+    5 / 3: "5:3",
+    5 / 4: "5:4",
 }
 
 common_color_depths = {
@@ -725,7 +795,7 @@ class Screen(metaclass=ClassPropertyMetaClass):
         try:
             return common_aspect_ratios[cls._width / cls._height]
         except KeyError:
-            fraction = Fraction(cls._width, cls._height)
+            fraction = Fraction(cls._width, cls._height)  # reduce the ratio
             return f"{fraction.numerator}:{fraction.denominator}"
 
     @classproperty
@@ -756,7 +826,7 @@ class Screen(metaclass=ClassPropertyMetaClass):
 
     @classproperty
     def ppi(cls) -> float:
-        return self.dpi
+        return cls.dpi
 
     def __str__(self) -> str:
         return f"{self.width.px};{self.height.px}"
