@@ -141,7 +141,9 @@ class _image_converter_class:
 
         self._tcl_eval(
             None,
-            f"{self._name} copy {frame_data[0]} -compositingrule set\nafter {int(frame_data[1])} {self.show_frames_command}",
+            f"{self._name} copy {frame_data[0]} -compositingrule set"
+            "\n"
+            f"after {int(frame_data[1])} {self.show_frames_command}",
         )
 
     def to_tcl(self) -> str:

@@ -87,7 +87,7 @@ def reversed_dict(dictionary: dict) -> dict:
 
 
 def get_tcl_interp():
-    from .app import App, tcl_interp
+    from .window import App, tcl_interp
 
     if tcl_interp is None:
         try:
@@ -150,13 +150,13 @@ def from_tcl(type_spec, value) -> Any:
         return None
 
     if type_spec is str:
-        return get_tcl_interp().get_string(value)
+        return get_tcl_interp()._get_string(value)
 
     if type_spec is bool:
         if not from_tcl(str, value):
             return None
 
-        return get_tcl_interp().get_boolean(value)
+        return get_tcl_interp()._get_boolean(value)
 
     if type_spec is int:
         if value == "":
@@ -175,7 +175,7 @@ def from_tcl(type_spec, value) -> Any:
             return type_spec.from_tcl(value)  # type: ignore
 
     if isinstance(type_spec, (list, tuple, dict)):
-        items = get_tcl_interp().split_list(value)
+        items = get_tcl_interp()._split_list(value)
 
         if isinstance(type_spec, list):
             # [int] -> [1, 2, 3]

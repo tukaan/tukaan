@@ -844,7 +844,7 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
 
     _tcl_units = {"px": "", "mm": "m", "cm": "c", "inch": "i"}
 
-    def __new__(cls, cm=0, px=0, inch=0, mm=0) -> ScreenDistance:
+    def __new__(cls, px=0, mm=0, cm=0, inch=0) -> ScreenDistance:
         distance = 0
 
         for unit, amount in {"cm": cm, "px": px, "mm": mm, "inch": inch}.items():

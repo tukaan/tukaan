@@ -100,10 +100,10 @@ class CommonMethods:
     child_stats: ChildStatistics
 
     def __repr__(self) -> str:
+        details = self._repr_details()
         return (
-            f"<tukaan.{type(self).__name__}"
-            + " widget:"
-            + f" tcl_name={self.tcl_path!r}{', ' + self._repr_details() if self._repr_details() else ''}>"
+            f"<tukaan.{type(self).__name__} widget:"
+            + f" tcl_name={self.tcl_path!r}{', ' + details if details else ''}>"
         )
 
     __str__ = __repr__

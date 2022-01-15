@@ -37,6 +37,13 @@ _inactive_cursor_styles = {"hollow": "hollow", "solid": "solid", None: "none"}
 
 _window_pos: set[str] = {"center", "top-left", "top-right", "bottom-left", "bottom-right"}
 
+_resizable = {
+    False: (0, 0),
+    "horizontal-only": (1, 0),
+    "vertical-only": (0, 1),
+    True: (1, 1),
+}
+
 _VALID_STATES: set[str] = {
     "active",
     "alternate",
