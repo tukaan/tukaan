@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from PIL import Image as PIL_Image
+from PIL import Image as PIL_Image  # type: ignore
 
 from ._base import BaseWidget, CgetAndConfigure
 from ._misc import HEX

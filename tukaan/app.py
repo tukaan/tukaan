@@ -19,13 +19,13 @@ class App(WindowMixin, TkWidget):
 
     def __init__(
         self,
-        title: Optional[str] = "Tukaan window",
-        width: Optional[int] = 200,
-        height: Optional[int] = 200,
+        title: str = "Tukaan window",
+        width: int = 200,
+        height: int = 200,
         transparency: Optional[int] = None,
         topmost: Optional[bool] = None,
         fullscreen: Optional[bool] = None,
-        theme: Optional[str] = "native",
+        theme: str = "native",
     ) -> None:
 
         TkWidget.__init__(self)

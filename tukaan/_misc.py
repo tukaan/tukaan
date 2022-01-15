@@ -5,6 +5,8 @@ import re
 from fractions import Fraction
 from typing import Callable, Tuple, cast
 
+from PIL import ImageGrab  # type: ignore
+
 from ._platform import Platform
 from ._utils import (
     ClassPropertyMetaClass,
@@ -210,6 +212,7 @@ class Color:
                 if not re.match(r"^#[0-9a-fA-F]{6}$", color):
                     raise ColorError
                 self.red, self.green, self.blue = HEX.from_hex(color)
+
             elif len(color) == self._length_dict[space] and self._check_in_range(
                 space, color, opt="str"
             ):
@@ -348,13 +351,20 @@ class Clipboard(metaclass=ClassPropertyMetaClass):
     def append(cls, content) -> None:
         get_tcl_interp()._tcl_call(None, "clipboard", "append", content)
 
+    def __add__(self, content) -> None:
+        self.append(content)
+        return self
+
     @classmethod
     def get(cls) -> str:
         try:
             return get_tcl_interp()._tcl_call(str, "clipboard", "get")
         except TclError:
-            # implement clipboard image with PIL.ImageGrab.grabclipboard
-            return ""
+            try:
+                return ImageGrab.grabclipboard()
+            except NotImplementedError:
+                # grabclipboard() is macOS and Windows only
+                return None
 
     @classmethod
     def set(cls, new_content: str) -> None:
@@ -371,9 +381,6 @@ class Clipboard(metaclass=ClassPropertyMetaClass):
 
 
 class Cursor(collections.namedtuple("Cursor", "cursor"), metaclass=ClassPropertyMetaClass):
-    """An object to use cross-platform, and human-understandable cursor names,
-    and to get and set the mouse cursor position"""
-
     _cursor_dict: dict[str | None, str] = {
         "crosshair": "crosshair",
         "default": "arrow",
@@ -787,11 +794,11 @@ class Screen(metaclass=ClassPropertyMetaClass):
         return (ScreenDistance(cls._width), ScreenDistance(cls._height))
 
     @classproperty
-    def area(cls) -> int:
+    def area(cls) -> ScreenDistance:
         return ScreenDistance(cls._width * cls._height)
 
     @classproperty
-    def aspect_ratio(cls) -> int:
+    def aspect_ratio(cls) -> str:
         try:
             return common_aspect_ratios[cls._width / cls._height]
         except KeyError:
@@ -799,7 +806,7 @@ class Screen(metaclass=ClassPropertyMetaClass):
             return f"{fraction.numerator}:{fraction.denominator}"
 
     @classproperty
-    def resolution_standard(cls) -> int:
+    def resolution_standard(cls) -> str:
         try:
             return common_resolution_standards[(cls._width, cls._height)]
         except KeyError:
@@ -835,24 +842,27 @@ class Screen(metaclass=ClassPropertyMetaClass):
 class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
     """An object to convert between different screen distance units"""
 
-    _tcl_units = {"px": "", "mm": "m", "cm": "c", "m": "c", "inch": "i", "ft": "i"}
+    _tcl_units = {"px": "", "mm": "m", "cm": "c", "inch": "i"}
 
-    def __new__(cls, distance, unit="px") -> ScreenDistance:
-        if unit != "px":
-            distance = f"{distance}{cls._tcl_units[unit]}"
+    def __new__(cls, cm=0, px=0, inch=0, mm=0) -> ScreenDistance:
+        distance = 0
 
-            pixels = get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", distance)
+        for unit, amount in {"cm": cm, "px": px, "mm": mm, "inch": inch}.items():
+            pixels = 0
 
-            if unit == "m":
-                pixels *= 100
-            elif unit == "ft":
-                pixels *= 12
-        else:
-            pixels = float(distance)
+            if amount:
+                if unit != "px":
+                    pixels = get_tcl_interp()._tcl_call(
+                        float, "winfo", "fpixels", ".", f"{amount}{cls._tcl_units[unit]}"
+                    )
+                else:
+                    pixels = float(amount)
+
+            distance += pixels
 
         cls.dpi = Screen.ppi
 
-        return super(ScreenDistance, cls).__new__(cls, pixels)  # type: ignore
+        return super(ScreenDistance, cls).__new__(cls, distance)  # type: ignore
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(distance={self.distance}px))"
@@ -869,8 +879,17 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
     __str__ = to_tcl
 
     @classmethod
-    def from_tcl(cls, tcl_value: int) -> ScreenDistance:
-        return cls(tcl_value)
+    def from_tcl(cls, tcl_value: str) -> ScreenDistance:
+        unit = tcl_value[-1]
+
+        if unit == "c":
+            return cls(cm=int(tcl_value[:-1]))
+        if unit == "m":
+            return cls(mm=int(tcl_value[:-1]))
+        if unit == "i":
+            return cls(inch=int(tcl_value[:-1]))
+
+        return cls(px=int(tcl_value[:-1]))
 
     @property
     def px(self) -> float:

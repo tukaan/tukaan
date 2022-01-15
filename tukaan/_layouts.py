@@ -124,8 +124,8 @@ class GridTemplates:
 class Grid:
     _widget: BaseWidget
     _cell_managed_children: dict[BaseWidget, str]
-    _get_lm_properties: Callable[[Grid, str], Any]
-    _set_lm_properties: Callable[[Grid, str, str, Any], None]
+    _get_lm_properties: Callable
+    _set_lm_properties: Callable
     _info: Callable
 
     def grid(
@@ -297,7 +297,7 @@ class Grid:
         padx = tuple(map(int, result["-padx"].split(" ")))
         pady = tuple(map(int, result["-pady"].split(" ")))
 
-        margin = [elem if len(elem) == 2 else elem * 2 for elem in (padx, pady)]
+        margin = [item if len(item) == 2 else item * 2 for item in (padx, pady)]
 
         return margin[1][0], margin[0][1], margin[1][1], margin[0][0]
 
@@ -310,8 +310,8 @@ class Grid:
 
 class Position:
     _widget: BaseWidget
-    _get_lm_properties: Callable[[Position, str], Any]
-    _set_lm_properties: Callable[[Position, str, str, Any], None]
+    _get_lm_properties: Callable
+    _set_lm_properties: Callable
 
     def position(
         self,

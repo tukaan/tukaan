@@ -298,10 +298,16 @@ class CommonMethods:
         sendevent: bool = False,
         data=None,
     ) -> None:
-        self._call_bind(what if what == "all" else self, sequence, func, overwrite, sendevent, data)
+        if what == "self":
+            what = self
+
+        self._call_bind(what, sequence, func, overwrite, sendevent, data)
 
     def _unbind(self, what, sequence: str):
-        self._call_bind(what if what == "all" else self, sequence, "", True, False, None)
+        if what == "self":
+            what = self
+
+        self._call_bind(what, sequence, "", True, False, None)
 
     def generate_event(self, sequence: str):
         self._tcl_call(None, "event", "generate", self, self.__parse_sequence(sequence))
@@ -388,9 +394,11 @@ class BaseWidget(TkWidget):
     def __init__(
         self, parent: TkWidget | None, creation_cmd: tuple[TkWidget | str, ...] = None, **kwargs
     ) -> None:
-        self.parent = parent
-        if self.parent is None:
+        if parent is None:
             self.parent = get_tcl_interp()
+        else:
+            self.parent = parent
+
         self.tcl_path = self._give_me_a_name()
         self._tcl_call: Callable = get_tcl_interp()._tcl_call
         self._tcl_eval: Callable = get_tcl_interp()._tcl_eval

@@ -9,13 +9,15 @@ from inspect import isclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
+import _tkinter as tk
+
 from .exceptions import TclError
 
 if TYPE_CHECKING:
-    from PIL import Image
+    from PIL import Image  # type: ignore
 
     from ._base import TkWidget
-    from ._images import _image_converter_class
+    from ._images import Icon, _image_converter_class
     from ._misc import NamedFont
     from ._variables import _TclVariable
     from .textbox import Tag
@@ -44,7 +46,7 @@ counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count(
 
 
 _callbacks: dict[str, Callable] = {}
-_images: dict[str, _image_converter_class] = {}
+_images: dict[str, _image_converter_class | Icon] = {}
 _pil_images: dict[str, Image] = {}
 _timeouts: dict[str, Timeout] = {}
 _variables: dict[str, _TclVariable] = {}
@@ -202,7 +204,7 @@ def from_tcl(type_spec, value) -> Any:
 
 def to_tcl(value: Any) -> Any:
     """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
-    if isinstance(value, str):
+    if isinstance(value, (str, tk.Tcl_Obj)):
         return value
 
     if value is None:

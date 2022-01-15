@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from PIL import Image
+from PIL import Image  # type: ignore
 
 from ._base import BaseWidget, TkWidget
 from ._constants import _anchors
-from ._images import _image_converter_class, Icon
+from ._images import Icon, _image_converter_class
 
 
 class Label(BaseWidget):

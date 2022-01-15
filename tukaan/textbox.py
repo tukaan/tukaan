@@ -4,10 +4,10 @@ import warnings
 from collections import abc, namedtuple
 from functools import partialmethod
 from pathlib import Path
-from typing import Any, Iterator, Optional
+from typing import Any, Iterator, Optional, Type
 
 import _tkinter as tk
-from PIL import Image
+from PIL import Image  # type: ignore
 
 from ._base import BaseWidget, CgetAndConfigure, TkWidget
 from ._constants import _cursor_styles, _inactive_cursor_styles, _wraps
@@ -142,20 +142,14 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
             *py_to_tcl_arguments(**kwargs),
         )
 
-    def add(self, start: TextIndex = None, end: TextIndex = None) -> None:
-        start = self._widget.start if start is None else start
-        end = self._widget.end if end is None else end
-
-        self._tcl_call(None, self, "add", start, end)
+    def add(self, *indexes) -> None:
+        self._tcl_call(None, self, "add", *self._widget._get_tcl_index_range(indexes))
 
     def delete(self) -> None:
         self._tcl_call(None, self, "delete")
 
-    def remove(self, start: TextIndex = None, end: TextIndex = None) -> None:
-        start = self._widget.start if start is None else start
-        end = self._widget.end if end is None else end
-
-        self._tcl_call(None, self, "remove", start, end)
+    def remove(self, *indexes) -> None:
+        self._tcl_call(None, self, "remove", *self._widget._get_tcl_index_range(indexes))
 
     @property
     def ranges(self):
@@ -182,71 +176,73 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
 
     @classproperty
     def hidden(cls) -> Tag:
-        return cls(_name="hidden", hidden=True)
+        return cls.Tag(_name="hidden", hidden=True)
 
     @classproperty
     def bold(cls) -> Tag:
         font = cls._widget.font.named_copy()
         font.bold = True
-        return cls(font=font)
+        return cls.Tag(font=font)
 
     @classproperty
     def italic(cls) -> Tag:
         font = cls._widget.font.named_copy()
         font.italic = True
-        return cls(font=font)
+        return cls.Tag(font=font)
 
     @classproperty
     def underline(cls) -> Tag:
         font = cls._widget.font.named_copy()
         font.underline = True
-        return cls(font=font)
+        return cls.Tag(font=font)
 
     @classproperty
     def strikethrough(cls) -> Tag:
         font = cls._widget.font.named_copy()
         font.strikethrough = True
-        return cls(font=font)
+        return cls.Tag(font=font)
 
 
-class TextRange(namedtuple("TextRange", "start end")):
-    def get(self):
-        return self._widget.get(self)
-
-    def __contains__(self, x):
-        return self.start <= x <= self.end
-
-
-class TextIndex(namedtuple("TextIndex", "line column")):
+class TextIndex(namedtuple("TextIndex", ["line", "column"])):
     _widget: TextBox
+    __slots__ = ()
 
-    def __new__(
-        cls,
-        *args,
-        x: int | None = None,
-        y: int | None = None,
-    ) -> TextIndex:
+    def __new__(cls, *index, no_check=False) -> TextIndex:
         result = None
 
-        if len(args) == 2:
+        if isinstance(index, tuple) and len(index) == 2:
             # line and column numbers
-            line, column = args
-        elif isinstance(args[0], tk.Tcl_Obj):
-            # Tcl_Obj from _utils.from_tcl()
-            result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", str(args[0]))
-        elif isinstance(args[0], (str, Icon, Image.Image, TkWidget)):
-            # string from from_tcl() OR mark name, image name or widget name
-            result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", args[0])
-        elif isinstance(x, (int, float, ScreenDistance)) and isinstance(
-            y, (int, float, ScreenDistance)
-        ):
-            # x and y
-            result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", f"@{x},{y}")
+            line, col = index
+        else:
+            index = index[0]
+            if isinstance(index, int):
+                if index in {0, 1}:
+                    line, col = 1, 0
+                elif index == -1:
+                    result = cls._widget._tcl_call(
+                        str, cls._widget.tcl_path, "index", f"end - 1 chars"
+                    )
+            elif isinstance(index, tk.Tcl_Obj):
+                # Tcl_Obj from _utils.from_tcl()
+                result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", str(index))
+            elif isinstance(index, (str, Icon, Image.Image, TkWidget)):
+                # string from from_tcl() OR mark name, image name or widget name
+                result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", index)
+            elif isinstance(index, tuple):
+                line, col = index
+            else:
+                raise TypeError
 
         if result:
-            line, column = tuple(map(int, result.split(".")))
+            line, col = tuple(map(int, result.split(".")))
 
-        return super(TextIndex, cls).__new__(cls, line, column)  # type: ignore
+        if not no_check:
+            if (line, col) < tuple(cls._widget.start):
+                return cls._widget.start
+            if (line, col) > tuple(cls._widget.end):
+                return cls._widget.end
+
+        return super(TextIndex, cls).__new__(cls, line, col)  # type: ignore
 
     def to_tcl(self) -> str:
         return f"{self.line}.{self.column}"
@@ -255,46 +251,58 @@ class TextIndex(namedtuple("TextIndex", "line column")):
     def from_tcl(cls, string: str) -> TextIndex:
         return cls(string)
 
-    def _compare(self, first: TextIndex, second: TextIndex, operator: str) -> bool:
-        return self._widget._tcl_call(bool, self._widget, "compare", first, operator, second)
+    def _compare(self, other: TextIndex, operator: str) -> bool:
+        return self._widget._tcl_call(bool, self._widget, "compare", self, operator, other)
 
     def __eq__(self, other: TextIndex) -> bool:  # type: ignore[override]
         if not isinstance(other, TextIndex):
             return NotImplemented
-        return self._compare(self, other, "==")
+        return self._compare(other, "==")
 
     def __lt__(self, other: TextIndex) -> bool:  # type: ignore[override]
-        return self._compare(self, other, "<")
+        return self._compare(other, "<")
 
     def __gt__(self, other: TextIndex) -> bool:  # type: ignore[override]
-        return self._compare(self, other, ">")
+        return self._compare(other, ">")
 
     def __le__(self, other: TextIndex) -> bool:  # type: ignore[override]
-        return self._compare(self, other, "<=")
+        return self._compare(other, "<=")
 
     def __ge__(self, other: TextIndex) -> bool:  # type: ignore[override]
-        return self._compare(self, other, ">=")
+        return self._compare(other, ">=")
 
-    @property
-    def between_start_end(self) -> TextIndex:
+    def __add__(self, indices: int) -> TextIndex:  # type: ignore[override]
+        return self.forward(indices=indices)
+
+    def __sub__(self, indices: int) -> TextIndex:  # type: ignore[override]
+        return self.back(indices=indices)
+
+    def clamp(self) -> TextIndex:
         if self < self._widget.start:
             return self._widget.start
         if self > self._widget.end:
             return self._widget.end
         return self
 
+    def _move(self, dir, chars, indices, lines):
+        move_str = ""
+        if chars:
+            move_str += f" {dir} {chars} chars"
+        if indices:
+            move_str += f" {dir} {indices} indices"
+        if lines:
+            move_str += f" {dir} {lines} lines"
+
+        return self.from_tcl(self.to_tcl() + move_str).clamp()
+
     def forward(self, chars: int = 0, indices: int = 0, lines: int = 0) -> TextIndex:
-        return self.from_tcl(
-            f"{self.to_tcl()} + {lines} lines + {chars} chars + {indices} indices"
-        ).between_start_end
+        return self._move("+", chars, indices, lines)
 
     def back(self, chars: int = 0, indices: int = 0, lines: int = 0) -> TextIndex:
-        return self.from_tcl(
-            f"{self.to_tcl()} - {lines} lines - {chars} chars - {indices} indices"
-        ).between_start_end
+        return self._move("-", chars, indices, lines)
 
     def _apply_suffix(self, suffix) -> TextIndex:
-        return self.from_tcl(f"{self.to_tcl()} {suffix}").between_start_end
+        return self.from_tcl(f"{self.to_tcl()} {suffix}").clamp()
 
     @property
     def linestart(self) -> TextIndex:
@@ -313,8 +321,35 @@ class TextIndex(namedtuple("TextIndex", "line column")):
         return self._apply_suffix("wordend")
 
 
-class Marks(abc.MutableMapping):
+class TextRange(namedtuple("TextRange", ["start", "end"])):
     _widget: TextBox
+
+    def __new__(
+        cls, *indexes: slice | tuple[tuple[int, int], tuple[int, int]] | tuple[TextIndex, TextIndex]
+    ) -> TextRange:
+        if isinstance(indexes[0], slice):
+            start, stop = indexes[0].start, indexes[0].stop
+        else:
+            start, stop = indexes
+
+        if isinstance(start, tuple):
+            start = cls._widget.index(*start)
+
+        if isinstance(stop, tuple):
+            stop = cls._widget.index(*stop)
+
+        return super(TextRange, cls).__new__(cls, start, stop)  # type: ignore
+
+    def get(self):
+        return self._widget.get(self)
+
+    def __contains__(self, index: TextIndex):  # type: ignore[override]
+        return self.start <= index < self.end
+
+
+class TextMarks(abc.MutableMapping):
+    _widget: TextBox
+    __slots__ = "_widget"
 
     def __get_names(self) -> list[str]:
         return self._widget._tcl_call([str], self._widget.tcl_path, "mark", "names")
@@ -331,20 +366,21 @@ class Marks(abc.MutableMapping):
     def __setitem__(self, name: str, index: TextIndex) -> None:
         self._widget._tcl_call(None, self._widget.tcl_path, "mark", "set", name, index)
 
-    def __getitem__(self, name: str) -> TextIndex:
-        if name not in self:
-            raise KeyError(f"Mark {name!r} doesn't exists in {self._widget}")
+    def __getitem__(self, name: str) -> TextIndex | None:
+        if name not in self.__get_names():
+            return None
 
         return self._widget.index(name)
 
     def __delitem__(self, name: str) -> None:
         if name == "insert":
-            raise TclError("can't delete insertion cursor")
+            raise RuntimeError("can't delete insertion cursor")
         self._widget._tcl_call(None, self._widget.tcl_path, "mark", "unset", name)
 
 
 class TextHistory:
     _widget: TextBox
+    __slots__ = "_widget"
 
     def call_subcommand(self, *args):
         if self._widget.track_history is False:
@@ -369,12 +405,16 @@ class TextHistory:
         except TclError:
             return
 
+    __rshift__ = redo
+
     def undo(self, number=1):
         try:
             for i in range(number):
                 self.call_subcommand("undo")
         except TclError:
             return
+
+    __lshift__ = undo
 
     def clear(self):
         self.call_subcommand("reset")
@@ -453,28 +493,28 @@ class TextBox(BaseWidget):
         cursor_color: Optional[Color] = None,
         cursor_offtime: Optional[int] = None,
         cursor_ontime: Optional[int] = None,
-        cursor_style: Optional[str] = "normal",
-        cursor_width: Optional[int, ScreenDistance] = None,
+        cursor_style: str = "normal",
+        cursor_width: Optional[int | ScreenDistance] = None,
         fg_color: Optional[Color] = None,
         focusable: Optional[bool] = None,
         font: Optional[Font] = None,
-        height: Optional[int, ScreenDistance] = None,
+        height: Optional[int | ScreenDistance] = None,
         inactive_cursor_style: Optional[str] = None,
         inactive_selection_bg: Optional[Color] = None,
         overflow: tuple[bool | str, bool | str] = ("auto", "auto"),
-        padding: Optional[int, tuple[int], tuple[int, int]] = None,
+        padding: Optional[int | tuple[int] | tuple[int, int]] = None,
         resize_along_chars: Optional[bool] = None,
         selection_bg: Optional[Color] = None,
         selection_fg: Optional[Color] = None,
-        space_after_paragraph: Optional[int, ScreenDistance] = None,
-        space_before_paragraph: Optional[int, ScreenDistance] = None,
-        space_before_wrapped_line: Optional[int, ScreenDistance] = None,
+        space_after_paragraph: Optional[int | ScreenDistance] = None,
+        space_before_paragraph: Optional[int | ScreenDistance] = None,
+        space_before_wrapped_line: Optional[int | ScreenDistance] = None,
         tab_stops: Optional[tuple[str | int, ...]] = None,
         tab_style: Optional[str] = None,
         track_history: Optional[bool] = None,
-        width: Optional[int, ScreenDistance] = None,
+        width: Optional[int | ScreenDistance] = None,
         wrap: Optional[str] = None,
-        _peer_of: Optional[str] = None,
+        _peer_of: Optional[TextBox] = None,
     ) -> None:
 
         if not font:
@@ -482,8 +522,10 @@ class TextBox(BaseWidget):
 
         padx = pady = None
         if padding is not None:
-            if isinstance(padding, int) or len(padding) == 1:
+            if isinstance(padding, int):
                 padx = pady = padding
+            elif len(padding) == 1:
+                padx = pady = padding[0]
             elif len(padding) == 2:
                 padx, pady = padding
             else:
@@ -532,16 +574,16 @@ class TextBox(BaseWidget):
 
         if _peer_of is None:
             self._frame = _textbox_frame(parent)
-            BaseWidget.__init__(self, self._frame, **to_call)
+            BaseWidget.__init__(self, self._frame, None, **to_call)
         else:
             self._frame = _textbox_frame(_peer_of._frame.parent)
             tcl_path = f"{self._frame.tcl_path}.textbox_peer_{_peer_of.peer_count}_of_{_peer_of.tcl_path.split('.')[-1]}"
             BaseWidget.__init__(
-                self, self._frame, creation_cmd=(_peer_of, "peer", "create", tcl_path), **to_call
+                self, self._frame, (_peer_of, "peer", "create", tcl_path), **to_call
             )
             self.tcl_path = tcl_path
 
-        self.peer_count = 0
+        self.peer_count: int = 0
 
         self._tcl_eval(
             None,
@@ -552,11 +594,11 @@ class TextBox(BaseWidget):
         if overflow is not None:
             self.overflow = overflow
 
-        self.index = TextIndex
-        self.range = TextRange
-        self.Tag = Tag
-        self.marks = Marks()
-        self.history = TextHistory()
+        self.index: Type[TextIndex] = TextIndex
+        self.range: Type[TextRange] = TextRange
+        self.Tag: Type[Tag] = Tag
+        self.marks: TextMarks = TextMarks()
+        self.history: TextHistory = TextHistory()
         for attr in (self.index, self.range, self.Tag, self.marks, self.history):
             setattr(attr, "_widget", self)
 
@@ -581,13 +623,13 @@ class TextBox(BaseWidget):
 
     @property
     def start(self) -> TextIndex:
-        return self.index(1, 0)
+        return self.index(0, no_check=True)
 
     @property
     def end(self) -> TextIndex:
-        return self._tcl_call(self.index, self, "index", "end - 1 char")
+        return self.index(-1, no_check=True)
 
-    def insert(self, index: TextIndex, content: str, **kwargs) -> None:
+    def insert(self, index: TextIndex | str = "insert", content: str = "", **kwargs) -> None:
         if isinstance(content, (Image.Image, Icon)):
             margin = kwargs.pop("margin", None)
             padx = pady = None
@@ -638,41 +680,42 @@ class TextBox(BaseWidget):
             raise TypeError(f"insert() got unexpected keyword argument(s): {tuple(kwargs.keys())}")
         self._tcl_call(None, self, *to_call)
 
-    def delete(
-        self, start: Optional[TextIndex | TextRange] = None, end: Optional[TextIndex] = None
-    ) -> None:
-        if isinstance(start, TextRange):
-            start, end = start
+    def _get_tcl_index_range(self, indexes):
+        if len(indexes) == 1:
+            index_or_range = indexes[0]
+
+            if isinstance(index_or_range, self.range):
+                return tuple(index.to_tcl() for index in index_or_range)
+            elif isinstance(index_or_range, self.index):
+                return index_or_range.to_tcl(), index_or_range.forward(chars=1).to_tcl()
+            elif isinstance(index_or_range, tuple):
+                return (
+                    self.index(*index_or_range).to_tcl(),
+                    self.index(*index_or_range).forward(chars=1).to_tcl(),
+                )
+
         else:
-            start = self.start if start is None else start
-            end = self.end if end is None else end
+            return "1.0", "end - 1 chars"
 
-        self._tcl_call(None, self, "delete", start, end)
+    def delete(self, *indexes) -> None:
+        self._tcl_call(None, self, "delete", *self._get_tcl_index_range(indexes))
 
-    def get(
-        self, start: Optional[TextIndex | TextRange] = None, end: Optional[TextIndex] = None
-    ) -> str:
-        if isinstance(start, TextRange):
-            start, end = start
-        else:
-            start = self.start if start is None else start
-            end = self.end if end is None else end
-
-        return self._tcl_call(str, self, "get", start, end)
+    def get(self, *indexes) -> str:
+        return self._tcl_call(str, self, "get", *self._get_tcl_index_range(indexes))
 
     def replace(self, *args, tag: Optional[Tag] = None) -> None:
         if isinstance(args[0], TextRange) and isinstance(args[1], str):
-            text = args[1]
             start, end = args[0]
+            text = args[1]
         elif (
             len(args) == 3
             and isinstance(args[0], TextIndex)
             and isinstance(args[1], TextIndex)
             and isinstance(args[2], str)
         ):
-            text = args[2]
             start = self.start if args[0] is None else args[0]
             end = self.end if args[1] is None else args[1]
+            text = args[2]
         else:
             raise ValueError("invalid arguments. See help(TextBox.replace).")
 
@@ -680,19 +723,19 @@ class TextBox(BaseWidget):
 
     def search(
         self,
-        pattern,
-        start,
-        stop="end",
+        pattern: str,
+        start: TextIndex,
+        stop: TextIndex | str = "end",
         *,
-        backwards=False,
-        case_sensitive=True,
-        count_hidden=False,
-        exact=False,
-        forwards=False,
-        match_newline=False,
-        regex=False,
-        strict_limits=False,
-        variable=None,
+        backwards: bool = False,
+        case_sensitive: bool = True,
+        count_hidden: bool = False,
+        exact: bool = False,
+        forwards: bool = False,
+        match_newline: bool = False,
+        regex: bool = False,
+        strict_limits: bool = False,
+        variable: Integer = None,
     ):
 
         if stop == self.end:
@@ -701,27 +744,27 @@ class TextBox(BaseWidget):
         if variable is None:
             variable = Integer()
 
-        to_call = []
+        to_call: list[str] = []
 
         if backwards:
-            to_call.append("-backwards")
+            to_call += "-backwards"
         if not case_sensitive:
-            to_call.append("-nocase")
+            to_call += "-nocase"
         if count_hidden:
-            to_call.append("-elide")
+            to_call += "-elide"
         if exact:
-            to_call.append("-exact")
+            to_call += "-exact"
         if forwards:
-            to_call.append("-forwards")
+            to_call += "-forwards"
         if match_newline:
-            to_call.append("-nolinestop")
+            to_call += "-nolinestop"
         if regex:
-            to_call.append("-regexp")
+            to_call += "-regexp"
         if strict_limits:
-            to_call.append("-strictlimits")
+            to_call += "-strictlimits"
 
         if pattern and pattern[0] == "-":
-            to_call.append("--")
+            to_call += "--"
 
         while True:
             result = self._tcl_call(
@@ -729,31 +772,31 @@ class TextBox(BaseWidget):
             )
             if not result:
                 break
-            yield self.range(self.index(result), self.index(result).forward(chars=variable.get()))
+            yield self.range(self.index(result), self.index(result).forward(chars=variable.get()))  # type: ignore
             start = result + "+ 1 chars"
 
     def scroll_to(self, index: TextIndex) -> None:
         self._tcl_call(None, self, "see", index)
 
-    def x_scroll(self, subcommand, fraction):
+    def x_scroll(self, subcommand: str, fraction: float) -> None:
         self._tcl_call(None, self, "xview", subcommand, fraction)
 
-    def y_scroll(self, subcommand, fraction):
+    def y_scroll(self, subcommand: str, fraction: float) -> None:
         self._tcl_call(None, self, "yview", subcommand, fraction)
 
     @property
-    def overflow(self):
+    def overflow(self) -> tuple[bool | str, bool | str]:
         return self._overflow
 
     @overflow.setter
-    def overflow(self, new_overflow: tuple[str, str]):
+    def overflow(self, new_overflow: tuple[bool | str, bool | str]) -> None:
         if hasattr(self, "_h_scroll"):
             self._h_scroll.destroy()
         if hasattr(self, "_v_scroll"):
             self._v_scroll.destroy()
 
         if len(new_overflow) == 1:
-            new_overflow = new_overflow * 2
+            new_overflow = (new_overflow[0], new_overflow[0])
 
         if new_overflow == (False, False):
             pass
@@ -783,20 +826,20 @@ class TextBox(BaseWidget):
         self._overflow = new_overflow
 
     @property
-    def text(self):
+    def text(self) -> str:
         return self.get()
 
     @text.setter
-    def text(self, new_text):
+    def text(self, new_text: str) -> None:
         self.delete()
         self.insert(self.end, new_text)
 
     @property
-    def cursor_pos(self):
+    def cursor_pos(self) -> TextIndex:
         return self.marks["insert"]
 
     @cursor_pos.setter
-    def cursor_pos(self, new_pos: TextIndex):
+    def cursor_pos(self, new_pos: TextIndex) -> None:
         self.marks["insert"] = new_pos
 
     @property
@@ -804,7 +847,7 @@ class TextBox(BaseWidget):
         result = []  # type: ignore
         unclosed_tags = {}
 
-        def add_item(type, value, index):
+        def add_item(type: str, value: str, index: str) -> None:
             nonlocal result
             nonlocal unclosed_tags
 
@@ -829,13 +872,13 @@ class TextBox(BaseWidget):
                 "window": TkWidget.from_tcl,
             }[type]
 
-            result.append((self.index(index), convert(value)))
+            result += (self.index(index), convert(value))  # type: ignore  # "object" not callable
 
         self._tcl_call(str, self, "dump", "-all", "-command", add_item, "1.0", "end - 1 chars")
         return result
 
     @update_before
-    def line_info(self, index: TextIndex) -> dict[str, ScreenDistance]:
+    def line_info(self, index: TextIndex) -> LineInfo:
         """Returns the accurate height only if the TextBox widget has already laid out"""
         result = self._tcl_call(
             (ScreenDistance, ScreenDistance, ScreenDistance, ScreenDistance, ScreenDistance),
@@ -846,15 +889,7 @@ class TextBox(BaseWidget):
 
         return LineInfo(*result)
 
-    def range_info(
-        self, start: Optional[TextIndex | TextRange] = None, end: Optional[TextIndex] = None
-    ) -> dict[str, int | ScreenDistance]:
-        if isinstance(start, TextRange):
-            start, end = start
-        else:
-            start = self.start if start is None else start
-            end = self.end if end is None else end
-
+    def range_info(self, *indexes) -> RangeInfo:
         result = self._tcl_call(
             (int, int, int, int, int, int, ScreenDistance, ScreenDistance),
             self,
@@ -867,8 +902,22 @@ class TextBox(BaseWidget):
             "-lines",
             "-xpixels",
             "-ypixels",
-            start,
-            end,
+            *self._get_tcl_index_range(indexes),
         )
 
         return RangeInfo(*result)
+
+    def __matmul__(
+        self, index: tuple[int, int] | int | str | Icon | Image.Image | TkWidget | tk.Tcl_Obj
+    ):
+        return self.index(index)
+
+    def __contains__(self, text):
+        return text in self.get()
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return self.get(self.range(index))
+        elif isinstance(index, (tuple, self.index)):
+            return self.get(index)
+        raise TypeError("expected a tuple, a slice or a `TextBox.index` object")
