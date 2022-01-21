@@ -94,6 +94,10 @@ class WindowManager:
     def in_focus(self) -> int:
         return self._tcl_call(str, "focus", "-displayof", self.wm_path)
 
+    @property
+    def id(self) -> int:
+        return int(self._tcl_call(str, "winfo", "id", self.wm_path), 0)
+
     # WM getters, setters
 
     @update_before
@@ -273,6 +277,67 @@ class WindowManager:
         self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", image)
 
     on_close = property(get_on_close, set_on_close)
+
+    # Platform specific things
+
+    def _dwm_set_window_attribute(self, rendering_policy, value):
+        """
+        Windows only feature
+
+        The idea of these windll and dwm stuff came from this Gist by Olikonsti:
+        https://gist.github.com/Olikonsti/879edbf69b801d8519bf25e804cec0aa
+        """
+
+        from ctypes import windll, c_int, byref, sizeof
+
+        value = c_int(value)
+
+        windll.dwmapi.DwmSetWindowAttribute(
+            windll.user32.GetParent(self.id), rendering_policy, byref(value), sizeof(value)
+        )
+
+    @property
+    def immersive_dark_mode(self):
+        return self._is_immersive_dark_mode_used
+
+    @immersive_dark_mode.setter
+    @update_before
+    def immersive_dark_mode(self, is_used=False):
+        rendering_policy = 20  # DWMWA_USE_IMMERSIVE_DARK_MODE
+
+        self._dwm_set_window_attribute(rendering_policy, int(is_used))
+
+        self._is_immersive_dark_mode_used = is_used
+
+        # Need to redraw the titlebar
+        self.minimize()
+        self.restore()
+
+    @property
+    def rtl_titlebar(self):
+        return self._is_rtl_titlebar_used
+
+    @rtl_titlebar.setter
+    @update_before
+    def rtl_titlebar(self, is_used=False):
+        rendering_policy = 6  # DWMWA_NONCLIENT_RTL_LAYOUT
+
+        self._dwm_set_window_attribute(rendering_policy, int(is_used))
+
+        self._is_rtl_titlebar_used = is_used
+
+    @property
+    def preview_disabled(self):
+        return self._is_preview_disabled
+
+    @preview_disabled.setter
+    @update_before
+    def preview_disabled(self, is_disabled=False):
+        rendering_policy = 7  # DWMWA_FORCE_ICONIC_REPRESENTATION
+
+        self._dwm_set_window_attribute(rendering_policy, int(is_disabled))
+
+        self._is_preview_disabled = is_disabled
 
 
 class App(WindowManager, TkWidget):
