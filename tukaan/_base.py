@@ -354,8 +354,7 @@ _BINDING_SUBSTS = (
 
 class StateSet(collections.abc.MutableSet):
     """
-    Object that contains the state of the widget,
-    though it inherits from MutableSet, it behaves like a list
+    Object that contains the state of the widget
     """
 
     def __init__(self, widget: TkWidget) -> None:
@@ -386,6 +385,12 @@ class StateSet(collections.abc.MutableSet):
 
     def discard(self, state: str) -> None:
         self.add_or_discard("discard", state)
+
+    def __iadd__(self, other: str) -> None:
+        self.add(other)
+
+    def __isub__(self, other: str) -> None:
+        self.discard(other)
 
 
 class BaseWidget(TkWidget):
