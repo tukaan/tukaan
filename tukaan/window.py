@@ -5,6 +5,7 @@ import re
 import sys
 from collections import namedtuple
 from typing import Any, Callable, Optional
+from fractions import Fraction
 
 import _tkinter as tk
 
@@ -248,9 +249,43 @@ class WindowManager:
     def set_size_increment(self, increment: Size | tuple[int, int] | int) -> None:
         if isinstance(increment, int):
             increment = (increment,) * 2
-        self._tcl_call(None, "wm", "grid", self.wm_path, 0, 0, *increment)
+        self._tcl_call(None, "wm", "grid", self.wm_path, 1, 1, *increment)
 
     size_increment = property(get_size_increment, set_size_increment)
+
+    @update_before
+    def get_aspect_ratio(self) -> tuple[Fraction, Fraction]:
+        result = self._tcl_call((int,), "wm", "aspect", self.wm_path)
+        if result == ():
+            return None
+        return Fraction(*result[:2]), Fraction(*result[2:])
+
+    @update_after
+    def set_aspect_ratio(self, new_aspect: tuple[float, float] | float | None) -> None:
+        if new_aspect is None:
+            self._tcl_call(None, "wm", "aspect", self.wm_path, *("",) * 4)
+            return
+
+        if isinstance(new_aspect, (int, float)):
+            min = max = new_aspect
+        else:
+            min, max = new_aspect
+
+        if isinstance(min, Fraction):
+            min_numer, min_denom = min.as_integer_ratio()
+        else:
+            min_numer, min_denom = Fraction.from_float(min).as_integer_ratio()
+
+        if isinstance(min, Fraction):
+            max_numer, max_denom = max.as_integer_ratio()
+        else:
+            max_numer, max_denom = Fraction.from_float(max).as_integer_ratio()
+
+        self._tcl_call(
+            None, "wm", "aspect", self.wm_path, min_numer, min_denom, max_numer, max_denom
+        )
+
+    aspect_ratio = property(get_aspect_ratio, set_aspect_ratio)
 
     def get_resizable(self) -> str:
         return reversed_dict(_resizable)[
@@ -390,8 +425,8 @@ class App(WindowManager, TkWidget):
             if return_type is None:
                 return
             return from_tcl(return_type, result)
-        except tk.TclError:
-            _, msg, tb = sys.exc_info()
+        
+        except tk.TclError as msg:
             msg = str(msg)
 
             if msg.startswith("couldn't read file"):
