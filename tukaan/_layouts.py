@@ -96,14 +96,14 @@ class GridTemplates:
             "row": ("_row_template", "rowconfigure"),
             "col": ("_col_template", "columnconfigure"),
         }[which]
-
-        if isinstance(template, int):
-            template = (template,)
-
         setattr(self, attr, template)
-        for index, weight in enumerate(template):
-            self._widget._tcl_call(None, "grid", command, self._widget, index, "-weight", weight)
 
+        try:
+            for index, weight in enumerate(template):
+                self._widget._tcl_call(None, "grid", command, self._widget, index, "-weight", weight)
+        except TypeError:
+            self._widget._tcl_call(None, "grid", command, self._widget, "all", "-weight", template)
+        
     @property
     def grid_row_template(self) -> tuple[int, ...]:
         return self._row_template

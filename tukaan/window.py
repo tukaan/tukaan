@@ -313,6 +313,24 @@ class WindowManager:
 
     on_close = property(get_on_close, set_on_close)
 
+    def get_modal(self) -> str:
+        return bool(self._tcl_call(str, "wm", "transient", self.wm_path))
+
+    def set_modal(self, is_modal) -> None:
+        if is_modal:
+            other = self.parent.wm_path
+        else:
+            other = ""
+
+        self._tcl_call(None, "wm", "transient", self.wm_path, other)
+
+        if tcl_interp._winsys == "aqua":
+            self._tcl_call(
+                "::tk::unsupported::MacWindowStyle", "style", self.wm_path, "moveableModal", ""
+            )
+
+    modal = property(get_modal, set_modal)
+
     # Platform specific things
 
     def _dwm_set_window_attribute(self, rendering_policy, value):
@@ -373,6 +391,14 @@ class WindowManager:
         self._dwm_set_window_attribute(rendering_policy, int(is_disabled))
 
         self._is_preview_disabled = is_disabled
+
+    @property
+    def tool_window(self):
+        return self._tcl_call(bool, "wm", "attributes", self.wm_path, "-toolwindow")
+
+    @tool_window.setter
+    def tool_window(self, is_toolwindow=False):
+        self._tcl_call(None, "wm", "attributes", self.wm_path, "-toolwindow", is_toolwindow)
 
 
 class App(WindowManager, TkWidget):
@@ -475,12 +501,12 @@ class App(WindowManager, TkWidget):
 
         self.app.quit()
 
+    def focus_should_follow_mouse(self) -> int:
+        self._tcl_call(None, "tk_focusFollowsMouse")
+
     @property
     def user_last_active(self) -> int:
         return self._tcl_call(int, "tk", "inactive") / 1000
-
-    def focus_should_follow_mouse(self) -> int:
-        self._tcl_call(None, "tk_focusFollowsMouse")
 
     @property
     def scaling(self) -> int:
@@ -518,6 +544,9 @@ class Window(WindowManager, BaseWidget):
     _tcl_class = "toplevel"
     _keys = {}
 
-    def __init__(self, parent: Optional[TkWidget] = None) -> None:
+    def __init__(self, parent: Optional[App | Window] = None) -> None:
+        if not isinstance(parent, (App, Window)) and parent is not None:
+            raise RuntimeError
+
         BaseWidget.__init__(self, parent)
         self.wm_path = self.tcl_path
