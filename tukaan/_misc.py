@@ -217,6 +217,7 @@ class Color:
                 space, color, opt="str"
             ):
                 if space == "rgb":
+                    assert not isinstance(color, str)
                     self.red, self.green, self.blue = color
                 elif space == "hsl":
                     self.red, self.green, self.blue = HSL.from_hsl(*color)
@@ -351,12 +352,12 @@ class Clipboard(metaclass=ClassPropertyMetaClass):
     def append(cls, content) -> None:
         get_tcl_interp()._tcl_call(None, "clipboard", "append", content)
 
-    def __add__(self, content) -> None:
+    def __add__(self, content) -> Clipboard:
         self.append(content)
         return self
 
     @classmethod
-    def get(cls) -> str:
+    def get(cls) -> str | None:
         try:
             return get_tcl_interp()._tcl_call(str, "clipboard", "get")
         except TclError:

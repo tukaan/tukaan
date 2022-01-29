@@ -210,7 +210,9 @@ class CommonMethods:
             self._tcl_call(None, "place", "forget", self.tcl_path)
 
     def unhide(self):
-        if self.tcl_path == ".app" or self._class == "Toplevel":
+        from .window import App, Window
+
+        if isinstance(self, (App, Window)):
             # object is a window
             self._tcl_call(None, "wm", "deiconify", self.wm_path)
         elif self.layout._real_manager == "grid":
@@ -386,11 +388,13 @@ class StateSet(collections.abc.MutableSet):
     def discard(self, state: str) -> None:
         self.add_or_discard("discard", state)
 
-    def __iadd__(self, other: str) -> None:
+    def __add__(self, other: str) -> StateSet:
         self.add(other)
+        return self
 
-    def __isub__(self, other: str) -> None:
+    def __sub__(self, other: str) -> StateSet:
         self.discard(other)
+        return self
 
 
 class BaseWidget(TkWidget):

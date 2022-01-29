@@ -338,6 +338,12 @@ class TextRange(namedtuple("TextRange", ["start", "end"])):
         if isinstance(stop, tuple):
             stop = cls._widget.index(*stop)
 
+        if start is None:
+            start = cls._widget.start
+
+        if stop is None:
+            stop = cls._widget.end
+
         return super(TextRange, cls).__new__(cls, start, stop)  # type: ignore
 
     def get(self):
@@ -456,6 +462,12 @@ class _textbox_frame(BaseWidget):
 
 
 class TextBox(BaseWidget):
+    index: Type[TextIndex]
+    range: Type[TextRange]
+    Tag: Type[Tag]
+    marks: TextMarks
+    history: TextHistory
+
     _tcl_class = "text"
     _keys = {
         "bg_color": (Color, "background"),
@@ -594,11 +606,11 @@ class TextBox(BaseWidget):
         if overflow is not None:
             self.overflow = overflow
 
-        self.index: Type[TextIndex] = TextIndex
-        self.range: Type[TextRange] = TextRange
-        self.Tag: Type[Tag] = Tag
-        self.marks: TextMarks = TextMarks()
-        self.history: TextHistory = TextHistory()
+        self.index = TextIndex
+        self.range = TextRange
+        self.Tag = Tag
+        self.marks = TextMarks()
+        self.history = TextHistory()
         for attr in (self.index, self.range, self.Tag, self.marks, self.history):
             setattr(attr, "_widget", self)
 
@@ -709,8 +721,8 @@ class TextBox(BaseWidget):
             text = args[1]
         elif (
             len(args) == 3
-            and isinstance(args[0], TextIndex)
-            and isinstance(args[1], TextIndex)
+            and isinstance(args[0], self.index)
+            and isinstance(args[1], self.index)
             and isinstance(args[2], str)
         ):
             start = self.start if args[0] is None else args[0]
@@ -907,15 +919,13 @@ class TextBox(BaseWidget):
 
         return RangeInfo(*result)
 
-    def __matmul__(
-        self, index: tuple[int, int] | int | str | Icon | Image.Image | TkWidget | tk.Tcl_Obj
-    ):
+    def __matmul__(self, index: tuple[int, int] | int | Icon | Image.Image | TkWidget):
         return self.index(index)
 
-    def __contains__(self, text):
+    def __contains__(self, text: str):
         return text in self.get()
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: slice | tuple | TextBox.index):
         if isinstance(index, slice):
             return self.get(self.range(index))
         elif isinstance(index, (tuple, self.index)):

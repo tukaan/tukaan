@@ -393,6 +393,8 @@ class BaseLayoutManager(GridCells, GridTemplates):
         self._widget = widget
         self._cell_managed_children = {}
         self._grid_cells = []
+        self._row_template = ()
+        self._col_template = ()
 
 
 class LayoutManager(BaseLayoutManager, Grid, Position):

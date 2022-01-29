@@ -501,7 +501,7 @@ class App(WindowManager, TkWidget):
 
         self.app.quit()
 
-    def focus_should_follow_mouse(self) -> int:
+    def focus_should_follow_mouse(self) -> None:
         self._tcl_call(None, "tk_focusFollowsMouse")
 
     @property
@@ -550,3 +550,21 @@ class Window(WindowManager, BaseWidget):
 
         BaseWidget.__init__(self, parent)
         self.wm_path = self.tcl_path
+
+    def get_modal(self) -> str:
+        return bool(self._tcl_call(str, "wm", "transient", self.wm_path))
+
+    def set_modal(self, is_modal) -> None:
+        if is_modal:
+            other = self.parent.wm_path
+        else:
+            other = ""
+
+        self._tcl_call(None, "wm", "transient", self.wm_path, other)
+
+        if tcl_interp._winsys == "aqua":
+            self._tcl_call(
+                "::tk::unsupported::MacWindowStyle", "style", self.wm_path, "moveableModal", ""
+            )
+
+    modal = property(get_modal, set_modal)
