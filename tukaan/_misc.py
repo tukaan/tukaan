@@ -815,7 +815,7 @@ class Screen(metaclass=ClassPropertyMetaClass):
 
     @classproperty
     def diagonal(cls) -> int:
-        return ScreenDistance((cls._width ** 2 + cls._height ** 2) ** 0.5)  # pythagoras
+        return ScreenDistance((cls._width**2 + cls._height**2) ** 0.5)  # pythagoras
 
     @classproperty
     def color_depth(cls) -> int:

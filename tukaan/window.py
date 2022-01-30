@@ -483,7 +483,7 @@ class App(WindowManager, TkWidget):
         os = {"Linux": "linux", "Darwin": "mac", "Windows": "windows"}[platform.system()]
 
         if os == "windows":
-            if sys.maxsize > 2 ** 32:
+            if sys.maxsize > 2**32:
                 os += "-x64"
             else:
                 os += "-x86"
