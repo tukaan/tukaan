@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from PIL import Image
+from PIL import Image  # type: ignore
 
 from ._base import BaseWidget, TkWidget
 from ._constants import _anchors
-from ._images import _image_converter_class, Icon
+from ._images import Icon, _image_converter_class
+from ._misc import Color
 
 
 class Label(BaseWidget):
@@ -19,6 +20,7 @@ class Label(BaseWidget):
         "max_line_length": (int, "wraplength"),
         "style": str,
         "text": str,
+        "bg_color": (Color, "background"),
     }
 
     def __init__(
@@ -31,6 +33,7 @@ class Label(BaseWidget):
         max_line_length: Optional[int] = None,
         style: Optional[str] = None,
         text: Optional[str] = None,
+        bg_color: Optional[str] = None,
     ) -> None:
 
         if align_content is not None:
@@ -47,5 +50,6 @@ class Label(BaseWidget):
             style=style,
             takefocus=focusable,
             wraplength=max_line_length,
+            background=bg_color,
         )
         self.config(text=text)

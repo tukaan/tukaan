@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from PIL import Image
+from PIL import Image  # type: ignore
 
 from ._base import BaseWidget, TkWidget
-from ._images import _image_converter_class, Icon
+from ._images import Icon, _image_converter_class
 
 
 class Button(BaseWidget):

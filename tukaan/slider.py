@@ -51,3 +51,11 @@ class Slider(BaseWidget):
 
     def set(self, value: float = 0) -> None:
         self._tcl_call(None, self, "set", value)
+
+    def __add__(self, other: int):
+        self.set(self.get() + other)
+        return self
+
+    def __sub__(self, other: int):
+        self.set(self.get() - other)
+        return self

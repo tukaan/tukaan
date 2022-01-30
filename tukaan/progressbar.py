@@ -56,3 +56,11 @@ class ProgressBar(BaseWidget):
 
     def step(self, amount: int = 1) -> None:
         self._tcl_call(None, self, "step", amount)
+
+    def __add__(self, other: int):
+        self.set(self.get() + other)
+        return self
+
+    def __sub__(self, other: int):
+        self.set(self.get() - other)
+        return self

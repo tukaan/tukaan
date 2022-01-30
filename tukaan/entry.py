@@ -8,8 +8,6 @@ from ._base import BaseWidget, TkWidget
 from ._misc import Color, ScreenDistance
 from ._utils import py_to_tcl_arguments
 
-EndAlias = Literal["end"]
-
 
 class Entry(BaseWidget):
     _tcl_class = "ttk::entry"
@@ -18,8 +16,8 @@ class Entry(BaseWidget):
         "focusable": (bool, "takefocus"),
         "hide_chars_with": (str, "show"),
         "justify": str,
-        "style": str,
         "on_xscroll": ("func", "xscrollcommand"),
+        "style": str,
         "width": ScreenDistance,
     }
 
@@ -54,7 +52,7 @@ class Entry(BaseWidget):
             width=width,
         )
 
-        self.__set_validation(validation)
+        self._set_validation(validation)
 
     def __len__(self):
         return len(self.get())
@@ -65,7 +63,7 @@ class Entry(BaseWidget):
     def __contains__(self, text: str):
         return text in self.get()
 
-    def __set_validation(self, validation):
+    def _set_validation(self, validation):
         self._validation = validation
         vcmd = None
         strict_regex = None
@@ -127,7 +125,7 @@ class Entry(BaseWidget):
         else:
             self.state.add("invalid")
 
-    def char_bbox(self, index: int | EndAlias):
+    def char_bbox(self, index: int | str):
         result = self._tcl_call((int,), self, "bbox", index)
         return {
             "left": result[0],
@@ -139,13 +137,13 @@ class Entry(BaseWidget):
     def clear(self) -> None:
         self._tcl_call(None, self, "delete", 0, "end")
 
-    def delete(self, start: int | EndAlias, end: int | EndAlias = "end") -> None:
+    def delete(self, start: int | str, end: int | str = "end") -> None:
         self._tcl_call(None, self, "delete", start, end)
 
     def get(self) -> str:
         return self._tcl_call(str, self, "get")
 
-    def insert(self, index: int | EndAlias, text: str) -> None:
+    def insert(self, index: int | str, text: str) -> None:
         self._tcl_call(None, self, "insert", index, text)
 
     @property
@@ -185,7 +183,7 @@ class Entry(BaseWidget):
 
     @selection.setter
     def selection(
-        self, new_selection_range: tuple[int | EndAlias, int | EndAlias] | None  # type: ignore
+        self, new_selection_range: tuple[int | str, int | str] | None  # type: ignore
     ) -> None:
         # it's quite a bad thing that the getter returns a str, but the setter expects a tuple
         if isinstance(new_selection_range, tuple) and len(new_selection_range) == 2:
