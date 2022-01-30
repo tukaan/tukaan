@@ -5,9 +5,8 @@ from functools import partial
 from typing import Any, Callable
 
 from ._base import TkWidget
-from ._dnd import _DND_BINDING_SUBSTS, DnDEvent, DND_SEQUENCES
+from ._dnd import _DND_BINDING_SUBSTS, DND_SEQUENCES, DnDEvent
 from ._utils import create_command, from_tcl, reversed_dict
-
 
 _BINDING_SUBSTS = (
     ("%b", int, "button_number"),

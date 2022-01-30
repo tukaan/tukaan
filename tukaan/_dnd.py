@@ -7,7 +7,6 @@ from ._base import TkWidget
 from ._misc import Color
 from ._utils import from_tcl, get_tcl_interp, reversed_dict, to_tcl
 
-
 DND_SEQUENCES = {
     "<<Drop>>": "<<Drop>>",
     "<<Drop:Any>>": "<<Drop:*>>",
