@@ -100,10 +100,12 @@ class GridTemplates:
 
         try:
             for index, weight in enumerate(template):
-                self._widget._tcl_call(None, "grid", command, self._widget, index, "-weight", weight)
+                self._widget._tcl_call(
+                    None, "grid", command, self._widget, index, "-weight", weight
+                )
         except TypeError:
             self._widget._tcl_call(None, "grid", command, self._widget, "all", "-weight", template)
-        
+
     @property
     def grid_row_template(self) -> tuple[int, ...]:
         return self._row_template

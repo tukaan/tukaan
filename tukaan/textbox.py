@@ -641,6 +641,13 @@ class TextBox(BaseWidget):
     def end(self) -> TextIndex:
         return self.index(-1, no_check=True)
 
+    @property
+    def mouse_index(self) -> TextIndex:
+        return self.index("current")
+
+    def coord_to_index(self, x, y) -> TextIndex:
+        return self.index(f"@{int(x)},{int(y)}")
+
     def insert(self, index: TextIndex | str = "insert", content: str = "", **kwargs) -> None:
         if isinstance(content, (Image.Image, Icon)):
             margin = kwargs.pop("margin", None)
@@ -790,11 +797,11 @@ class TextBox(BaseWidget):
     def scroll_to(self, index: TextIndex) -> None:
         self._tcl_call(None, self, "see", index)
 
-    def x_scroll(self, subcommand: str, fraction: float) -> None:
-        self._tcl_call(None, self, "xview", subcommand, fraction)
+    def x_scroll(self, *args) -> None:
+        self._tcl_call(None, self, "xview", *args)
 
-    def y_scroll(self, subcommand: str, fraction: float) -> None:
-        self._tcl_call(None, self, "yview", subcommand, fraction)
+    def y_scroll(self, *args) -> None:
+        self._tcl_call(None, self, "yview", *args)
 
     @property
     def overflow(self) -> tuple[bool | str, bool | str]:

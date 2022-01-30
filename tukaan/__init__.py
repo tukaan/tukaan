@@ -1,3 +1,4 @@
+from ._dnd import DragObject
 from ._images import Icon, IconFactory, Image
 from ._misc import Clipboard, Color, Cursor, Font, NamedFont, Screen, ScreenDistance
 from ._platform import Platform

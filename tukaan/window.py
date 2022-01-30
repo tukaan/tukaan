@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import os
+import platform
 import re
 import sys
 from collections import namedtuple
-from typing import Any, Callable, Optional
 from fractions import Fraction
+from pathlib import Path
+from typing import Any, Callable, Optional
 
 import _tkinter as tk
 
@@ -17,6 +19,7 @@ from ._utils import from_tcl, reversed_dict, to_tcl
 from .exceptions import TclError
 
 tcl_interp = None
+tkdnd_inited = False
 
 Position = namedtuple("Position", ["x", "y"])
 Size = namedtuple("Size", ["width", "height"])
@@ -313,24 +316,6 @@ class WindowManager:
 
     on_close = property(get_on_close, set_on_close)
 
-    def get_modal(self) -> str:
-        return bool(self._tcl_call(str, "wm", "transient", self.wm_path))
-
-    def set_modal(self, is_modal) -> None:
-        if is_modal:
-            other = self.parent.wm_path
-        else:
-            other = ""
-
-        self._tcl_call(None, "wm", "transient", self.wm_path, other)
-
-        if tcl_interp._winsys == "aqua":
-            self._tcl_call(
-                "::tk::unsupported::MacWindowStyle", "style", self.wm_path, "moveableModal", ""
-            )
-
-    modal = property(get_modal, set_modal)
-
     # Platform specific things
 
     def _dwm_set_window_attribute(self, rendering_policy, value):
@@ -341,7 +326,7 @@ class WindowManager:
         https://gist.github.com/Olikonsti/879edbf69b801d8519bf25e804cec0aa
         """
 
-        from ctypes import windll, c_int, byref, sizeof
+        from ctypes import byref, c_int, sizeof, windll
 
         value = c_int(value)
 
@@ -451,9 +436,9 @@ class App(WindowManager, TkWidget):
             if return_type is None:
                 return
             return from_tcl(return_type, result)
-        
-        except tk.TclError as msg:
-            msg = str(msg)
+
+        except tk.TclError as e:
+            msg = str(e)
 
             if msg.startswith("couldn't read file"):
                 # FileNotFoundError is a bit more pythonic than TclError: couldn't read file
@@ -481,6 +466,32 @@ class App(WindowManager, TkWidget):
 
     def _split_list(self, arg) -> tuple:
         return self.app.splitlist(arg)
+
+    def _lappend_auto_path(self, path: str | Path):
+        self._tcl_call(None, "lappend", "auto_path", path)
+
+    @property
+    def _auto_path(self):
+        return self._tcl_call([str], "set", "auto_path")
+
+    def _init_tkdnd(self):
+        global tkdnd_inited
+
+        if tkdnd_inited:
+            return
+
+        os = {"Linux": "linux", "Darwin": "mac", "Windows": "windows"}[platform.system()]
+
+        if os == "windows":
+            if sys.maxsize > 2 ** 32:
+                os += "-x64"
+            else:
+                os += "-x86"
+
+        self._lappend_auto_path(Path(__file__).parent / "tkdnd" / os)
+        self._tcl_call(None, "package", "require", "tkdnd")
+
+        tkdnd_inited = True
 
     def run(self) -> None:
         self.app.mainloop(0)
