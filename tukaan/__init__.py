@@ -5,7 +5,6 @@ from ._platform import Platform
 from ._variables import Boolean, Float, Integer, String
 from .button import Button
 from .checkbox import CheckBox
-from .combobox import ComboBox
 from .entry import Entry
 from .label import Label
 from .progressbar import ProgressBar
