@@ -257,17 +257,18 @@ class TkWidget(TukaanWidget, CgetAndConfigure, CommonMethods):
     layout: BaseLayoutManager
 
     def __init__(self):
+        _widgets[self.tcl_path] = self
+        
         self._children: dict[str, BaseWidget] = {}
         self._child_type_count: DefaultDict[
             Type[BaseWidget], Iterator[int]
         ] = collections.defaultdict(lambda: count())
-        _widgets[self.tcl_path] = self
         self.child_stats = ChildStatistics(self)
 
         from ._event import EventManager
 
-        self.event = EventManager()
-        setattr(self.event, "_widget", self)
+        self.events = EventManager()
+        setattr(self.events, "_widget", self)
 
 
 class StateSet(collections.abc.MutableSet):
