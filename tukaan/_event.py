@@ -91,6 +91,8 @@ class Event:
 
 
 class EventManager:
+    _widget: TkWidget
+
     def __parse_sequence(self, sequence: str) -> str:
         tcl_sequence = sequence
         regex_str = r"<Key(Down|Up):(.*?)>"
@@ -113,7 +115,7 @@ class EventManager:
 
     def _call_bind(
         self,
-        sequence: tuple[str, ...] | str,
+        sequence: str,
         func: Callable | str,
         overwrite: bool,
         send_event: bool,

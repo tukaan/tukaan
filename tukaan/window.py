@@ -422,6 +422,9 @@ class App(WindowManager, TkWidget):
         self.size = width, height
         self.theme = theme
 
+        self._init_tkdnd()
+        self._init_tkextrafont()
+
     def __enter__(self):
         return self
 
@@ -475,11 +478,6 @@ class App(WindowManager, TkWidget):
         return self._tcl_call([str], "set", "auto_path")
 
     def _init_tkdnd(self):
-        global tkdnd_inited
-
-        if tkdnd_inited:
-            return
-
         os = {"Linux": "linux", "Darwin": "mac", "Windows": "windows"}[platform.system()]
 
         if os == "windows":
@@ -491,7 +489,9 @@ class App(WindowManager, TkWidget):
         self._lappend_auto_path(Path(__file__).parent / "tkdnd" / os)
         self._tcl_call(None, "package", "require", "tkdnd")
 
-        tkdnd_inited = True
+    def _init_tkextrafont(self):
+        self._lappend_auto_path(Path(__file__).parent / "tkextrafont")
+        self._tcl_call(None, "package", "require", "extrafont")
 
     def run(self) -> None:
         self.app.mainloop(0)
