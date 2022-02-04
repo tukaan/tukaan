@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from typing import Tuple
 
 from PIL import Image, UnidentifiedImageError
 
@@ -123,7 +124,7 @@ class DnDEvent:
     action: str
     data: str
     format: str
-    formats: tuple[str]
+    formats: Tuple[str]
     type: str
     widget: TkWidget
     x: int
