@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from typing import Tuple
 
 from PIL import Image, UnidentifiedImageError
 
@@ -109,7 +110,6 @@ class DragObject:
                 pass
 
         if type_name not in ALL_TYPES:
-            get_tcl_interp()._init_tkdnd()
             get_tcl_interp()._tcl_eval(
                 None,
                 f"lappend tkdnd::generic::_platform2tkdnd {type_name} DND_UserDefined"
@@ -121,6 +121,15 @@ class DragObject:
 
 
 class DnDEvent:
+    action: str
+    data: str
+    format: str
+    formats: Tuple[str]
+    type: str
+    widget: TkWidget
+    x: int
+    y: int
+
     def __repr__(self) -> str:
         if self.type == "custom":
             more_useful_type_info = f", format={self.format!r}"

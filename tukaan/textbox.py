@@ -11,8 +11,9 @@ from PIL import Image  # type: ignore
 
 from ._base import BaseWidget, CgetAndConfigure, TkWidget
 from ._constants import _cursor_styles, _inactive_cursor_styles, _wraps
+from ._font import Font
 from ._images import Icon
-from ._misc import Color, Font, NamedFont, ScreenDistance
+from ._misc import Color, ScreenDistance
 from ._utils import (
     ClassPropertyMetaClass,
     _images,
@@ -81,7 +82,7 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
         _text_tags[self._name] = self
 
         if not font:
-            font = self._widget.font.named_copy()
+            font = self._widget.font.copy()
 
         self._tcl_call(
             None,
@@ -530,7 +531,7 @@ class TextBox(BaseWidget):
     ) -> None:
 
         if not font:
-            font = NamedFont("monospace")
+            font = Font("monospace")
 
         padx = pady = None
         if padding is not None:
@@ -642,6 +643,14 @@ class TextBox(BaseWidget):
         return self.index(-1, no_check=True)
 
     @property
+    def current(self) -> TextIndex:
+        return self.marks["insert"]
+
+    @current.setter
+    def current(self, new_pos: TextIndex) -> None:
+        self.marks["insert"] = new_pos
+
+    @property
     def mouse_index(self) -> TextIndex:
         return self.index("current")
 
@@ -712,7 +721,8 @@ class TextBox(BaseWidget):
                     self.index(*index_or_range).to_tcl(),
                     self.index(*index_or_range).forward(chars=1).to_tcl(),
                 )
-
+        elif len(indexes) == 2:
+            return tuple(index.to_tcl() for index in self.range(*indexes))
         else:
             return "1.0", "end - 1 chars"
 
@@ -852,14 +862,6 @@ class TextBox(BaseWidget):
     def text(self, new_text: str) -> None:
         self.delete()
         self.insert(self.end, new_text)
-
-    @property
-    def cursor_pos(self) -> TextIndex:
-        return self.marks["insert"]
-
-    @cursor_pos.setter
-    def cursor_pos(self, new_pos: TextIndex) -> None:
-        self.marks["insert"] = new_pos
 
     @property
     def content(self) -> list[tuple[TextIndex, str | Tag | Icon | Image.Image | TkWidget]]:

@@ -182,19 +182,15 @@ class CommonMethods:
         return self._tcl_call(int, "winfo", "height", self)
 
     def set_drag_dest(self) -> None:
-        get_tcl_interp()._init_tkdnd()
         self._tcl_call(None, "tkdnd::drop_target", "register", self, "*")
 
     def unset_drag_dest(self) -> None:
-        get_tcl_interp()._init_tkdnd()
         self._tcl_call(None, "tkdnd::drop_target", "unregister", self)
 
     def set_drag_source(self) -> None:
-        get_tcl_interp()._init_tkdnd()
         self._tcl_call(None, "tkdnd::drag_source", "register", self, "*")
 
     def unset_drag_source(self) -> None:
-        get_tcl_interp()._init_tkdnd()
         self._tcl_call(None, "tkdnd::drag_source", "unregister", self)
 
     def focus(self):
@@ -258,7 +254,7 @@ class TkWidget(TukaanWidget, CgetAndConfigure, CommonMethods):
 
     def __init__(self):
         _widgets[self.tcl_path] = self
-        
+
         self._children: dict[str, BaseWidget] = {}
         self._child_type_count: DefaultDict[
             Type[BaseWidget], Iterator[int]
@@ -309,7 +305,7 @@ class StateSet(collections.abc.MutableSet):
         self.add(other)
         return self
 
-    def __sub__(self, other: str) -> StateSet:
+    def __sub__(self, other: str) -> StateSet:  # type: ignore[override]
         self.discard(other)
         return self
 

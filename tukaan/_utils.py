@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     from PIL import Image  # type: ignore
 
     from ._base import TkWidget
+    from ._font import Font
     from ._images import Icon, _image_converter_class
-    from ._misc import NamedFont
     from ._variables import _TclVariable
     from .textbox import Tag
     from .timeout import Timeout
@@ -52,7 +52,7 @@ _timeouts: dict[str, Timeout] = {}
 _variables: dict[str, _TclVariable] = {}
 _text_tags: dict[str, Tag] = {}
 _widgets: dict[str, TkWidget] = {}
-_fonts: dict[str, NamedFont] = {}
+_fonts: dict[str, Font] = {}
 
 
 def updated(func: Callable) -> Callable:
@@ -198,8 +198,11 @@ def from_tcl(type_spec, value) -> Any:
                 result[key] = from_tcl(type_spec.get(key, str), value)
             return result
 
-    if isinstance(type_spec, Path):
+    if type_spec is Path:
         return Path(value).resolve()
+
+    if type_spec == "noconvert":
+        return value
 
 
 def to_tcl(value: Any) -> Any:
