@@ -198,7 +198,7 @@ def from_tcl(type_spec, value) -> Any:
                 result[key] = from_tcl(type_spec.get(key, str), value)
             return result
 
-    if isinstance(type_spec, Path):
+    if type_spec is Path:
         return Path(value).resolve()
 
     if type_spec == "noconvert":
