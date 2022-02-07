@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections
 import re
+import warnings
 from fractions import Fraction
 from typing import Callable, Tuple, cast
 
@@ -10,16 +11,9 @@ from PIL import ImageGrab  # type: ignore
 from ._platform import Platform
 from ._utils import (
     ClassPropertyMetaClass,
-    _flatten,
-    _fonts,
-    _pairs,
     classproperty,
-    counts,
-    from_tcl,
     get_tcl_interp,
-    py_to_tcl_arguments,
     reversed_dict,
-    to_tcl,
     update_after,
 )
 from .exceptions import ColorError, TclError
@@ -284,10 +278,10 @@ class Color:
     def __repr__(self) -> str:
         return f"{type(self).__name__}(red={self.red}, green={self.green}," + f" blue={self.blue})"
 
+    __str__ = __repr__
+
     def to_tcl(self) -> str:
         return self.hex
-
-    __str__ = to_tcl
 
     @classmethod
     def from_tcl(cls, tcl_value) -> Color:
@@ -664,3 +658,49 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
     @property
     def inch(self) -> float:
         return round4(self.distance / self.dpi)
+
+
+class ConfigObject:
+    tk_focusFollowsMouse = False
+
+    @property
+    def focus_follows_mouse(self) -> None:
+        return self.tk_focusFollowsMouse
+
+    @focus_follows_mouse.setter
+    def focus_follows_mouse(self, value) -> None:
+        if value:
+            get_tcl_interp()._tcl_call(None, "tk_focusFollowsMouse")
+            self.tk_focusFollowsMouse = True
+        else:
+            warnings.warn("Config.focus_follows_mouse can't be disabled.")
+
+    @staticmethod
+    def _get_theme_aliases() -> dict[str, str]:
+        theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
+        winsys = get_tcl_interp()._winsys
+
+        if winsys == "win32":
+            theme_dict["native"] = "vista"
+        elif winsys == "aqua":
+            theme_dict["native"] = "aqua"
+
+        return theme_dict
+
+    @property
+    def theme(self) -> str:
+        theme_dict = {"clam": "clam", "default": "legacy", "vista": "native", "aqua": "native"}
+        current = get_tcl_interp()._tcl_call(str, "ttk::style", "theme", "use")
+
+        try:
+            return theme_dict[current]
+        except KeyError:
+            return current
+
+    @theme.setter
+    def theme(self, theme) -> None:
+        aliases = self._get_theme_aliases()
+        if theme in aliases:
+            theme = aliases[theme]
+
+        get_tcl_interp()._tcl_call(None, "ttk::style", "theme", "use", theme)

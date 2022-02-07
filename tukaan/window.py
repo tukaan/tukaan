@@ -512,9 +512,6 @@ class App(WindowManager, TkWidget):
 
         self.app.quit()
 
-    def focus_should_follow_mouse(self) -> None:
-        self._tcl_call(None, "tk_focusFollowsMouse")
-
     @property
     def user_last_active(self) -> int:
         return self._tcl_call(int, "tk", "inactive") / 1000
@@ -526,29 +523,6 @@ class App(WindowManager, TkWidget):
     @scaling.setter
     def scaling(self, factor: int) -> None:
         self._tcl_call(None, "tk", "scaling", "-displayof", ".", factor)
-
-    def _get_theme_aliases(self) -> dict[str, str]:
-        theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
-
-        if self._winsys == "win32":
-            theme_dict["native"] = "vista"
-        elif self._winsys == "aqua":
-            theme_dict["native"] = "aqua"
-
-        return theme_dict
-
-    @property
-    def theme(self) -> str:
-        theme_dict = {"clam": "clam", "default": "legacy", "vista": "native", "aqua": "native"}
-
-        try:
-            return theme_dict[self._tcl_call(str, "ttk::style", "theme", "use")]
-        except KeyError:
-            return self._tcl_call(str, "ttk::style", "theme", "use")
-
-    @theme.setter
-    def theme(self, theme) -> None:
-        self._tcl_call(None, "ttk::style", "theme", "use", self._get_theme_aliases()[theme])
 
 
 class Window(WindowManager, BaseWidget):

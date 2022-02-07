@@ -1,7 +1,7 @@
 from ._dnd import DragObject
 from ._font import Font
 from ._images import Icon, IconFactory, Image
-from ._misc import Clipboard, Color, Cursor, Screen, ScreenDistance
+from ._misc import Clipboard, Color, ConfigObject, Cursor, Screen, ScreenDistance
 from ._platform import Platform
 from ._variables import Boolean, Float, Integer, String
 from .button import Button
@@ -16,3 +16,5 @@ from .slider import Slider
 from .textbox import TextBox
 from .timeout import Timeout
 from .window import App, Window
+
+Config = ConfigObject()
