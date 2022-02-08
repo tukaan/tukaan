@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
-from typing import Any, Callable, DefaultDict, Iterator, Literal, Type
+from typing import Any, Callable, DefaultDict, Iterator, Type
 
 from ._constants import _VALID_STATES
 from ._layouts import BaseLayoutManager, LayoutManager
@@ -52,10 +52,13 @@ class CgetAndConfigure:
     _tcl_call: Callable
 
     def _cget(self, key: str) -> Any:
-        if isinstance(self._keys[key], tuple):
-            type_spec, key = self._keys[key]
+        if key in self._keys:
+            if isinstance(self._keys[key], tuple):
+                type_spec, key = self._keys[key]
+            else:
+                type_spec = self._keys[key]
         else:
-            type_spec = self._keys[key]
+            type_spec = str
 
         if type_spec == "func":
             # return a callable func, not tcl name
@@ -70,7 +73,7 @@ class CgetAndConfigure:
 
     def config(self, **kwargs) -> None:
         for key, value in tuple(kwargs.items()):
-            if isinstance(self._keys[key], tuple):
+            if key in self._keys and isinstance(self._keys[key], tuple):
                 # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
                 kwargs[self._keys[key][1]] = kwargs.pop(key)
 
@@ -287,9 +290,9 @@ class StateSet(collections.abc.MutableSet):
     def __contains__(self, state: object) -> bool:
         return self._widget._tcl_call(bool, self._widget, "instate", state)
 
-    def add_or_discard(self, action: Literal["add", "discard"], state: str) -> None:
-        if state not in _VALID_STATES:
-            raise RuntimeError
+    def add_or_discard(self, action: str, state: str) -> None:
+        assert state in _VALID_STATES
+        
         if action == "discard":
             state = f"!{state}"
 

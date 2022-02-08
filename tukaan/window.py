@@ -229,13 +229,13 @@ class WindowManager:
 
     title = property(get_title, set_title)
 
-    def get_topmost(self) -> bool:
+    def get_always_on_top(self) -> bool:
         return self._tcl_call(bool, "wm", "attributes", self.wm_path, "-topmost")
 
-    def set_topmost(self, is_topmost: bool = False) -> None:
+    def set_always_on_top(self, is_topmost: bool = False) -> None:
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-topmost", is_topmost)
 
-    topmost = property(get_topmost, set_topmost)
+    always_on_top = property(get_always_on_top, set_always_on_top)
 
     def get_opacity(self) -> float:
         return self._tcl_call(float, "wm", "attributes", self.wm_path, "-alpha")
