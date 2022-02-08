@@ -660,7 +660,7 @@ class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
         return round4(self.distance / self.dpi)
 
 
-class ConfigObject:
+class _ConfigObject:
     tk_focusFollowsMouse = False
 
     @property
