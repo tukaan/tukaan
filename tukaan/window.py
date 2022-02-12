@@ -15,7 +15,7 @@ from ._base import BaseWidget, TkWidget
 from ._constants import _resizable
 from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
-from ._utils import from_tcl, reversed_dict, to_tcl, _callbacks
+from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl
 from .exceptions import TclError
 
 tcl_interp = None
@@ -98,7 +98,7 @@ class WindowManager:
         def wrapper() -> None:
             if func(self):
                 self.destroy()
-            
+
         self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", wrapper)
         return wrapper
 
