@@ -15,7 +15,7 @@ from ._base import BaseWidget, TkWidget
 from ._constants import _resizable
 from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
-from ._utils import from_tcl, reversed_dict, to_tcl
+from ._utils import from_tcl, reversed_dict, to_tcl, _callbacks
 from .exceptions import TclError
 
 tcl_interp = None
@@ -94,16 +94,16 @@ class WindowManager:
     def group(self, other: WindowManager) -> None:
         self._tcl_call(None, "wm", "group", self.wm_path, other.tcl_path)
 
-    def on_close(self, func) -> None:
-        def wrapper():
+    def on_close(self, func: Callable[[WindowManager], None]) -> Callable[[], None]:
+        def wrapper() -> None:
             if func(self):
-                self.quit()
+                self.destroy()
             
         self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", wrapper)
         return wrapper
 
     @property
-    def in_focus(self) -> int:
+    def is_focused(self) -> int:
         return self._tcl_call(str, "focus", "-displayof", self.wm_path)
 
     @property
@@ -117,8 +117,8 @@ class WindowManager:
         return self._tcl_call(int, "winfo", "x", self.wm_path)
 
     @update_after
-    def set_x(self, x: int) -> None:
-        self._tcl_call(None, "wm", "geometry", self.wm_path, f"+{x}+{self.y}")
+    def set_x(self, new_x: int) -> None:
+        self._tcl_call(None, "wm", "geometry", self.wm_path, f"+{new_x}+{self.y}")
 
     x = property(get_x, set_x)
 
@@ -127,8 +127,8 @@ class WindowManager:
         return self._tcl_call(int, "winfo", "y", self.wm_path)
 
     @update_after
-    def set_y(self, y: int) -> None:
-        self._tcl_call(None, "wm", "geometry", self.wm_path, f"+{self.x}+{y}")
+    def set_y(self, new_y: int) -> None:
+        self._tcl_call(None, "wm", "geometry", self.wm_path, f"+{self.x}+{new_y}")
 
     y = property(get_y, set_y)
 
@@ -137,8 +137,8 @@ class WindowManager:
         return self._tcl_call(int, "winfo", "width", self.wm_path)
 
     @update_after
-    def set_width(self, width: int) -> None:
-        self._tcl_call(None, "wm", "geometry", self.wm_path, f"{width}x{self.height}")
+    def set_width(self, new_width: int) -> None:
+        self._tcl_call(None, "wm", "geometry", self.wm_path, f"{new_width}x{self.height}")
 
     width = property(get_width, set_width)
 
@@ -147,8 +147,8 @@ class WindowManager:
         return self._tcl_call(int, "winfo", "height", self.wm_path)
 
     @update_after
-    def set_height(self, height: int) -> None:
-        self._tcl_call(None, "wm", "geometry", self.wm_path, f"{self.width}x{height}")
+    def set_height(self, new_height: int) -> None:
+        self._tcl_call(None, "wm", "geometry", self.wm_path, f"{self.width}x{new_height}")
 
     height = property(get_height, set_height)
 
@@ -230,20 +230,20 @@ class WindowManager:
     max_size = property(get_max_size, set_max_size)
 
     def get_title(self) -> str:
-        return self._tcl_call(None, "wm", "title", self.wm_path)
+        return self._tcl_call(str, "wm", "title", self.wm_path)
 
-    def set_title(self, new_title: str = None) -> None:
+    def set_title(self, new_title: str) -> None:
         self._tcl_call(None, "wm", "title", self.wm_path, new_title)
 
     title = property(get_title, set_title)
 
-    def get_topmost(self) -> bool:
+    def get_always_on_top(self) -> bool:
         return self._tcl_call(bool, "wm", "attributes", self.wm_path, "-topmost")
 
-    def set_topmost(self, is_topmost: bool = False) -> None:
+    def set_always_on_top(self, is_topmost: bool) -> None:
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-topmost", is_topmost)
 
-    topmost = property(get_topmost, set_topmost)
+    always_on_top = property(get_always_on_top, set_always_on_top)
 
     def get_opacity(self) -> float:
         return self._tcl_call(float, "wm", "attributes", self.wm_path, "-alpha")
@@ -265,7 +265,7 @@ class WindowManager:
     size_increment = property(get_size_increment, set_size_increment)
 
     @update_before
-    def get_aspect_ratio(self) -> tuple[Fraction, Fraction]:
+    def get_aspect_ratio(self) -> None | tuple[Fraction, Fraction]:
         result = self._tcl_call((int,), "wm", "aspect", self.wm_path)
         if result == ():
             return None
@@ -316,6 +316,22 @@ class WindowManager:
 
     icon = property(get_icon, set_icon)
 
+    def get_on_close_callback(self) -> Callable[[WindowManager], None]:
+        return _callbacks[self._tcl_call(str, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW")]
+
+    def set_on_close_callback(self, callback: Callable[[WindowManager], None]) -> None:
+        self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", callback)
+
+    on_close_callback = property(get_on_close_callback, set_on_close_callback)
+
+    def get_scaling(self) -> float:
+        return self._tcl_call(float, "tk", "scaling", "-displayof", self.wm_path)
+
+    def set_scaling(self, factor: float) -> None:
+        self._tcl_call(None, "tk", "scaling", "-displayof", self.wm_path, factor)
+
+    scaling = property(get_scaling, set_scaling)
+
     # Platform specific things
 
     def _dwm_set_window_attribute(self, rendering_policy, value):
@@ -334,13 +350,11 @@ class WindowManager:
             windll.user32.GetParent(self.id), rendering_policy, byref(value), sizeof(value)
         )
 
-    @property
-    def immersive_dark_mode(self):
+    def get_immersive_dark_mode(self):
         return self._is_immersive_dark_mode_used
 
-    @immersive_dark_mode.setter
     @update_before
-    def immersive_dark_mode(self, is_used=False):
+    def set_immersive_dark_mode(self, is_used=False):
         rendering_policy = 20  # DWMWA_USE_IMMERSIVE_DARK_MODE
 
         self._dwm_set_window_attribute(rendering_policy, int(is_used))
@@ -351,39 +365,41 @@ class WindowManager:
         self.minimize()
         self.restore()
 
-    @property
-    def rtl_titlebar(self):
+    immersive_dark_mode = property(get_immersive_dark_mode, set_immersive_dark_mode)
+
+    def get_rtl_titlebar(self):
         return self._is_rtl_titlebar_used
 
-    @rtl_titlebar.setter
     @update_before
-    def rtl_titlebar(self, is_used=False):
+    def set_rtl_titlebar(self, is_used=False):
         rendering_policy = 6  # DWMWA_NONCLIENT_RTL_LAYOUT
 
         self._dwm_set_window_attribute(rendering_policy, int(is_used))
 
         self._is_rtl_titlebar_used = is_used
 
-    @property
-    def preview_disabled(self):
+    rtl_titlebar = property(get_rtl_titlebar, set_rtl_titlebar)
+
+    def get_preview_disabled(self):
         return self._is_preview_disabled
 
-    @preview_disabled.setter
     @update_before
-    def preview_disabled(self, is_disabled=False):
+    def set_preview_disabled(self, is_disabled=False):
         rendering_policy = 7  # DWMWA_FORCE_ICONIC_REPRESENTATION
 
         self._dwm_set_window_attribute(rendering_policy, int(is_disabled))
 
         self._is_preview_disabled = is_disabled
 
-    @property
-    def tool_window(self):
+    preview_disabled = property(get_preview_disabled, set_preview_disabled)
+
+    def get_tool_window(self):
         return self._tcl_call(bool, "wm", "attributes", self.wm_path, "-toolwindow")
 
-    @tool_window.setter
-    def tool_window(self, is_toolwindow=False):
+    def set_tool_window(self, is_toolwindow=False):
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-toolwindow", is_toolwindow)
+
+    tool_window = property(get_tool_window, set_tool_window)
 
 
 class App(WindowManager, TkWidget):
@@ -395,7 +411,6 @@ class App(WindowManager, TkWidget):
         title: str = "Tukaan window",
         width: int = 200,
         height: int = 200,
-        theme: str = "native",
     ) -> None:
 
         TkWidget.__init__(self)
@@ -420,7 +435,6 @@ class App(WindowManager, TkWidget):
 
         self.title = title
         self.size = width, height
-        self.theme = theme
 
         self._init_tkdnd()
         self._init_tkextrafont()
@@ -496,9 +510,8 @@ class App(WindowManager, TkWidget):
     def run(self) -> None:
         self.app.mainloop(0)
 
-    def quit(self) -> None:
-        # There is no App.destroy, only App.quit,
-        # which also quits the entire tcl interpreter
+    def destroy(self) -> None:
+        """Quit the entire Tcl interpreter"""
 
         global tcl_interp
 
@@ -518,14 +531,6 @@ class App(WindowManager, TkWidget):
     @property
     def user_last_active(self) -> int:
         return self._tcl_call(int, "tk", "inactive") / 1000
-
-    @property
-    def scaling(self) -> int:
-        return self._tcl_call(int, "tk", "scaling", "-displayof", ".")
-
-    @scaling.setter
-    def scaling(self, factor: int) -> None:
-        self._tcl_call(None, "tk", "scaling", "-displayof", ".", factor)
 
     def _get_theme_aliases(self) -> dict[str, str]:
         theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}

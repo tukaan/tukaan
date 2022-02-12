@@ -11,8 +11,6 @@ from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
 import _tkinter as tk
 
-from .exceptions import TclError
-
 if TYPE_CHECKING:
     from PIL import Image  # type: ignore
 
