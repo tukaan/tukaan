@@ -94,6 +94,14 @@ class WindowManager:
     def group(self, other: WindowManager) -> None:
         self._tcl_call(None, "wm", "group", self.wm_path, other.tcl_path)
 
+    def on_close(self, func) -> None:
+        def wrapper():
+            if func(self):
+                self.quit()
+            
+        self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", wrapper)
+        return wrapper
+
     @property
     def in_focus(self) -> int:
         return self._tcl_call(str, "focus", "-displayof", self.wm_path)
@@ -307,14 +315,6 @@ class WindowManager:
         self._tcl_call(None, "wm", "iconphoto", self.wm_path, image)
 
     icon = property(get_icon, set_icon)
-
-    def get_on_close(self) -> str:
-        return self._tcl_call(str, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW")
-
-    def set_on_close(self, image) -> None:
-        self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", image)
-
-    on_close = property(get_on_close, set_on_close)
 
     # Platform specific things
 
