@@ -250,7 +250,7 @@ class WindowManager:
 
     def set_opacity(self, alpha: float) -> None:
         self._tcl_call(None, "tkwait", "visibility", self.wm_path)
-        self._tcl_call(None, "wm", "attributes", self.wm_path, "-alpha", "alpha")
+        self._tcl_call(None, "wm", "attributes", self.wm_path, "-alpha", alpha)
 
     opacity = property(get_opacity, set_opacity)
 
