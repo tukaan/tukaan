@@ -492,13 +492,12 @@ class App(WindowManager, TkWidget):
         return self._tcl_call([str], "set", "auto_path")
 
     def _init_tkdnd(self):
-        os = {"Linux": "linux", "Darwin": "mac", "Windows": "windows"}[platform.system()]
+        os = {"Linux": "linux", "Darwin": "mac", "Windows": "win"}[platform.system()]
 
-        if os == "windows":
-            if sys.maxsize > 2**32:
-                os += "-x64"
-            else:
-                os += "-x86"
+        if sys.maxsize > 2**32:
+            os += "-x64"
+        else:
+            os += "-x32"
 
         self._lappend_auto_path(Path(__file__).parent / "tkdnd" / os)
         self._tcl_call(None, "package", "require", "tkdnd")
