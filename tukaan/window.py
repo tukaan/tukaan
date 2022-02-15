@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ctypes
+import enum
 import os
 import platform
 import re
@@ -70,6 +71,14 @@ class WindowCompositionAttributeData(ctypes.Structure):
         ("Data", ctypes.POINTER(ctypes.c_int)),
         ("SizeOfData", ctypes.c_size_t),
     ]
+
+
+class DwmBlurEffect(enum.Enum):
+    DISABLED = 0
+    OPAQUE_COLOR = 1
+    TRANSPARENT_COLOR = 2
+    BLUR = 3
+    ACRYLIC = 4
 
 
 class DesktopWindowManager:
@@ -160,7 +169,10 @@ class DesktopWindowManager:
 
     @windows_only
     def enable_bg_blur(
-        self, tint: Optional[Color] = None, tint_opacity: float = 0.2, accent_state: int = 3
+        self,
+        tint: Optional[Color] = None,
+        tint_opacity: float = 0.2,
+        effect: DwmBlurEffect = DwmBlurEffect.BLUR,
     ) -> None:
         # https://github.com/Peticali/PythonBlurBehind/blob/main/blurWindow/blurWindow.py
         # https://github.com/sourcechord/FluentWPF/blob/master/FluentWPF/Utility/AcrylicHelper.cs
@@ -172,8 +184,9 @@ class DesktopWindowManager:
         if tint is None:
             tint = Color(
                 rgb=tuple(value >> 8 for value in self._tcl_eval((int,), f"winfo rgb . {bg_color}"))
-            )
-        tint = tint.hex
+            ).hex
+        else:
+            tint = tint.hex
 
         tint_alpha = str(hex(int(255 * tint_opacity)))[2:]
         tint_hex_bgr = tint[5:7] + tint[3:5] + tint[1:3]
@@ -181,7 +194,7 @@ class DesktopWindowManager:
         # Set up AccentPolicy struct
         ap = AccentPolicy()
         ap.AccentFlags = 2  # ACCENT_ENABLE_BLURBEHIND  <- try this with 4 bruhh :D
-        ap.AccentState = accent_state
+        ap.AccentState = effect.value
         ap.GradientColor = int(tint_alpha + tint_hex_bgr, 16)
 
         # Set up WindowCompositionAttributeData struct
@@ -207,7 +220,7 @@ class DesktopWindowManager:
         # Set up AccentPolicy struct
         ap = AccentPolicy()
         ap.AccentFlags = 0  # idk
-        ap.AccentState = 0  # ACCENT_DISABLED
+        ap.AccentState = DwmBlurEffect.DISABLED
         ap.GradientColor = 0
 
         # Set up WindowCompositionAttributeData struct
