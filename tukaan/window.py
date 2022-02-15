@@ -17,6 +17,7 @@ from ._constants import _resizable
 from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
 from ._misc import Color
+from ._platform import windows_only
 from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl
 from .exceptions import TclError
 
@@ -78,12 +79,17 @@ class DesktopWindowManager:
     _tcl_eval: Callable
     wm_path: str
 
+    _is_immersive_dark_mode_used = None
+    _is_preview_disabled = None
+    _is_rtl_titlebar_used = None
+
     DWMWA_TRANSITIONS_FORCEDISABLED = 3
     DWMWA_NONCLIENT_RTL_LAYOUT = 6
     DWMWA_FORCE_ICONIC_REPRESENTATION = 7
     DWMWA_USE_IMMERSIVE_DARK_MODE = 20
 
     @property
+    @windows_only
     def HWND(self) -> int:
         return ctypes.windll.user32.GetParent(self.id)
 
@@ -104,6 +110,7 @@ class DesktopWindowManager:
         return self._is_immersive_dark_mode_used
 
     @update_before
+    @windows_only
     def set_immersive_dark_mode(self, is_used: bool = False) -> None:
         self._dwm_set_window_attribute(self.DWMWA_USE_IMMERSIVE_DARK_MODE, int(is_used))
 
@@ -121,6 +128,7 @@ class DesktopWindowManager:
         return self._is_rtl_titlebar_used
 
     @update_before
+    @windows_only
     def set_rtl_titlebar(self, is_used: bool = False) -> None:
         self._dwm_set_window_attribute(self.DWMWA_NONCLIENT_RTL_LAYOUT, int(is_used))
 
@@ -132,6 +140,7 @@ class DesktopWindowManager:
         return self._is_preview_disabled
 
     @update_before
+    @windows_only
     def set_preview_disabled(self, is_disabled: bool = False) -> None:
         self._dwm_set_window_attribute(self.DWMWA_FORCE_ICONIC_REPRESENTATION, int(is_disabled))
 
@@ -139,14 +148,17 @@ class DesktopWindowManager:
 
     preview_disabled = property(get_preview_disabled, set_preview_disabled)
 
+    @windows_only
     def get_tool_window(self) -> bool:
         return self._tcl_call(bool, "wm", "attributes", self.wm_path, "-toolwindow")
 
+    @windows_only
     def set_tool_window(self, is_toolwindow: bool = False) -> None:
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-toolwindow", is_toolwindow)
 
     tool_window = property(get_tool_window, set_tool_window)
 
+    @windows_only
     def enable_bg_blur(
         self, tint: Optional[Color] = None, tint_opacity: float = 0.2, accent_state: int = 3
     ) -> None:
@@ -160,7 +172,8 @@ class DesktopWindowManager:
         if tint is None:
             tint = Color(
                 rgb=tuple(value >> 8 for value in self._tcl_eval((int,), f"winfo rgb . {bg_color}"))
-            ).hex
+            )
+        tint = tint.hex
 
         tint_alpha = str(hex(int(255 * tint_opacity)))[2:]
         tint_hex_bgr = tint[5:7] + tint[3:5] + tint[1:3]
@@ -189,6 +202,7 @@ class DesktopWindowManager:
         self._prev_state = self._tcl_call(str, "wm", "state", self.wm_path)
         self.events.bind("<Expose>", self._fullredraw)
 
+    @windows_only
     def disable_bg_blur(self) -> None:
         # Set up AccentPolicy struct
         ap = AccentPolicy()

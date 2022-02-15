@@ -7,6 +7,14 @@ import _tkinter as tk
 from ._utils import ClassPropertyMetaClass, classproperty, get_tcl_interp
 
 
+def windows_only(func):
+    def wrapper(*args, **kwargs):
+        if platform.system() == "Windows":
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
 class Platform(metaclass=ClassPropertyMetaClass):
     version: str = platform.version()
     node: str = platform.node()
