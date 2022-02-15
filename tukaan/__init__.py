@@ -15,4 +15,4 @@ from .separator import Separator
 from .slider import Slider
 from .textbox import TextBox
 from .timeout import Timeout
-from .window import App, Window
+from .window import App, DwmBlurEffect, Window
