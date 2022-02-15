@@ -73,6 +73,7 @@ class WindowCompositionAttributeData(ctypes.Structure):
 
 class DesktopWindowManager:
     """Interface for Windows DWM functions"""
+
     _tcl_call: Callable
     _tcl_eval: Callable
     wm_path: str
@@ -103,7 +104,7 @@ class DesktopWindowManager:
         return self._is_immersive_dark_mode_used
 
     @update_before
-    def set_immersive_dark_mode(self, is_used: bool=False) -> None:
+    def set_immersive_dark_mode(self, is_used: bool = False) -> None:
         self._dwm_set_window_attribute(self.DWMWA_USE_IMMERSIVE_DARK_MODE, int(is_used))
 
         # Need to redraw the titlebar
@@ -120,7 +121,7 @@ class DesktopWindowManager:
         return self._is_rtl_titlebar_used
 
     @update_before
-    def set_rtl_titlebar(self, is_used: bool=False) -> None:
+    def set_rtl_titlebar(self, is_used: bool = False) -> None:
         self._dwm_set_window_attribute(self.DWMWA_NONCLIENT_RTL_LAYOUT, int(is_used))
 
         self._is_rtl_titlebar_used = is_used
@@ -131,7 +132,7 @@ class DesktopWindowManager:
         return self._is_preview_disabled
 
     @update_before
-    def set_preview_disabled(self, is_disabled: bool=False) -> None:
+    def set_preview_disabled(self, is_disabled: bool = False) -> None:
         self._dwm_set_window_attribute(self.DWMWA_FORCE_ICONIC_REPRESENTATION, int(is_disabled))
 
         self._is_preview_disabled = is_disabled
@@ -141,7 +142,7 @@ class DesktopWindowManager:
     def get_tool_window(self) -> bool:
         return self._tcl_call(bool, "wm", "attributes", self.wm_path, "-toolwindow")
 
-    def set_tool_window(self, is_toolwindow: bool=False) -> None:
+    def set_tool_window(self, is_toolwindow: bool = False) -> None:
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-toolwindow", is_toolwindow)
 
     tool_window = property(get_tool_window, set_tool_window)
