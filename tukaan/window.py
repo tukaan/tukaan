@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import ctypes
-import enum
 import os
 import platform
 import re
@@ -73,14 +72,6 @@ class WindowCompositionAttributeData(ctypes.Structure):
     ]
 
 
-class DwmBlurEffect(enum.Enum):
-    DISABLED = 0
-    OPAQUE_COLOR = 1
-    TRANSPARENT_COLOR = 2
-    BLUR = 3
-    ACRYLIC = 4
-
-
 class DesktopWindowManager:
     """Interface for Windows DWM functions"""
 
@@ -96,6 +87,8 @@ class DesktopWindowManager:
     DWMWA_NONCLIENT_RTL_LAYOUT = 6
     DWMWA_FORCE_ICONIC_REPRESENTATION = 7
     DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+    DWMWA_SYSTEMBACKDROP_TYPE = 38  # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/DesktopWindowManager.cs#L15
+    DWMWA_MICA_EFFECT = 1029  # https://github.com/Brouilles/win32-mica/blob/main/main.cpp#L119
 
     @property
     @windows_only
@@ -115,40 +108,38 @@ class DesktopWindowManager:
     def _set_window_composition_attribute(self, wcad: WindowCompositionAttributeData) -> None:
         ctypes.windll.user32.SetWindowCompositionAttribute(self.HWND, wcad)
 
-    def get_immersive_dark_mode(self) -> bool:
+    def get_dark_titlebar(self) -> bool:
         return self._is_immersive_dark_mode_used
 
-    @update_before
     @windows_only
-    def set_immersive_dark_mode(self, is_used: bool = False) -> None:
-        self._dwm_set_window_attribute(self.DWMWA_USE_IMMERSIVE_DARK_MODE, int(is_used))
+    def set_dark_titlebar(self, is_used: bool = False) -> None:
+        if sys.getwindowsversion().build >= 19041:
+            self._dwm_set_window_attribute(self.DWMWA_USE_IMMERSIVE_DARK_MODE, int(is_used))
 
-        # Need to redraw the titlebar
-        self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 1)
-        self.minimize()
-        self.restore()
-        self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 0)
+            # Need to redraw the titlebar
+            self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 1)
+            self.minimize()
+            self.restore()
+            self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 0)
 
         self._is_immersive_dark_mode_used = is_used
 
-    immersive_dark_mode = property(get_immersive_dark_mode, set_immersive_dark_mode)
+    dark_mode_titlebar = property(get_dark_titlebar, set_dark_titlebar)
 
-    def get_rtl_titlebar(self) -> bool:
+    def get_right_to_left_titlebar(self) -> bool:
         return self._is_rtl_titlebar_used
 
-    @update_before
     @windows_only
-    def set_rtl_titlebar(self, is_used: bool = False) -> None:
+    def set_right_to_left_titlebar(self, is_used: bool = False) -> None:
         self._dwm_set_window_attribute(self.DWMWA_NONCLIENT_RTL_LAYOUT, int(is_used))
 
         self._is_rtl_titlebar_used = is_used
 
-    rtl_titlebar = property(get_rtl_titlebar, set_rtl_titlebar)
+    right_to_left_titlebar = property(get_right_to_left_titlebar, set_right_to_left_titlebar)
 
     def get_preview_disabled(self) -> bool:
         return self._is_preview_disabled
 
-    @update_before
     @windows_only
     def set_preview_disabled(self, is_disabled: bool = False) -> None:
         self._dwm_set_window_attribute(self.DWMWA_FORCE_ICONIC_REPRESENTATION, int(is_disabled))
@@ -168,34 +159,62 @@ class DesktopWindowManager:
     tool_window = property(get_tool_window, set_tool_window)
 
     @windows_only
-    def enable_bg_blur(
+    def set_backdrop_effect(
         self,
+        effect: str = "blur",
         tint: Optional[Color] = None,
-        tint_opacity: float = 0.2,
-        effect: DwmBlurEffect = DwmBlurEffect.BLUR,
+        tint_opacity: float = 0.2,        
     ) -> None:
         # https://github.com/Peticali/PythonBlurBehind/blob/main/blurWindow/blurWindow.py
         # https://github.com/sourcechord/FluentWPF/blob/master/FluentWPF/Utility/AcrylicHelper.cs
 
-        # Make an ABGR color from `tint` and `tint_opacity`
-        # If `tint` is None, use the window background color
-        bg_color = self._tcl_eval(str, "ttk::style lookup . -background")
+        effect = {None: 0, "opaque-color": 1, "transparent-color": 2, "blur": 3, "acrylic": 4, "mica": 5}[effect]
+        build = sys.getwindowsversion().build
+        has_mica = (build >= 22000)
+        has_backdrop_type = (build >= 22523)
 
-        if tint is None:
-            tint = Color(
-                rgb=tuple(value >> 8 for value in self._tcl_eval((int,), f"winfo rgb . {bg_color}"))
-            ).hex
+        if has_mica or has_backdrop_type and effect == 5:
+            # Mica is available only on Windows 11 build 22000+, fall back to acrylic
+            effect = 4
+
+        if effect == 0:
+            gradient_color = 0
+            
+            # Remove `-transparentcolor`
+            self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {{}}")
+
+            # Remove <Expose> binding
+            self.events.unbind("<Expose>")
         else:
-            tint = tint.hex
+            # Make an ABGR color from `tint` and `tint_opacity`
+            # If `tint` is None, use the window background color
+            bg_color = self._tcl_eval(str, "ttk::style lookup . -background")
 
-        tint_alpha = str(hex(int(255 * tint_opacity)))[2:]
-        tint_hex_bgr = tint[5:7] + tint[3:5] + tint[1:3]
+            if tint is None:
+                res = self._tcl_eval((int,), f"winfo rgb . {bg_color}")
+                tint = Color(rgb=tuple(value >> 8 for value in res)).hex
+            else:
+                tint = tint.hex
+
+            tint_alpha = str(hex(int(255 * tint_opacity)))[2:]
+            tint_hex_bgr = tint[5:7] + tint[3:5] + tint[1:3]
+            gradient_color = int(tint_alpha + tint_hex_bgr, 16)
+
+            # Make the window background, and each pixel with the same colour as the window background fully transparent
+            # These are the areas that will be blurred
+            self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {bg_color}")
+
+            # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing
+            # Therefore we bind it to the expose event, so every time it changes state, it calls the _fullredraw method
+            # See _fullredraw.__doc__ for more
+            self._prev_state = self._tcl_call(str, "wm", "state", self.wm_path)
+            self.events.bind("<Expose>", self._fullredraw)
 
         # Set up AccentPolicy struct
         ap = AccentPolicy()
         ap.AccentFlags = 2  # ACCENT_ENABLE_BLURBEHIND  <- try this with 4 bruhh :D
-        ap.AccentState = effect.value
-        ap.GradientColor = int(tint_alpha + tint_hex_bgr, 16)
+        ap.AccentState = effect
+        ap.GradientColor = gradient_color
 
         # Set up WindowCompositionAttributeData struct
         wcad = WindowCompositionAttributeData()
@@ -205,37 +224,20 @@ class DesktopWindowManager:
 
         self._set_window_composition_attribute(wcad)
 
-        # Make the window background, and each pixel with the same colour as the window background fully transparent
-        # These are the areas that will be blurred
-        self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {bg_color}")
-
-        # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing
-        # Therefore we bind it to the expose event, so every time it changes state, it calls the _fullredraw method
-        # See _fullredraw.__doc__ for more
-        self._prev_state = self._tcl_call(str, "wm", "state", self.wm_path)
-        self.events.bind("<Expose>", self._fullredraw)
-
-    @windows_only
-    def disable_bg_blur(self) -> None:
-        # Set up AccentPolicy struct
-        ap = AccentPolicy()
-        ap.AccentFlags = 0  # idk
-        ap.AccentState = DwmBlurEffect.DISABLED
-        ap.GradientColor = 0
-
-        # Set up WindowCompositionAttributeData struct
-        wcad = WindowCompositionAttributeData()
-        wcad.Attribute = 19  # WCA_ACCENT_POLICY
-        wcad.Data = ctypes.cast(ctypes.pointer(ap), ctypes.POINTER(ctypes.c_int))
-        wcad.SizeOfData = ctypes.sizeof(ap)
-
-        self._set_window_composition_attribute(wcad)
-
-        # Remove `-transparentcolor`
-        self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {{}}")
-
-        # Remove <Expose> binding
-        self.events.unbind("<Expose>")
+        if effect == 5:
+            if has_backdrop_type:
+                # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/PInvoke/DWM_SYSTEMBACKDROP_TYPE.cs
+                # Mica effect is 2
+                self._dwm_set_window_attribute(self.DWMWA_SYSTEMBACKDROP_TYPE, 2)
+            elif has_mica:
+                self._dwm_set_window_attribute(self.DWMWA_MICA_EFFECT, 1)
+        elif effect == 0:
+            # Remove Mica
+            if has_backdrop_type:
+                # None effect is 1
+                self._dwm_set_window_attribute(self.DWMWA_SYSTEMBACKDROP_TYPE, 1)
+            elif has_mica:
+                self._dwm_set_window_attribute(self.DWMWA_MICA_EFFECT, 0)
 
     def _fullredraw(self) -> None:
         """
