@@ -72,9 +72,18 @@ class WindowCompositionAttributeData(ctypes.Structure):
     ]
 
 
-class DesktopWindowManager:
-    """Interface for Windows DWM functions"""
+DWMWA_TRANSITIONS_FORCEDISABLED = 3
+DWMWA_NONCLIENT_RTL_LAYOUT = 6
+DWMWA_FORCE_ICONIC_REPRESENTATION = 7
+DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+DWMWA_BORDER_COLOR = 34
+DWMWA_CAPTION_COLOR = 35
+DWMWA_TEXT_COLOR = 36
+DWMWA_SYSTEMBACKDROP_TYPE = 38  # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/DesktopWindowManager.cs#L15
+DWMWA_MICA_EFFECT = 1029  # https://github.com/Brouilles/win32-mica/blob/main/main.cpp#L119
 
+
+class Titlebar:
     _tcl_call: Callable
     _tcl_eval: Callable
     wm_path: str
@@ -82,13 +91,69 @@ class DesktopWindowManager:
     _is_immersive_dark_mode_used = None
     _is_preview_disabled = None
     _is_rtl_titlebar_used = None
+    _bg_color = None
+    _fg_color = None
 
-    DWMWA_TRANSITIONS_FORCEDISABLED = 3
-    DWMWA_NONCLIENT_RTL_LAYOUT = 6
-    DWMWA_FORCE_ICONIC_REPRESENTATION = 7
-    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-    DWMWA_SYSTEMBACKDROP_TYPE = 38  # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/DesktopWindowManager.cs#L15
-    DWMWA_MICA_EFFECT = 1029  # https://github.com/Brouilles/win32-mica/blob/main/main.cpp#L119
+    def __init__(self, window):
+        self._window = window
+
+    def get_dark_mode(self) -> bool:
+        return self._is_immersive_dark_mode_used
+
+    @windows_only
+    def set_dark_mode(self, is_used: bool = False) -> None:
+        if sys.getwindowsversion().build >= 19041:
+            self._window._dwm_set_window_attribute(DWMWA_USE_IMMERSIVE_DARK_MODE, int(is_used))
+
+            # Need to redraw the titlebar
+            self._window._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 1)
+            self._window.minimize()
+            self._window.restore()
+            self._window._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 0)
+
+        self._is_immersive_dark_mode_used = is_used
+
+    dark_mode = property(get_dark_mode, set_dark_mode)
+
+    def get_rtl_layout(self) -> bool:
+        return self._is_rtl_titlebar_used
+
+    @windows_only
+    def set_rtl_layout(self, is_used: bool = False) -> None:
+        self._window._dwm_set_window_attribute(DWMWA_NONCLIENT_RTL_LAYOUT, int(is_used))
+        self._is_rtl_titlebar_used = is_used
+
+    rtl_layout = property(get_rtl_layout, set_rtl_layout)
+
+    def get_bg_color(self) -> Color:
+        if self._bg_color is not None:
+            return Color(rgb=self._bg_color)
+
+    @windows_only
+    def set_bg_color(self, color: Color) -> None:
+        color = color.hex
+        int_color = int(color[5:7] + color[3:5] + color[1:3], 16)
+        self._window._dwm_set_window_attribute(DWMWA_CAPTION_COLOR, int_color)
+        self._bg_color = color.rgb
+
+    bg_color = property(get_bg_color, set_bg_color)
+
+    def get_fg_color(self) -> Color:
+        if self._fg_color is not None:
+            return Color(rgb=self._fg_color)
+
+    @windows_only
+    def set_fg_color(self, color: Color) -> None:
+        color = color.hex
+        int_color = int(color[5:7] + color[3:5] + color[1:3], 16)
+        self._window._dwm_set_window_attribute(DWMWA_TEXT_COLOR, int_color)
+        self._fg_color = color.rgb
+
+    fg_color = property(get_fg_color, set_fg_color)
+
+
+class DesktopWindowManager:
+    _border_color = None
 
     @property
     @windows_only
@@ -108,41 +173,12 @@ class DesktopWindowManager:
     def _set_window_composition_attribute(self, wcad: WindowCompositionAttributeData) -> None:
         ctypes.windll.user32.SetWindowCompositionAttribute(self.HWND, wcad)
 
-    def get_dark_titlebar(self) -> bool:
-        return self._is_immersive_dark_mode_used
-
-    @windows_only
-    def set_dark_titlebar(self, is_used: bool = False) -> None:
-        if sys.getwindowsversion().build >= 19041:
-            self._dwm_set_window_attribute(self.DWMWA_USE_IMMERSIVE_DARK_MODE, int(is_used))
-
-            # Need to redraw the titlebar
-            self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 1)
-            self.minimize()
-            self.restore()
-            self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 0)
-
-        self._is_immersive_dark_mode_used = is_used
-
-    dark_mode_titlebar = property(get_dark_titlebar, set_dark_titlebar)
-
-    def get_right_to_left_titlebar(self) -> bool:
-        return self._is_rtl_titlebar_used
-
-    @windows_only
-    def set_right_to_left_titlebar(self, is_used: bool = False) -> None:
-        self._dwm_set_window_attribute(self.DWMWA_NONCLIENT_RTL_LAYOUT, int(is_used))
-
-        self._is_rtl_titlebar_used = is_used
-
-    right_to_left_titlebar = property(get_right_to_left_titlebar, set_right_to_left_titlebar)
-
     def get_preview_disabled(self) -> bool:
         return self._is_preview_disabled
 
     @windows_only
     def set_preview_disabled(self, is_disabled: bool = False) -> None:
-        self._dwm_set_window_attribute(self.DWMWA_FORCE_ICONIC_REPRESENTATION, int(is_disabled))
+        self._dwm_set_window_attribute(DWMWA_FORCE_ICONIC_REPRESENTATION, int(is_disabled))
 
         self._is_preview_disabled = is_disabled
 
@@ -158,20 +194,40 @@ class DesktopWindowManager:
 
     tool_window = property(get_tool_window, set_tool_window)
 
+    def get_border_color(self) -> Color:
+        if self._border_color is not None:
+            return Color(rgb=self._border_color)
+
+    @windows_only
+    def set_border_color(self, color: Color) -> None:
+        color = color.hex
+        int_color = int(color[5:7] + color[3:5] + color[1:3], 16)
+        self._window._dwm_set_window_attribute(DWMWA_BORDER_COLOR, int_color)
+        self._border_color = color.rgb
+
+    border_color = property(get_border_color, set_border_color)
+
     @windows_only
     def set_backdrop_effect(
         self,
         effect: str = "blur",
         tint: Optional[Color] = None,
-        tint_opacity: float = 0.2,        
+        tint_opacity: float = 0.2,
     ) -> None:
         # https://github.com/Peticali/PythonBlurBehind/blob/main/blurWindow/blurWindow.py
         # https://github.com/sourcechord/FluentWPF/blob/master/FluentWPF/Utility/AcrylicHelper.cs
 
-        effect = {None: 0, "opaque-color": 1, "transparent-color": 2, "blur": 3, "acrylic": 4, "mica": 5}[effect]
+        effect = {
+            None: 0,
+            "opaque-color": 1,
+            "transparent-color": 2,
+            "blur": 3,
+            "acrylic": 4,
+            "mica": 5,
+        }[effect]
         build = sys.getwindowsversion().build
-        has_mica = (build >= 22000)
-        has_backdrop_type = (build >= 22523)
+        has_mica = build >= 22000
+        has_backdrop_type = build >= 22523
 
         if has_mica or has_backdrop_type and effect == 5:
             # Mica is available only on Windows 11 build 22000+, fall back to acrylic
@@ -179,7 +235,7 @@ class DesktopWindowManager:
 
         if effect == 0:
             gradient_color = 0
-            
+
             # Remove `-transparentcolor`
             self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {{}}")
 
@@ -228,16 +284,16 @@ class DesktopWindowManager:
             if has_backdrop_type:
                 # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/PInvoke/DWM_SYSTEMBACKDROP_TYPE.cs
                 # Mica effect is 2
-                self._dwm_set_window_attribute(self.DWMWA_SYSTEMBACKDROP_TYPE, 2)
+                self._dwm_set_window_attribute(DWMWA_SYSTEMBACKDROP_TYPE, 2)
             elif has_mica:
-                self._dwm_set_window_attribute(self.DWMWA_MICA_EFFECT, 1)
+                self._dwm_set_window_attribute(DWMWA_MICA_EFFECT, 1)
         elif effect == 0:
             # Remove Mica
             if has_backdrop_type:
                 # None effect is 1
-                self._dwm_set_window_attribute(self.DWMWA_SYSTEMBACKDROP_TYPE, 1)
+                self._dwm_set_window_attribute(DWMWA_SYSTEMBACKDROP_TYPE, 1)
             elif has_mica:
-                self._dwm_set_window_attribute(self.DWMWA_MICA_EFFECT, 0)
+                self._dwm_set_window_attribute(DWMWA_MICA_EFFECT, 0)
 
     def _fullredraw(self) -> None:
         """
@@ -249,10 +305,10 @@ class DesktopWindowManager:
         """
 
         if self._prev_state == "zoomed":
-            self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 1)
+            self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 1)
             self.minimize()
             self.restore()
-            self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 0)
+            self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 0)
 
         self._prev_state = self._tcl_call(str, "wm", "state", self.wm_path)
 
@@ -571,6 +627,7 @@ class App(TkWindowManager, TkWidget):
 
         self.title = title
         self.size = width, height
+        self.Titlebar = Titlebar(self)
 
         self._init_tkdnd()
         self._init_tkextrafont()
@@ -701,6 +758,7 @@ class Window(TkWindowManager, BaseWidget):
 
         BaseWidget.__init__(self, parent)
         self.wm_path = self.tcl_path
+        self.Titlebar = Titlebar(self)
 
     def get_modal(self) -> str:
         return bool(self._tcl_call(str, "wm", "transient", self.wm_path))
