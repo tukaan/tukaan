@@ -11,8 +11,6 @@ from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
 import _tkinter as tk
 
-from .exceptions import TclError
-
 if TYPE_CHECKING:
     from PIL import Image  # type: ignore
 
@@ -87,13 +85,10 @@ def reversed_dict(dictionary: dict) -> dict:
 
 
 def get_tcl_interp():
-    from .window import App, tcl_interp
+    from .window import tcl_interp
 
     if tcl_interp is None:
-        try:
-            tcl_interp = App()
-        except Exception as e:
-            raise TclError(e)
+        raise RuntimeError("tcl/tk is not initialized. Please use tukaan.App() to initialize it.")
 
     return tcl_interp
 
