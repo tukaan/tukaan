@@ -13,7 +13,8 @@ from ._base import BaseWidget, CgetAndConfigure, TkWidget
 from ._constants import _cursor_styles, _inactive_cursor_styles, _wraps
 from ._font import Font
 from ._images import Icon
-from ._misc import Color, ScreenDistance
+from ._misc import Color
+from ._units import ScreenDistance
 from ._utils import (
     ClassPropertyMetaClass,
     _images,

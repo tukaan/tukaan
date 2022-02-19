@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
 import _tkinter as tk
 
+from ._info import Platform
+
 if TYPE_CHECKING:
     from PIL import Image  # type: ignore
 
@@ -76,6 +78,30 @@ def update_after(func: Callable) -> Callable:
         result = func(self, *args, **kwargs)
         get_tcl_interp()._tcl_call(None, "update", "idletasks")
         return result
+
+    return wrapper
+
+
+def windows_only(func):
+    def wrapper(*args, **kwargs):
+        if Platform.os == "Windows":
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
+def mac_only(func):
+    def wrapper(*args, **kwargs):
+        if Platform.os == "macOS":
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
+def linux_only(func):
+    def wrapper(*args, **kwargs):
+        if Platform.os == "Linux":
+            return func(*args, **kwargs)
 
     return wrapper
 

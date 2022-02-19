@@ -5,7 +5,8 @@ import warnings
 from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._misc import Color, ScreenDistance
+from ._misc import Color
+from ._units import ScreenDistance
 from ._utils import py_to_tcl_arguments
 
 

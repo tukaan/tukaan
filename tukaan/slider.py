@@ -1,7 +1,7 @@
 from typing import Callable, Literal, Optional, Union
 
 from ._base import BaseWidget, TkWidget
-from ._misc import ScreenDistance
+from ._units import ScreenDistance
 from ._variables import Float
 
 

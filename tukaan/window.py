@@ -18,8 +18,7 @@ from ._constants import _resizable
 from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
 from ._misc import Color
-from ._platform import windows_only
-from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl
+from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl, windows_only
 from .exceptions import TclError
 
 tcl_interp = None
