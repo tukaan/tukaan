@@ -6,9 +6,11 @@ from datetime import datetime
 from fractions import Fraction
 
 import _tkinter as tk
-import distro
 import psutil
 from screeninfo import get_monitors
+
+if platform.system() == "Linux":
+    import distro
 
 from ._units import MemoryUnit, ScreenDistance
 
