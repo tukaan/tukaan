@@ -66,22 +66,25 @@ class _Platform:
     @property
     def dark_mode(self):
         if self.os == "Windows":
-            from winreg import HKEY_CURRENT_USER, QueryValueEx, OpenKey
+            from winreg import HKEY_CURRENT_USER, OpenKey, QueryValueEx
 
             try:
-                key = OpenKey(HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize")
+                key = OpenKey(
+                    HKEY_CURRENT_USER,
+                    r"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+                )
                 result = QueryValueEx(key, "AppsUseLightTheme")[0]
             except FileNotFoundError:
                 return False
-            
+
             return bool(result)
-        
+
         elif self.os == "macOS":
-            from subprocess import Popen, PIPE
-            
+            from subprocess import PIPE, Popen
+
             p = Popen(["defaults", "read", "-g", "AppleInterfaceStyle"], stdout=PIPE, stderr=PIPE)
             return "Dark" in p.communicate()[0]
-        
+
         return False
 
 
@@ -96,7 +99,7 @@ class _Memory:
     @property
     def ram_size(self):
         return MemoryUnit(psutil.virtual_memory().total)
-    
+
     @property
     def ram_available(self):
         return MemoryUnit(psutil.virtual_memory().available)

@@ -14,7 +14,7 @@ class MemoryUnit:
 
         byte_count, unit = bytes2human(byte_count, format="%(value).2f/%(symbol)s").split("/")
         self.amount = round2(float(byte_count))
-        
+
         if unit != "B":
             unit = unit + "iB"
         self.unit = unit
