@@ -13,7 +13,7 @@ from ._utils import (
     counts,
     create_command,
     get_tcl_interp,
-    py_to_tcl_arguments,
+    py_to_tcl_args,
 )
 from .exceptions import TclError
 
@@ -184,7 +184,7 @@ class Icon(CgetAndConfigure):
             "create",
             "photo",
             self._name,
-            *py_to_tcl_arguments(file=file, data=data),
+            *py_to_tcl_args(file=file, data=data),
         )
 
     def to_tcl(self):

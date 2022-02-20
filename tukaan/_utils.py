@@ -145,7 +145,7 @@ def delete_command(name: str) -> None:
     get_tcl_interp().app.deletecommand(name)
 
 
-def py_to_tcl_arguments(**kwargs) -> tuple:
+def py_to_tcl_args(**kwargs) -> tuple:
     result = []
 
     for key, value in kwargs.items():
@@ -160,8 +160,7 @@ def py_to_tcl_arguments(**kwargs) -> tuple:
     return tuple(result)
 
 
-def _pairs(sequence):
-    """Source: https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
+def _sequence_pairs(sequence):
     return zip(sequence[0::2], sequence[1::2])
 
 
@@ -214,7 +213,7 @@ def from_tcl(type_spec, value) -> Any:
         if isinstance(type_spec, dict):
             # {'a': int, 'b': str} -> {'a': 1, 'b': 'hello', 'c': 'str assumed'}
             result = {}
-            for key, value in _pairs(items):
+            for key, value in _sequence_pairs(items):
                 key = from_tcl(str, key)
                 result[key] = from_tcl(type_spec.get(key, str), value)
             return result

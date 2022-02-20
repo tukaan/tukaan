@@ -11,7 +11,7 @@ from ._utils import (
     _widgets,
     count,
     get_tcl_interp,
-    py_to_tcl_arguments,
+    py_to_tcl_args,
     reversed_dict,
     update_before,
 )
@@ -330,9 +330,9 @@ class BaseWidget(TkWidget):
         self.parent._children[self.tcl_path] = self
 
         if not creation_cmd:
-            self._tcl_call(None, self._tcl_class, self.tcl_path, *py_to_tcl_arguments(**kwargs))
+            self._tcl_call(None, self._tcl_class, self.tcl_path, *py_to_tcl_args(**kwargs))
         else:
-            self._tcl_call(None, *creation_cmd, *py_to_tcl_arguments(**kwargs))
+            self._tcl_call(None, *creation_cmd, *py_to_tcl_args(**kwargs))
 
         self.layout = LayoutManager(self)
         self._temp_manager = None
