@@ -292,7 +292,7 @@ class StateSet(collections.abc.MutableSet):
 
     def add_or_discard(self, action: str, state: str) -> None:
         assert state in _VALID_STATES
-        
+
         if action == "discard":
             state = f"!{state}"
 
