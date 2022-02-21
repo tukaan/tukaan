@@ -52,27 +52,34 @@ class CgetAndConfigure:
     _tcl_call: Callable
 
     def _cget(self, key: str) -> Any:
-        if isinstance(self._keys[key], tuple):
-            type_spec, key = self._keys[key]
+        if key in self._keys:
+            if isinstance(self._keys[key], tuple):
+                type_spec, key = self._keys[key]
+            else:
+                type_spec = self._keys[key]
         else:
-            type_spec = self._keys[key]
+            type_spec = str
 
         if type_spec == "func":
             # return a callable func, not tcl name
-            result = self._tcl_call(str, self, "cget", f"-{key}")
-            return _callbacks[result]
+            return _callbacks[self._get(str, key)]
 
         if isinstance(type_spec, dict):
-            result = self._tcl_call(str, self, "cget", f"-{key}")
-            return reversed_dict(type_spec)[result]
+            return reversed_dict(type_spec)[self._get(str, key)]
 
-        return self._tcl_call(type_spec, self, "cget", f"-{key}")
+        return self._get(type_spec, key)
 
     def config(self, **kwargs) -> None:
         for key, value in tuple(kwargs.items()):
-            if isinstance(self._keys[key], tuple):
+            if key in self._keys and isinstance(self._keys[key], tuple):
                 # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
-                kwargs[self._keys[key][1]] = kwargs.pop(key)
+                alias = self._keys[key]
+                value = kwargs.pop(key)
+
+                if isinstance(alias[0], dict):
+                    value = alias[0][value]
+
+                kwargs[alias[1]] = value
 
             if key == "text":
                 if isinstance(value, String):
@@ -80,7 +87,13 @@ class CgetAndConfigure:
                 else:
                     kwargs["textvariable"] = ""
 
-        self._tcl_call(None, self, "configure", *py_to_tcl_arguments(**kwargs))
+        self._set(**kwargs)
+
+    def _get(self, type_spec, key):
+        return self._tcl_call(type_spec, self, "cget", f"-{key}")
+
+    def _set(self, **kwargs):
+        self._tcl_call(None, self, "configure", *py_to_tcl_args(**kwargs))
 
 
 class CommonMethods:
@@ -98,8 +111,6 @@ class CommonMethods:
             f"<tukaan.{type(self).__name__} widget:"
             + f" tcl_name={self.tcl_path!r}{', ' + details if details else ''}>"
         )
-
-    __str__ = __repr__
 
     def _repr_details(self) -> str:
         # overridden in subclasses

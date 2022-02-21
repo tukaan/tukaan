@@ -7,14 +7,7 @@ from PIL import Image as PIL_Image  # type: ignore
 
 from ._base import BaseWidget, CgetAndConfigure
 from ._misc import HEX
-from ._utils import (
-    _images,
-    _pil_images,
-    counts,
-    create_command,
-    get_tcl_interp,
-    py_to_tcl_args,
-)
+from ._utils import _images, _pil_images, counts, create_command, get_tcl_interp, py_to_tcl_args
 from .exceptions import TclError
 
 
@@ -151,7 +144,9 @@ class _image_converter_class:
 
     @classmethod
     def from_tcl(cls, value: str) -> PIL_Image.Image:
-        return _pil_images[value]
+        if isinstance(value, tuple):
+            value = value[0]  # Sometimes tk.call returns a tuple for some reason
+        return _pil_images.get(value, None)
 
 
 def pil_image_to_tcl(self):

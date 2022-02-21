@@ -599,8 +599,12 @@ class App(TkWindowManager, TkWidget):
                 raise TclError(msg) from None
 
     def _tcl_eval(self, return_type: Any, code: str) -> Any:
-        result = self.app.eval(code)
-        return from_tcl(return_type, result)
+        try:
+            result = self.app.eval(code)
+        except tk.TclError:
+            raise TclError
+        else:
+            return from_tcl(return_type, result)
 
     def _get_boolean(self, arg) -> bool:
         return self.app.getboolean(arg)
