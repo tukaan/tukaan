@@ -127,27 +127,25 @@ class Titlebar:
 
     def get_bg_color(self) -> Color:
         if self._bg_color is not None:
-            return Color(rgb=self._bg_color)
+            return Color(self._bg_color)
 
     @windows_only
     def set_bg_color(self, color: Color) -> None:
-        color = color.hex
+        self._bg_color = color = color.hex
         int_color = int(color[5:7] + color[3:5] + color[1:3], 16)
         self._window._dwm_set_window_attribute(DWMWA_CAPTION_COLOR, int_color)
-        self._bg_color = color.rgb
 
     bg_color = property(get_bg_color, set_bg_color)
 
     def get_fg_color(self) -> Color:
         if self._fg_color is not None:
-            return Color(rgb=self._fg_color)
+            return Color(self._fg_color)
 
     @windows_only
     def set_fg_color(self, color: Color) -> None:
-        color = color.hex
+        self._fg_color = color = color.hex
         int_color = int(color[5:7] + color[3:5] + color[1:3], 16)
         self._window._dwm_set_window_attribute(DWMWA_TEXT_COLOR, int_color)
-        self._fg_color = color.rgb
 
     fg_color = property(get_fg_color, set_fg_color)
 
@@ -196,14 +194,13 @@ class DesktopWindowManager:
 
     def get_border_color(self) -> Color:
         if self._border_color is not None:
-            return Color(rgb=self._border_color)
+            return Color(self._border_color)
 
     @windows_only
     def set_border_color(self, color: Color) -> None:
-        color = color.hex
+        self._border_color = color = color.hex
         int_color = int(color[5:7] + color[3:5] + color[1:3], 16)
         self._window._dwm_set_window_attribute(DWMWA_BORDER_COLOR, int_color)
-        self._border_color = color.rgb
 
     border_color = property(get_border_color, set_border_color)
 
