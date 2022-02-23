@@ -200,7 +200,7 @@ class DesktopWindowManager:
     def set_border_color(self, color: Color) -> None:
         self._border_color = color = color.hex
         int_color = int(color[5:7] + color[3:5] + color[1:3], 16)
-        self._window._dwm_set_window_attribute(DWMWA_BORDER_COLOR, int_color)
+        self._dwm_set_window_attribute(DWMWA_BORDER_COLOR, int_color)
 
     border_color = property(get_border_color, set_border_color)
 
