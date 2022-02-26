@@ -153,23 +153,18 @@ class Titlebar:
 class DesktopWindowManager:
     _border_color = None
 
-    @property
-    @windows_only
-    def HWND(self) -> int:
-        return ctypes.windll.user32.GetParent(self.id)
-
     def _dwm_set_window_attribute(self, rendering_policy: int, value: Any) -> None:
         value = ctypes.c_int(value)
 
         ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            self.HWND,
+            self._wm_frame,
             rendering_policy,
             ctypes.byref(value),
             ctypes.sizeof(value),
         )
 
     def _set_window_composition_attribute(self, wcad: WindowCompositionAttributeData) -> None:
-        ctypes.windll.user32.SetWindowCompositionAttribute(self.HWND, wcad)
+        ctypes.windll.user32.SetWindowCompositionAttribute(self._wm_frame, wcad)
 
     def get_preview_disabled(self) -> bool:
         return self._is_preview_disabled
@@ -362,6 +357,8 @@ class TkWindowManager(DesktopWindowManager):
         return wrapper
 
     @property
+    def _wm_frame(self):
+        return int(self._tcl_call(str, 'wm', 'frame', self.wm_path), 16)
     def is_focused(self) -> int:
         return self._tcl_call(str, "focus", "-displayof", self.wm_path)
 
