@@ -222,7 +222,7 @@ class DesktopWindowManager:
             "acrylic": 4,
             "mica": 5,
         }[effect]
-        
+
         build = sys.getwindowsversion().build
         has_mica = build >= 22000
         has_backdrop_type = build >= 22523
