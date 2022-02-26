@@ -197,10 +197,7 @@ class CommonMethods:
         self._tcl_call(None, "focus", self)
 
     def hide(self):
-        if self.tcl_path == ".app" or self._class == "Toplevel":
-            # object is a window
-            self._tcl_call(None, "wm", "withdraw", self.wm_path)
-        elif self.layout._real_manager == "grid":
+        if self.layout._real_manager == "grid":
             # widget managed by grid
             self._tcl_call(None, "grid", "remove", self.tcl_path)
         elif self.layout._real_manager == "place":
@@ -215,12 +212,7 @@ class CommonMethods:
             self._tcl_call(None, "place", "forget", self.tcl_path)
 
     def unhide(self):
-        from .window import App, Window
-
-        if isinstance(self, (App, Window)):
-            # object is a window
-            self._tcl_call(None, "wm", "deiconify", self.wm_path)
-        elif self.layout._real_manager == "grid":
+        if self.layout._real_manager == "grid":
             # widget managed by grid
             self._tcl_call(None, "grid", "configure", self.tcl_path)
         elif self.layout._real_manager == "place":
