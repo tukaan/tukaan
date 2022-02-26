@@ -222,11 +222,12 @@ class DesktopWindowManager:
             "acrylic": 4,
             "mica": 5,
         }[effect]
+        
         build = sys.getwindowsversion().build
         has_mica = build >= 22000
         has_backdrop_type = build >= 22523
 
-        if has_mica or has_backdrop_type and effect == 5:
+        if not has_mica and effect == 5:
             # Mica is available only on Windows 11 build 22000+, fall back to acrylic
             effect = 4
 
