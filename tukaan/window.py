@@ -232,8 +232,8 @@ class DesktopWindowManager:
             # Remove `-transparentcolor`
             self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {{}}")
 
-            # Remove <Expose> binding
-            self.events.unbind("<Expose>")
+            # Remove <<Unmaximize>> binding
+            self.events.unbind("<<Unmaximize>>")
         else:
             # Make an ABGR color from `tint` and `tint_opacity`
             # If `tint` is None, use the window background color
@@ -249,15 +249,14 @@ class DesktopWindowManager:
             tint_hex_bgr = tint[5:7] + tint[3:5] + tint[1:3]
             gradient_color = int(tint_alpha + tint_hex_bgr, 16)
 
-            # Make the window background, and each pixel with the same colour as the window background fully transparent
-            # These are the areas that will be blurred
+            # Make the window background, and each pixel with the same colour as the window background fully transparent.
+            # These are the areas that will be blurred.
             self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {bg_color}")
 
-            # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing
-            # Therefore we bind it to the expose event, so every time it changes state, it calls the _fullredraw method
-            # See _fullredraw.__doc__ for more
-            self._prev_state = self._tcl_call(str, "wm", "state", self.wm_path)
-            self.events.bind("<Expose>", self._fullredraw)
+            # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing.
+            # Therefore we bind it to the <<Unmaximize>> event (see it below: TkWindowManager._generate_state_event),
+            # so every time it changes state, it calls the _fullredraw method. See DesktopWindowManager._fullredraw.__doc__ for more.
+            self.events.bind("<<Unmaximize>>", self._fullredraw)
 
         # Set up AccentPolicy struct
         ap = AccentPolicy()
@@ -297,13 +296,10 @@ class DesktopWindowManager:
         To avoid visual effects, disable transitions on the window for that time.
         """
 
-        if self._prev_state == "zoomed":
-            self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 1)
-            self.minimize()
-            self.restore()
-            self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 0)
-
-        self._prev_state = self._tcl_call(str, "wm", "state", self.wm_path)
+        self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 1)
+        self.minimize()
+        self.restore()
+        self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 0)
 
 
 class TkWindowManager(DesktopWindowManager):
@@ -320,20 +316,16 @@ class TkWindowManager(DesktopWindowManager):
             self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", True)
 
     def restore(self) -> None:
-        state = self._tcl_call(str, "wm", "state", self.wm_path)
+        state = self.state
 
-        if state in {"iconic", "withdrawn"}:
+        if state in {"hidden", "minimized"}:
             self._tcl_call(None, "wm", "deiconify", self.wm_path)
-
-        elif state == "zoomed":
-            self._tcl_call(None, "wm", "state", self.wm_path, "normal")
-
-        elif self._winsys == "x11" and self._tcl_call(
-            bool, "wm", "attributes", self.wm_path, "-zoomed"
-        ):
-            self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", False)
-
-        elif self._tcl_call(bool, "wm", "attributes", self.wm_path, "-fullscreen"):
+        elif state == "maximized":
+            if self._winsys == "x11":
+                self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", False)
+            else:
+                self._tcl_call(None, "wm", "state", self.wm_path, "normal")            
+        elif state == "fullscreen":
             self._tcl_call(None, "wm", "attributes", self.wm_path, "-fullscreen", False)
 
     def minimize(self) -> None:
@@ -359,12 +351,33 @@ class TkWindowManager(DesktopWindowManager):
     @property
     def _wm_frame(self):
         return int(self._tcl_call(str, 'wm', 'frame', self.wm_path), 16)
+
+    @property
+    def state(self):
+        state = self._tcl_call(str, "wm", "state", self.wm_path)
+
+        if state == "iconic":
+            return "minimized"
+        elif state == "withdrawn":
+            return "hidden"
+        elif state == "zoomed":
+            return "maximized"
+        elif self._winsys == "x11" and self._tcl_call(
+            bool, "wm", "attributes", self.wm_path, "-zoomed"
+        ):
+            return "maximized"
+        elif self._tcl_call(bool, "wm", "attributes", self.wm_path, "-fullscreen"):
+            return "fullscreen"
+
+        return "normal"
+
+    @property
     def is_focused(self) -> int:
         return self._tcl_call(str, "focus", "-displayof", self.wm_path)
 
     @property
     def id(self) -> int:
-        return int(self._tcl_call(str, "winfo", "id", self.wm_path), 0)
+        return int(self._tcl_call(str, "winfo", "id", self.wm_path), 16)
 
     # WM getters, setters
 
@@ -588,6 +601,44 @@ class TkWindowManager(DesktopWindowManager):
 
     scaling = property(get_scaling, set_scaling)
 
+    def _generate_state_event(self):
+        prev_state = self._current_state
+        new_state = self.state
+
+        if new_state == prev_state:
+            return
+
+        event = None
+        un_event = None
+
+        if new_state == "normal":
+            event = "<<Restore>>"
+        elif new_state == "maximized":
+            event = "<<Maximize>>"
+        elif new_state == "minimized":
+            event = "<<Minimize>>"
+        elif new_state == "hidden":
+            event = "<<Hide>>"
+        elif new_state == "fullscreen":
+            event = "<<Fullscreen>>"
+
+        if prev_state == "maximized":
+            un_event = "<<Unmaximize>>"
+        elif prev_state == "minimized":
+            un_event = "<<Unminimize>>"
+        elif prev_state == "hidden":
+            un_event = "<<Unhide>>"
+        elif prev_state == "fullscreen":
+            un_event = "<<Unfullscreen>>"
+
+        if event:
+            self._tcl_call(None, "event", "generate", self.tcl_path, event)
+
+        if un_event:
+            self._tcl_call(None, "event", "generate", self.tcl_path, un_event)
+
+        self._current_state = new_state
+
 
 class App(TkWindowManager, TkWidget):
     wm_path = "."
@@ -604,7 +655,7 @@ class App(TkWindowManager, TkWidget):
 
         global tcl_interp
         if tcl_interp is self:
-            raise TclError("can't create multiple App objects use a Window instead")
+            raise TclError("can't create multiple App objects. Use tukaan.Window instead.")
         tcl_interp = self
 
         self.app = tk.create(
@@ -617,12 +668,16 @@ class App(TkWindowManager, TkWidget):
 
         self.layout: BaseLayoutManager = BaseLayoutManager(self)
 
-        self._tcl_call(None, "ttk::frame", ".app")
-        self._tcl_call(None, "pack", ".app", "-expand", "1", "-fill", "both")
+        self._tcl_eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
 
         self.title = title
         self.size = width, height
         self.Titlebar = Titlebar(self)
+
+        self._current_state = "normal"
+        self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
+        self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
+        self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
 
         self._init_tkdnd()
         self._init_tkextrafont()
@@ -754,6 +809,11 @@ class Window(TkWindowManager, BaseWidget):
         BaseWidget.__init__(self, parent)
         self.wm_path = self.tcl_path
         self.Titlebar = Titlebar(self)
+
+        self._current_state = "normal"
+        self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
+        self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
+        self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
 
     def get_modal(self) -> str:
         return bool(self._tcl_call(str, "wm", "transient", self.wm_path))
