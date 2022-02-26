@@ -202,9 +202,7 @@ class IconFactory:
         self._current_dir = dark_theme
         self.cache: dict[str, Icon] = {}
 
-        get_tcl_interp()._tcl_call(
-            None, "bind", ".app", "<<ThemeChanged>>", create_command(self.change_theme)
-        )
+        get_tcl_interp()._tcl_call(None, "bind", ".app", "<<ThemeChanged>>", self.change_theme)
 
     def change_theme(self):
         # fmt: off
