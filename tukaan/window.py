@@ -552,28 +552,23 @@ class TkWindowManager(DesktopWindowManager):
         return Fraction(*result[:2]), Fraction(*result[2:])
 
     @update_after
-    def set_aspect_ratio(self, new_aspect: tuple[float, float] | float | None) -> None:
+    def set_aspect_ratio(self, new_aspect: Optional[tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction]) -> None:
         if new_aspect is None:
-            self._tcl_call(None, "wm", "aspect", self.wm_path, *("",) * 4)
-            return
+            return self._tcl_call(None, "wm", "aspect", self.wm_path, *("",) * 4)
 
         if isinstance(new_aspect, (int, float)):
             min = max = new_aspect
         else:
             min, max = new_aspect
 
-        if isinstance(min, Fraction):
-            min_numer, min_denom = min.as_integer_ratio()
-        else:
-            min_numer, min_denom = Fraction.from_float(min).as_integer_ratio()
+        if not isinstance(min, Fraction):
+            min = Fraction.from_float(min)
 
-        if isinstance(min, Fraction):
-            max_numer, max_denom = max.as_integer_ratio()
-        else:
-            max_numer, max_denom = Fraction.from_float(max).as_integer_ratio()
+        if not isinstance(max, Fraction):
+            max = Fraction.from_float(max)
 
         self._tcl_call(
-            None, "wm", "aspect", self.wm_path, min_numer, min_denom, max_numer, max_denom
+            None, "wm", "aspect", self.wm_path, *min.as_integer_ratio(), *max.as_integer_ratio()
         )
 
     aspect_ratio = property(get_aspect_ratio, set_aspect_ratio)
