@@ -17,6 +17,6 @@ from .slider import Slider
 from .spinbox import SpinBox
 from .textbox import TextBox
 from .timeout import Timeout
-from .window import App, DwmBlurEffect, Window
+from .window import App, Window
 
 Config = _ConfigObject()

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import ctypes
-import enum
 import os
 import platform
 import re
@@ -73,17 +72,18 @@ class WindowCompositionAttributeData(ctypes.Structure):
     ]
 
 
-class DwmBlurEffect(enum.Enum):
-    DISABLED = 0
-    OPAQUE_COLOR = 1
-    TRANSPARENT_COLOR = 2
-    BLUR = 3
-    ACRYLIC = 4
+DWMWA_TRANSITIONS_FORCEDISABLED = 3
+DWMWA_NONCLIENT_RTL_LAYOUT = 6
+DWMWA_FORCE_ICONIC_REPRESENTATION = 7
+DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+DWMWA_BORDER_COLOR = 34
+DWMWA_CAPTION_COLOR = 35
+DWMWA_TEXT_COLOR = 36
+DWMWA_SYSTEMBACKDROP_TYPE = 38  # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/DesktopWindowManager.cs#L15
+DWMWA_MICA_EFFECT = 1029  # https://github.com/Brouilles/win32-mica/blob/main/main.cpp#L119
 
 
-class DesktopWindowManager:
-    """Interface for Windows DWM functions"""
-
+class Titlebar:
     _tcl_call: Callable
     _tcl_eval: Callable
     wm_path: str
@@ -91,67 +91,87 @@ class DesktopWindowManager:
     _is_immersive_dark_mode_used = None
     _is_preview_disabled = None
     _is_rtl_titlebar_used = None
+    _bg_color = None
+    _fg_color = None
 
-    DWMWA_TRANSITIONS_FORCEDISABLED = 3
-    DWMWA_NONCLIENT_RTL_LAYOUT = 6
-    DWMWA_FORCE_ICONIC_REPRESENTATION = 7
-    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+    def __init__(self, window):
+        self._window = window
 
-    @property
+    def get_dark_mode(self) -> bool:
+        return self._is_immersive_dark_mode_used
+
     @windows_only
-    def HWND(self) -> int:
-        return ctypes.windll.user32.GetParent(self.id)
+    def set_dark_mode(self, is_used: bool = False) -> None:
+        if sys.getwindowsversion().build >= 19041:
+            self._window._dwm_set_window_attribute(DWMWA_USE_IMMERSIVE_DARK_MODE, int(is_used))
+
+            # Need to redraw the titlebar
+            self._window._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 1)
+            self._window.minimize()
+            self._window.restore()
+            self._window._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 0)
+
+        self._is_immersive_dark_mode_used = is_used
+
+    dark_mode = property(get_dark_mode, set_dark_mode)
+
+    def get_rtl_layout(self) -> bool:
+        return self._is_rtl_titlebar_used
+
+    @windows_only
+    def set_rtl_layout(self, is_used: bool = False) -> None:
+        self._window._dwm_set_window_attribute(DWMWA_NONCLIENT_RTL_LAYOUT, int(is_used))
+        self._is_rtl_titlebar_used = is_used
+
+    rtl_layout = property(get_rtl_layout, set_rtl_layout)
+
+    def get_bg_color(self) -> Color:
+        if self._bg_color is not None:
+            return Color(self._bg_color)
+
+    @windows_only
+    def set_bg_color(self, color: Color) -> None:
+        self._bg_color = color = color.hex
+        int_color = int(color[5:7] + color[3:5] + color[1:3], 16)
+        self._window._dwm_set_window_attribute(DWMWA_CAPTION_COLOR, int_color)
+
+    bg_color = property(get_bg_color, set_bg_color)
+
+    def get_fg_color(self) -> Color:
+        if self._fg_color is not None:
+            return Color(self._fg_color)
+
+    @windows_only
+    def set_fg_color(self, color: Color) -> None:
+        self._fg_color = color = color.hex
+        int_color = int(color[5:7] + color[3:5] + color[1:3], 16)
+        self._window._dwm_set_window_attribute(DWMWA_TEXT_COLOR, int_color)
+
+    fg_color = property(get_fg_color, set_fg_color)
+
+
+class DesktopWindowManager:
+    _border_color = None
 
     def _dwm_set_window_attribute(self, rendering_policy: int, value: Any) -> None:
         value = ctypes.c_int(value)
 
         ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            self.HWND,
+            self._wm_frame,
             rendering_policy,
             ctypes.byref(value),
             ctypes.sizeof(value),
         )
 
     def _set_window_composition_attribute(self, wcad: WindowCompositionAttributeData) -> None:
-        ctypes.windll.user32.SetWindowCompositionAttribute(self.HWND, wcad)
-
-    def get_immersive_dark_mode(self) -> bool:
-        return self._is_immersive_dark_mode_used
-
-    @update_before
-    @windows_only
-    def set_immersive_dark_mode(self, is_used: bool = False) -> None:
-        self._dwm_set_window_attribute(self.DWMWA_USE_IMMERSIVE_DARK_MODE, int(is_used))
-
-        # Need to redraw the titlebar
-        self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 1)
-        self.minimize()
-        self.restore()
-        self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 0)
-
-        self._is_immersive_dark_mode_used = is_used
-
-    immersive_dark_mode = property(get_immersive_dark_mode, set_immersive_dark_mode)
-
-    def get_rtl_titlebar(self) -> bool:
-        return self._is_rtl_titlebar_used
-
-    @update_before
-    @windows_only
-    def set_rtl_titlebar(self, is_used: bool = False) -> None:
-        self._dwm_set_window_attribute(self.DWMWA_NONCLIENT_RTL_LAYOUT, int(is_used))
-
-        self._is_rtl_titlebar_used = is_used
-
-    rtl_titlebar = property(get_rtl_titlebar, set_rtl_titlebar)
+        ctypes.windll.user32.SetWindowCompositionAttribute(self._wm_frame, wcad)
 
     def get_preview_disabled(self) -> bool:
         return self._is_preview_disabled
 
-    @update_before
     @windows_only
     def set_preview_disabled(self, is_disabled: bool = False) -> None:
-        self._dwm_set_window_attribute(self.DWMWA_FORCE_ICONIC_REPRESENTATION, int(is_disabled))
+        self._dwm_set_window_attribute(DWMWA_FORCE_ICONIC_REPRESENTATION, int(is_disabled))
 
         self._is_preview_disabled = is_disabled
 
@@ -167,35 +187,82 @@ class DesktopWindowManager:
 
     tool_window = property(get_tool_window, set_tool_window)
 
+    def get_border_color(self) -> Color:
+        if self._border_color is not None:
+            return Color(self._border_color)
+
     @windows_only
-    def enable_bg_blur(
+    def set_border_color(self, color: Color) -> None:
+        self._border_color = color = color.hex
+        int_color = int(color[5:7] + color[3:5] + color[1:3], 16)
+        self._dwm_set_window_attribute(DWMWA_BORDER_COLOR, int_color)
+
+    border_color = property(get_border_color, set_border_color)
+
+    @windows_only
+    def set_backdrop_effect(
         self,
+        effect: str = "blur",
         tint: Optional[Color] = None,
         tint_opacity: float = 0.2,
-        effect: DwmBlurEffect = DwmBlurEffect.BLUR,
     ) -> None:
         # https://github.com/Peticali/PythonBlurBehind/blob/main/blurWindow/blurWindow.py
         # https://github.com/sourcechord/FluentWPF/blob/master/FluentWPF/Utility/AcrylicHelper.cs
 
-        # Make an ABGR color from `tint` and `tint_opacity`
-        # If `tint` is None, use the window background color
-        bg_color = self._tcl_eval(str, "ttk::style lookup . -background")
+        effect = {
+            None: 0,
+            "opaque-color": 1,
+            "transparent-color": 2,
+            "blur": 3,
+            "acrylic": 4,
+            "mica": 5,
+        }[effect]
 
-        if tint is None:
-            tint = Color(
-                rgb=tuple(value >> 8 for value in self._tcl_eval((int,), f"winfo rgb . {bg_color}"))
-            ).hex
+        build = sys.getwindowsversion().build
+        has_mica = build >= 22000
+        has_backdrop_type = build >= 22523
+
+        if not has_mica and effect == 5:
+            # Mica is available only on Windows 11 build 22000+, fall back to acrylic
+            effect = 4
+
+        if effect == 0:
+            gradient_color = 0
+
+            # Remove `-transparentcolor`
+            self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {{}}")
+
+            # Remove <<Unmaximize>> binding
+            self.events.unbind("<<Unmaximize>>")
         else:
-            tint = tint.hex
+            # Make an ABGR color from `tint` and `tint_opacity`
+            # If `tint` is None, use the window background color
+            bg_color = self._tcl_eval(str, "ttk::style lookup . -background")
 
-        tint_alpha = str(hex(int(255 * tint_opacity)))[2:]
-        tint_hex_bgr = tint[5:7] + tint[3:5] + tint[1:3]
+            if tint is None:
+                res = self._tcl_eval((int,), f"winfo rgb . {bg_color}")
+                tint = Color(rgb=tuple(value >> 8 for value in res)).hex
+            else:
+                tint = tint.hex
+
+            tint_alpha = str(hex(int(255 * tint_opacity)))[2:]
+            tint_hex_bgr = tint[5:7] + tint[3:5] + tint[1:3]
+            gradient_color = int(tint_alpha + tint_hex_bgr, 16)
+
+            # Make the window background, and each pixel with the same colour as the window background fully transparent.
+            # These are the areas that will be blurred.
+            self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {bg_color}")
+
+            # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing.
+            # Therefore we bind it to the <<Unmaximize>> event (see it below: TkWindowManager._generate_state_event),
+            # so every time it changes state, it calls the _fullredraw method. See DesktopWindowManager._fullredraw.__doc__ for more.
+            self.events.bind("<<Unmaximize>>", self._fullredraw)
 
         # Set up AccentPolicy struct
         ap = AccentPolicy()
         ap.AccentFlags = 2  # ACCENT_ENABLE_BLURBEHIND  <- try this with 4 bruhh :D
-        ap.AccentState = effect.value
-        ap.GradientColor = int(tint_alpha + tint_hex_bgr, 16)
+        ap.AccentState = effect
+        ap.GradientColor = gradient_color
 
         # Set up WindowCompositionAttributeData struct
         wcad = WindowCompositionAttributeData()
@@ -205,37 +272,20 @@ class DesktopWindowManager:
 
         self._set_window_composition_attribute(wcad)
 
-        # Make the window background, and each pixel with the same colour as the window background fully transparent
-        # These are the areas that will be blurred
-        self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {bg_color}")
-
-        # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing
-        # Therefore we bind it to the expose event, so every time it changes state, it calls the _fullredraw method
-        # See _fullredraw.__doc__ for more
-        self._prev_state = self._tcl_call(str, "wm", "state", self.wm_path)
-        self.events.bind("<Expose>", self._fullredraw)
-
-    @windows_only
-    def disable_bg_blur(self) -> None:
-        # Set up AccentPolicy struct
-        ap = AccentPolicy()
-        ap.AccentFlags = 0  # idk
-        ap.AccentState = DwmBlurEffect.DISABLED
-        ap.GradientColor = 0
-
-        # Set up WindowCompositionAttributeData struct
-        wcad = WindowCompositionAttributeData()
-        wcad.Attribute = 19  # WCA_ACCENT_POLICY
-        wcad.Data = ctypes.cast(ctypes.pointer(ap), ctypes.POINTER(ctypes.c_int))
-        wcad.SizeOfData = ctypes.sizeof(ap)
-
-        self._set_window_composition_attribute(wcad)
-
-        # Remove `-transparentcolor`
-        self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {{}}")
-
-        # Remove <Expose> binding
-        self.events.unbind("<Expose>")
+        if effect == 5:
+            if has_backdrop_type:
+                # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/PInvoke/DWM_SYSTEMBACKDROP_TYPE.cs
+                # Mica effect is 2
+                self._dwm_set_window_attribute(DWMWA_SYSTEMBACKDROP_TYPE, 2)
+            elif has_mica:
+                self._dwm_set_window_attribute(DWMWA_MICA_EFFECT, 1)
+        elif effect == 0:
+            # Remove Mica
+            if has_backdrop_type:
+                # None effect is 1
+                self._dwm_set_window_attribute(DWMWA_SYSTEMBACKDROP_TYPE, 1)
+            elif has_mica:
+                self._dwm_set_window_attribute(DWMWA_MICA_EFFECT, 0)
 
     def _fullredraw(self) -> None:
         """
@@ -246,13 +296,10 @@ class DesktopWindowManager:
         To avoid visual effects, disable transitions on the window for that time.
         """
 
-        if self._prev_state == "zoomed":
-            self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 1)
-            self.minimize()
-            self.restore()
-            self._dwm_set_window_attribute(self.DWMWA_TRANSITIONS_FORCEDISABLED, 0)
-
-        self._prev_state = self._tcl_call(str, "wm", "state", self.wm_path)
+        self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 1)
+        self.minimize()
+        self.restore()
+        self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 0)
 
 
 class TkWindowManager(DesktopWindowManager):
@@ -269,20 +316,16 @@ class TkWindowManager(DesktopWindowManager):
             self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", True)
 
     def restore(self) -> None:
-        state = self._tcl_call(str, "wm", "state", self.wm_path)
+        state = self.state
 
-        if state in {"iconic", "withdrawn"}:
+        if state in {"hidden", "minimized"}:
             self._tcl_call(None, "wm", "deiconify", self.wm_path)
-
-        elif state == "zoomed":
-            self._tcl_call(None, "wm", "state", self.wm_path, "normal")
-
-        elif self._winsys == "x11" and self._tcl_call(
-            bool, "wm", "attributes", self.wm_path, "-zoomed"
-        ):
-            self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", False)
-
-        elif self._tcl_call(bool, "wm", "attributes", self.wm_path, "-fullscreen"):
+        elif state == "maximized":
+            if self._winsys == "x11":
+                self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", False)
+            else:
+                self._tcl_call(None, "wm", "state", self.wm_path, "normal")
+        elif state == "fullscreen":
             self._tcl_call(None, "wm", "attributes", self.wm_path, "-fullscreen", False)
 
     def minimize(self) -> None:
@@ -297,6 +340,12 @@ class TkWindowManager(DesktopWindowManager):
     def group(self, other: TkWindowManager) -> None:
         self._tcl_call(None, "wm", "group", self.wm_path, other.tcl_path)
 
+    def hide(self):
+        self._tcl_call(None, "wm", "withdraw", self.wm_path)
+
+    def unhide(self):
+        self._tcl_call(None, "wm", "deiconify", self.wm_path)
+
     def on_close(self, func: Callable[[TkWindowManager], None]) -> Callable[[], None]:
         def wrapper() -> None:
             if func(self):
@@ -306,12 +355,40 @@ class TkWindowManager(DesktopWindowManager):
         return wrapper
 
     @property
+    def _wm_frame(self):
+        return int(self._tcl_call(str, "wm", "frame", self.wm_path), 16)
+
+    @property
+    def state(self):
+        try:
+            state = self._tcl_call(str, "wm", "state", self.wm_path)
+        except TclError as e:
+            if not self._tcl_call(bool, "winfo", "exists", self.wm_path):
+                return "closed"
+            raise e
+
+        if state == "iconic":
+            return "minimized"
+        elif state == "withdrawn":
+            return "hidden"
+        elif state == "zoomed":
+            return "maximized"
+        elif self._winsys == "x11" and self._tcl_call(
+            bool, "wm", "attributes", self.wm_path, "-zoomed"
+        ):
+            return "maximized"
+        elif self._tcl_call(bool, "wm", "attributes", self.wm_path, "-fullscreen"):
+            return "fullscreen"
+
+        return "normal"
+
+    @property
     def is_focused(self) -> int:
         return self._tcl_call(str, "focus", "-displayof", self.wm_path)
 
     @property
     def id(self) -> int:
-        return int(self._tcl_call(str, "winfo", "id", self.wm_path), 0)
+        return int(self._tcl_call(str, "winfo", "id", self.wm_path), 16)
 
     # WM getters, setters
 
@@ -535,6 +612,44 @@ class TkWindowManager(DesktopWindowManager):
 
     scaling = property(get_scaling, set_scaling)
 
+    def _generate_state_event(self):
+        prev_state = self._current_state
+        new_state = self.state
+
+        if new_state == prev_state:
+            return
+
+        event = None
+        un_event = None
+
+        if new_state == "normal":
+            event = "<<Restore>>"
+        elif new_state == "maximized":
+            event = "<<Maximize>>"
+        elif new_state == "minimized":
+            event = "<<Minimize>>"
+        elif new_state == "hidden":
+            event = "<<Hide>>"
+        elif new_state == "fullscreen":
+            event = "<<Fullscreen>>"
+
+        if prev_state == "maximized":
+            un_event = "<<Unmaximize>>"
+        elif prev_state == "minimized":
+            un_event = "<<Unminimize>>"
+        elif prev_state == "hidden":
+            un_event = "<<Unhide>>"
+        elif prev_state == "fullscreen":
+            un_event = "<<Unfullscreen>>"
+
+        if event:
+            self._tcl_call(None, "event", "generate", self.tcl_path, event)
+
+        if un_event:
+            self._tcl_call(None, "event", "generate", self.tcl_path, un_event)
+
+        self._current_state = new_state
+
 
 class App(TkWindowManager, TkWidget):
     wm_path = "."
@@ -551,7 +666,7 @@ class App(TkWindowManager, TkWidget):
 
         global tcl_interp
         if tcl_interp is self:
-            raise TclError("can't create multiple App objects use a Window instead")
+            raise TclError("can't create multiple App objects. Use tukaan.Window instead.")
         tcl_interp = self
 
         self.app = tk.create(
@@ -564,11 +679,16 @@ class App(TkWindowManager, TkWidget):
 
         self.layout: BaseLayoutManager = BaseLayoutManager(self)
 
-        self._tcl_call(None, "ttk::frame", ".app")
-        self._tcl_call(None, "pack", ".app", "-expand", "1", "-fill", "both")
+        self._tcl_eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
 
         self.title = title
         self.size = width, height
+        self.Titlebar = Titlebar(self)
+
+        self._current_state = "normal"
+        self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
+        self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
+        self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
 
         self._init_tkdnd()
         self._init_tkextrafont()
@@ -681,6 +801,13 @@ class Window(TkWindowManager, BaseWidget):
 
         BaseWidget.__init__(self, parent)
         self.wm_path = self.tcl_path
+        self._winsys = self.parent._winsys
+        self.Titlebar = Titlebar(self)
+
+        self._current_state = "normal"
+        self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
+        self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
+        self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
 
     def get_modal(self) -> str:
         return bool(self._tcl_call(str, "wm", "transient", self.wm_path))
@@ -693,7 +820,7 @@ class Window(TkWindowManager, BaseWidget):
 
         self._tcl_call(None, "wm", "transient", self.wm_path, other)
 
-        if tcl_interp._winsys == "aqua":
+        if self._winsys == "aqua":
             self._tcl_call(
                 "::tk::unsupported::MacWindowStyle", "style", self.wm_path, "moveableModal", ""
             )
