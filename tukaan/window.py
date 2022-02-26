@@ -324,7 +324,7 @@ class TkWindowManager(DesktopWindowManager):
             if self._winsys == "x11":
                 self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", False)
             else:
-                self._tcl_call(None, "wm", "state", self.wm_path, "normal")            
+                self._tcl_call(None, "wm", "state", self.wm_path, "normal")
         elif state == "fullscreen":
             self._tcl_call(None, "wm", "attributes", self.wm_path, "-fullscreen", False)
 
@@ -350,7 +350,7 @@ class TkWindowManager(DesktopWindowManager):
 
     @property
     def _wm_frame(self):
-        return int(self._tcl_call(str, 'wm', 'frame', self.wm_path), 16)
+        return int(self._tcl_call(str, "wm", "frame", self.wm_path), 16)
 
     @property
     def state(self):
