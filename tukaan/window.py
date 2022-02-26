@@ -340,6 +340,12 @@ class TkWindowManager(DesktopWindowManager):
     def group(self, other: TkWindowManager) -> None:
         self._tcl_call(None, "wm", "group", self.wm_path, other.tcl_path)
 
+    def hide(self):
+        self._tcl_call(None, "wm", "withdraw", self.wm_path)
+
+    def unhide(self):
+        self._tcl_call(None, "wm", "deiconify", self.wm_path)
+
     def on_close(self, func: Callable[[TkWindowManager], None]) -> Callable[[], None]:
         def wrapper() -> None:
             if func(self):
@@ -354,7 +360,12 @@ class TkWindowManager(DesktopWindowManager):
 
     @property
     def state(self):
-        state = self._tcl_call(str, "wm", "state", self.wm_path)
+        try:
+            state = self._tcl_call(str, "wm", "state", self.wm_path)
+        except TclError as e:
+            if not self._tcl_call(bool, "winfo", "exists", self.wm_path):
+                return "closed"
+            raise e
 
         if state == "iconic":
             return "minimized"
@@ -808,6 +819,7 @@ class Window(TkWindowManager, BaseWidget):
 
         BaseWidget.__init__(self, parent)
         self.wm_path = self.tcl_path
+        self._winsys = self.parent._winsys
         self.Titlebar = Titlebar(self)
 
         self._current_state = "normal"
@@ -826,7 +838,7 @@ class Window(TkWindowManager, BaseWidget):
 
         self._tcl_call(None, "wm", "transient", self.wm_path, other)
 
-        if tcl_interp._winsys == "aqua":
+        if self._winsys == "aqua":
             self._tcl_call(
                 "::tk::unsupported::MacWindowStyle", "style", self.wm_path, "moveableModal", ""
             )
