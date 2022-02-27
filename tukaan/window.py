@@ -17,9 +17,8 @@ from ._constants import _resizable
 from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
 from ._misc import Color
-from ._platform import windows_only
-from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl
-from .exceptions import TclError
+from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl, windows_only
+from .exceptions import TclError, ApplicationError
 
 tcl_interp = None
 tkdnd_inited = False
@@ -355,10 +354,6 @@ class TkWindowManager(DesktopWindowManager):
         return wrapper
 
     @property
-    def _wm_frame(self):
-        return int(self._tcl_call(str, "wm", "frame", self.wm_path), 16)
-
-    @property
     def state(self):
         try:
             state = self._tcl_call(str, "wm", "state", self.wm_path)
@@ -389,6 +384,10 @@ class TkWindowManager(DesktopWindowManager):
     @property
     def id(self) -> int:
         return int(self._tcl_call(str, "winfo", "id", self.wm_path), 16)
+
+    @property
+    def _wm_frame(self):
+        return int(self._tcl_call(str, "wm", "frame", self.wm_path), 16)
 
     # WM getters, setters
 
@@ -552,28 +551,23 @@ class TkWindowManager(DesktopWindowManager):
         return Fraction(*result[:2]), Fraction(*result[2:])
 
     @update_after
-    def set_aspect_ratio(self, new_aspect: tuple[float, float] | float | None) -> None:
+    def set_aspect_ratio(self, new_aspect: Optional[tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction]) -> None:
         if new_aspect is None:
-            self._tcl_call(None, "wm", "aspect", self.wm_path, *("",) * 4)
-            return
+            return self._tcl_call(None, "wm", "aspect", self.wm_path, *("",) * 4)
 
         if isinstance(new_aspect, (int, float)):
             min = max = new_aspect
         else:
             min, max = new_aspect
 
-        if isinstance(min, Fraction):
-            min_numer, min_denom = min.as_integer_ratio()
-        else:
-            min_numer, min_denom = Fraction.from_float(min).as_integer_ratio()
+        if not isinstance(min, Fraction):
+            min = Fraction.from_float(min)
 
-        if isinstance(min, Fraction):
-            max_numer, max_denom = max.as_integer_ratio()
-        else:
-            max_numer, max_denom = Fraction.from_float(max).as_integer_ratio()
+        if not isinstance(max, Fraction):
+            max = Fraction.from_float(max)
 
         self._tcl_call(
-            None, "wm", "aspect", self.wm_path, min_numer, min_denom, max_numer, max_denom
+            None, "wm", "aspect", self.wm_path, *min.as_integer_ratio(), *max.as_integer_ratio()
         )
 
     aspect_ratio = property(get_aspect_ratio, set_aspect_ratio)
@@ -599,7 +593,10 @@ class TkWindowManager(DesktopWindowManager):
     def get_on_close_callback(self) -> Callable[[TkWindowManager], None]:
         return _callbacks[self._tcl_call(str, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW")]
 
-    def set_on_close_callback(self, callback: Callable[[TkWindowManager], None]) -> None:
+    def set_on_close_callback(self, callback: Optional[Callable[[TkWindowManager], None]]) -> None:
+        if callback is None:
+            callback = self.destroy
+        
         self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", callback)
 
     on_close_callback = property(get_on_close_callback, set_on_close_callback)
@@ -711,6 +708,9 @@ class App(TkWindowManager, TkWidget):
         except tk.TclError as e:
             msg = str(e)
 
+            if "application has been destroyed" in msg:
+                raise ApplicationError("can't invoke Tcl callback. Application has been destroyed.")
+
             if msg.startswith("couldn't read file"):
                 # FileNotFoundError is a bit more pythonic than TclError: couldn't read file
                 path = msg.split('"')[1]  # path is between ""
@@ -720,8 +720,12 @@ class App(TkWindowManager, TkWidget):
                 raise TclError(msg) from None
 
     def _tcl_eval(self, return_type: Any, code: str) -> Any:
-        result = self.app.eval(code)
-        return from_tcl(return_type, result)
+        try:
+            result = self.app.eval(code)
+        except tk.TclError:
+            raise TclError
+        else:
+            return from_tcl(return_type, result)
 
     def _get_boolean(self, arg) -> bool:
         return self.app.getboolean(arg)
@@ -768,9 +772,6 @@ class App(TkWindowManager, TkWidget):
 
         global tcl_interp
 
-        for child in tuple(self._children.values()):
-            child.destroy()
-
         self._tcl_call(None, "destroy", self.tcl_path)
         self._tcl_call(None, "destroy", self.wm_path)
 
@@ -808,6 +809,9 @@ class Window(TkWindowManager, BaseWidget):
         self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
+
+    def wait_till_closed(self):
+        self._tcl_call(None, "tkwait", "window", self.wm_path)
 
     def get_modal(self) -> str:
         return bool(self._tcl_call(str, "wm", "transient", self.wm_path))

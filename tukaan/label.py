@@ -5,7 +5,7 @@ from typing import Literal, Optional
 from PIL import Image  # type: ignore
 
 from ._base import BaseWidget, TkWidget
-from ._constants import _anchors
+from ._constants import _anchors, _image_positions
 from ._images import Icon, _image_converter_class
 from ._misc import Color
 
@@ -17,6 +17,7 @@ class Label(BaseWidget):
         "align_text": str,
         "focusable": (bool, "takefocus"),
         "image": _image_converter_class,
+        "image_pos": (_image_positions, "compound"),
         "max_line_length": (int, "wraplength"),
         "style": str,
         "text": str,
@@ -30,6 +31,7 @@ class Label(BaseWidget):
         align_text: Optional[Literal["left", "center", "right"]] = None,
         focusable: Optional[bool] = None,
         image: Optional[Image.Image | Icon] = None,
+        image_pos: Optional[str] = None,
         max_line_length: Optional[int] = None,
         style: Optional[str] = None,
         text: Optional[str] = None,
@@ -45,6 +47,7 @@ class Label(BaseWidget):
             self,
             parent,
             anchor=align_content,
+            compound=_image_positions[image_pos],
             image=image,
             justify=align_text,
             style=style,

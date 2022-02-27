@@ -1,6 +1,9 @@
 class TclError(Exception):
     ...
 
+class ApplicationError(Exception):
+    ...
+
 
 class ColorError(Exception):
     ...

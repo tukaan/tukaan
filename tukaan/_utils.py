@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
 import _tkinter as tk
 
+from ._info import Platform
+
 if TYPE_CHECKING:
     from PIL import Image  # type: ignore
 
@@ -80,6 +82,30 @@ def update_after(func: Callable) -> Callable:
     return wrapper
 
 
+def windows_only(func):
+    def wrapper(*args, **kwargs):
+        if Platform.os == "Windows":
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
+def mac_only(func):
+    def wrapper(*args, **kwargs):
+        if Platform.os == "macOS":
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
+def linux_only(func):
+    def wrapper(*args, **kwargs):
+        if Platform.os == "Linux":
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
 def reversed_dict(dictionary: dict) -> dict:
     return {value: key for key, value in dictionary.items()}
 
@@ -119,7 +145,7 @@ def delete_command(name: str) -> None:
     get_tcl_interp().app.deletecommand(name)
 
 
-def py_to_tcl_arguments(**kwargs) -> tuple:
+def py_to_tcl_args(**kwargs) -> tuple:
     result = []
 
     for key, value in kwargs.items():
@@ -134,8 +160,7 @@ def py_to_tcl_arguments(**kwargs) -> tuple:
     return tuple(result)
 
 
-def _pairs(sequence):
-    """Source: https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
+def _sequence_pairs(sequence):
     return zip(sequence[0::2], sequence[1::2])
 
 
@@ -188,7 +213,7 @@ def from_tcl(type_spec, value) -> Any:
         if isinstance(type_spec, dict):
             # {'a': int, 'b': str} -> {'a': 1, 'b': 'hello', 'c': 'str assumed'}
             result = {}
-            for key, value in _pairs(items):
+            for key, value in _sequence_pairs(items):
                 key = from_tcl(str, key)
                 result[key] = from_tcl(type_spec.get(key, str), value)
             return result

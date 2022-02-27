@@ -11,7 +11,7 @@ from ._utils import (
     _widgets,
     count,
     get_tcl_interp,
-    py_to_tcl_arguments,
+    py_to_tcl_args,
     reversed_dict,
     update_before,
 )
@@ -62,20 +62,24 @@ class CgetAndConfigure:
 
         if type_spec == "func":
             # return a callable func, not tcl name
-            result = self._tcl_call(str, self, "cget", f"-{key}")
-            return _callbacks[result]
+            return _callbacks[self._get(str, key)]
 
         if isinstance(type_spec, dict):
-            result = self._tcl_call(str, self, "cget", f"-{key}")
-            return reversed_dict(type_spec)[result]
+            return reversed_dict(type_spec)[self._get(str, key)]
 
-        return self._tcl_call(type_spec, self, "cget", f"-{key}")
+        return self._get(type_spec, key)
 
     def config(self, **kwargs) -> None:
         for key, value in tuple(kwargs.items()):
             if key in self._keys and isinstance(self._keys[key], tuple):
                 # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
-                kwargs[self._keys[key][1]] = kwargs.pop(key)
+                alias = self._keys[key]
+                value = kwargs.pop(key)
+
+                if isinstance(alias[0], dict):
+                    value = alias[0][value]
+
+                kwargs[alias[1]] = value
 
             if key == "text":
                 if isinstance(value, String):
@@ -83,7 +87,13 @@ class CgetAndConfigure:
                 else:
                     kwargs["textvariable"] = ""
 
-        self._tcl_call(None, self, "configure", *py_to_tcl_arguments(**kwargs))
+        self._set(**kwargs)
+
+    def _get(self, type_spec, key):
+        return self._tcl_call(type_spec, self, "cget", f"-{key}")
+
+    def _set(self, **kwargs):
+        self._tcl_call(None, self, "configure", *py_to_tcl_args(**kwargs))
 
 
 class CommonMethods:
@@ -101,8 +111,6 @@ class CommonMethods:
             f"<tukaan.{type(self).__name__} widget:"
             + f" tcl_name={self.tcl_path!r}{', ' + details if details else ''}>"
         )
-
-    __str__ = __repr__
 
     def _repr_details(self) -> str:
         # overridden in subclasses
@@ -325,9 +333,9 @@ class BaseWidget(TkWidget):
         self.parent._children[self.tcl_path] = self
 
         if not creation_cmd:
-            self._tcl_call(None, self._tcl_class, self.tcl_path, *py_to_tcl_arguments(**kwargs))
+            self._tcl_call(None, self._tcl_class, self.tcl_path, *py_to_tcl_args(**kwargs))
         else:
-            self._tcl_call(None, *creation_cmd, *py_to_tcl_arguments(**kwargs))
+            self._tcl_call(None, *creation_cmd, *py_to_tcl_args(**kwargs))
 
         self.layout = LayoutManager(self)
         self._temp_manager = None

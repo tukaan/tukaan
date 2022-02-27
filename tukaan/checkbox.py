@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._variables import Boolean
+from ._variables import Boolean, _TclVariable
 
 
 class CheckBox(BaseWidget):
@@ -26,9 +26,13 @@ class CheckBox(BaseWidget):
         text: Optional[str] = None,
         underline: Optional[int] = None,
         value: bool = False,
+        variable: Optional[_TclVariable] = None,
         width: Optional[int] = None,
     ) -> None:
-        self._variable = Boolean(value)
+        if variable is None:
+            self._variable = variable = Boolean(value)
+        else:
+            self._variable = variable
 
         BaseWidget.__init__(
             self,
@@ -39,7 +43,7 @@ class CheckBox(BaseWidget):
             style=style,
             takefocus=focusable,
             underline=underline,
-            variable=self._variable,
+            variable=variable,
             width=width,
         )
         self.config(text=text)

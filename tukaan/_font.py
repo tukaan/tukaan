@@ -4,7 +4,7 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Type
 
-from ._utils import _fonts, _pairs, counts, get_tcl_interp, py_to_tcl_arguments
+from ._utils import _fonts, _sequence_pairs, counts, get_tcl_interp, py_to_tcl_args
 from .exceptions import FontError, TclError
 
 font_props = {
@@ -57,7 +57,7 @@ class FontMetaData(namedtuple("FontMetadata", list(font_props.keys()))):
         items = owner._interp._split_list(nameinfo_result[0])
 
         result = {}
-        for key, value in _pairs(items):
+        for key, value in _sequence_pairs(items):
             result[str(key)] = str(value)
 
         kwargs = {}
@@ -131,7 +131,7 @@ class Font:
         underline: bool = False,
         strikethrough: bool = False,
     ) -> None:
-        args = py_to_tcl_arguments(
+        args = py_to_tcl_args(
             family=family,
             size=size,
             weight="bold" if bold else "normal",

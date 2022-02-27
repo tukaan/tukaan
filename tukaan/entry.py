@@ -4,7 +4,8 @@ import warnings
 from typing import Optional
 
 from ._base import BaseWidget, TkWidget
-from ._misc import Color, ScreenDistance
+from ._misc import Color
+from ._units import ScreenDistance
 
 
 class Entry(BaseWidget):

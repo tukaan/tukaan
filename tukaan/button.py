@@ -5,6 +5,7 @@ from typing import Callable, Optional
 from PIL import Image  # type: ignore
 
 from ._base import BaseWidget, TkWidget
+from ._constants import _image_positions
 from ._images import Icon, _image_converter_class
 
 
@@ -14,6 +15,7 @@ class Button(BaseWidget):
         "default": str,
         "focusable": (bool, "takefocus"),
         "image": _image_converter_class,
+        "image_pos": (_image_positions, "compound"),
         "on_click": ("func", "command"),
         "style": str,
         "text": str,
@@ -27,6 +29,7 @@ class Button(BaseWidget):
         default: Optional[str] = None,
         focusable: Optional[bool] = None,
         image: Optional[Image.Image | Icon] = None,
+        image_pos: Optional[str] = None,
         on_click: Optional[Callable] = None,
         style: Optional[str] = None,
         text: Optional[str] = None,
@@ -37,6 +40,7 @@ class Button(BaseWidget):
             self,
             parent,
             command=on_click,
+            compound=_image_positions[image_pos],
             default=default,
             image=image,
             style=style,
