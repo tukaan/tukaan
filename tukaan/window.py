@@ -18,7 +18,7 @@ from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
 from ._misc import Color
 from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl, windows_only
-from .exceptions import TclError
+from .exceptions import TclError, ApplicationError
 
 tcl_interp = None
 tkdnd_inited = False
@@ -354,10 +354,6 @@ class TkWindowManager(DesktopWindowManager):
         return wrapper
 
     @property
-    def _wm_frame(self):
-        return int(self._tcl_call(str, "wm", "frame", self.wm_path), 16)
-
-    @property
     def state(self):
         try:
             state = self._tcl_call(str, "wm", "state", self.wm_path)
@@ -388,6 +384,10 @@ class TkWindowManager(DesktopWindowManager):
     @property
     def id(self) -> int:
         return int(self._tcl_call(str, "winfo", "id", self.wm_path), 16)
+
+    @property
+    def _wm_frame(self):
+        return int(self._tcl_call(str, "wm", "frame", self.wm_path), 16)
 
     # WM getters, setters
 
@@ -593,7 +593,10 @@ class TkWindowManager(DesktopWindowManager):
     def get_on_close_callback(self) -> Callable[[TkWindowManager], None]:
         return _callbacks[self._tcl_call(str, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW")]
 
-    def set_on_close_callback(self, callback: Callable[[TkWindowManager], None]) -> None:
+    def set_on_close_callback(self, callback: Optional[Callable[[TkWindowManager], None]]) -> None:
+        if callback is None:
+            callback = self.destroy
+        
         self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", callback)
 
     on_close_callback = property(get_on_close_callback, set_on_close_callback)
@@ -705,6 +708,9 @@ class App(TkWindowManager, TkWidget):
         except tk.TclError as e:
             msg = str(e)
 
+            if "application has been destroyed" in msg:
+                raise ApplicationError("can't invoke Tcl callback. Application has been destroyed.")
+
             if msg.startswith("couldn't read file"):
                 # FileNotFoundError is a bit more pythonic than TclError: couldn't read file
                 path = msg.split('"')[1]  # path is between ""
@@ -766,9 +772,6 @@ class App(TkWindowManager, TkWidget):
 
         global tcl_interp
 
-        for child in tuple(self._children.values()):
-            child.destroy()
-
         self._tcl_call(None, "destroy", self.tcl_path)
         self._tcl_call(None, "destroy", self.wm_path)
 
@@ -824,6 +827,9 @@ class Window(TkWindowManager, BaseWidget):
         self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
+
+    def wait_till_closed(self):
+        self._tcl_call(None, "tkwait", "window", self.wm_path)
 
     def get_modal(self) -> str:
         return bool(self._tcl_call(str, "wm", "transient", self.wm_path))
