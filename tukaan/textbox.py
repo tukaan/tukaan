@@ -13,14 +13,15 @@ from ._base import BaseWidget, CgetAndConfigure, TkWidget
 from ._constants import _cursor_styles, _inactive_cursor_styles, _wraps
 from ._font import Font
 from ._images import Icon
-from ._misc import Color, ScreenDistance
+from ._misc import Color
+from ._units import ScreenDistance
 from ._utils import (
     ClassPropertyMetaClass,
     _images,
     _text_tags,
     classproperty,
     counts,
-    py_to_tcl_arguments,
+    py_to_tcl_args,
     update_before,
 )
 from ._variables import Integer
@@ -140,7 +141,7 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
             subcommand,
             self._name,
             *args,
-            *py_to_tcl_arguments(**kwargs),
+            *py_to_tcl_args(**kwargs),
         )
 
     def add(self, *indexes) -> None:
@@ -674,7 +675,7 @@ class TextBox(BaseWidget):
             align = kwargs.pop("align", None)
 
             # fmt: off
-            to_call = ("image", "create", index, *py_to_tcl_arguments(image=content, padx=padx, pady=pady, align=align))
+            to_call = ("image", "create", index, *py_to_tcl_args(image=content, padx=padx, pady=pady, align=align))
             # fmt: on
         elif isinstance(content, TkWidget):
             margin = kwargs.pop("margin", None)
@@ -696,7 +697,7 @@ class TextBox(BaseWidget):
                 align = None
 
             # fmt: off
-            to_call = ("window", "create", index, *py_to_tcl_arguments(window=content, padx=padx, pady=pady, align=align, stretch=stretch))
+            to_call = ("window", "create", index, *py_to_tcl_args(window=content, padx=padx, pady=pady, align=align, stretch=stretch))
             # fmt: on
         elif isinstance(content, Path):
             with open(str(content.resolve())) as file:

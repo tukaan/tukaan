@@ -5,8 +5,9 @@ import warnings
 from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._misc import Color, ScreenDistance
-from ._utils import py_to_tcl_arguments
+from ._misc import Color
+from ._units import ScreenDistance
+from ._utils import py_to_tcl_args
 
 
 class Entry(BaseWidget):
@@ -99,7 +100,7 @@ class Entry(BaseWidget):
                 None,
                 self,
                 "config",
-                *py_to_tcl_arguments(validatecommand=vcmd, validate="all"),
+                *py_to_tcl_args(validatecommand=vcmd, validate="all"),
             )
 
     def _repr_details(self) -> str:

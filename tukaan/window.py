@@ -17,8 +17,7 @@ from ._constants import _resizable
 from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
 from ._misc import Color
-from ._platform import windows_only
-from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl
+from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl, windows_only
 from .exceptions import TclError
 
 tcl_interp = None
@@ -715,8 +714,12 @@ class App(TkWindowManager, TkWidget):
                 raise TclError(msg) from None
 
     def _tcl_eval(self, return_type: Any, code: str) -> Any:
-        result = self.app.eval(code)
-        return from_tcl(return_type, result)
+        try:
+            result = self.app.eval(code)
+        except tk.TclError:
+            raise TclError
+        else:
+            return from_tcl(return_type, result)
 
     def _get_boolean(self, arg) -> bool:
         return self.app.getboolean(arg)

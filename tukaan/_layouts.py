@@ -7,8 +7,8 @@ if TYPE_CHECKING:
     from ._base import BaseWidget, TkWidget
 
 from ._constants import AnchorAnnotation
-from ._misc import ScreenDistance
-from ._utils import py_to_tcl_arguments
+from ._units import ScreenDistance
+from ._utils import py_to_tcl_args
 from .exceptions import CellNotFoundError, LayoutError
 
 HorAlignAlias = Optional[Literal["left", "right", "stretch"]]
@@ -154,7 +154,7 @@ class Grid:
             "grid",
             "configure",
             self._widget,
-            *py_to_tcl_arguments(
+            *py_to_tcl_args(
                 column=col,
                 columnspan=colspan,
                 padx=padx,
@@ -184,7 +184,7 @@ class Grid:
             "grid",
             "configure",
             self._widget,
-            *py_to_tcl_arguments(row=row, column=col, rowspan=rowspan, columnspan=colspan),
+            *py_to_tcl_args(row=row, column=col, rowspan=rowspan, columnspan=colspan),
         )
 
         self._widget.parent.layout._cell_managed_children[self._widget] = cell
@@ -332,7 +332,7 @@ class Position:
             "place",
             "configure",
             self._widget,
-            *py_to_tcl_arguments(**possibly_relative_values_dict, anchor=anchor),
+            *py_to_tcl_args(**possibly_relative_values_dict, anchor=anchor),
         )
 
         if self._widget in self._widget.parent.layout._cell_managed_children:
@@ -454,7 +454,7 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
         if _lm is None:
             _lm = self._get_manager()
         self._real_manager = _lm
-        self._widget._tcl_call(None, _lm, "configure", self._widget, *py_to_tcl_arguments(**kwargs))
+        self._widget._tcl_call(None, _lm, "configure", self._widget, *py_to_tcl_args(**kwargs))
 
     def _info(self):
         result = self._widget._tcl_call(

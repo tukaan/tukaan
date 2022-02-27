@@ -7,19 +7,12 @@ from typing import Callable, Tuple, cast
 
 from PIL import ImageGrab  # type: ignore
 
-from ._platform import Platform
+from ._info import Platform
 from ._utils import (
     ClassPropertyMetaClass,
-    _flatten,
-    _fonts,
-    _pairs,
     classproperty,
-    counts,
-    from_tcl,
     get_tcl_interp,
-    py_to_tcl_arguments,
     reversed_dict,
-    to_tcl,
     update_after,
 )
 from .exceptions import ColorError, TclError
@@ -413,7 +406,7 @@ class Cursor(collections.namedtuple("Cursor", "cursor"), metaclass=ClassProperty
         "we-resize": "size_we",
     }
 
-    if Platform.system == "Windows":
+    if Platform.os == "Windows":
         _cursor_dict = {**_cursor_dict, **_win_cursor_dict}
 
     def to_tcl(self) -> str:
@@ -482,185 +475,3 @@ class Cursor(collections.namedtuple("Cursor", "cursor"), metaclass=ClassProperty
         get_tcl_interp()._tcl_call(
             None, "event", "generate", ".", "<Motion>", "-warp", "1", "-x", x, "-y", y
         )
-
-
-common_resolution_standards = {
-    (1024, 600): "WSVGA",
-    (1024, 768): "XGA",
-    (1280, 1024): "SXGA",
-    (1280, 720): "HD 720",
-    (1280, 768): "WXGA",
-    (1280, 800): "WXGA",
-    (1400, 1050): "SXGA+",
-    (1600, 1200): "UXGA",
-    (1680, 1050): "WSXGA+",
-    (1920, 1080): "HD 1080",
-    (1920, 1200): "WUXGA",
-    (2048, 1080): "2K",
-    (2048, 1536): "QXGA",
-    (2560, 1600): "WQXGA",
-    (2560, 2048): "QSXGA",
-    (320, 200): "CGA",
-    (320, 240): "QVGA",
-    (640, 480): "VGA",
-    (768, 576): "PAL",
-    (800, 480): "WVGA",
-    (800, 600): "SVGA",
-    (854, 480): "FWVGA",
-}
-
-common_aspect_ratios = {
-    16 / 10: "16:10",
-    16 / 9: "16:9",
-    17 / 9: "17:9",
-    3 / 2: "3:2",
-    4 / 3: "4:3",
-    5 / 3: "5:3",
-    5 / 4: "5:4",
-}
-
-common_color_depths = {
-    1: "monochrome",
-    15: "high color",
-    16: "high color",
-    24: "true color",
-    30: "deep color",
-    36: "deep color",
-    48: "deep color",
-}
-
-
-class Screen(metaclass=ClassPropertyMetaClass):
-    @classproperty
-    def _width(cls) -> ScreenDistance:
-        return get_tcl_interp()._tcl_call(int, "winfo", "screenwidth", ".")
-
-    @classproperty
-    def _height(cls) -> ScreenDistance:
-        return get_tcl_interp()._tcl_call(int, "winfo", "screenheight", ".")
-
-    @classproperty
-    def width(cls) -> ScreenDistance:
-        return ScreenDistance(cls._width)
-
-    @classproperty
-    def height(cls) -> ScreenDistance:
-        return ScreenDistance(cls._height)
-
-    @classproperty
-    def size(cls) -> tuple[ScreenDistance, ScreenDistance]:
-        return (ScreenDistance(cls._width), ScreenDistance(cls._height))
-
-    @classproperty
-    def area(cls) -> ScreenDistance:
-        return ScreenDistance(cls._width * cls._height)
-
-    @classproperty
-    def aspect_ratio(cls) -> str:
-        try:
-            return common_aspect_ratios[cls._width / cls._height]
-        except KeyError:
-            fraction = Fraction(cls._width, cls._height)  # reduce the ratio
-            return f"{fraction.numerator}:{fraction.denominator}"
-
-    @classproperty
-    def resolution_standard(cls) -> str:
-        try:
-            return common_resolution_standards[(cls._width, cls._height)]
-        except KeyError:
-            return ""
-
-    @classproperty
-    def diagonal(cls) -> int:
-        return ScreenDistance((cls._width**2 + cls._height**2) ** 0.5)  # pythagoras
-
-    @classproperty
-    def color_depth(cls) -> int:
-        return get_tcl_interp()._tcl_call(int, "winfo", "screendepth", ".")
-
-    @classproperty
-    def color_depth_alias(cls) -> str:
-        try:
-            return common_color_depths[cls.color_depth]
-        except KeyError:
-            return ""
-
-    @classproperty
-    def dpi(cls) -> float:
-        return get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", "1i")
-
-    @classproperty
-    def ppi(cls) -> float:
-        return cls.dpi
-
-    def __str__(self) -> str:
-        return f"{self.width.px};{self.height.px}"
-
-
-class ScreenDistance(collections.namedtuple("ScreenDistance", "distance")):
-    """An object to convert between different screen distance units"""
-
-    _tcl_units = {"px": "", "mm": "m", "cm": "c", "inch": "i"}
-
-    def __new__(cls, px=0, mm=0, cm=0, inch=0) -> ScreenDistance:
-        distance = 0
-
-        for unit, amount in {"cm": cm, "px": px, "mm": mm, "inch": inch}.items():
-            pixels = 0
-
-            if amount:
-                if unit != "px":
-                    pixels = get_tcl_interp()._tcl_call(
-                        float, "winfo", "fpixels", ".", f"{amount}{cls._tcl_units[unit]}"
-                    )
-                else:
-                    pixels = float(amount)
-
-            distance += pixels
-
-        cls.dpi = Screen.ppi
-
-        return super(ScreenDistance, cls).__new__(cls, distance)  # type: ignore
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}(distance={self.distance}px))"
-
-    def __int__(self):
-        return intround(self.distance)
-
-    def __float__(self):
-        return round4(self.distance)
-
-    def to_tcl(self) -> str:
-        return str(self.distance)
-
-    __str__ = to_tcl
-
-    @classmethod
-    def from_tcl(cls, tcl_value: str) -> ScreenDistance:
-        unit = tcl_value[-1]
-
-        if unit == "c":
-            return cls(cm=int(tcl_value[:-1]))
-        if unit == "m":
-            return cls(mm=int(tcl_value[:-1]))
-        if unit == "i":
-            return cls(inch=int(tcl_value[:-1]))
-
-        return cls(px=int(tcl_value[:-1]))
-
-    @property
-    def px(self) -> float:
-        return round4(self.distance)
-
-    @property
-    def mm(self) -> float:
-        return round4(self.distance / (self.dpi / 25.4))
-
-    @property
-    def cm(self) -> float:
-        return round4(self.distance / (self.dpi / 2.54))
-
-    @property
-    def inch(self) -> float:
-        return round4(self.distance / self.dpi)
