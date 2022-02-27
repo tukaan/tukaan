@@ -98,8 +98,11 @@ class Tab(Frame):
     def unhide(self):
         self._tcl_call(None, self._widget, "add", self)
 
-    def delete(self):
-        self._tcl_call(None, self._widget, "forget", self)
+    def remove(self):
+        try:
+            self._tcl_call(None, self._widget, "forget", self)
+        except TclError:  # Tab isn't added to TabView
+            pass
 
     @property
     def enabled(self):
