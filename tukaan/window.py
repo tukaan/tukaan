@@ -551,7 +551,10 @@ class TkWindowManager(DesktopWindowManager):
         return Fraction(*result[:2]), Fraction(*result[2:])
 
     @update_after
-    def set_aspect_ratio(self, new_aspect: Optional[tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction]) -> None:
+    def set_aspect_ratio(
+        self,
+        new_aspect: Optional[tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction],
+    ) -> None:
         if new_aspect is None:
             return self._tcl_call(None, "wm", "aspect", self.wm_path, *("",) * 4)
 

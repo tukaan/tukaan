@@ -4,8 +4,8 @@ from typing import Optional
 
 from ._base import BaseWidget, TkWidget
 from ._utils import py_to_tcl_args
-from .frame import Frame
 from .exceptions import TclError
+from .frame import Frame
 
 
 class Pane(Frame):
@@ -39,7 +39,7 @@ class Pane(Frame):
         if self in self._widget:
             self.move(-1)
             return
-        
+
         self._tcl_call(None, self._widget, "add", self, *py_to_tcl_args(**self._store_options))
         self._widget.panes.append(self)
 
@@ -65,7 +65,12 @@ class SplitView(BaseWidget):
         "focusable": (bool, "takefocus"),
     }
 
-    def __init__(self, parent: Optional[TkWidget] = None, focusable: Optional[bool] = None, orientation: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        parent: Optional[TkWidget] = None,
+        focusable: Optional[bool] = None,
+        orientation: Optional[str] = None,
+    ) -> None:
         BaseWidget.__init__(self, parent, takefocus=focusable, orient=orientation)
 
         self.Pane = Pane

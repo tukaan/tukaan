@@ -154,6 +154,10 @@ class TabView(BaseWidget):
 
         return self.tabs[selected]
 
+    @selected.setter
+    def selected(self, tab: Tab):
+        tab.select()
+
     def on_tab_change(self, func: Callable[[], None]) -> Callable[[Tab], None]:
         def wrapper() -> None:
             func(self.selected)

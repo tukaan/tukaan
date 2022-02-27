@@ -4,6 +4,7 @@ from typing import Callable, Optional
 
 from ._base import Any, BaseWidget, TkWidget
 from ._variables import String, _TclVariable
+from .frame import Frame
 
 
 class RadioButton(BaseWidget):
@@ -51,66 +52,68 @@ class RadioButton(BaseWidget):
         self.variable.set(self.value)
 
     @property
-    def is_selected(self) -> bool:
+    def is_selected(self) -> bool:  # read-only
         return self.variable.get() == self.value
 
-    @is_selected.setter
-    def is_selected(self, _: bool) -> bool:
-        raise AttributeError("RadioButton.is_selected is read-only")
 
+class RadioGroup(Frame):
+    _keys = {}
 
-class RadioGroup(BaseWidget):
-    _tcl_class = "ttk::frame"
-    _keys: dict[str, Any | tuple[Any, str]] = {}
+    def __init__(
+        self,
+        parent: Optional[TkWidget] = None,
+        *,
+        items: dict[str, str],
+        padding: Optional[int | tuple[int, ...]] = None,
+    ) -> None:
+        Frame.__init__(self, parent, padding=padding)
 
-    def __init__(self, parent: Optional[TkWidget] = None, *, items: list[tuple[str, str]]) -> None:
-        BaseWidget.__init__(self, parent)
-        self.variable = String(items[0][1])
-        self.items = items
+        self.variable = String(tuple(items.keys())[0])
+        self.items = items  # RadioGroup.items setter
 
     def _repr_details(self) -> str:
-        return f"number_of_items={len(self._items)}, selected={self.selected_item!r}"
+        item_id = self.variable.get()
+        if item_id not in self._items:
+            item_id = None
+
+        return f"number of items={len(self._items)}, selected={item_id!r}"
 
     @property
     def value(self):
         return self.variable.get()
 
-    def get_item(self, item: str) -> BaseWidget:
+    def __getitem__(self, item: str) -> RadioButton:
         for radio in self.child_stats.children:
             if radio.item_id == item:
                 return radio
-        raise RuntimeError(f"item with id {item!r} is not in this RadioGroup")
 
-    def destroy_item(self, item: str) -> None:
-        for radio in self.child_stats.children:
-            if radio.item_id == item:
-                radio.destroy()
-        raise RuntimeError(f"item with id {item!r} is not in this RadioGroup")
+        if item == self.variable.get():
+            # selected getter wants to return a radio that no longer exists
+            return None
+        else:
+            # user tries to select non-existent element
+            raise RuntimeError(f"item with id {item!r} is not in this RadioGroup")
 
     @property
-    def selected_item(self) -> BaseWidget | None:
-        value = self.variable.get()
-        for radio in self._items:
-            if radio[1] == value:
-                return self.get_item(radio[1])
-        return None
+    def selected(self) -> RadioButton | None:
+        return self[self.variable.get()]
 
-    @selected_item.setter
-    def selected_item(self, value: str) -> None:
+    @selected.setter
+    def selected(self, value: str) -> None:
         self.variable.set(value)
 
     @property
-    def items(self) -> list[tuple[str, str]]:
+    def items(self) -> dict[str, str]:
         return self._items
 
     @items.setter
-    def items(self, new_items: list[tuple[str, str]]) -> None:
+    def items(self, new_items: dict[str, str]) -> None:
         self._items = new_items
 
         for child in self.child_stats.children:
             child.destroy()
 
-        for index, item in enumerate(new_items):
-            radio = RadioButton(self, variable=self.variable, value=item[1], text=item[0])
-            radio.item_id = item[1]
+        for index, (id, text) in enumerate(tuple(new_items.items())):
+            radio = RadioButton(self, variable=self.variable, value=id, text=text)
+            radio.item_id = id
             radio.layout.grid(row=index)
