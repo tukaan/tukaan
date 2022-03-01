@@ -222,12 +222,9 @@ class TextIndex(namedtuple("TextIndex", ["line", "column"])):
                     line, col = 1, 0
                 elif index == -1:
                     result = cls._widget._tcl_call(
-                        str, cls._widget.tcl_path, "index", f"end - 1 chars"
+                        str, cls._widget.tcl_path, "index", "end - 1 chars"
                     )
-            elif isinstance(index, tk.Tcl_Obj):
-                # Tcl_Obj from _utils.from_tcl()
-                result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", str(index))
-            elif isinstance(index, (str, Icon, Image.Image, TkWidget)):
+            elif isinstance(index, (str, Icon, Image.Image, TkWidget, tk.Tcl_Obj)):
                 # string from from_tcl() OR mark name, image name or widget name
                 result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", index)
             elif isinstance(index, tuple):
@@ -273,11 +270,15 @@ class TextIndex(namedtuple("TextIndex", ["line", "column"])):
     def __ge__(self, other: TextIndex) -> bool:  # type: ignore[override]
         return self._compare(other, ">=")
 
-    def __add__(self, indices: int) -> TextIndex:  # type: ignore[override]
-        return self.forward(indices=indices)
+    def __add__(self, arg: int | TextIndex) -> TextIndex:  # type: ignore[override]
+        if isinstance(arg, TextIndex):
+            return TextIndex(self.line + arg.line, self.column + arg.column)
+        return self.forward(indices=arg)
 
-    def __sub__(self, indices: int) -> TextIndex:  # type: ignore[override]
-        return self.back(indices=indices)
+    def __sub__(self, arg: int | TextIndex) -> TextIndex:  # type: ignore[override]
+        if isinstance(arg, TextIndex):
+            return TextIndex(self.line - arg.line, self.column - arg.column)
+        return self.back(indices=arg)
 
     def clamp(self) -> TextIndex:
         if self < self._widget.start:
@@ -390,8 +391,8 @@ class TextHistory:
     _widget: TextBox
     __slots__ = "_widget"
 
-    def call_subcommand(self, *args):
-        if self._widget.track_history is False:
+    def call_subcommand(self, *args) -> bool:
+        if not self._widget.track_history:
             warnings.warn(
                 "undoing is disabled on this textbox widget. Use `track_history=True` to enable it.",
                 stacklevel=3,
@@ -399,14 +400,14 @@ class TextHistory:
         return self._widget._tcl_call(bool, self._widget, "edit", *args)
 
     @property
-    def can_redo(self):
+    def can_redo(self) -> bool:
         return self.call_subcommand("canredo")
 
     @property
-    def can_undo(self):
+    def can_undo(self) -> bool:
         return self.call_subcommand("canundo")
 
-    def redo(self, number=1):
+    def redo(self, number=1) -> None:
         try:
             for i in range(number):
                 self.call_subcommand("redo")
@@ -415,7 +416,7 @@ class TextHistory:
 
     __rshift__ = redo
 
-    def undo(self, number=1):
+    def undo(self, number=1) -> None:
         try:
             for i in range(number):
                 self.call_subcommand("undo")
@@ -424,10 +425,10 @@ class TextHistory:
 
     __lshift__ = undo
 
-    def clear(self):
+    def clear(self) -> None:
         self.call_subcommand("reset")
 
-    def add_sep(self):
+    def add_sep(self) -> None:
         self.call_subcommand("separator")
 
     @property
@@ -641,7 +642,7 @@ class TextBox(BaseWidget):
 
     @property
     def end(self) -> TextIndex:
-        return self.index(-1, no_check=True)
+        return self.index("end - 1 chars", no_check=True)
 
     @property
     def current(self) -> TextIndex:
@@ -894,7 +895,7 @@ class TextBox(BaseWidget):
                 "window": TkWidget.from_tcl,
             }[type]
 
-            result += (self.index(index), convert(value))  # type: ignore  # "object" not callable
+            result.append((self.index(index), convert(value)))  # type: ignore  # "object" not callable
 
         self._tcl_call(str, self, "dump", "-all", "-command", add_item, "1.0", "end - 1 chars")
         return result
@@ -928,6 +929,13 @@ class TextBox(BaseWidget):
         )
 
         return RangeInfo(*result)
+
+    @property
+    def is_empty(self):
+        return self.end == (1, 0)
+
+    def __len__(self):
+        return self.end.line
 
     def __matmul__(self, index: tuple[int, int] | int | Icon | Image.Image | TkWidget):
         return self.index(index)
