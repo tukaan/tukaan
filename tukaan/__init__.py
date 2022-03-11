@@ -3,6 +3,7 @@ from ._font import Font
 from ._images import Icon, IconFactory, Image
 from ._info import Machine, Memory, Platform, Screen
 from ._misc import Clipboard, Color, Cursor
+from ._misc import _Time as Time
 from ._units import MemoryUnit, ScreenDistance
 from ._variables import Boolean, Float, Integer, String
 from .button import Button
@@ -17,5 +18,5 @@ from .separator import Separator
 from .slider import Slider
 from .tabview import TabView
 from .textbox import TextBox
-from .timeout import Timeout
+from .timeout import Timer
 from .window import App, Window

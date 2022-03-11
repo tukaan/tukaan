@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from ._font import Font
     from ._images import Icon, _image_converter_class
     from ._variables import _TclVariable
+    from .media import Sound
     from .textbox import Tag
     from .timeout import Timeout
 
@@ -53,13 +54,14 @@ _variables: dict[str, _TclVariable] = {}
 _text_tags: dict[str, Tag] = {}
 _widgets: dict[str, TkWidget] = {}
 _fonts: dict[str, Font] = {}
+_sounds: dict[str, Sound] = {}
 
 
 def updated(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
-        get_tcl_interp()._tcl_call(None, "update", "idletasks")
+        get_tcl_interp()._tcl_call(None, "update")
         result = func(self, *args, **kwargs)
-        get_tcl_interp()._tcl_call(None, "update", "idletasks")
+        get_tcl_interp()._tcl_call(None, "update")
         return result
 
     return wrapper
@@ -67,7 +69,7 @@ def updated(func: Callable) -> Callable:
 
 def update_before(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
-        get_tcl_interp()._tcl_call(None, "update", "idletasks")
+        get_tcl_interp()._tcl_call(None, "update")
         return func(self, *args, **kwargs)
 
     return wrapper
@@ -76,7 +78,7 @@ def update_before(func: Callable) -> Callable:
 def update_after(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
         result = func(self, *args, **kwargs)
-        get_tcl_interp()._tcl_call(None, "update", "idletasks")
+        get_tcl_interp()._tcl_call(None, "update")
         return result
 
     return wrapper
@@ -114,7 +116,7 @@ def get_tcl_interp():
     from .window import tcl_interp
 
     if tcl_interp is None:
-        raise RuntimeError("tcl/tk is not initialized. Please use tukaan.App() to initialize it.")
+        raise RuntimeError("Tcl/Tk is not initialized. Use tukaan.App() to initialize it.")
 
     return tcl_interp
 
@@ -173,9 +175,6 @@ def from_tcl(type_spec, value) -> Any:
         return get_tcl_interp()._get_string(value)
 
     if type_spec is bool:
-        if not from_tcl(str, value):
-            return None
-
         return get_tcl_interp()._get_boolean(value)
 
     if type_spec is int:
@@ -183,16 +182,13 @@ def from_tcl(type_spec, value) -> Any:
             return None
         return int(value)
 
-    if isinstance(type_spec, type):
-        if issubclass(type_spec, numbers.Real):
-            string = from_tcl(str, value)
-            if not string:
-                return None
+    if type_spec is float:
+        if value == "":
+            return None
+        return get_tcl_interp()._get_float(value)
 
-            return type_spec(string)  # type: ignore
-
-        if hasattr(type_spec, "from_tcl"):
-            return type_spec.from_tcl(value)  # type: ignore
+    if hasattr(type_spec, "from_tcl"):
+        return type_spec.from_tcl(value)  # type: ignore
 
     if isinstance(type_spec, (list, tuple, dict)):
         items = get_tcl_interp()._split_list(value)

@@ -475,3 +475,68 @@ class Cursor(collections.namedtuple("Cursor", "cursor"), metaclass=ClassProperty
         get_tcl_interp()._tcl_call(
             None, "event", "generate", ".", "<Motion>", "-warp", "1", "-x", x, "-y", y
         )
+
+
+class Time:
+    def __init__(self, *args, **kwargs):
+        if args and not kwargs:
+            if len(args) == 3:
+                h, m, s = args
+                if s is None and m is None:  # comes from a slice
+                    h, m, s = 0, 0, h
+                elif s is None:
+                    h, m, s = 0, h, m
+            elif len(args) == 2:
+                h, m, s = 0, *args
+            elif len(args) == 1:
+                h, m, s = 0, 0, args[0]
+        elif kwargs and not args:
+            h = kwargs.pop("hours", 0)
+            m = kwargs.pop("minutes", 0)
+            s = kwargs.pop("seconds", 0)
+        else:
+            raise ValueError
+
+        if s >= 60:
+            plus_m, s = divmod(s, 60)
+            m += plus_m
+        if m >= 60:
+            plus_h, m = divmod(m, 60)
+            h += plus_h
+
+        self.hours = int(h)
+        self.minutes = int(m)
+        self.seconds = s
+
+    def __repr__(self):
+        return f"Time(hours={self.hours}, minutes={self.minutes}, seconds={self.seconds})"
+
+    @property
+    def total_seconds(self):
+        return self.hours * 3600 + self.minutes * 60 + self.seconds
+
+
+class _TimeCreator:
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return Time(key.start, key.stop, key.step)
+        elif isinstance(key, (int, float)):
+            return Time(seconds=key)
+
+    def __call__(self, *args, **kwargs):
+        return Time(*args, **kwargs)
+
+    def __instancecheck__(self, other):
+        return isinstance(other, (_TimeCreator, Time))
+
+    def __repr__(self):
+        return "<tukaan.Time; usage: Time[h:min:sec] or Time(h, min, sec)>"
+
+    @staticmethod
+    def from_secs(seconds: int):
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        return Time(h, m, s)
+
+
+_Time = _TimeCreator()

@@ -53,9 +53,7 @@ class _Platform:
     def win_sys(self) -> str:
         from ._utils import get_tcl_interp
 
-        return {"win32": "DWM", "x11": "X11", "aqua": "Quartz"}[
-            get_tcl_interp()._tcl_call(str, "tk", "windowingsystem")
-        ]
+        return {"win32": "DWM", "x11": "X11", "aqua": "Quartz"}[get_tcl_interp()._winsys]
 
     @property
     def tcl_version(self) -> str:

@@ -1,6 +1,7 @@
 class TclError(Exception):
     ...
 
+
 class ApplicationError(Exception):
     ...
 

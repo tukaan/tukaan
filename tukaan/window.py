@@ -18,7 +18,7 @@ from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
 from ._misc import Color
 from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl, windows_only
-from .exceptions import TclError, ApplicationError
+from .exceptions import ApplicationError, TclError
 
 tcl_interp = None
 tkdnd_inited = False
@@ -29,9 +29,9 @@ Size = namedtuple("Size", ["width", "height"])
 
 def updated(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
-        self._tcl_call(None, "update", "idletasks")
+        self._tcl_call(None, "update")
         result = func(self, *args, **kwargs)
-        self._tcl_call(None, "update", "idletasks")
+        self._tcl_call(None, "update")
         return result
 
     return wrapper
@@ -39,7 +39,7 @@ def updated(func: Callable) -> Callable:
 
 def update_before(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
-        self._tcl_call(None, "update", "idletasks")
+        self._tcl_call(None, "update")
         return func(self, *args, **kwargs)
 
     return wrapper
@@ -48,7 +48,7 @@ def update_before(func: Callable) -> Callable:
 def update_after(func: Callable) -> Callable:
     def wrapper(self, *args, **kwargs) -> Any:
         result = func(self, *args, **kwargs)
-        self._tcl_call(None, "update", "idletasks")
+        self._tcl_call(None, "update")
         return result
 
     return wrapper
@@ -362,7 +362,9 @@ class TkWindowManager(DesktopWindowManager):
                 return "closed"
             raise e
 
-        if state == "iconic":
+        if state == "normal" and self._winsys != "x11":  # needs further checking on X11
+            return "normal"
+        elif state == "iconic":
             return "minimized"
         elif state == "withdrawn":
             return "hidden"
@@ -551,7 +553,10 @@ class TkWindowManager(DesktopWindowManager):
         return Fraction(*result[:2]), Fraction(*result[2:])
 
     @update_after
-    def set_aspect_ratio(self, new_aspect: Optional[tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction]) -> None:
+    def set_aspect_ratio(
+        self,
+        new_aspect: Optional[tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction],
+    ) -> None:
         if new_aspect is None:
             return self._tcl_call(None, "wm", "aspect", self.wm_path, *("",) * 4)
 
@@ -596,7 +601,7 @@ class TkWindowManager(DesktopWindowManager):
     def set_on_close_callback(self, callback: Optional[Callable[[TkWindowManager], None]]) -> None:
         if callback is None:
             callback = self.destroy
-        
+
         self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", callback)
 
     on_close_callback = property(get_on_close_callback, set_on_close_callback)
@@ -689,6 +694,9 @@ class App(TkWindowManager, TkWidget):
 
         self._init_tkdnd()
         self._init_tkextrafont()
+        self._init_tksnack()
+
+        self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", self.destroy)
 
     def __enter__(self):
         return self
@@ -696,6 +704,7 @@ class App(TkWindowManager, TkWidget):
     def __exit__(self, exc_type, exc_value, _):
         if exc_type is None:
             return self.run()
+
         raise exc_type(exc_value) from None
 
     def _tcl_call(self, return_type: Any, *args) -> Any:
@@ -729,6 +738,9 @@ class App(TkWindowManager, TkWidget):
 
     def _get_boolean(self, arg) -> bool:
         return self.app.getboolean(arg)
+
+    def _get_float(self, arg) -> float:
+        return float(self.app.getdouble(arg))
 
     def _get_string(self, obj) -> str:
         if isinstance(obj, str):
@@ -764,6 +776,10 @@ class App(TkWindowManager, TkWidget):
         self._lappend_auto_path(Path(__file__).parent / "tkextrafont")
         self._tcl_call(None, "package", "require", "extrafont")
 
+    def _init_tksnack(self):
+        self._lappend_auto_path(Path(__file__).parent / "tksnack")
+        self._tcl_call(None, "package", "require", "snack")
+
     def run(self) -> None:
         self.app.mainloop(0)
 
@@ -772,6 +788,7 @@ class App(TkWindowManager, TkWidget):
 
         global tcl_interp
 
+        self._tcl_call(None, "snack::audio", "stop")
         self._tcl_call(None, "destroy", self.tcl_path)
         self._tcl_call(None, "destroy", self.wm_path)
 
