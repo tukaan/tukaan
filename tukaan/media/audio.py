@@ -8,47 +8,6 @@ from tukaan._misc import Time, _Time
 from tukaan._utils import _sounds, counts, get_tcl_interp, py_to_tcl_args
 from tukaan.exceptions import TclError
 
-"""
------ Filters -----
-
-[ ] Amplifier
-    - amount %
-[ ] Compose
-    - filter ...
-[ ] Echo
-    - gain_in
-    - gain_out
-    - delay ...
-    - decay ...
-[ ] Fade in
-    - type
-    - length
-[ ] Fade out
-    - type
-    - length
-[ ] Formant
-    - frequency
-    - bandwidth
-[ ] Generator
-    - frequency
-    - amplitude
-    - shape
-    - type
-    - ntot
-[ ] IIR
-    - denominator
-    - dither
-    - impulse
-    - noise
-    - numerator
-[ ] Map
-    - value ...
-[ ] Reverb
-    - gain_out
-    - time
-    - delay ...
-"""
-
 
 class BaseFilter:
     def __and__(self, other):
@@ -330,6 +289,14 @@ class Sound:
         finally:
             self.stop()
 
+    def start_recording(self, input="default", overwrite=True):
+        if overwrite:
+            self.stop()
+
+        self._interp._tcl_call(
+            None, self._name, "record", "-device", input, "-append", not overwrite
+        )
+
     def save(self, file_name: str | Path, format: str = None, *, byteorder: str = None) -> None:
         self._interp._tcl_call(
             None,
@@ -435,7 +402,7 @@ class Sound:
             self._interp._tcl_call(None, self._name, "mix", other_sound._name)
         return self
 
-    def insert(self, other_sound, position) -> Sound:
+    def insert(self, position, other_sound) -> Sound:
         if isinstance(position, Time):
             position = self._get_sample(position)
 
