@@ -73,28 +73,6 @@ class EchoFilter(BaseFilter):
         )
 
 
-class ReverbFilter(BaseFilter):
-    def __init__(self, time: float = 5, delay: float = 1, volume: float = 100):
-        if time < 0.001:
-            time = 0.001
-
-        if delay < 0.001:
-            delay = 0.001
-
-        self._name = get_tcl_interp()._tcl_call(
-            str, "snack::filter", "reverb", volume / 100, time * 1000, delay * 1000
-        )
-
-
-class GeneratorFilter(BaseFilter):
-    def __init__(
-        self, frequency: float, amplitude: int, shape: float = 0.5, type: str = "sine"
-    ) -> None:
-        self._name = get_tcl_interp()._tcl_call(
-            str, "snack::filter", "generator", frequency, amplitude, shape, type
-        )
-
-
 class FadeInFilter(BaseFilter):
     def __init__(self, length: float = 5, type: str = "linear") -> None:
         self._name = get_tcl_interp()._tcl_call(
@@ -106,6 +84,22 @@ class FadeOutFilter(BaseFilter):
     def __init__(self, length: float = 5, type: str = "linear") -> None:
         self._name = get_tcl_interp()._tcl_call(
             str, "snack::filter", "fade", "out", type, length * 1000
+        )
+
+
+class FormantFilter(BaseFilter):
+    def __init__(self, frequency: float, bandwidth: int) -> None:
+        self._name = get_tcl_interp()._tcl_call(
+            str, "snack::filter", "formant", frequency, bandwidth
+        )
+
+
+class GeneratorFilter(BaseFilter):
+    def __init__(
+        self, frequency: float, amplitude: int, shape: float = 0.5, type: str = "sine"
+    ) -> None:
+        self._name = get_tcl_interp()._tcl_call(
+            str, "snack::filter", "generator", frequency, amplitude, shape, type
         )
 
 
@@ -140,11 +134,25 @@ class MapFilter(BaseFilter):
         )
 
 
+class ReverbFilter(BaseFilter):
+    def __init__(self, time: float = 5, delay: float = 1, volume: float = 100):
+        if time < 0.001:
+            time = 0.001
+
+        if delay < 0.001:
+            delay = 0.001
+
+        self._name = get_tcl_interp()._tcl_call(
+            str, "snack::filter", "reverb", volume / 100, time * 1000, delay * 1000
+        )
+
+
 class Filter:
     Amplifier = AmplifierFilter
     Echo = EchoFilter
     FadeIn = FadeInFilter
     FadeOut = FadeOutFilter
+    Formant = FormantFilter
     Generator = GeneratorFilter
     IIR = IIRFilter
     Map = MapFilter
