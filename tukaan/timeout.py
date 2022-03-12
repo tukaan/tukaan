@@ -19,7 +19,7 @@ class TimeOut:
             self.state = "failed"
         else:
             self.state = "succesfully completed"
-        
+
     def cancel(self) -> None:
         if self.state != "pending":
             raise RuntimeError(f"cannot cancel a {self.state} timeout")
@@ -39,4 +39,3 @@ class Timer:
     @staticmethod
     def cancel(timeout: TimeOut) -> None:
         timeout.cancel()
-        

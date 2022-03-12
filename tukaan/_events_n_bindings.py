@@ -3,14 +3,14 @@ from __future__ import annotations
 import re
 from functools import partial
 from pathlib import Path
-from typing import Callable, Optional, Any
+from typing import Any, Callable, Optional
+
 from PIL import Image, UnidentifiedImageError  # type: ignore
 
 from ._constants import _keysym_aliases
 from ._info import System
 from ._misc import Color
-from ._utils import create_command, from_tcl, get_tcl_interp, reversed_dict, to_tcl, py_to_tcl_args
-
+from ._utils import create_command, from_tcl, get_tcl_interp, py_to_tcl_args, reversed_dict, to_tcl
 
 if System.os == "macOS":
     button_numbers = {1: "left", 2: "right", 3: "middle"}
@@ -151,6 +151,14 @@ class KeyboardEvent(Event):
                 if mod in cls._reversed_aliases:
                     modifier_keys.remove(mod)
                     modifier_keys.append(cls._reversed_aliases[mod])
+
+            if "Shift" in modifier_keys:
+                if len(key) == 1:
+                    key = key.upper()
+                elif key == "Tab" and System.win_sys == "X11":
+                    modifier_keys.remove("Shift")
+                    key = "ISO_Left_Tab"
+
             modifiers = "-".join(modifier_keys) + ("-" if modifier_keys else "")
 
             return f"<{modifiers}Key{up_or_down[search.group(1)]}-{key}>"
@@ -226,15 +234,20 @@ class MouseEvent(Event):
 
 
 class ScrollEvent(Event):
-    sequences = {
-        # linux
-        "<Button-4>": "<Button-4>",
-        "<Button-5>": "<Button-5>",
-        # other
-        "<MouseWheel>": "<MouseWheel>",
-    }
     _ignored_values: tuple[Any, ...] = (None, "??", set())
     _relevant_attributes = ("delta", "modifiers")
+
+    @classmethod
+    def _matches(cls, sequence) -> bool:
+        for i in ("MouseWheel", "Button-4", "Button-5"):
+            if i in sequence:
+                return True
+
+        return False
+
+    @classmethod
+    def _parse(cls, sequence: str) -> str:
+        return sequence
 
     def __init__(self, *args) -> None:
         if System.win_sys == "X11":
@@ -257,7 +270,7 @@ class VirtualEvent(Event):
         return sequence.startswith("<<") and sequence.endswith(">>") and len(sequence) > 4
 
     @classmethod
-    def _parse(cls, sequence:str) -> str:
+    def _parse(cls, sequence: str) -> str:
         return sequence
 
     def __init__(self, *args) -> None:
@@ -433,8 +446,9 @@ class DnDEvent(Event):
     @property
     def data(self) -> str | list | Image.Image | Path | Color:
         if self._needs_download:
-            import requests
             import tempfile
+
+            import requests
 
             try:
                 path = re.search(self._image_regex, self._data).group(3)  # type: ignore
@@ -462,15 +476,15 @@ class DnDEvent(Event):
 class EventMixin:
     tcl_path: str
     _tcl_call: Callable
-    
+
     def _bind(self, sequence: str, func: Callable | str, overwrite: bool, send_event: bool) -> None:
         event: type[KeyboardEvent | MouseEvent | ScrollEvent | DnDEvent | VirtualEvent]
-        
+
         if KeyboardEvent._matches(sequence):
             event = KeyboardEvent
         elif sequence in MouseEvent.sequences:
             event = MouseEvent
-        elif sequence in ScrollEvent.sequences:
+        if ScrollEvent._matches(sequence):
             event = ScrollEvent
         elif sequence in DnDEvent.sequences:
             event = DnDEvent
@@ -503,26 +517,39 @@ class EventMixin:
             else:
                 script_str = f"{'' if overwrite else '+'} if {{[{cmd} {subst_str}] == 0}} break"  # tcl: {+ if {[command %subst] == 0} break}
 
-        self._tcl_call(None, "bind", self.tcl_path, sequence, script_str)
+        tcl_path = self.tcl_path
+        if tcl_path == ".app":
+            tcl_path = "."
 
-    def bind(self, sequence: str, func, overwrite: bool = False, send_event: bool = False) -> None:
+        self._tcl_call(None, "bind", tcl_path, sequence, script_str)
+
+    def bind(
+        self,
+        sequence: str,
+        func: Callable[[], Optional[bool]] | Callable[[Event], Optional[bool]],
+        overwrite: bool = False,
+        send_event: bool = False,
+    ) -> None:
         if isinstance(sequence, KeySeq):
             sequence = sequence.event_sequence
 
-        if "Shift-Tab" in sequence and System.win_sys == "X11":
-            sequence = sequence.replace("Shift-Tab", "ISO_Left_Tab")
+        if "MouseScroll" in sequence:
+            if System.win_sys == "X11":
+                self._bind(sequence.replace("MouseScroll", "Button-4"), func, overwrite, send_event)
+                self._bind(sequence.replace("MouseScroll", "Button-5"), func, overwrite, send_event)
+                return
+            else:
+                sequence = sequence.replace("MouseScroll", "MouseWheel")
 
-        if "MouseWheel" in sequence and System.win_sys == "X11":
-            self._bind(sequence.replace("MouseWheel", "Button-4"), func, overwrite, send_event)
-            self._bind(sequence.replace("MouseWheel", "Button-5"), func, overwrite, send_event)
-            return
+        if "Menu" in sequence and System.os == "Windows":
+            sequence = sequence.replace("Menu", "App")
 
         self._bind(sequence, func, overwrite, send_event)
 
     def unbind(self, sequence: str) -> None:
         self._bind(sequence, "", True, False)
 
-    def generate_event(self, sequence: str, data:Any=None) -> None:
+    def generate_event(self, sequence: str, data: Any = None) -> None:
         global _virtual_event_data_container
         key = None
 
@@ -534,7 +561,9 @@ class EventMixin:
         )
 
 
-def DragObject(data: str | list | tuple | Path | Color, type_:Optional[str]=None, action: str="copy") -> tuple[str, str, str]:
+def DragObject(
+    data: str | list | tuple | Path | Color, type_: Optional[str] = None, action: str = "copy"
+) -> tuple[str, str, str]:
     if type_ is None:
         if isinstance(data, str):
             type_ = "DND_Text"
@@ -597,10 +626,12 @@ class KeySeq:
 
             for key in list(args):
                 if key in self._wrong_modifiers:
-                    raise ValueError(f"wrong modifier key: {key!r}. Use {self._wrong_modifiers[key]} instead.")
+                    raise ValueError(
+                        f"wrong modifier key: {key!r}. Use {self._wrong_modifiers[key]} instead."
+                    )
                 elif " " in key:
                     raise ValueError(f"invalid key: {key!r}")
-                    
+
                 if key in modifier_order:
                     seq.append(key)
                 else:
@@ -629,5 +660,5 @@ class KeySeq:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, KeySeq):
             return NotImplemented
-        
+
         return set(self._sequence) == set(other._sequence)

@@ -30,23 +30,30 @@ from .window import App, Window
 class _RequiredVersion:
     def splitver(self, version_str):
         return tuple(map(int, version_str.split(".")))
-    
+
     def __eq__(self, version):
         if version != __version__:
             sys.tracebacklimit = 0
-            raise RuntimeError(f"you have Tukaan version {__version__} installed, which is incompatible with your code that requires Tukaan {version}.\n"
-                                f"Use 'pip install tukaan=={version}' to install the required version of Tukaan.")
+            raise RuntimeError(
+                f"you have Tukaan version {__version__} installed, which is incompatible with your code that requires Tukaan {version}.\n"
+                f"Use 'pip install tukaan=={version}' to install the required version of Tukaan."
+            )
 
     def __le__(self, version):
         if self.splitver(__version__) > self.splitver(version):
             sys.tracebacklimit = 0
-            raise RuntimeError(f"you have Tukaan version {__version__} installed, which is incompatible with your code that requires Tukaan {version} or older.\n"
-                                f"Use 'pip install tukaan=={version}' to install an older version of Tukaan.")
+            raise RuntimeError(
+                f"you have Tukaan version {__version__} installed, which is incompatible with your code that requires Tukaan {version} or older.\n"
+                f"Use 'pip install tukaan=={version}' to install an older version of Tukaan."
+            )
 
     def __ge__(self, version):
         if self.splitver(__version__) < self.splitver(version):
             sys.tracebacklimit = 0
-            raise RuntimeError(f"you have Tukaan version {__version__} installed, which is incompatible with your code that requires Tukaan {version} or newer.\n"
-                                "Use 'pip install --upgrade tukaan' to install the newest version of Tukaan.")
+            raise RuntimeError(
+                f"you have Tukaan version {__version__} installed, which is incompatible with your code that requires Tukaan {version} or newer.\n"
+                "Use 'pip install --upgrade tukaan' to install the newest version of Tukaan."
+            )
+
 
 # required_version = _RequiredVersion()  # uncomment when release to Pypi

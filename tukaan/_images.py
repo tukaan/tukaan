@@ -59,13 +59,13 @@ class _image_converter_class:
 
             self.create_tcl_image(self._name, self._image)
 
-    def create_tcl_image(self, name: str, image: PIL_Image.Image) -> None:
+    def create_tcl_image(self, name: str, image: PIL_Image.Image) -> tuple[str, int]:
         if not hasattr(image, "mode") and not hasattr(image, "size"):
             return
 
         if self._transparent:
             image = image.convert("RGBA")
-        
+
         mode = image.mode
         image.load()
 
@@ -73,7 +73,7 @@ class _image_converter_class:
             duration = image.info["duration"]
         except KeyError:
             duration = 50
-        
+
         if mode == "P":
             try:
                 mode = image.palette.mode

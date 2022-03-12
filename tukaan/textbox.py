@@ -682,7 +682,7 @@ class TextBox(BaseWidget):
             if content is self._frame.parent:
                 # don't insert the textbox's parent in itself
                 return
-            
+
             margin = kwargs.pop("margin", None)
             padx = pady = None
             if margin is not None:

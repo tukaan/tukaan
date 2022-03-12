@@ -4,8 +4,8 @@ import collections
 import contextlib
 from typing import Any, Callable, DefaultDict, Iterator, Literal, Type
 
-from ._events_n_bindings import EventMixin
 from ._constants import _VALID_STATES
+from ._events_n_bindings import EventMixin
 from ._layouts import BaseLayoutManager, LayoutManager
 from ._utils import (
     _callbacks,

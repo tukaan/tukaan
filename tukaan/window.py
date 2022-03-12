@@ -18,7 +18,7 @@ from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
 from ._misc import Color
 from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl, windows_only
-from .exceptions import TclError, ApplicationError
+from .exceptions import ApplicationError, TclError
 
 tcl_interp = None
 tkdnd_inited = False
@@ -160,7 +160,7 @@ class DesktopWindowManager:
     restore: Callable
     unbind: Callable
     _wm_frame: int
-    wm_path : str
+    wm_path: str
 
     def _dwm_set_window_attribute(self, rendering_policy: int, value: Any) -> None:
         value = ctypes.c_int(value)
@@ -540,7 +540,7 @@ class TkWindowManager(DesktopWindowManager):
     def get_opacity(self) -> float:
         return self._tcl_call(float, "wm", "attributes", self.wm_path, "-alpha")
 
-    def set_opacity(self, alpha: float, wait_till_visible: bool=False) -> None:
+    def set_opacity(self, alpha: float, wait_till_visible: bool = False) -> None:
         if wait_till_visible:
             self._tcl_call(None, "tkwait", "visibility", self.wm_path)
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-alpha", alpha)
@@ -565,7 +565,10 @@ class TkWindowManager(DesktopWindowManager):
         return Fraction(*result[:2]), Fraction(*result[2:])
 
     @update_after
-    def set_aspect_ratio(self, new_aspect: Optional[tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction]) -> None:
+    def set_aspect_ratio(
+        self,
+        new_aspect: Optional[tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction],
+    ) -> None:
         if new_aspect is None:
             return self._tcl_call(None, "wm", "aspect", self.wm_path, *("",) * 4)
 
@@ -610,7 +613,7 @@ class TkWindowManager(DesktopWindowManager):
     def set_on_close_callback(self, callback: Optional[Callable[[TkWindowManager], None]]) -> None:
         if callback is None:
             callback = self.destroy
-        
+
         self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", callback)
 
     on_close_callback = property(get_on_close_callback, set_on_close_callback)
