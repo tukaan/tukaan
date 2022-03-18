@@ -13,7 +13,7 @@ class Frame(BaseWidget):
     def __init__(
         self, parent: Optional[TkWidget] = None, padding: Optional[int | tuple[int, ...]] = None
     ) -> None:
-        BaseWidget.__init__(self, parent, padding=convert_4side(padding), style="Accent.TButton")
+        BaseWidget.__init__(self, parent, padding=convert_4side(padding))
 
     def _get(self, type_spec, key):
         if key == "padding":
