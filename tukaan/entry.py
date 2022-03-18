@@ -11,7 +11,7 @@ from ._units import ScreenDistance
 class Entry(BaseWidget):
     _tcl_class = "ttk::entry"
     _keys = {
-        "color": (Color, "foreground"),
+        "fg_color": (Color, "foreground"),
         "focusable": (bool, "takefocus"),
         "hide_chars_with": (str, "show"),
         "justify": str,
@@ -26,7 +26,8 @@ class Entry(BaseWidget):
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
-        color: Optional[str | Color] = None,
+        *,
+        fg_color: Optional[str | Color] = None,
         focusable: Optional[bool] = None,
         hide_chars: bool = False,
         hide_chars_with: Optional[str] = "•",
@@ -42,7 +43,7 @@ class Entry(BaseWidget):
         BaseWidget.__init__(
             self,
             parent,
-            foreground=color,
+            foreground=fg_color,
             justify=justify,
             show=hide_chars_with,
             style=style,
@@ -50,7 +51,7 @@ class Entry(BaseWidget):
             width=width,
         )
 
-        self.events.bind("<FocusOut>", f"+{self.tcl_path} selection clear")
+        self.bind("<FocusOut>", f"+{self.tcl_path} selection clear")
 
     def __len__(self):
         return len(self.get())
@@ -138,5 +139,5 @@ class Entry(BaseWidget):
                 stacklevel=3,
             )
 
-    def x_scroll(self, *args):
+    def x_scroll(self, *args) -> None:
         self._tcl_call(None, self, "xview", *args)

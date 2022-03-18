@@ -217,6 +217,9 @@ class MouseEvent(Event):
         "<MouseEnter>": "<Enter>",
         "<MouseLeave>": "<Leave>",
         "<MouseMotion>": "<Motion>",
+        # focus (i have no better idea where to put them)
+        "<FocusOut>": "<FocusOut>",
+        "<FocusIn>": "<FocusIn>",
     }
     _ignored_values: tuple[Any, ...] = (None, "??", -1, 0, set())
     _relevant_attributes = ("button", "modifiers", "abs_x", "abs_y", "rel_x", "rel_y")

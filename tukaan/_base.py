@@ -342,13 +342,13 @@ class BaseWidget(TkWidget):
         #     need to define separately for non-ttk widgets
 
     def __setattr__(self, key: str, value: Any) -> None:
-        if key in self._keys.keys():
+        if key in self._keys:
             self.config(**{key: value})
         else:
             super().__setattr__(key, value)
 
     def __getattr__(self, key: str) -> Any:
-        if key in self._keys.keys():
+        if key in self._keys:
             return self._cget(key)
         else:
             return super().__getattribute__(key)

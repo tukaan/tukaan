@@ -522,4 +522,3 @@ class _ConfigObject:
             theme = aliases[theme]
 
         get_tcl_interp()._tcl_call(None, "ttk::style", "theme", "use", theme)
-        
