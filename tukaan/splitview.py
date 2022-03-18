@@ -13,12 +13,14 @@ class Pane(Frame):
 
     def __init__(
         self,
+        *,
         padding: Optional[int | tuple[int, ...]] = None,
         weight: Optional[int] = None,
     ):
         Frame.__init__(self, self._widget, padding=padding)
 
         self._store_options = {"weight": weight}
+        self.append()
 
     def __repr__(self):
         return f"<tukaan.SplitView.Pane in {self.parent}; tcl_name={self.tcl_path}>"

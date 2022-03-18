@@ -23,13 +23,14 @@ class RadioButton(BaseWidget):
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
+        text: Optional[str] = None,
+        value: Optional[Any] = None,
+        variable: Optional[_TclVariable] = None,
+        *,
         focusable: Optional[bool] = None,
         on_click: Optional[Callable] = None,
         style: Optional[str] = None,
-        text: Optional[str] = None,
         underline: Optional[int] = None,
-        value: Optional[Any] = None,
-        variable: Optional[_TclVariable] = None,
         width: Optional[int] = None,
     ) -> None:
         BaseWidget.__init__(

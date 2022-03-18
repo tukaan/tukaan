@@ -22,11 +22,12 @@ class Tab(Frame):
     def __init__(
         self,
         title: Optional[str] = None,
+        *,
         icon: Optional[Icon | Image] = None,
-        image_pos: Optional[str] = None,
-        underline: Optional[int] = None,
-        padding: Optional[int | tuple[int, ...]] = None,
+        image_pos: str = "left",
         margin: Optional[int | tuple[int, ...]] = None,
+        padding: Optional[int | tuple[int, ...]] = None,
+        underline: Optional[int] = None,
     ):
         Frame.__init__(self, self._widget, padding=padding)
 
@@ -37,6 +38,7 @@ class Tab(Frame):
             "underline": underline,
             "padding": convert_4side(margin),
         }
+        self.append()
 
     def __repr__(self):
         return f"<tukaan.TabView.Tab in {self.parent}; tcl_name={self.tcl_path}>"
