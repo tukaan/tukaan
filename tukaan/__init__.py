@@ -21,6 +21,7 @@ from .radiobutton import RadioButton, RadioGroup
 from .scrollbar import Scrollbar
 from .separator import Separator
 from .slider import Slider
+from .splitview import SplitView
 from .tabview import TabView
 from .textbox import TextBox
 from .timeout import Timer

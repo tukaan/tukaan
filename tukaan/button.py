@@ -26,13 +26,14 @@ class Button(BaseWidget):
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
+        text: Optional[str] = None,
+        on_click: Optional[Callable] = None,
+        *,
         default: Optional[str] = None,
         focusable: Optional[bool] = None,
         image: Optional[Image.Image | Icon] = None,
         image_pos: Optional[str] = None,
-        on_click: Optional[Callable] = None,
         style: Optional[str] = None,
-        text: Optional[str] = None,
         underline: Optional[int] = None,
         width: Optional[int] = None,
     ) -> None:
