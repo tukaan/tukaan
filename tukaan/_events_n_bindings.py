@@ -525,10 +525,10 @@ class EventMixin:
                 event_to_send = event(*args)
                 event_to_send.sequence = _orig_seq
                 result = func(event_to_send)
-                
+
                 if result is not None:
                     return result
-                
+
                 return event_to_send._result
             else:
                 return func()
