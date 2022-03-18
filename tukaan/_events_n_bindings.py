@@ -77,6 +77,7 @@ class Event:
     _ignored_values: tuple[Any, ...] = (None, "??", -1, 0)
     _order: tuple[str, ...] = tuple(binding_substitutions.keys())
     _relevant_attributes: tuple[str, ...] = ()
+    _result = True
 
     @classmethod
     def _parse(cls, sequence: str) -> str:
@@ -112,6 +113,10 @@ class Event:
                 result.append(self._modifiers[modifier_value])
 
         return set(result)
+
+    def stop(self):
+        self._result = False
+        return self._result
 
 
 class KeyboardEvent(Event):
@@ -370,6 +375,7 @@ class DnDEvent(Event):
         "text": "DND_Text",
         "url": "DND_URL",
     }
+    _result = "copy"
 
     type: str
     format: str
@@ -441,7 +447,12 @@ class DnDEvent(Event):
         else:
             more_useful_type_info = f", type={self.type!r}"
 
-        return f"<DnDEvent: data={self.data!r}, action={self.action!r}{more_useful_type_info}>"
+        if "Drop" in self.sequence:
+            data_or_xy = f"data={self.data!r}"
+        else:
+            data_or_xy = f"rel_x={self.rel_x}, rel_y={self.rel_y}"
+
+        return f"<DnDEvent: {data_or_xy}, action={self.action!r}{more_useful_type_info}>"
 
     @property
     def data(self) -> str | list | Image.Image | Path | Color:
@@ -467,10 +478,25 @@ class DnDEvent(Event):
 
         return self._data
 
-    ignore = lambda self: "refuse_drop"
-    move = lambda self: "move"
-    copy = lambda self: "copy"
-    link = lambda self: "link"
+    def ignore(self):
+        self._result = "refuse_drop"
+        return self._result
+
+    def move(self):
+        self._result = "move"
+        return self._result
+
+    def copy(self):
+        self._result = "copy"
+        return self._result
+
+    def link(self):
+        self._result = "link"
+        return self._result
+
+    def stop(self):
+        self._result = "refuse_drop"
+        return self._result
 
 
 class EventMixin:
@@ -484,7 +510,7 @@ class EventMixin:
             event = KeyboardEvent
         elif sequence in MouseEvent.sequences:
             event = MouseEvent
-        if ScrollEvent._matches(sequence):
+        elif ScrollEvent._matches(sequence):
             event = ScrollEvent
         elif sequence in DnDEvent.sequences:
             event = DnDEvent
@@ -492,12 +518,18 @@ class EventMixin:
             event = VirtualEvent
         else:
             raise ValueError(f"invalid event sequence: {sequence}")
+        _orig_seq = sequence
 
         def real_func(func, *args):
             if send_event:
-                inited_event = event(*args)
-                inited_event.sequence = sequence
-                return func(inited_event)
+                event_to_send = event(*args)
+                event_to_send.sequence = _orig_seq
+                result = func(event_to_send)
+                
+                if result is not None:
+                    return result
+                
+                return event_to_send._result
             else:
                 return func()
 
