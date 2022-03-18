@@ -18,7 +18,7 @@ from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
 from ._misc import Color
 from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl, windows_only
-from .exceptions import TclError, ApplicationError
+from .exceptions import ApplicationError, TclError
 
 tcl_interp = None
 tkdnd_inited = False
@@ -87,9 +87,9 @@ class Titlebar:
     _tcl_eval: Callable
     wm_path: str
 
-    _is_immersive_dark_mode_used = None
-    _is_preview_disabled = None
-    _is_rtl_titlebar_used = None
+    _is_immersive_dark_mode_used = False
+    _is_preview_disabled = False
+    _is_rtl_titlebar_used = False
     _bg_color = None
     _fg_color = None
 
@@ -124,9 +124,10 @@ class Titlebar:
 
     rtl_layout = property(get_rtl_layout, set_rtl_layout)
 
-    def get_bg_color(self) -> Color:
+    def get_bg_color(self) -> Color | None:
         if self._bg_color is not None:
             return Color(self._bg_color)
+        return None
 
     @windows_only
     def set_bg_color(self, color: Color) -> None:
@@ -136,9 +137,10 @@ class Titlebar:
 
     bg_color = property(get_bg_color, set_bg_color)
 
-    def get_fg_color(self) -> Color:
+    def get_fg_color(self) -> Color | None:
         if self._fg_color is not None:
             return Color(self._fg_color)
+        return None
 
     @windows_only
     def set_fg_color(self, color: Color) -> None:
@@ -151,6 +153,14 @@ class Titlebar:
 
 class DesktopWindowManager:
     _border_color = None
+    _tcl_call: Callable
+    _tcl_eval: Callable
+    bind: Callable
+    minimize: Callable
+    restore: Callable
+    unbind: Callable
+    _wm_frame: int
+    wm_path: str
 
     def _dwm_set_window_attribute(self, rendering_policy: int, value: Any) -> None:
         value = ctypes.c_int(value)
@@ -186,9 +196,10 @@ class DesktopWindowManager:
 
     tool_window = property(get_tool_window, set_tool_window)
 
-    def get_border_color(self) -> Color:
+    def get_border_color(self) -> Color | None:
         if self._border_color is not None:
             return Color(self._border_color)
+        return None
 
     @windows_only
     def set_border_color(self, color: Color) -> None:
@@ -232,7 +243,7 @@ class DesktopWindowManager:
             self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {{}}")
 
             # Remove <<Unmaximize>> binding
-            self.events.unbind("<<Unmaximize>>")
+            self.unbind("<<Unmaximize>>")
         else:
             # Make an ABGR color from `tint` and `tint_opacity`
             # If `tint` is None, use the window background color
@@ -255,7 +266,7 @@ class DesktopWindowManager:
             # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing.
             # Therefore we bind it to the <<Unmaximize>> event (see it below: TkWindowManager._generate_state_event),
             # so every time it changes state, it calls the _fullredraw method. See DesktopWindowManager._fullredraw.__doc__ for more.
-            self.events.bind("<<Unmaximize>>", self._fullredraw)
+            self.bind("<<Unmaximize>>", self._fullredraw)
 
         # Set up AccentPolicy struct
         ap = AccentPolicy()
@@ -442,12 +453,14 @@ class TkWindowManager(DesktopWindowManager):
         if isinstance(new_position, int):
             new_position = (new_position,) * 2
         elif isinstance(new_position, str):
-            from ._misc import Screen
+            from ._info import Screen
 
             width = self.width
             height = self.height
             screenwidth = Screen._width
             screenheight = Screen._height
+            assert screenwidth is not None
+            assert screenheight is not None
 
             if new_position == "center":
                 x = screenwidth // 2 - width // 2
@@ -527,8 +540,9 @@ class TkWindowManager(DesktopWindowManager):
     def get_opacity(self) -> float:
         return self._tcl_call(float, "wm", "attributes", self.wm_path, "-alpha")
 
-    def set_opacity(self, alpha: float) -> None:
-        self._tcl_call(None, "tkwait", "visibility", self.wm_path)
+    def set_opacity(self, alpha: float, wait_till_visible: bool = False) -> None:
+        if wait_till_visible:
+            self._tcl_call(None, "tkwait", "visibility", self.wm_path)
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-alpha", alpha)
 
     opacity = property(get_opacity, set_opacity)
@@ -599,7 +613,7 @@ class TkWindowManager(DesktopWindowManager):
     def set_on_close_callback(self, callback: Optional[Callable[[TkWindowManager], None]]) -> None:
         if callback is None:
             callback = self.destroy
-        
+
         self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", callback)
 
     on_close_callback = property(get_on_close_callback, set_on_close_callback)
@@ -642,11 +656,13 @@ class TkWindowManager(DesktopWindowManager):
         elif prev_state == "fullscreen":
             un_event = "<<Unfullscreen>>"
 
+        self.generate_event("<<StateChanged>>")
+
         if event:
-            self._tcl_call(None, "event", "generate", self.tcl_path, event)
+            self.generate_event(event)
 
         if un_event:
-            self._tcl_call(None, "event", "generate", self.tcl_path, un_event)
+            self.generate_event(un_event)
 
         self._current_state = new_state
 
@@ -816,6 +832,7 @@ class App(TkWindowManager, TkWidget):
 class Window(TkWindowManager, BaseWidget):
     _tcl_class = "toplevel"
     _keys = {}
+    parent: App | Window
 
     def __init__(self, parent: Optional[App | Window] = None) -> None:
         if not isinstance(parent, (App, Window)) and parent is not None:

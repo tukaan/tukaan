@@ -59,66 +59,49 @@ class _image_converter_class:
 
             self.create_tcl_image(self._name, self._image)
 
-    def get_image_mode(self, image) -> tuple[str, PIL_Image.Image]:
-        # currently this is a copy/pasta from PIL.ImageTk
-        if hasattr(image, "mode") and hasattr(image, "size"):
-            mode = image.mode
-            if mode == "P":
-                image.load()
-                try:
-                    mode = image.palette.mode
-                except AttributeError:
-                    mode = "RGB"
-        else:
-            mode = image
-            image = None
-
-        if mode not in {"1", "L", "RGB", "RGBA"}:
-            mode = PIL_Image.getmodebase(mode)
-
-        return mode, image
-
-    def create_tcl_image(self, name: str, image: PIL_Image.Image) -> None:
-        self._mode, image = self.get_image_mode(image)
-        if image is None:
+    def create_tcl_image(self, name: str, image: PIL_Image.Image) -> tuple[str, int]:
+        if not hasattr(image, "mode") and not hasattr(image, "size"):
             return
 
+        if self._transparent:
+            image = image.convert("RGBA")
+
+        mode = image.mode
         image.load()
 
-        size = image.size
-        mode = image.mode
+        try:
+            duration = image.info["duration"]
+        except KeyError:
+            duration = 50
 
+        if mode == "P":
+            try:
+                mode = image.palette.mode
+                if mode not in {"1", "L", "RGB", "RGBA"}:
+                    mode = PIL_Image.getmodebase(mode)
+            except AttributeError:
+                mode = "RGB"
+
+        size = image.size
         image = image.im
 
-        if image.isblock() and mode == self._mode:
+        if image.isblock():
             block = image
         else:
-            block = image.new_block(self._mode, size)
+            block = image.new_block(mode, size)
             image.convert2(block, image)
 
         self._tcl_eval(None, f"image create photo {name}\nPyImagingPhoto {name} {block.id}")
+
+        return name, duration
 
     def start_animation(self) -> None:
         frame_count = 0
         try:
             while True:
                 self._image.seek(frame_count)
-
                 name = f"{self._name}_frame_{frame_count}"
-                image = self._image
-
-                if self._transparent:
-                    # we have to convert every frame to rgba one by one
-                    image = self._image.convert("RGBA")
-
-                self.create_tcl_image(name, image)
-
-                try:
-                    duration = self._image.info["duration"]
-                except:
-                    duration = 100
-
-                self.image_frames.append((name, duration))
+                self.image_frames.append(self.create_tcl_image(name, self._image))
                 frame_count += 1
         except EOFError:
             pass

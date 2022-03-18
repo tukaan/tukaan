@@ -679,6 +679,10 @@ class TextBox(BaseWidget):
             to_call = ("image", "create", index, *py_to_tcl_args(image=content, padx=padx, pady=pady, align=align))
             # fmt: on
         elif isinstance(content, TkWidget):
+            if content is self._frame.parent:
+                # don't insert the textbox's parent in itself
+                return
+
             margin = kwargs.pop("margin", None)
             padx = pady = None
             if margin is not None:
