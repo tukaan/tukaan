@@ -22,11 +22,12 @@ class Tab(Frame):
     def __init__(
         self,
         title: Optional[str] = None,
+        *,
         icon: Optional[Icon | Image] = None,
-        image_pos: Optional[str] = None,
-        underline: Optional[int] = None,
-        padding: Optional[int | tuple[int, ...]] = None,
+        image_pos: str = "left",
         margin: Optional[int | tuple[int, ...]] = None,
+        padding: Optional[int | tuple[int, ...]] = None,
+        underline: Optional[int] = None,
     ):
         Frame.__init__(self, self._widget, padding=padding)
 
@@ -37,6 +38,7 @@ class Tab(Frame):
             "underline": underline,
             "padding": convert_4side(margin),
         }
+        self.append()
 
     def __repr__(self):
         return f"<tukaan.TabView.Tab in {self.parent}; tcl_name={self.tcl_path}>"
@@ -98,8 +100,11 @@ class Tab(Frame):
     def unhide(self):
         self._tcl_call(None, self._widget, "add", self)
 
-    def delete(self):
-        self._tcl_call(None, self._widget, "forget", self)
+    def remove(self):
+        try:
+            self._tcl_call(None, self._widget, "forget", self)
+        except TclError:  # Tab isn't added to TabView
+            pass
 
     @property
     def enabled(self):
@@ -151,7 +156,11 @@ class TabView(BaseWidget):
 
         return self.tabs[selected]
 
-    def on_tab_change(self, func: Callable[[], None]) -> Callable[[Tab], None]:
+    @selected.setter
+    def selected(self, tab: Tab):
+        tab.select()
+
+    def on_tab_change(self, func: Callable[[Tab], None]) -> Callable[[Tab], None]:
         def wrapper() -> None:
             func(self.selected)
 

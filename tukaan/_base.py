@@ -5,6 +5,7 @@ import contextlib
 from typing import Any, Callable, DefaultDict, Iterator, Type
 
 from ._constants import _VALID_STATES
+from ._events_n_bindings import EventMixin
 from ._layouts import BaseLayoutManager, LayoutManager
 from ._utils import (
     _callbacks,
@@ -250,7 +251,7 @@ class TukaanWidget:
     ...
 
 
-class TkWidget(TukaanWidget, CgetAndConfigure, CommonMethods):
+class TkWidget(TukaanWidget, CgetAndConfigure, CommonMethods, EventMixin):
     """Base class for every Tk-based widget"""
 
     layout: BaseLayoutManager
@@ -263,11 +264,6 @@ class TkWidget(TukaanWidget, CgetAndConfigure, CommonMethods):
             Type[BaseWidget], Iterator[int]
         ] = collections.defaultdict(lambda: count())
         self.child_stats = ChildStatistics(self)
-
-        from ._event import EventManager
-
-        self.events = EventManager()
-        setattr(self.events, "_widget", self)
 
 
 class StateSet(collections.abc.MutableSet):

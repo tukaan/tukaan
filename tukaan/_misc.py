@@ -8,7 +8,7 @@ from typing import Callable, Tuple, cast
 
 from PIL import ImageGrab  # type: ignore
 
-from ._info import Platform
+from ._info import System
 from ._utils import (
     ClassPropertyMetaClass,
     classproperty,
@@ -407,7 +407,7 @@ class Cursor(collections.namedtuple("Cursor", "cursor"), metaclass=ClassProperty
         "we-resize": "size_we",
     }
 
-    if Platform.os == "Windows":
+    if System.os == "Windows":
         _cursor_dict = {**_cursor_dict, **_win_cursor_dict}
 
     def to_tcl(self) -> str:
