@@ -7,6 +7,7 @@ from typing import Any, Callable, DefaultDict, Iterator, Type
 from ._constants import _VALID_STATES
 from ._events_n_bindings import EventMixin
 from ._layouts import BaseLayoutManager, LayoutManager
+from ._misc import Bbox
 from ._utils import (
     _callbacks,
     _widgets,
@@ -17,7 +18,6 @@ from ._utils import (
     update_before,
 )
 from ._variables import String
-from ._misc import Bbox
 
 
 class ChildStatistics:
@@ -213,7 +213,7 @@ class VisibilityMixin:
     @update_before
     def visible(self) -> bool:
         return self._tcl_call(bool, "winfo", "ismapped", self.tcl_path)
-    
+
     def hide(self):
         if self.layout._real_manager == "grid":
             # widget managed by grid
