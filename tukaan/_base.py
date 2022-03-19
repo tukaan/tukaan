@@ -17,6 +17,7 @@ from ._utils import (
     update_before,
 )
 from ._variables import String
+from ._misc import Bbox
 
 
 class ChildStatistics:
@@ -48,64 +49,7 @@ class ChildStatistics:
         )
 
 
-class CgetAndConfigure:
-    _keys: dict[str, Any | tuple[Any, str]]
-    _tcl_call: Callable
-
-    def _cget(self, key: str) -> Any:
-        if key in self._keys:
-            if isinstance(self._keys[key], tuple):
-                type_spec, key = self._keys[key]
-            else:
-                type_spec = self._keys[key]
-        else:
-            type_spec = str
-
-        if type_spec == "func":
-            # return a callable func, not tcl name
-            return _callbacks[self._get(str, key)]
-
-        if isinstance(type_spec, dict):
-            return reversed_dict(type_spec)[self._get(str, key)]
-
-        return self._get(type_spec, key)
-
-    def config(self, **kwargs) -> None:
-        for key, value in tuple(kwargs.items()):
-            if key in self._keys and isinstance(self._keys[key], tuple):
-                # if key has a tukaan alias, use the tuple's 2-nd item as the tcl key
-                alias = self._keys[key]
-                value = kwargs.pop(key)
-
-                if isinstance(alias[0], dict):
-                    value = alias[0][value]
-
-                kwargs[alias[1]] = value
-
-            if key == "text":
-                if isinstance(value, String):
-                    kwargs["textvariable"] = kwargs.pop("text")
-                else:
-                    kwargs["textvariable"] = ""
-
-        self._set(**kwargs)
-
-    def _get(self, type_spec, key):
-        return self._tcl_call(type_spec, self, "cget", f"-{key}")
-
-    def _set(self, **kwargs):
-        self._tcl_call(None, self, "configure", *py_to_tcl_args(**kwargs))
-
-
-class CommonMethods:
-    _tcl_call: Callable
-    _keys: dict[str, Any]
-    layout: BaseLayoutManager
-    tcl_path: str
-    wm_path: str
-    parent: TkWidget
-    child_stats: ChildStatistics
-
+class WidgetMixin:
     def __repr__(self) -> str:
         details = self._repr_details()
         return (
@@ -116,25 +60,6 @@ class CommonMethods:
     def _repr_details(self) -> str:
         # overridden in subclasses
         return ""
-
-    @property
-    def is_busy(self) -> bool:
-        return self._tcl_call(bool, "tk", "busy", "status", self)
-
-    @is_busy.setter
-    def is_busy(self, is_busy) -> None:
-        if is_busy:
-            self._tcl_call(None, "tk", "busy", "hold", self)
-        else:
-            self._tcl_call(None, "tk", "busy", "forget", self)
-
-    @contextlib.contextmanager
-    def busy(self):
-        self.is_busy = True
-        try:
-            yield
-        finally:
-            self.is_busy = False
 
     @property
     def id(self) -> int:
@@ -161,53 +86,134 @@ class CommonMethods:
     def to_tcl(self) -> str:
         return self.tcl_path
 
+
+class ConfigMixin:
+    _keys: dict[str, Any | tuple[Any, str]]
+    _tcl_call: Callable
+
+    def _cget(self, key: str) -> Any:
+        if key in self._keys:
+            if isinstance(self._keys[key], tuple):
+                type_spec, key = self._keys[key]
+            else:
+                type_spec = self._keys[key]
+        else:
+            type_spec = str
+
+        if type_spec == "func":
+            # Return a Python callable, not a Tcl procedure name
+            return _callbacks[self._get(str, key)]
+
+        if isinstance(type_spec, dict):
+            return reversed_dict(type_spec)[self._get(str, key)]
+
+        return self._get(type_spec, key)
+
+    def config(self, **kwargs) -> None:
+        for key, value in tuple(kwargs.items()):
+            if key in self._keys and isinstance(self._keys[key], tuple):
+                # If the key has an alias in Tukaan, use the tuple[1] as the Tcl key
+                alias = self._keys[key]
+                value = kwargs.pop(key)
+
+                if isinstance(alias[0], dict):
+                    value = alias[0][value]
+
+                kwargs[alias[1]] = value
+
+            if key == "text":
+                if isinstance(value, String):
+                    kwargs["textvariable"] = kwargs.pop("text")
+                else:
+                    kwargs["textvariable"] = ""
+
+        self._set(**kwargs)
+
+    def _get(self, type_spec, key):
+        return self._tcl_call(type_spec, self, "cget", f"-{key}")
+
+    def _set(self, **kwargs):
+        self._tcl_call(None, self, "configure", *py_to_tcl_args(**kwargs))
+
+
+class GetSetAttrMixin(ConfigMixin):
+    _keys: dict[str, Any | tuple[Any, str]] = {}
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        if key in self._keys:
+            self.config(**{key: value})
+        else:
+            super().__setattr__(key, value)
+
+    def __getattr__(self, key: str) -> Any:
+        if key in self._keys:
+            return self._cget(key)
+        else:
+            return super().__getattribute__(key)
+
+
+class StateMixin:
     @property
-    def _class(self):
-        return self._tcl_call(str, "winfo", "class", self)
+    def is_busy(self) -> bool:
+        return self._tcl_call(bool, "tk", "busy", "status", self)
 
-    @property
-    def keys(self) -> list:
-        return sorted(self._keys.keys())
+    @is_busy.setter
+    def is_busy(self, is_busy) -> None:
+        if is_busy:
+            self._tcl_call(None, "tk", "busy", "hold", self)
+        else:
+            self._tcl_call(None, "tk", "busy", "forget", self)
 
-    @property
-    def bbox(self) -> tuple:
-        return (self.x, self.y, self.x + self.width, self.y + self.height)
-
-    @property  # type: ignore
-    @update_before
-    def x(self) -> int:
-        return self._tcl_call(int, "winfo", "rootx", self)
-
-    @property  # type: ignore
-    @update_before
-    def y(self) -> int:
-        return self._tcl_call(int, "winfo", "rooty", self)
-
-    @property  # type: ignore
-    @update_before
-    def width(self) -> int:
-        return self._tcl_call(int, "winfo", "width", self)
-
-    @property  # type: ignore
-    @update_before
-    def height(self) -> int:
-        return self._tcl_call(int, "winfo", "height", self)
-
-    def set_drag_dest(self) -> None:
-        self._tcl_call(None, "tkdnd::drop_target", "register", self, "*")
-
-    def unset_drag_dest(self) -> None:
-        self._tcl_call(None, "tkdnd::drop_target", "unregister", self)
-
-    def set_drag_source(self) -> None:
-        self._tcl_call(None, "tkdnd::drag_source", "register", self, "*")
-
-    def unset_drag_source(self) -> None:
-        self._tcl_call(None, "tkdnd::drag_source", "unregister", self)
+    @contextlib.contextmanager
+    def busy(self):
+        self.is_busy = True
+        try:
+            yield
+        finally:
+            self.is_busy = False
 
     def focus(self):
         self._tcl_call(None, "focus", self)
 
+
+class SizePosMixin:
+    @property
+    @update_before
+    def bbox(self) -> tuple:
+        return Bbox(self._abs_x(), self._abs_y(), self._width(), self._height())
+
+    def _abs_x(self) -> int:
+        return self._tcl_call(int, "winfo", "rootx", self)
+
+    def _abs_y(self) -> int:
+        return self._tcl_call(int, "winfo", "rooty", self)
+
+    def _rel_x(self) -> int:
+        return self._tcl_call(int, "winfo", "x", self)
+
+    def _rel_y(self) -> int:
+        return self._tcl_call(int, "winfo", "y", self)
+
+    def _width(self) -> int:
+        return self._tcl_call(int, "winfo", "reqwidth", self)
+
+    def _height(self) -> int:
+        return self._tcl_call(int, "winfo", "reqheight", self)
+
+    rel_x = property(update_before(_rel_x))
+    rel_y = property(update_before(_rel_y))
+    abs_x = property(update_before(_abs_x))
+    abs_y = property(update_before(_abs_y))
+    width = property(update_before(_width))
+    height = property(update_before(_height))
+
+
+class VisibilityMixin:
+    @property
+    @update_before
+    def visible(self) -> bool:
+        return self._tcl_call(bool, "winfo", "ismapped", self.tcl_path)
+    
     def hide(self):
         if self.layout._real_manager == "grid":
             # widget managed by grid
@@ -231,18 +237,30 @@ class CommonMethods:
             # widget managed by position (place)
             self._tcl_call(
                 None,
-                (
-                    "place",
-                    "configure",
-                    self.tcl_path,
-                    *(
-                        elem
-                        for key, value in self._temp_position_info.items()
-                        for elem in (key, value)
-                        if value is not None
-                    ),
+                "place",
+                "configure",
+                self.tcl_path,
+                *(
+                    elem
+                    for key, value in self._temp_position_info.items()
+                    for elem in (key, value)
+                    if value is not None
                 ),
             )
+
+
+class DnDMixin:
+    def set_drag_target(self) -> None:
+        self._tcl_call(None, "tkdnd::drop_target", "register", self, "*")
+
+    def unset_drag_target(self) -> None:
+        self._tcl_call(None, "tkdnd::drop_target", "unregister", self)
+
+    def set_drag_source(self) -> None:
+        self._tcl_call(None, "tkdnd::drag_source", "register", self, "*")
+
+    def unset_drag_source(self) -> None:
+        self._tcl_call(None, "tkdnd::drag_source", "unregister", self)
 
 
 class TukaanWidget:
@@ -251,8 +269,8 @@ class TukaanWidget:
     ...
 
 
-class TkWidget(TukaanWidget, CgetAndConfigure, CommonMethods, EventMixin):
-    """Base class for every Tk-based widget"""
+class TkWidget(TukaanWidget, GetSetAttrMixin, WidgetMixin, EventMixin):
+    """Base class for every Tk widget"""
 
     layout: BaseLayoutManager
 
@@ -309,7 +327,7 @@ class StateSet(collections.abc.MutableSet):
         return self
 
 
-class BaseWidget(TkWidget):
+class BaseWidget(TkWidget, StateMixin, DnDMixin, SizePosMixin, VisibilityMixin):
     layout: LayoutManager
 
     def __init__(
@@ -321,8 +339,8 @@ class BaseWidget(TkWidget):
             self.parent = parent
 
         self.tcl_path = self._give_me_a_name()
-        self._tcl_call: Callable = get_tcl_interp()._tcl_call
-        self._tcl_eval: Callable = get_tcl_interp()._tcl_eval
+        self._tcl_call = self.parent._tcl_call
+        self._tcl_eval = self.parent._tcl_eval
 
         TkWidget.__init__(self)
 
@@ -340,18 +358,6 @@ class BaseWidget(TkWidget):
             self.state = StateSet(self)
         # else:
         #     need to define separately for non-ttk widgets
-
-    def __setattr__(self, key: str, value: Any) -> None:
-        if key in self._keys:
-            self.config(**{key: value})
-        else:
-            super().__setattr__(key, value)
-
-    def __getattr__(self, key: str) -> Any:
-        if key in self._keys:
-            return self._cget(key)
-        else:
-            return super().__getattribute__(key)
 
     def _give_me_a_name(self) -> str:
         klass = type(self)

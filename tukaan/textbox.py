@@ -9,7 +9,7 @@ from typing import Any, Iterator, Optional, Type
 import _tkinter as tk
 from PIL import Image  # type: ignore
 
-from ._base import BaseWidget, CgetAndConfigure, TkWidget
+from ._base import BaseWidget, GetSetAttrMixin, TkWidget
 from ._constants import _cursor_styles, _inactive_cursor_styles, _wraps
 from ._font import Font
 from ._images import Icon
@@ -29,7 +29,7 @@ from .exceptions import TclError
 from .scrollbar import Scrollbar
 
 
-class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
+class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
     _widget: TextBox
     _keys = {
         "bg_color": (Color, "background"),
@@ -113,18 +113,6 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
 
     def __repr__(self) -> str:
         return f"<tukaan.TextBox.Tag named {self._name!r}>"
-
-    def __setattr__(self, key: str, value: Any) -> None:
-        if key in self._keys.keys():
-            self.config(**{key: value})
-        else:
-            super().__setattr__(key, value)
-
-    def __getattr__(self, key: str) -> Any:
-        if key in self._keys.keys():
-            return self._cget(key)
-        else:
-            return super().__getattribute__(key)
 
     def to_tcl(self):
         return self._name

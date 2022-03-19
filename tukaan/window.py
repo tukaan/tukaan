@@ -264,7 +264,7 @@ class DesktopWindowManager:
             self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {bg_color}")
 
             # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing.
-            # Therefore we bind it to the <<Unmaximize>> event (see it below: TkWindowManager._generate_state_event),
+            # Therefore we bind it to the <<Unmaximize>> event (see it below: WindowMixin._generate_state_event),
             # so every time it changes state, it calls the _fullredraw method. See DesktopWindowManager._fullredraw.__doc__ for more.
             self.bind("<<Unmaximize>>", self._fullredraw)
 
@@ -312,7 +312,9 @@ class DesktopWindowManager:
         self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 0)
 
 
-class TkWindowManager(DesktopWindowManager):
+class WindowMixin(DesktopWindowManager):
+    _current_state = "normal"
+
     _tcl_call: Callable
     _tcl_eval: Callable
     _winsys: str
@@ -347,7 +349,7 @@ class TkWindowManager(DesktopWindowManager):
     def focus(self) -> None:
         self._tcl_call(None, "focus", "-force", self.wm_path)
 
-    def group(self, other: TkWindowManager) -> None:
+    def group(self, other: WindowMixin) -> None:
         self._tcl_call(None, "wm", "group", self.wm_path, other.tcl_path)
 
     def hide(self):
@@ -356,7 +358,7 @@ class TkWindowManager(DesktopWindowManager):
     def unhide(self):
         self._tcl_call(None, "wm", "deiconify", self.wm_path)
 
-    def on_close(self, func: Callable[[TkWindowManager], None]) -> Callable[[], None]:
+    def on_close(self, func: Callable[[WindowMixin], None]) -> Callable[[], None]:
         def wrapper() -> None:
             if func(self):
                 self.destroy()
@@ -391,6 +393,11 @@ class TkWindowManager(DesktopWindowManager):
     @property
     def is_focused(self) -> int:
         return self._tcl_call(str, "focus", "-displayof", self.wm_path)
+
+    @property
+    @update_before
+    def visible(self) -> bool:
+        return self._tcl_call(bool, "winfo", "ismapped", self.wm_path)
 
     @property
     def id(self) -> int:
@@ -607,10 +614,10 @@ class TkWindowManager(DesktopWindowManager):
 
     icon = property(get_icon, set_icon)
 
-    def get_on_close_callback(self) -> Callable[[TkWindowManager], None]:
+    def get_on_close_callback(self) -> Callable[[WindowMixin], None]:
         return _callbacks[self._tcl_call(str, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW")]
 
-    def set_on_close_callback(self, callback: Optional[Callable[[TkWindowManager], None]]) -> None:
+    def set_on_close_callback(self, callback: Optional[Callable[[WindowMixin], None]]) -> None:
         if callback is None:
             callback = self.destroy
 
@@ -667,7 +674,7 @@ class TkWindowManager(DesktopWindowManager):
         self._current_state = new_state
 
 
-class App(TkWindowManager, TkWidget):
+class App(WindowMixin, TkWidget):
     wm_path = "."
     tcl_path = ".app"
 
@@ -701,7 +708,6 @@ class App(TkWindowManager, TkWidget):
         self.size = width, height
         self.Titlebar = Titlebar(self)
 
-        self._current_state = "normal"
         self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
@@ -811,7 +817,7 @@ class App(TkWindowManager, TkWidget):
         self._tcl_call(None, "tk", "scaling", "-displayof", ".", factor)
 
 
-class Window(TkWindowManager, BaseWidget):
+class Window(WindowMixin, BaseWidget):
     _tcl_class = "toplevel"
     _keys = {}
     parent: App | Window
@@ -825,7 +831,6 @@ class Window(TkWindowManager, BaseWidget):
         self._winsys = self.parent._winsys
         self.Titlebar = Titlebar(self)
 
-        self._current_state = "normal"
         self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)

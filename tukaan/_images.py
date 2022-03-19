@@ -5,7 +5,7 @@ from typing import Optional
 
 from PIL import Image as PIL_Image  # type: ignore
 
-from ._base import BaseWidget, CgetAndConfigure
+from ._base import BaseWidget, ConfigMixin
 from ._misc import HEX
 from ._utils import _images, _pil_images, counts, create_command, get_tcl_interp, py_to_tcl_args
 from .exceptions import TclError
@@ -147,11 +147,11 @@ class Image(BaseWidget):
         BaseWidget.__init__(self, parent, image=image)
 
 
-class Icon(CgetAndConfigure):
+class Icon(ConfigMixin):
     _keys = {"data": str, "file": Path}
 
     def __init__(self, file: Optional[str | Path] = None, data: Optional[str] = None):
-        self._tcl_call = get_tcl_interp()._tcl_call  # for CgetAndConfigure
+        self._tcl_call = get_tcl_interp()._tcl_call  # for ConfigMixin
 
         self._name = f"tukaan_icon_{next(counts['icons'])}"
         _images[self._name] = self
