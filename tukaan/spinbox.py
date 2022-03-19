@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
 from collections import namedtuple
+from typing import Callable, Optional
 
 from ._base import BaseWidget, TkWidget
 from ._misc import Color
-from .entry import Entry
 from ._utils import py_to_tcl_args
-
+from .entry import Entry
 
 SpinBox_values = namedtuple("SpinBox_values", ["start", "stop", "step"])
 
@@ -34,9 +33,10 @@ class SpinBox(Entry):
         values: Optional[list[str | float] | tuple[str | float, ...] | range] = None,
         *,
         cycle: Optional[bool] = None,
+        value: Optional[str | float] = None,
         fg_color: Optional[str | Color] = None,
         focusable: Optional[bool] = None,
-        hide_chars: bool = False,
+        hide_chars: Optional[bool] = False,
         hide_chars_with: Optional[str] = "•",
         increment: Optional[int] = None,
         max: Optional[int] = None,
@@ -67,10 +67,12 @@ class SpinBox(Entry):
 
         self._set_values(values, min, max, increment)
 
-        if values:
-            self.set(self.values[0])
-        elif min is not None:
+        if value is not None:
+            self.set(value)
+        elif min:
             self.set(min)
+        elif values:
+            self.set(values[0])
         else:
             self.set("0")
 
@@ -81,11 +83,13 @@ class SpinBox(Entry):
     def set(self, value: str) -> None:
         self._tcl_call(None, self, "set", value)
 
+    value = property(Entry.get, set)
+
     @property
     def values(self) -> list[str | float]:
         result = self._tcl_call([str], self, "cget", "-values")
 
-        if result == []:
+        if not result:
             min_ = self._tcl_call(float, self, "cget", "-from") or 0
             max_ = self._tcl_call(float, self, "cget", "-to") or 0
             increment = self._tcl_call(float, self, "cget", "-increment") or 1
@@ -121,4 +125,9 @@ class SpinBox(Entry):
         else:
             return self.config(values=values)
 
-        self._tcl_call(None, self.tcl_path, "configure", *py_to_tcl_args(from_=min_, to=max_ - increment, increment=increment))
+        self._tcl_call(
+            None,
+            self.tcl_path,
+            "configure",
+            *py_to_tcl_args(from_=min_, to=max_ - increment, increment=increment),
+        )

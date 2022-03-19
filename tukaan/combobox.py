@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Callable, Iterable, Optional
 
 from ._base import BaseWidget, TkWidget
 from ._misc import Color
 from .entry import Entry
+from .exceptions import TclError
 
 
 class ComboBox(Entry):
@@ -27,15 +28,16 @@ class ComboBox(Entry):
         parent: Optional[TkWidget] = None,
         values: Optional[list | tuple] = None,
         *,
+        current: Optional[int] = None,
         fg_color: Optional[str | Color] = None,
         focusable: Optional[bool] = None,
-        hide_chars: bool = False,
+        hide_chars: Optional[bool] = False,
         hide_chars_with: Optional[str] = "•",
         on_click: Optional[Callable] = None,
         on_select: Optional[Callable] = None,
         style: Optional[str] = None,
         text_align: Optional[str] = None,
-        user_edit: bool = True,
+        user_edit: Optional[bool] = True,
         visible_rows: Optional[int] = None,
         width: Optional[int] = None,
     ) -> None:
@@ -65,20 +67,32 @@ class ComboBox(Entry):
         if on_select:
             self.bind("<<ComboboxSelected>>", on_select)
 
-        if values:
-            self.current(0)
+        if current is not None:
+            self.current = current
+        else:
+            self.current = 0
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._tcl_call([str], self, "cget", "-values"))
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[str]:
         return iter(self._tcl_call([str], self, "cget", "-values"))
 
-    def __contains__(self, text: str):
-        return text in self._tcl_call([str], self, "cget", "-values")
+    def __contains__(self, item: str) -> bool:
+        return str(item) in self._tcl_call([str], self, "cget", "-values")
 
-    def set(self, value: str):
+    def set(self, value: str) -> None:
         self._tcl_call(None, self, "set", value)
 
-    def current(self, index: int):
-        self._tcl_call(None, self, "current", index)
+    value = property(Entry.get, set)
+
+    @property
+    def current(self) -> int:
+        return self.values.index(self.get())
+
+    @current.setter
+    def current(self, index: int) -> None:
+        try:
+            self._tcl_call(None, self, "current", index)
+        except TclError:
+            raise IndexError("ComboBox index out of range")

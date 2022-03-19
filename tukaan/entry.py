@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import warnings
-from typing import Optional
+from typing import Iterable, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._misc import Color
-from ._units import ScreenDistance
+from ._misc import Bbox, Color
+from .exceptions import TclError
 
 
 class Entry(BaseWidget):
@@ -17,7 +16,7 @@ class Entry(BaseWidget):
         "justify": str,
         "on_xscroll": ("func", "xscrollcommand"),
         "style": str,
-        "width": ScreenDistance,
+        "width": int,
     }
 
     start = 0
@@ -33,6 +32,7 @@ class Entry(BaseWidget):
         hide_chars_with: Optional[str] = "•",
         justify: Optional[str] = None,
         style: Optional[str] = None,
+        value: Optional[str] = None,
         width: Optional[int] = None,
     ) -> None:
 
@@ -53,13 +53,16 @@ class Entry(BaseWidget):
 
         self.bind("<FocusOut>", f"+{self.tcl_path} selection clear")
 
+        if value:
+            self.set(value)
+
     def __len__(self):
         return len(self.get())
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[str]:
         return iter(self.get())
 
-    def __contains__(self, text: str):
+    def __contains__(self, text: str) -> bool:
         return text in self.get()
 
     def _repr_details(self) -> str:
@@ -67,13 +70,7 @@ class Entry(BaseWidget):
         return f"value='{value if len(value) <= 10 else value[:10] + '...'}'"
 
     def char_bbox(self, index: int | str):
-        result = self._tcl_call((int,), self, "bbox", index)
-        return {
-            "left": result[0],
-            "right": result[0] + result[2],
-            "top": result[1],
-            "bottom": result[1] + result[3],
-        }
+        return Bbox(*self._tcl_call((int,), self, "bbox", index))
 
     def clear(self) -> None:
         self._tcl_call(None, self, "delete", 0, "end")
@@ -81,28 +78,32 @@ class Entry(BaseWidget):
     def delete(self, start: int | str, end: int | str = "end") -> None:
         self._tcl_call(None, self, "delete", start, end)
 
-    def get(self) -> str:
-        return self._tcl_call(str, self, "get")
+    def get(self, *indices) -> str:
+        content = self._tcl_call(str, self, "get")
+
+        if indices and indices[0] != None:
+            if not isinstance(indices[0], (str, float)):
+                indices = indices[0]
+            return content[indices[0] : indices[1]]
+
+        return content
+
+    def set(self, new_value: str) -> str:
+        self._tcl_call(None, self, "delete", 0, "end")
+        self._tcl_call(None, self, "insert", 0, new_value)
+
+    value = property(get, set)
 
     def insert(self, index: int | str, text: str) -> None:
         self._tcl_call(None, self, "insert", index, text)
 
     @property
-    def cursor_pos(self):
+    def caret_pos(self) -> int:
         return self._tcl_call(int, self, "index", "insert")
 
-    @cursor_pos.setter
-    def cursor_pos(self, new_pos):
+    @caret_pos.setter
+    def caret_pos(self, new_pos: int) -> None:
         self._tcl_call(None, self, "icursor", new_pos)
-
-    @property
-    def value(self) -> str:
-        return self.get()
-
-    @value.setter
-    def value(self, new_value: str) -> None:
-        self.clear()
-        self.insert(0, new_value)
 
     @property
     def hide_chars(self) -> bool:
@@ -118,26 +119,21 @@ class Entry(BaseWidget):
 
     @property
     def selection(self) -> str | None:
-        if not self._tcl_call(bool, self, "selection", "present"):
+        try:
+            first = self._tcl_call(int, self, "index", "sel.first")
+            last = self._tcl_call(int, self, "index", "sel.last")
+        except TclError:
             return None
-        return self._tcl_call(str, self, "selection", "get")
+        else:
+            return first, last
 
     @selection.setter
-    def selection(
-        self, new_selection_range: tuple[int | str, int | str] | None  # type: ignore
-    ) -> None:
-        # it's quite a bad thing that the getter returns a str, but the setter expects a tuple
-        if isinstance(new_selection_range, tuple) and len(new_selection_range) == 2:
-            start, end = new_selection_range
+    def selection(self, new_range: tuple[int | str, int | str] | list[int | str] | None) -> None:
+        if isinstance(new_range, (tuple, list)) and len(new_range) == 2:
+            start, end = new_range
             self._tcl_call((int,), self, "selection", "range", start, end)
-        elif new_selection_range is None:
+        elif new_range is None:
             self._tcl_call((int,), self, "selection", "clear")
-        else:
-            warnings.warn(
-                "for Entry.selection setter you should use a tuple with two indexes, or"
-                + " None to clear the selection",
-                stacklevel=3,
-            )
 
     def x_scroll(self, *args) -> None:
         self._tcl_call(None, self, "xview", *args)

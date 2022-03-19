@@ -22,6 +22,9 @@ intround: Callable[[float], int] = lambda x: int(round(x, 0))
 round4: Callable[[float], float] = lambda x: round(x, 4)
 
 
+Bbox = collections.namedtuple("Bbox", ["x", "y", "width", "height"])
+
+
 class HEX:
     @staticmethod
     def to_hex(r, g, b) -> str:
