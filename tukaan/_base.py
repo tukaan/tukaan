@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
-from typing import Any, Callable, DefaultDict, Iterator, Literal, Type
+from typing import Any, Callable, DefaultDict, Iterator, Type
 
 from ._constants import _VALID_STATES
 from ._events_n_bindings import EventMixin
@@ -286,9 +286,9 @@ class StateSet(collections.abc.MutableSet):
     def __contains__(self, state: object) -> bool:
         return self._widget._tcl_call(bool, self._widget, "instate", state)
 
-    def add_or_discard(self, action: Literal["add", "discard"], state: str) -> None:
-        if state not in _VALID_STATES:
-            raise RuntimeError
+    def add_or_discard(self, action: str, state: str) -> None:
+        assert state in _VALID_STATES
+
         if action == "discard":
             state = f"!{state}"
 
@@ -342,13 +342,13 @@ class BaseWidget(TkWidget):
         #     need to define separately for non-ttk widgets
 
     def __setattr__(self, key: str, value: Any) -> None:
-        if key in self._keys.keys():
+        if key in self._keys:
             self.config(**{key: value})
         else:
             super().__setattr__(key, value)
 
     def __getattr__(self, key: str) -> Any:
-        if key in self._keys.keys():
+        if key in self._keys:
             return self._cget(key)
         else:
             return super().__getattribute__(key)

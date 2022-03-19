@@ -532,7 +532,7 @@ class TkWindowManager(DesktopWindowManager):
     def get_always_on_top(self) -> bool:
         return self._tcl_call(bool, "wm", "attributes", self.wm_path, "-topmost")
 
-    def set_always_on_top(self, is_topmost: bool) -> None:
+    def set_always_on_top(self, is_topmost: bool = False) -> None:
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-topmost", is_topmost)
 
     always_on_top = property(get_always_on_top, set_always_on_top)
@@ -798,35 +798,17 @@ class App(TkWindowManager, TkWidget):
 
         self.app.quit()
 
-    def focus_should_follow_mouse(self) -> None:
-        self._tcl_call(None, "tk_focusFollowsMouse")
-
     @property
     def user_last_active(self) -> int:
         return self._tcl_call(int, "tk", "inactive") / 1000
 
-    def _get_theme_aliases(self) -> dict[str, str]:
-        theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
-
-        if self._winsys == "win32":
-            theme_dict["native"] = "vista"
-        elif self._winsys == "aqua":
-            theme_dict["native"] = "aqua"
-
-        return theme_dict
-
     @property
-    def theme(self) -> str:
-        theme_dict = {"clam": "clam", "default": "legacy", "vista": "native", "aqua": "native"}
+    def scaling(self) -> int:
+        return self._tcl_call(int, "tk", "scaling", "-displayof", ".")
 
-        try:
-            return theme_dict[self._tcl_call(str, "ttk::style", "theme", "use")]
-        except KeyError:
-            return self._tcl_call(str, "ttk::style", "theme", "use")
-
-    @theme.setter
-    def theme(self, theme) -> None:
-        self._tcl_call(None, "ttk::style", "theme", "use", self._get_theme_aliases()[theme])
+    @scaling.setter
+    def scaling(self, factor: int) -> None:
+        self._tcl_call(None, "tk", "scaling", "-displayof", ".", factor)
 
 
 class Window(TkWindowManager, BaseWidget):
