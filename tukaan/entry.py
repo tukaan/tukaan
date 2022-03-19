@@ -32,6 +32,7 @@ class Entry(BaseWidget):
         hide_chars_with: Optional[str] = "•",
         justify: Optional[str] = None,
         style: Optional[str] = None,
+        user_edit: Optional[bool] = True,
         value: Optional[str] = None,
         width: Optional[int] = None,
     ) -> None:
@@ -46,6 +47,7 @@ class Entry(BaseWidget):
             foreground=fg_color,
             justify=justify,
             show=hide_chars_with,
+            state=None if user_edit else "readonly",
             style=style,
             takefocus=focusable,
             width=width,
