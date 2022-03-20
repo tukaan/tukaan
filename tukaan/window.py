@@ -797,7 +797,7 @@ class App(WindowMixin, TkWidget):
 
         self._lappend_auto_path(Path(__file__).parent / "tkdnd" / os)
         self._tcl_call(None, "package", "require", "tkdnd")
-        
+
     def run(self) -> None:
         self.app.mainloop(0)
 

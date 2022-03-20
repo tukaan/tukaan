@@ -526,7 +526,7 @@ class _ConfigObject:
 
         get_tcl_interp()._tcl_call(None, "ttk::style", "theme", "use", theme)
 
-        
+
 class Time:
     def __init__(self, *args, **kwargs):
         if args and not kwargs:
