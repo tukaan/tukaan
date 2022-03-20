@@ -87,9 +87,9 @@ class Titlebar:
     _tcl_eval: Callable
     wm_path: str
 
-    _is_immersive_dark_mode_used = None
-    _is_preview_disabled = None
-    _is_rtl_titlebar_used = None
+    _is_immersive_dark_mode_used = False
+    _is_preview_disabled = False
+    _is_rtl_titlebar_used = False
     _bg_color = None
     _fg_color = None
 
@@ -124,9 +124,10 @@ class Titlebar:
 
     rtl_layout = property(get_rtl_layout, set_rtl_layout)
 
-    def get_bg_color(self) -> Color:
+    def get_bg_color(self) -> Color | None:
         if self._bg_color is not None:
             return Color(self._bg_color)
+        return None
 
     @windows_only
     def set_bg_color(self, color: Color) -> None:
@@ -136,9 +137,10 @@ class Titlebar:
 
     bg_color = property(get_bg_color, set_bg_color)
 
-    def get_fg_color(self) -> Color:
+    def get_fg_color(self) -> Color | None:
         if self._fg_color is not None:
             return Color(self._fg_color)
+        return None
 
     @windows_only
     def set_fg_color(self, color: Color) -> None:
@@ -151,6 +153,14 @@ class Titlebar:
 
 class DesktopWindowManager:
     _border_color = None
+    _tcl_call: Callable
+    _tcl_eval: Callable
+    bind: Callable
+    minimize: Callable
+    restore: Callable
+    unbind: Callable
+    _wm_frame: int
+    wm_path: str
 
     def _dwm_set_window_attribute(self, rendering_policy: int, value: Any) -> None:
         value = ctypes.c_int(value)
@@ -186,9 +196,10 @@ class DesktopWindowManager:
 
     tool_window = property(get_tool_window, set_tool_window)
 
-    def get_border_color(self) -> Color:
+    def get_border_color(self) -> Color | None:
         if self._border_color is not None:
             return Color(self._border_color)
+        return None
 
     @windows_only
     def set_border_color(self, color: Color) -> None:
@@ -232,7 +243,7 @@ class DesktopWindowManager:
             self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {{}}")
 
             # Remove <<Unmaximize>> binding
-            self.events.unbind("<<Unmaximize>>")
+            self.unbind("<<Unmaximize>>")
         else:
             # Make an ABGR color from `tint` and `tint_opacity`
             # If `tint` is None, use the window background color
@@ -253,9 +264,9 @@ class DesktopWindowManager:
             self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {bg_color}")
 
             # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing.
-            # Therefore we bind it to the <<Unmaximize>> event (see it below: TkWindowManager._generate_state_event),
+            # Therefore we bind it to the <<Unmaximize>> event (see it below: WindowMixin._generate_state_event),
             # so every time it changes state, it calls the _fullredraw method. See DesktopWindowManager._fullredraw.__doc__ for more.
-            self.events.bind("<<Unmaximize>>", self._fullredraw)
+            self.bind("<<Unmaximize>>", self._fullredraw)
 
         # Set up AccentPolicy struct
         ap = AccentPolicy()
@@ -301,7 +312,9 @@ class DesktopWindowManager:
         self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 0)
 
 
-class TkWindowManager(DesktopWindowManager):
+class WindowMixin(DesktopWindowManager):
+    _current_state = "normal"
+
     _tcl_call: Callable
     _tcl_eval: Callable
     _winsys: str
@@ -336,7 +349,7 @@ class TkWindowManager(DesktopWindowManager):
     def focus(self) -> None:
         self._tcl_call(None, "focus", "-force", self.wm_path)
 
-    def group(self, other: TkWindowManager) -> None:
+    def group(self, other: WindowMixin) -> None:
         self._tcl_call(None, "wm", "group", self.wm_path, other.tcl_path)
 
     def hide(self):
@@ -345,7 +358,7 @@ class TkWindowManager(DesktopWindowManager):
     def unhide(self):
         self._tcl_call(None, "wm", "deiconify", self.wm_path)
 
-    def on_close(self, func: Callable[[TkWindowManager], None]) -> Callable[[], None]:
+    def on_close(self, func: Callable[[WindowMixin], None]) -> Callable[[], None]:
         def wrapper() -> None:
             if func(self):
                 self.destroy()
@@ -382,6 +395,11 @@ class TkWindowManager(DesktopWindowManager):
     @property
     def is_focused(self) -> int:
         return self._tcl_call(str, "focus", "-displayof", self.wm_path)
+
+    @property
+    @update_before
+    def visible(self) -> bool:
+        return self._tcl_call(bool, "winfo", "ismapped", self.wm_path)
 
     @property
     def id(self) -> int:
@@ -444,12 +462,14 @@ class TkWindowManager(DesktopWindowManager):
         if isinstance(new_position, int):
             new_position = (new_position,) * 2
         elif isinstance(new_position, str):
-            from ._misc import Screen
+            from ._info import Screen
 
             width = self.width
             height = self.height
             screenwidth = Screen._width
             screenheight = Screen._height
+            assert screenwidth is not None
+            assert screenheight is not None
 
             if new_position == "center":
                 x = screenwidth // 2 - width // 2
@@ -521,7 +541,7 @@ class TkWindowManager(DesktopWindowManager):
     def get_always_on_top(self) -> bool:
         return self._tcl_call(bool, "wm", "attributes", self.wm_path, "-topmost")
 
-    def set_always_on_top(self, is_topmost: bool) -> None:
+    def set_always_on_top(self, is_topmost: bool = False) -> None:
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-topmost", is_topmost)
 
     always_on_top = property(get_always_on_top, set_always_on_top)
@@ -529,8 +549,9 @@ class TkWindowManager(DesktopWindowManager):
     def get_opacity(self) -> float:
         return self._tcl_call(float, "wm", "attributes", self.wm_path, "-alpha")
 
-    def set_opacity(self, alpha: float) -> None:
-        self._tcl_call(None, "tkwait", "visibility", self.wm_path)
+    def set_opacity(self, alpha: float, wait_till_visible: bool = False) -> None:
+        if wait_till_visible:
+            self._tcl_call(None, "tkwait", "visibility", self.wm_path)
         self._tcl_call(None, "wm", "attributes", self.wm_path, "-alpha", alpha)
 
     opacity = property(get_opacity, set_opacity)
@@ -595,10 +616,10 @@ class TkWindowManager(DesktopWindowManager):
 
     icon = property(get_icon, set_icon)
 
-    def get_on_close_callback(self) -> Callable[[TkWindowManager], None]:
+    def get_on_close_callback(self) -> Callable[[WindowMixin], None]:
         return _callbacks[self._tcl_call(str, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW")]
 
-    def set_on_close_callback(self, callback: Optional[Callable[[TkWindowManager], None]]) -> None:
+    def set_on_close_callback(self, callback: Optional[Callable[[WindowMixin], None]]) -> None:
         if callback is None:
             callback = self.destroy
 
@@ -644,16 +665,18 @@ class TkWindowManager(DesktopWindowManager):
         elif prev_state == "fullscreen":
             un_event = "<<Unfullscreen>>"
 
+        self.generate_event("<<StateChanged>>")
+
         if event:
-            self._tcl_call(None, "event", "generate", self.tcl_path, event)
+            self.generate_event(event)
 
         if un_event:
-            self._tcl_call(None, "event", "generate", self.tcl_path, un_event)
+            self.generate_event(un_event)
 
         self._current_state = new_state
 
 
-class App(TkWindowManager, TkWidget):
+class App(WindowMixin, TkWidget):
     wm_path = "."
     tcl_path = ".app"
 
@@ -687,14 +710,13 @@ class App(TkWindowManager, TkWidget):
         self.size = width, height
         self.Titlebar = Titlebar(self)
 
-        self._current_state = "normal"
         self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
 
+        self._init_tukaan_ext_pkg("Serif")
+        self._init_tukaan_ext_pkg("Snack")
         self._init_tkdnd()
-        self._init_tkextrafont()
-        self._init_tksnack()
 
         self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", self.destroy)
 
@@ -761,6 +783,10 @@ class App(TkWindowManager, TkWidget):
     def _auto_path(self):
         return self._tcl_call([str], "set", "auto_path")
 
+    def _init_tukaan_ext_pkg(self, name: str) -> None:
+        self._tcl_call(None, "lappend", "auto_path", Path(__file__).parent / name / "pkg")
+        self._tcl_call(None, "package", "require", name)
+
     def _init_tkdnd(self):
         os = {"Linux": "linux", "Darwin": "mac", "Windows": "win"}[platform.system()]
 
@@ -771,15 +797,7 @@ class App(TkWindowManager, TkWidget):
 
         self._lappend_auto_path(Path(__file__).parent / "tkdnd" / os)
         self._tcl_call(None, "package", "require", "tkdnd")
-
-    def _init_tkextrafont(self):
-        self._lappend_auto_path(Path(__file__).parent / "tkextrafont")
-        self._tcl_call(None, "package", "require", "extrafont")
-
-    def _init_tksnack(self):
-        self._lappend_auto_path(Path(__file__).parent / "tksnack")
-        self._tcl_call(None, "package", "require", "snack")
-
+        
     def run(self) -> None:
         self.app.mainloop(0)
 
@@ -788,7 +806,7 @@ class App(TkWindowManager, TkWidget):
 
         global tcl_interp
 
-        self._tcl_call(None, "snack::audio", "stop")
+        self._tcl_call(None, "Snack::audio", "stop")
         self._tcl_call(None, "destroy", self.tcl_path)
         self._tcl_call(None, "destroy", self.wm_path)
 
@@ -796,40 +814,23 @@ class App(TkWindowManager, TkWidget):
 
         self.app.quit()
 
-    def focus_should_follow_mouse(self) -> None:
-        self._tcl_call(None, "tk_focusFollowsMouse")
-
     @property
     def user_last_active(self) -> int:
         return self._tcl_call(int, "tk", "inactive") / 1000
 
-    def _get_theme_aliases(self) -> dict[str, str]:
-        theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
-
-        if self._winsys == "win32":
-            theme_dict["native"] = "vista"
-        elif self._winsys == "aqua":
-            theme_dict["native"] = "aqua"
-
-        return theme_dict
-
     @property
-    def theme(self) -> str:
-        theme_dict = {"clam": "clam", "default": "legacy", "vista": "native", "aqua": "native"}
+    def scaling(self) -> int:
+        return self._tcl_call(int, "tk", "scaling", "-displayof", ".")
 
-        try:
-            return theme_dict[self._tcl_call(str, "ttk::style", "theme", "use")]
-        except KeyError:
-            return self._tcl_call(str, "ttk::style", "theme", "use")
-
-    @theme.setter
-    def theme(self, theme) -> None:
-        self._tcl_call(None, "ttk::style", "theme", "use", self._get_theme_aliases()[theme])
+    @scaling.setter
+    def scaling(self, factor: int) -> None:
+        self._tcl_call(None, "tk", "scaling", "-displayof", ".", factor)
 
 
-class Window(TkWindowManager, BaseWidget):
+class Window(WindowMixin, BaseWidget):
     _tcl_class = "toplevel"
     _keys = {}
+    parent: App | Window
 
     def __init__(self, parent: Optional[App | Window] = None) -> None:
         if not isinstance(parent, (App, Window)) and parent is not None:
@@ -840,7 +841,6 @@ class Window(TkWindowManager, BaseWidget):
         self._winsys = self.parent._winsys
         self.Titlebar = Titlebar(self)
 
-        self._current_state = "normal"
         self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)

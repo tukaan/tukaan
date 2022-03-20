@@ -9,7 +9,7 @@ from typing import Any, Iterator, Optional, Type
 import _tkinter as tk
 from PIL import Image  # type: ignore
 
-from ._base import BaseWidget, CgetAndConfigure, TkWidget
+from ._base import BaseWidget, GetSetAttrMixin, TkWidget
 from ._constants import _cursor_styles, _inactive_cursor_styles, _wraps
 from ._font import Font
 from ._images import Icon
@@ -29,7 +29,7 @@ from .exceptions import TclError
 from .scrollbar import Scrollbar
 
 
-class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
+class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
     _widget: TextBox
     _keys = {
         "bg_color": (Color, "background"),
@@ -113,18 +113,6 @@ class Tag(CgetAndConfigure, metaclass=ClassPropertyMetaClass):
 
     def __repr__(self) -> str:
         return f"<tukaan.TextBox.Tag named {self._name!r}>"
-
-    def __setattr__(self, key: str, value: Any) -> None:
-        if key in self._keys.keys():
-            self.config(**{key: value})
-        else:
-            super().__setattr__(key, value)
-
-    def __getattr__(self, key: str) -> Any:
-        if key in self._keys.keys():
-            return self._cget(key)
-        else:
-            return super().__getattribute__(key)
 
     def to_tcl(self):
         return self._name
@@ -287,14 +275,14 @@ class TextIndex(namedtuple("TextIndex", ["line", "column"])):
             return self._widget.end
         return self
 
-    def _move(self, dir, chars, indices, lines):
+    def _move(self, dir_, chars, indices, lines):
         move_str = ""
         if chars:
-            move_str += f" {dir} {chars} chars"
+            move_str += f" {dir_} {chars} chars"
         if indices:
-            move_str += f" {dir} {indices} indices"
+            move_str += f" {dir_} {indices} indices"
         if lines:
-            move_str += f" {dir} {lines} lines"
+            move_str += f" {dir_} {lines} lines"
 
         return self.from_tcl(self.to_tcl() + move_str).clamp()
 
@@ -383,7 +371,7 @@ class TextMarks(abc.MutableMapping):
 
     def __delitem__(self, name: str) -> None:
         if name == "insert":
-            raise RuntimeError("can't delete insertion cursor")
+            raise RuntimeError("can't delete caret")
         self._widget._tcl_call(None, self._widget.tcl_path, "mark", "unset", name)
 
 
@@ -474,16 +462,16 @@ class TextBox(BaseWidget):
     _tcl_class = "text"
     _keys = {
         "bg_color": (Color, "background"),
-        "cursor_color": (Color, "insertbackground"),
-        "cursor_offtime": (int, "insertofftime"),
-        "cursor_ontime": (int, "insertontime"),
-        "cursor_style": (_cursor_styles, "blockcursor"),
-        "cursor_width": (ScreenDistance, "insertwidth"),
+        "caret_color": (Color, "insertbackground"),
+        "caret_offtime": (int, "insertofftime"),
+        "caret_ontime": (int, "insertontime"),
+        "caret_style": (_cursor_styles, "blockcursor"),
+        "caret_width": (ScreenDistance, "insertwidth"),
         "fg_color": (Color, "foreground"),
         "focusable": (bool, "takefocus"),
         "font": Font,
         "height": ScreenDistance,
-        "inactive_cursor_style": (_inactive_cursor_styles, "insertunfocussed"),
+        "inactive_caret_style": (_inactive_cursor_styles, "insertunfocussed"),
         "inactive_selection_bg": (Color, "inactiveselectbackground"),
         "on_xscroll": ("func", "xscrollcommand"),
         "on_yscroll": ("func", "yscrollcommand"),
@@ -504,17 +492,18 @@ class TextBox(BaseWidget):
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
+        *,
         bg_color: Optional[Color] = None,
-        cursor_color: Optional[Color] = None,
-        cursor_offtime: Optional[int] = None,
-        cursor_ontime: Optional[int] = None,
-        cursor_style: str = "normal",
-        cursor_width: Optional[int | ScreenDistance] = None,
+        caret_color: Optional[Color] = None,
+        caret_offtime: Optional[int] = None,
+        caret_ontime: Optional[int] = None,
+        caret_style: str = "normal",
+        caret_width: Optional[int | ScreenDistance] = None,
         fg_color: Optional[Color] = None,
         focusable: Optional[bool] = None,
         font: Optional[Font] = None,
         height: Optional[int | ScreenDistance] = None,
-        inactive_cursor_style: Optional[str] = None,
+        inactive_caret_style: Optional[str] = None,
         inactive_selection_bg: Optional[Color] = None,
         overflow: tuple[bool | str, bool | str] = ("auto", "auto"),
         padding: Optional[int | tuple[int] | tuple[int, int]] = None,
@@ -548,11 +537,11 @@ class TextBox(BaseWidget):
                     "unfortunately 4 side paddings aren't supported for TextBox padding"
                 )
 
-        if cursor_offtime is not None:
-            cursor_offtime = int(1000 * cursor_offtime)
+        if caret_offtime is not None:
+            caret_offtime = int(caret_offtime * 1000)
 
-        if cursor_ontime is not None:
-            cursor_ontime = int(1000 * cursor_ontime)
+        if caret_ontime is not None:
+            caret_ontime = int(caret_ontime * 1000)
 
         self.peer_of = _peer_of
 
@@ -561,16 +550,16 @@ class TextBox(BaseWidget):
             "highlightthickness": 0,
             "relief": "flat",
             "background": bg_color,
-            "blockcursor": _cursor_styles[cursor_style],
+            "blockcursor": _cursor_styles[caret_style],
             "font": font,
             "foreground": fg_color,
             "height": height,
             "inactiveselectbackground": inactive_selection_bg,
-            "insertbackground": cursor_color,
-            "insertofftime": cursor_offtime,
-            "insertontime": cursor_ontime,
-            "insertunfocussed": _inactive_cursor_styles[inactive_cursor_style],
-            "insertwidth": cursor_width,
+            "insertbackground": caret_color,
+            "insertofftime": caret_offtime,
+            "insertontime": caret_ontime,
+            "insertunfocussed": _inactive_cursor_styles[inactive_caret_style],
+            "insertwidth": caret_width,
             "padx": padx,
             "pady": pady,
             "selectbackground": selection_bg,
@@ -645,11 +634,11 @@ class TextBox(BaseWidget):
         return self.index("end - 1 chars", no_check=True)
 
     @property
-    def current(self) -> TextIndex:
+    def caret_pos(self) -> TextIndex:
         return self.marks["insert"]
 
-    @current.setter
-    def current(self, new_pos: TextIndex) -> None:
+    @caret_pos.setter
+    def caret_pos(self, new_pos: TextIndex) -> None:
         self.marks["insert"] = new_pos
 
     @property
@@ -679,6 +668,10 @@ class TextBox(BaseWidget):
             to_call = ("image", "create", index, *py_to_tcl_args(image=content, padx=padx, pady=pady, align=align))
             # fmt: on
         elif isinstance(content, TkWidget):
+            if content is self._frame.parent:
+                # don't insert the textbox's parent in itself
+                return
+
             margin = kwargs.pop("margin", None)
             padx = pady = None
             if margin is not None:

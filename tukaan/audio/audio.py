@@ -37,7 +37,7 @@ class ComposeFilter(BaseFilter):
     def __init__(self, filter_1, filter_2):
         self._filters = [filter_1, filter_2]
 
-        self._name = get_tcl_interp()._tcl_call(str, "snack::filter", "compose", filter_1, filter_2)
+        self._name = get_tcl_interp()._tcl_call(str, "Snack::filter", "compose", filter_1, filter_2)
 
     def append(self, filter: BaseFilter):
         self._filters.append(filter)
@@ -54,7 +54,7 @@ class ComposeFilter(BaseFilter):
 class AmplifierFilter(BaseFilter):
     # Echo with 0 delay is the easiest way to amplify sound
     def __init__(self, volume: float = 150):
-        self._name = get_tcl_interp()._tcl_call(str, "snack::filter", "echo", 1, volume / 100, 1, 0)
+        self._name = get_tcl_interp()._tcl_call(str, "Snack::filter", "echo", 1, volume / 100, 1, 0)
 
 
 class EchoFilter(BaseFilter):
@@ -69,28 +69,28 @@ class EchoFilter(BaseFilter):
             delay = 0.001
 
         self._name = get_tcl_interp()._tcl_call(
-            str, "snack::filter", "echo", gain_in, gain_out, delay * 1000, decay_factor
+            str, "Snack::filter", "echo", gain_in, gain_out, delay * 1000, decay_factor
         )
 
 
 class FadeInFilter(BaseFilter):
     def __init__(self, length: float = 5, type: str = "linear") -> None:
         self._name = get_tcl_interp()._tcl_call(
-            str, "snack::filter", "fade", "in", type, length * 1000
+            str, "Snack::filter", "fade", "in", type, length * 1000
         )
 
 
 class FadeOutFilter(BaseFilter):
     def __init__(self, length: float = 5, type: str = "linear") -> None:
         self._name = get_tcl_interp()._tcl_call(
-            str, "snack::filter", "fade", "out", type, length * 1000
+            str, "Snack::filter", "fade", "out", type, length * 1000
         )
 
 
 class FormantFilter(BaseFilter):
     def __init__(self, frequency: float, bandwidth: int) -> None:
         self._name = get_tcl_interp()._tcl_call(
-            str, "snack::filter", "formant", frequency, bandwidth
+            str, "Snack::filter", "formant", frequency, bandwidth
         )
 
 
@@ -99,7 +99,7 @@ class GeneratorFilter(BaseFilter):
         self, frequency: float, amplitude: int, shape: float = 0.5, type: str = "sine"
     ) -> None:
         self._name = get_tcl_interp()._tcl_call(
-            str, "snack::filter", "generator", frequency, amplitude, shape, type
+            str, "Snack::filter", "generator", frequency, amplitude, shape, type
         )
 
 
@@ -115,7 +115,7 @@ class IIRFilter(BaseFilter):
 
         self._name = get_tcl_interp()._tcl_call(
             str,
-            "snack::filter",
+            "Snack::filter",
             "iir",
             *py_to_tcl_args(
                 denominator=denom,
@@ -130,7 +130,7 @@ class IIRFilter(BaseFilter):
 class MapFilter(BaseFilter):
     def __init__(self, *args):
         self._name = get_tcl_interp()._tcl_call(
-            str, "snack::filter", "map", *(x / 100 for x in args)
+            str, "Snack::filter", "map", *(x / 100 for x in args)
         )
 
 
@@ -143,7 +143,7 @@ class ReverbFilter(BaseFilter):
             delay = 0.001
 
         self._name = get_tcl_interp()._tcl_call(
-            str, "snack::filter", "reverb", volume / 100, time * 1000, delay * 1000
+            str, "Snack::filter", "reverb", volume / 100, time * 1000, delay * 1000
         )
 
 
@@ -178,7 +178,7 @@ class Sound:
 
         self._interp._tcl_call(
             None,
-            "snack::sound",
+            "Snack::sound",
             self._name,
             *py_to_tcl_args(
                 buffersize=buffer_size,
@@ -691,27 +691,27 @@ class _AudioDevice:
 
     @property
     def supported_encodings(self) -> list[str]:
-        return get_tcl_interp()._tcl_call([str], "snack::audio", "encodings")
+        return get_tcl_interp()._tcl_call([str], "Snack::audio", "encodings")
 
     @property
     def supported_bitrates(self) -> list[str]:
-        return get_tcl_interp()._tcl_call([int], "snack::audio", "rates")
+        return get_tcl_interp()._tcl_call([int], "Snack::audio", "rates")
 
     @property
     def latency(self) -> float:
-        return get_tcl_interp()._tcl_call(float, "snack::audio", "playLatency") / 1000
+        return get_tcl_interp()._tcl_call(float, "Snack::audio", "playLatency") / 1000
 
     @latency.setter
     def latency(self, new_latency: float) -> None:
-        get_tcl_interp()._tcl_call(None, "snack::audio", "playLatency", new_latency * 1000)
+        get_tcl_interp()._tcl_call(None, "Snack::audio", "playLatency", new_latency * 1000)
 
     @property
     def inputs(self) -> list[str]:
-        return get_tcl_interp()._tcl_call([str], "snack::audio", "inputDevices")
+        return get_tcl_interp()._tcl_call([str], "Snack::audio", "inputDevices")
 
     @property
     def outputs(self) -> list[str]:
-        return get_tcl_interp()._tcl_call([str], "snack::audio", "outputDevices")
+        return get_tcl_interp()._tcl_call([str], "Snack::audio", "outputDevices")
 
     @property
     def default_input(self) -> str:
@@ -720,7 +720,7 @@ class _AudioDevice:
     @default_input.setter
     def default_input(self, device: str) -> str:
         self._current_input = device
-        return get_tcl_interp()._tcl_call(None, "snack::audio", "selectInput", device)
+        return get_tcl_interp()._tcl_call(None, "Snack::audio", "selectInput", device)
 
     @property
     def default_output(self) -> str:
@@ -729,20 +729,20 @@ class _AudioDevice:
     @default_output.setter
     def default_output(self, device: str) -> str:
         self._current_output = device
-        return get_tcl_interp()._tcl_call(None, "snack::audio", "selectOutput", device)
+        return get_tcl_interp()._tcl_call(None, "Snack::audio", "selectOutput", device)
 
     @property
     def is_playing(self) -> bool:
-        return get_tcl_interp()._tcl_call(bool, "snack::audio", "active")
+        return get_tcl_interp()._tcl_call(bool, "Snack::audio", "active")
 
     def resume_all(self) -> None:
-        return get_tcl_interp()._tcl_call(None, "snack::audio", "play")
+        return get_tcl_interp()._tcl_call(None, "Snack::audio", "play")
 
     def pause_all(self) -> None:
-        return get_tcl_interp()._tcl_call(None, "snack::audio", "pause")
+        return get_tcl_interp()._tcl_call(None, "Snack::audio", "pause")
 
     def stop_all(self) -> None:
-        return get_tcl_interp()._tcl_call(None, "snack::audio", "stop")
+        return get_tcl_interp()._tcl_call(None, "Snack::audio", "stop")
 
 
 AudioDevice = _AudioDevice()

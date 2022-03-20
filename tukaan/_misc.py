@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import collections
 import re
+import warnings
 from fractions import Fraction
 from typing import Callable, Tuple, cast
 
 from PIL import ImageGrab  # type: ignore
 
-from ._info import Platform
+from ._info import System
 from ._utils import (
     ClassPropertyMetaClass,
     classproperty,
@@ -19,6 +20,9 @@ from .exceptions import ColorError, TclError
 
 intround: Callable[[float], int] = lambda x: int(round(x, 0))
 round4: Callable[[float], float] = lambda x: round(x, 4)
+
+
+Bbox = collections.namedtuple("Bbox", ["x", "y", "width", "height"])
 
 
 class HEX:
@@ -277,10 +281,10 @@ class Color:
     def __repr__(self) -> str:
         return f"{type(self).__name__}(red={self.red}, green={self.green}," + f" blue={self.blue})"
 
+    __str__ = __repr__
+
     def to_tcl(self) -> str:
         return self.hex
-
-    __str__ = to_tcl
 
     @classmethod
     def from_tcl(cls, tcl_value) -> Color:
@@ -406,7 +410,7 @@ class Cursor(collections.namedtuple("Cursor", "cursor"), metaclass=ClassProperty
         "we-resize": "size_we",
     }
 
-    if Platform.os == "Windows":
+    if System.os == "Windows":
         _cursor_dict = {**_cursor_dict, **_win_cursor_dict}
 
     def to_tcl(self) -> str:
@@ -477,6 +481,52 @@ class Cursor(collections.namedtuple("Cursor", "cursor"), metaclass=ClassProperty
         )
 
 
+class _ConfigObject:
+    tk_focusFollowsMouse = False
+
+    @property
+    def focus_follows_mouse(self) -> None:
+        return self.tk_focusFollowsMouse
+
+    @focus_follows_mouse.setter
+    def focus_follows_mouse(self, value) -> None:
+        if value:
+            get_tcl_interp()._tcl_call(None, "tk_focusFollowsMouse")
+            self.tk_focusFollowsMouse = True
+        else:
+            warnings.warn("Config.focus_follows_mouse can't be disabled.")
+
+    @staticmethod
+    def _get_theme_aliases() -> dict[str, str]:
+        theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
+        winsys = get_tcl_interp()._winsys
+
+        if winsys == "win32":
+            theme_dict["native"] = "vista"
+        elif winsys == "aqua":
+            theme_dict["native"] = "aqua"
+
+        return theme_dict
+
+    @property
+    def theme(self) -> str:
+        theme_dict = {"clam": "clam", "default": "legacy", "vista": "native", "aqua": "native"}
+        current = get_tcl_interp()._tcl_call(str, "ttk::style", "theme", "use")
+
+        try:
+            return theme_dict[current]
+        except KeyError:
+            return current
+
+    @theme.setter
+    def theme(self, theme) -> None:
+        aliases = self._get_theme_aliases()
+        if theme in aliases:
+            theme = aliases[theme]
+
+        get_tcl_interp()._tcl_call(None, "ttk::style", "theme", "use", theme)
+
+        
 class Time:
     def __init__(self, *args, **kwargs):
         if args and not kwargs:
@@ -516,7 +566,7 @@ class Time:
         return self.hours * 3600 + self.minutes * 60 + self.seconds
 
 
-class _TimeCreator:
+class _TimeConstructor:
     def __getitem__(self, key):
         if isinstance(key, slice):
             return Time(key.start, key.stop, key.step)
@@ -527,7 +577,7 @@ class _TimeCreator:
         return Time(*args, **kwargs)
 
     def __instancecheck__(self, other):
-        return isinstance(other, (_TimeCreator, Time))
+        return isinstance(other, (_TimeConstructor, Time))
 
     def __repr__(self):
         return "<tukaan.Time; usage: Time[h:min:sec] or Time(h, min, sec)>"
@@ -539,4 +589,4 @@ class _TimeCreator:
         return Time(h, m, s)
 
 
-_Time = _TimeCreator()
+_Time = _TimeConstructor()

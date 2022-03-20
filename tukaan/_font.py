@@ -7,34 +7,34 @@ from typing import Type
 from ._utils import _fonts, _sequence_pairs, counts, get_tcl_interp, py_to_tcl_args
 from .exceptions import FontError, TclError
 
-font_props = {
-    "compatible_full_name": "compatibleFullName",
-    "copyright": "copyright",
-    "dark_bg_palette": "darkBackgroundPalette",
-    "description": "description",
-    "designer": "designer",
-    "designer_url": "designerURL",
-    "family": "fontFamily",
-    "subfamily": "fontSubfamily",
-    "full_name": "fullName",
-    "license": "license",
-    "license_url": "licenseURL",
-    "light_bg_palette": "lightBackgroundPalette",
-    "manufacturer": "manufacturer",
-    "manufacturer_url": "manufacturerURL",
-    "post_script_find_font_name": "postScriptFindFontName",
-    "post_script_name": "postScriptName",
-    "preferred_family": "preferredFamily",
-    "preferred_subfamily": "preferredSubfamily",
-    "reserved": "reserved",
-    "sample_text": "sampleText",
-    "trademark": "trademark",
-    "unique_ID": "uniqueID",
-    "variations_post_script_name_prefix": "variationsPostScriptNamePrefix",
-    "version": "version",
-    "wss_family": "wwsFamily",
-    "wss_subfamily": "wwsSubfamily",
-}
+font_props = [
+    "compatible_full_name",
+    "copyright",
+    "dark_bg_palette",
+    "description",
+    "designer",
+    "designer_URL",
+    "family",
+    "full_name",
+    "license",
+    "license_URL",
+    "light_bg_palette",
+    "manufacturer",
+    "manufacturer_URL",
+    "post_script_find_font_name",
+    "post_script_name",
+    "preferred_family",
+    "preferred_subfamily",
+    "reserved",
+    "sample_text",
+    "subfamily",
+    "trademark",
+    "unique_ID",
+    "variations_post_script_name_prefix",
+    "version",
+    "wws_family",
+    "wws_subfamily",
+]
 
 _preset_fonts = {
     "TkCaptionFont",
@@ -48,37 +48,44 @@ _preset_fonts = {
     "TkTooltipFont",
 }
 
-FontMetrics = namedtuple("FontMetrics", ["ascent", "descent", "linespace", "fixed"])
+
+FontMetrics = namedtuple("FontMetrics", ["ascent", "descent", "linespace", "monospace"])
 
 
-class FontMetaData(namedtuple("FontMetadata", list(font_props.keys()))):
-    def __new__(cls, owner: Font) -> FontMetaData:
-        nameinfo_result = owner._interp._tcl_call("noconvert", "extrafont::nameinfo", owner.path)
-        items = owner._interp._split_list(nameinfo_result[0])
+class FontMetadata(namedtuple("FontMetadata", font_props)):
+    def __new__(cls, owner: Font) -> FontMetadata:
+        items = owner._interp._tcl_call([str], "Serif::getFontMetadata", owner.path)
 
         result = {}
         for key, value in _sequence_pairs(items):
             result[str(key)] = str(value)
 
-        kwargs = {}
-        for name, tcl_name in tuple(font_props.items()):
-            kwargs[name] = result.get(tcl_name, None)
+        for property_ in font_props:
+            if property_ not in result:
+                result[property_] = None
 
-        return super(FontMetaData, cls).__new__(cls, **kwargs)
+        return super(FontMetadata, cls).__new__(cls, **result)
 
     def __init__(self, owner: Font) -> None:
         self.owner = owner
 
-    def __getitem__(self, key: str) -> tuple:  # type: ignore[override]
-        return getattr(self, key)
-
     def __repr__(self) -> str:
         return f"<FontMetadata object of {self.owner}>"
+
+    def __len__(self):
+        return len(font_props)
+
+    def __iter__(self):
+        for key in font_props:
+            yield key, getattr(self, key)
 
     __bool__ = lambda *_: True
 
 
 class Font:
+    path: None | Path
+    metadata: None | FontMetadata
+
     def __init__(
         self,
         family: str = None,
@@ -91,32 +98,35 @@ class Font:
         file: str = None,
     ) -> None:
 
-        self.path = file
+        if file and not isinstance(file, Path):
+            self.path = Path(file)
+        else:
+            self.path = file
+
         self.metadata = None
+        file_family = None
 
         self._interp = get_tcl_interp()
 
-        if file is not None:
-            if isinstance(file, Path):
-                file = str(file.resolve())
-
+        if self.path:
             try:
-                self._interp._tcl_call(None, "extrafont::load", self.path)
+                file_family = self._interp._tcl_call(str, "Serif::load", self.path)
             except TclError as e:
-                if str(e) == 'key "fontFamily" not known in dictionary':
+                if "not known in dictionary" in str(e):
                     raise FontError(f"missing or invalid metadata in file {self.path!r}") from None
+                raise e
 
-            self.metadata = FontMetaData(self)
+            self.metadata = FontMetadata(self)
+
+        if not family and file_family:
+            family = file_family
+        elif not family and not self.path:
+            family = "TkDefaultFont"
 
         if family in _preset_fonts:
             self._name = family
         else:
             self._name = f"tukaan_font_{next(counts['fonts'])}"
-
-        if family is None and self.metadata:
-            family = self.metadata.preferred_family
-        elif family is None and self.path is None:
-            family = "TkDefaultFont"
 
         self.config(family, size, bold, italic, underline, strikethrough)
 
@@ -152,9 +162,6 @@ class Font:
     @classmethod
     def from_tcl(cls, tcl_value: str) -> Font:
         return _fonts[tcl_value]
-
-    def __getitem__(self, key: str) -> int | str | bool:
-        return getattr(self, key)
 
     def _get(self, type_spec: Type[int] | Type[str] | Type[bool], option: str) -> int | str | bool:
         return self._interp._tcl_call(type_spec, "font", "actual", self, f"-{option}")
@@ -213,8 +220,8 @@ class Font:
     @property
     def families(cls):
         return sorted(
-            list(set(cls._interp._tcl_call([str], "font", "families")))
-        )  # set to remove duplicates
+            list(set(cls._interp._tcl_call([str], "font", "families")))  # set to remove duplicates
+        )
 
     def measure(self, text: str) -> int:
         return get_tcl_interp()._tcl_call(int, "font", "measure", self, text)

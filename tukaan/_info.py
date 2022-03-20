@@ -7,10 +7,10 @@ from fractions import Fraction
 
 import _tkinter as tk
 import psutil
-from screeninfo import get_monitors
+from screeninfo import get_monitors  # type: ignore
 
 if platform.system() == "Linux":
-    import distro
+    import distro  # type: ignore
 
 from ._units import MemoryUnit, ScreenDistance
 
@@ -18,16 +18,16 @@ OsVersion = namedtuple("OsVersion", ["major", "minor", "build"])
 Version = namedtuple("Version", ["major", "minor", "patchlevel"])
 
 
-class _Platform:
+class _System:
     arch: tuple[str, str] = platform.architecture()
     node: str = platform.node()
     os: str = {"Linux": "Linux", "Windows": "Windows", "Darwin": "macOS"}[platform.system()]
     py_version: tuple[int, int, int] = Version(*map(int, platform.python_version_tuple()))
-    tk_version = Version(*map(int, tk.TK_VERSION.split(".")), 0)
     release: str = platform.release()
+    tk_version = Version(*map(int, tk.TK_VERSION.split(".")), 0)
 
     @property
-    def os_version(self) -> tuple[str, str, str]:
+    def os_version(self) -> OsVersion | None:
         if self.os == "Linux":
             return OsVersion(*distro.version_parts())
         elif self.os == "Windows":
@@ -35,15 +35,19 @@ class _Platform:
         elif self.os == "macOS":
             return OsVersion(*platform.mac_ver()[0].split("."), 0)
 
+        return None
+
     @property
     def os_distro(self) -> str | None:
         if self.os == "Linux":
             return distro.name()
+        return None
 
     @property
-    def os_codename(self) -> str:
+    def os_codename(self) -> str | None:
         if self.os == "Linux":
             return distro.codename()
+        return None
 
     @property
     def uptime(self):
@@ -56,7 +60,7 @@ class _Platform:
         return {"win32": "DWM", "x11": "X11", "aqua": "Quartz"}[get_tcl_interp()._winsys]
 
     @property
-    def tcl_version(self) -> str:
+    def tcl_version(self) -> Version:
         from ._utils import get_tcl_interp
 
         return Version(*map(int, get_tcl_interp()._tcl_call(str, "info", "patchlevel").split(".")))
@@ -191,17 +195,17 @@ common_color_depths = {
 
 
 class _Screen:
-    _width = None
-    _height = None
-    _mm_width = None
-    _mm_height = None
+    _width: int = 0
+    _height: int = 0
+    _mm_width: int = 0
+    _mm_height: int = 0
 
     for _monitor in get_monitors():
         if _monitor.is_primary:
-            _width = _monitor.width
-            _height = _monitor.height
-            _mm_width = _monitor.width_mm
-            _mm_height = _monitor.height_mm
+            _width = _monitor.width or 0
+            _height = _monitor.height or 0
+            _mm_width = _monitor.width_mm or 0
+            _mm_height = _monitor.height_mm or 0
 
     @property
     def width(cls):
@@ -235,7 +239,7 @@ class _Screen:
             return ""
 
     @property
-    def diagonal(self) -> int:
+    def diagonal(self) -> ScreenDistance:
         return ScreenDistance(px=(self._width**2 + self._height**2) ** 0.5)
 
     @property
@@ -268,5 +272,5 @@ class _Screen:
 # Instantiate them
 Machine = _Machine()
 Memory = _Memory()
-Platform = _Platform()
+System = _System()
 Screen = _Screen()

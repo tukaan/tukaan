@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
 import _tkinter as tk
 
-from ._info import Platform
+from ._info import System
 
 if TYPE_CHECKING:
     from PIL import Image  # type: ignore
@@ -86,7 +86,7 @@ def update_after(func: Callable) -> Callable:
 
 def windows_only(func):
     def wrapper(*args, **kwargs):
-        if Platform.os == "Windows":
+        if System.os == "Windows":
             return func(*args, **kwargs)
 
     return wrapper
@@ -94,7 +94,7 @@ def windows_only(func):
 
 def mac_only(func):
     def wrapper(*args, **kwargs):
-        if Platform.os == "macOS":
+        if System.os == "macOS":
             return func(*args, **kwargs)
 
     return wrapper
@@ -102,7 +102,7 @@ def mac_only(func):
 
 def linux_only(func):
     def wrapper(*args, **kwargs):
-        if Platform.os == "Linux":
+        if System.os == "Linux":
             return func(*args, **kwargs)
 
     return wrapper
