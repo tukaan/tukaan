@@ -85,7 +85,7 @@ class FontMetadata(namedtuple("FontMetadata", font_props)):
 class Font:
     path: None | Path
     metadata: None | FontMetadata
-    
+
     def __init__(
         self,
         family: str = None,
@@ -102,7 +102,7 @@ class Font:
             self.path = Path(file)
         else:
             self.path = file
-                
+
         self.metadata = None
         file_family = None
 
@@ -112,7 +112,7 @@ class Font:
             try:
                 file_family = self._interp._tcl_call(str, "Serif::load", self.path)
             except TclError as e:
-                if 'not known in dictionary' in str(e):
+                if "not known in dictionary" in str(e):
                     raise FontError(f"missing or invalid metadata in file {self.path!r}") from None
                 raise e
 
@@ -220,7 +220,7 @@ class Font:
     @property
     def families(cls):
         return sorted(
-            list(set(cls._interp._tcl_call([str], "font", "families")))  # set() to remove duplicates
+            list(set(cls._interp._tcl_call([str], "font", "families")))  # set to remove duplicates
         )
 
     def measure(self, text: str) -> int:
