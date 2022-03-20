@@ -712,8 +712,8 @@ class App(WindowMixin, TkWidget):
         self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
         self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
 
+        self._init_tukaan_ext_pkg("Serif")
         self._init_tkdnd()
-        self._init_tkextrafont()
 
     def __enter__(self):
         return self
@@ -774,6 +774,10 @@ class App(WindowMixin, TkWidget):
     def _auto_path(self):
         return self._tcl_call([str], "set", "auto_path")
 
+    def _init_tukaan_ext_pkg(self, name: str) -> None:
+        self._tcl_call(None, "lappend", "auto_path", Path(__file__).parent / name / "pkg")
+        self._tcl_call(None, "package", "require", name)
+
     def _init_tkdnd(self):
         os = {"Linux": "linux", "Darwin": "mac", "Windows": "win"}[platform.system()]
 
@@ -784,10 +788,6 @@ class App(WindowMixin, TkWidget):
 
         self._lappend_auto_path(Path(__file__).parent / "tkdnd" / os)
         self._tcl_call(None, "package", "require", "tkdnd")
-
-    def _init_tkextrafont(self):
-        self._lappend_auto_path(Path(__file__).parent / "tkextrafont")
-        self._tcl_call(None, "package", "require", "extrafont")
 
     def run(self) -> None:
         self.app.mainloop(0)
