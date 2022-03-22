@@ -559,7 +559,11 @@ class Time:
         self.seconds = s
 
     def __repr__(self):
-        return f"Time(hours={self.hours}, minutes={self.minutes}, seconds={self.seconds})"
+        time_values = [self.hours, self.minutes, self.seconds]
+        if not time_values[0]:
+            del time_values[0]
+            
+        return f"Time[{':'.join(map(str, time_values))}]"
 
     @property
     def total_seconds(self):

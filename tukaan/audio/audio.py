@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import contextlib
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -283,7 +283,7 @@ class Sound:
     def stop(self):
         self._interp._tcl_call(None, self._name, "stop")
 
-    @contextlib.contextmanager
+    @contextmanager
     def record(self, input="default", overwrite=True):
         if overwrite:
             self.stop()
