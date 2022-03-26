@@ -5,9 +5,9 @@ from typing import Optional
 
 from PIL import Image as PIL_Image  # type: ignore
 
-from ._base import BaseWidget, ConfigMixin
-from ._misc import HEX
-from ._utils import _images, _pil_images, counts, create_command, get_tcl_interp, py_to_tcl_args
+from .widgets._base import BaseWidget, ConfigMixin
+from ._utils import _images, _pil_images, counts
+from ._tcl import Tcl
 from .exceptions import TclError
 
 
@@ -34,10 +34,7 @@ class _image_converter_class:
         self._image = image
         self._name = f"tukaan_image_{next(counts['images'])}"
 
-        self._tcl_call = get_tcl_interp()._tcl_call
-        self._tcl_eval = get_tcl_interp()._tcl_eval
-
-        self._tcl_call(None, "image", "create", "photo", self._name)
+        Tcl.call(None, "image", "create", "photo", self._name)
 
         _images[self._name] = self  # gc
         _pil_images[self._name] = image
@@ -45,13 +42,13 @@ class _image_converter_class:
         try:
             from PIL import _imagingtk
 
-            _imagingtk.tkinit(get_tcl_interp().tcl_interp_address, 1)
+            _imagingtk.tkinit(Tcl.interp_address, 1)
         except (ImportError, AttributeError, TclError) as e:
             raise e
 
         if _animated:
             self.image_frames = []
-            self.show_frames_command = create_command(self.show_frame)
+            self.show_frames_command = Tcl.create_cmd(self.show_frame)
             self.start_animation()
         else:
             if self._transparent:
@@ -91,7 +88,7 @@ class _image_converter_class:
             block = image.new_block(mode, size)
             image.convert2(block, image)
 
-        self._tcl_eval(None, f"image create photo {name}\nPyImagingPhoto {name} {block.id}")
+        Tcl.eval(None, f"image create photo {name}\nPyImagingPhoto {name} {block.id}")
 
         return name, duration
 
@@ -115,28 +112,28 @@ class _image_converter_class:
         if self.current_frame == len(self.image_frames):
             self.current_frame = 0
 
-        self._tcl_eval(
+        Tcl.eval(
             None,
             f"{self._name} copy {frame_data[0]} -compositingrule set"
             "\n"
             f"after {int(frame_data[1])} {self.show_frames_command}",
         )
 
-    def to_tcl(self) -> str:
+    def __to_tcl__(self) -> str:
         return self._name
 
     @classmethod
-    def from_tcl(cls, value: str) -> PIL_Image.Image:
+    def __from_tcl__(cls, value: str) -> PIL_Image.Image:
         if isinstance(value, tuple):
             value = value[0]  # Sometimes tk.call returns a tuple for some reason
         return _pil_images.get(value, None)
 
 
 def pil_image_to_tcl(self):
-    return _image_converter_class(self).to_tcl()
+    return _image_converter_class(self).__to_tcl__()
 
 
-PIL_Image.Image.to_tcl = pil_image_to_tcl
+PIL_Image.Image.__to_tcl__ = pil_image_to_tcl
 
 
 class Image(BaseWidget):
@@ -150,26 +147,24 @@ class Image(BaseWidget):
 class Icon(ConfigMixin):
     _keys = {"data": str, "file": Path}
 
-    def __init__(self, file: Optional[str | Path] = None, data: Optional[str] = None):
-        self._tcl_call = get_tcl_interp()._tcl_call  # for ConfigMixin
-
+    def __init__(self, file: Optional[str | Path] = None, data: Optional[str] = None) -> None:
         self._name = f"tukaan_icon_{next(counts['icons'])}"
         _images[self._name] = self
 
-        self._tcl_call(
+        Tcl.call(
             None,
             "image",
             "create",
             "photo",
             self._name,
-            *py_to_tcl_args(file=file, data=data),
+            *Tcl.to_tcl_args(file=file, data=data),
         )
 
-    def to_tcl(self):
+    def __to_tcl__(self) -> str:
         return self._name
 
     @classmethod
-    def from_tcl(cls, value):
+    def __from_tcl__(cls, value: str) -> Icon:
         return _images[value]
 
 
@@ -180,12 +175,12 @@ class IconFactory:
         self._current_dir = dark_theme
         self.cache: dict[str, Icon] = {}
 
-        get_tcl_interp()._tcl_call(None, "bind", ".app", "<<ThemeChanged>>", self.change_theme)
+        Tcl.call(None, "bind", ".app", "<<ThemeChanged>>", self.change_theme)
 
     def change_theme(self):
         # fmt: off
         dark_theme = sum(
-            HEX.from_hex(get_tcl_interp()._tcl_call(str, "ttk::style", "lookup", "TLabel.label", "-foreground")
+            HEX.from_hex(Tcl.call(str, "ttk::style", "lookup", "TLabel.label", "-foreground")
         )) / 3 > 127
         # fmt: on
 

@@ -5,8 +5,8 @@ from typing import Callable, Optional
 from PIL import Image  # type: ignore
 
 from ._base import BaseWidget, TkWidget
-from ._constants import _image_positions
-from ._images import Icon, _image_converter_class
+from tukaan._constants import _image_positions
+from tukaan._images import Icon, _image_converter_class
 
 
 class Button(BaseWidget):

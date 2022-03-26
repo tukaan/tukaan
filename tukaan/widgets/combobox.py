@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Callable, Iterable, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._misc import Color
+from tukaan._structures import Color
 from .entry import Entry
-from .exceptions import TclError
+from tukaan.exceptions import TclError
 
 
 class ComboBox(Entry):

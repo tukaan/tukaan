@@ -2,7 +2,7 @@ class TclError(Exception):
     ...
 
 
-class ApplicationError(Exception):
+class AppError(Exception):
     ...
 
 

@@ -1,18 +1,15 @@
-from typing import Callable, Literal, Optional, Union
+from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._units import ScreenDistance
-from ._variables import Float
+from tukaan._variables import Float
 
 
-class Slider(BaseWidget):
-    _tcl_class = "ttk::scale"
+class ProgressBar(BaseWidget):
+    _tcl_class = "ttk::progressbar"
     _keys = {
         "focusable": (bool, "takefocus"),
-        "length": ScreenDistance,
-        "max": (float, "to"),
-        "min": (float, "from"),
-        "on_move": ("func", "command"),
+        "max": float,
+        "mode": str,
         "orientation": (str, "orient"),
         "value": float,
         "variable": Float,
@@ -22,35 +19,43 @@ class Slider(BaseWidget):
         self,
         parent: Optional[TkWidget] = None,
         focusable: Optional[bool] = None,
-        length: Optional[Union[int, ScreenDistance]] = None,
         max: Optional[int] = 100,
-        min: Optional[int] = 0,
-        on_move: Optional[Callable] = None,
+        mode: Optional[Literal["determinate", "indeterminate"]] = None,
         orientation: Optional[Literal["horizontal", "vertical"]] = None,
-        value: Optional[float] = None,
+        value: Optional[int] = None,
         variable: Optional[Float] = None,
     ) -> None:
         BaseWidget.__init__(
             self,
             parent,
-            command=on_move,
-            from_=min,
-            length=length,
+            maximum=max,
+            mode=mode,
             orient=orientation,
             takefocus=focusable,
-            to=max,
             value=value,
             variable=variable,
         )
 
     def _repr_details(self):
-        return f"min={self.min!r}, max={self.max!r}, value={self.value!r}"
+        return f"mode={self.mode!r}, max={self.max!r}, value={self.value!r}"
 
     def get(self) -> float:
-        return self._tcl_call(float, self, "get")
+        return self.value
 
     def set(self, value: float = 0) -> None:
-        self._tcl_call(None, self, "set", value)
+        self.value = value
+
+    def start(self, steps_per_second: int = 20) -> None:
+        if steps_per_second > 1000:
+            raise ValueError("error")
+        interval = int(1000 / steps_per_second)
+        self._tcl_call(None, self, "start", interval)
+
+    def stop(self) -> None:
+        self._tcl_call(None, self, "stop")
+
+    def step(self, amount: int = 1) -> None:
+        self._tcl_call(None, self, "step", amount)
 
     def __add__(self, other: int):
         self.set(self.get() + other)

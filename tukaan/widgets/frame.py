@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from ._base import BaseWidget, TkWidget
-from ._helpers import convert_4side, convert_4side_back
+from tukaan._helpers import convert_4side, convert_4side_back
 
 
 class Frame(BaseWidget):

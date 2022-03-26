@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Iterable, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._misc import Bbox, Color
-from .exceptions import TclError
+from tukaan._structures import Bbox, Color
+from tukaan.exceptions import TclError
 
 
 class Entry(BaseWidget):
@@ -90,7 +90,7 @@ class Entry(BaseWidget):
 
         return content
 
-    def set(self, new_value: str) -> str:
+    def set(self, new_value: str) -> None:
         self._tcl_call(None, self, "delete", 0, "end")
         self._tcl_call(None, self, "insert", 0, new_value)
 

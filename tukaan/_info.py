@@ -55,17 +55,13 @@ class _System:
 
     @property
     def win_sys(self) -> str:
-        from ._utils import get_tcl_interp
-
-        return {"win32": "DWM", "x11": "X11", "aqua": "Quartz"}[
-            get_tcl_interp()._tcl_call(str, "tk", "windowingsystem")
-        ]
+        from ._tcl import Tcl
+        return {"win32": "DWM", "x11": "X11", "aqua": "Quartz"}[Tcl.windowing_system]
 
     @property
     def tcl_version(self) -> Version:
-        from ._utils import get_tcl_interp
-
-        return Version(*map(int, get_tcl_interp()._tcl_call(str, "info", "patchlevel").split(".")))
+        from ._tcl import Tcl
+        return Version(*map(int, Tcl.version.split(".")))
 
     @property
     def dark_mode(self):
@@ -87,7 +83,7 @@ class _System:
             from subprocess import PIPE, Popen
 
             p = Popen(["defaults", "read", "-g", "AppleInterfaceStyle"], stdout=PIPE, stderr=PIPE)
-            return "Dark" in p.communicate()[0]
+            return "dark" in p.communicate()[0].lower()
 
         return False
 
@@ -246,9 +242,9 @@ class _Screen:
 
     @property
     def color_depth(self) -> int:
-        from ._utils import get_tcl_interp
+        from ._tcl import Tcl
 
-        return get_tcl_interp()._tcl_call(int, "winfo", "screendepth", ".")
+        return Tcl.call(int, "winfo", "screendepth", ".")
 
     @property
     def color_depth_alias(self) -> str:
@@ -259,9 +255,9 @@ class _Screen:
 
     @property
     def dpi(self) -> float:
-        from ._utils import get_tcl_interp
+        from ._tcl import Tcl
 
-        return get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", "1i")
+        return Tcl.call(float, "winfo", "fpixels", ".", "1i")
 
     @property
     def ppi(self) -> float:

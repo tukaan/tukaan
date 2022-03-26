@@ -3,13 +3,8 @@ from __future__ import annotations
 import collections
 import collections.abc
 import itertools
-import numbers
-import traceback
 from inspect import isclass
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
-
-import _tkinter as tk
 
 from ._info import System
 
@@ -35,7 +30,7 @@ class count:
         return self._count
 
     def __iter__(self) -> Iterator[int]:
-        # function only for mypy
+        # method to make mypy happy
         yield self._count
 
     def __int__(self) -> int:
@@ -45,7 +40,7 @@ class count:
 counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count())
 
 
-_callbacks: dict[str, Callable] = {}
+_commands: dict[str, Callable] = {}
 _images: dict[str, _image_converter_class | Icon] = {}
 _pil_images: dict[str, Image] = {}
 _timeouts: dict[str, Timeout] = {}
@@ -53,33 +48,6 @@ _variables: dict[str, _TclVariable] = {}
 _text_tags: dict[str, Tag] = {}
 _widgets: dict[str, TkWidget] = {}
 _fonts: dict[str, Font] = {}
-
-
-def updated(func: Callable) -> Callable:
-    def wrapper(self, *args, **kwargs) -> Any:
-        get_tcl_interp()._tcl_call(None, "update", "idletasks")
-        result = func(self, *args, **kwargs)
-        get_tcl_interp()._tcl_call(None, "update", "idletasks")
-        return result
-
-    return wrapper
-
-
-def update_before(func: Callable) -> Callable:
-    def wrapper(self, *args, **kwargs) -> Any:
-        get_tcl_interp()._tcl_call(None, "update", "idletasks")
-        return func(self, *args, **kwargs)
-
-    return wrapper
-
-
-def update_after(func: Callable) -> Callable:
-    def wrapper(self, *args, **kwargs) -> Any:
-        result = func(self, *args, **kwargs)
-        get_tcl_interp()._tcl_call(None, "update", "idletasks")
-        return result
-
-    return wrapper
 
 
 def windows_only(func):
@@ -105,156 +73,14 @@ def linux_only(func):
 
     return wrapper
 
+flatten = itertools.chain.from_iterable
 
 def reversed_dict(dictionary: dict) -> dict:
     return {value: key for key, value in dictionary.items()}
 
 
-def get_tcl_interp():
-    from .window import tcl_interp
-
-    if tcl_interp is None:
-        raise RuntimeError("tcl/tk is not initialized. Please use tukaan.App() to initialize it.")
-
-    return tcl_interp
-
-
-_flatten = itertools.chain.from_iterable
-
-
-def create_command(func) -> str:
-    name = f"tukaan_command_{next(counts['commands'])}"
-    _callbacks[name] = func
-
-    def real_func(*args):
-        try:
-            return func(*args)
-        except Exception:
-            # remove unnecessary lines:
-            # File "/home/.../_utils.py", line 88, in real_func
-            # return func(*args)
-            tb = traceback.format_exc().split("\n")[3:]
-            print("Traceback (most recent call last):", "\n".join(tb), sep="\n")
-
-    get_tcl_interp().app.createcommand(name, real_func)
-    return name
-
-
-def delete_command(name: str) -> None:
-    del _callbacks[name]
-    get_tcl_interp().app.deletecommand(name)
-
-
-def py_to_tcl_args(**kwargs) -> tuple:
-    result = []
-
-    for key, value in kwargs.items():
-        if value is None:
-            continue
-
-        if key.endswith("_"):
-            key = key.rstrip("_")
-
-        result.extend([f"-{key}", value])
-
-    return tuple(result)
-
-
-def _sequence_pairs(sequence):
-    return zip(sequence[0::2], sequence[1::2])
-
-
-def from_tcl(type_spec, value) -> Any:
-    """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
-    if type_spec is None:
-        return None
-
-    if type_spec is str:
-        return get_tcl_interp()._get_string(value)
-
-    if type_spec is bool:
-        if not from_tcl(str, value):
-            return None
-
-        return get_tcl_interp()._get_boolean(value)
-
-    if type_spec is int:
-        if value == "":
-            return None
-        return int(value)
-
-    if isinstance(type_spec, type):
-        if issubclass(type_spec, numbers.Real):
-            string = from_tcl(str, value)
-            if not string:
-                return None
-
-            return type_spec(string)  # type: ignore
-
-        if hasattr(type_spec, "from_tcl"):
-            return type_spec.from_tcl(value)  # type: ignore
-
-    if isinstance(type_spec, (list, tuple, dict)):
-        items = get_tcl_interp()._split_list(value)
-
-        if isinstance(type_spec, list):
-            # [int] -> [1, 2, 3]
-            (item_spec,) = type_spec
-            return [from_tcl(item_spec, item) for item in items]
-
-        if isinstance(type_spec, tuple):
-            # (int, str) -> (1, 'hello')
-            # if all type is same, can shorten:
-            # (str) -> ('1', 'hello')
-            if len(type_spec) != len(items):
-                type_spec *= len(items)
-            return tuple(map(from_tcl, type_spec, items))
-
-        if isinstance(type_spec, dict):
-            # {'a': int, 'b': str} -> {'a': 1, 'b': 'hello', 'c': 'str assumed'}
-            result = {}
-            for key, value in _sequence_pairs(items):
-                key = from_tcl(str, key)
-                result[key] = from_tcl(type_spec.get(key, str), value)
-            return result
-
-    if type_spec is Path:
-        return Path(value).resolve()
-
-    if type_spec == "noconvert":
-        return value
-
-
-def to_tcl(value: Any) -> Any:
-    """Based on https://github.com/Akuli/teek/blob/master/teek/_tcl_calls.py"""
-    if isinstance(value, (str, tk.Tcl_Obj)):
-        return value
-
-    if value is None:
-        return ""
-
-    if isinstance(value, bool):
-        return "1" if value else "0"
-
-    if hasattr(value, "tcl_path"):
-        return value.tcl_path
-
-    if hasattr(value, "to_tcl"):
-        return value.to_tcl()
-
-    if isinstance(value, numbers.Real):
-        return str(value)
-
-    if isinstance(value, collections.abc.Mapping):
-        return tuple(map(to_tcl, _flatten(value.items())))
-
-    if callable(value):
-        return create_command(value)
-
-    if isinstance(value, Path):
-        return str(value.resolve())
-
-    return tuple(map(to_tcl, value))
+def seq_pairs(sequence):
+    return zip(sequence[0::2], sequence[1::2])    
 
 
 class ClassPropertyDescriptor:

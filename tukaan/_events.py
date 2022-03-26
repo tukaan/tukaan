@@ -9,8 +9,9 @@ from PIL import Image, UnidentifiedImageError  # type: ignore
 
 from ._constants import _keysym_aliases
 from ._info import System
-from ._misc import Color
-from ._utils import create_command, from_tcl, get_tcl_interp, py_to_tcl_args, reversed_dict, to_tcl
+from ._structures import Color
+from ._tcl import Tcl
+from ._utils import reversed_dict
 
 if System.os == "macOS":
     button_numbers = {1: "left", 2: "right", 3: "middle"}
@@ -87,7 +88,7 @@ class Event:
         for item in self._relevant_attributes:
             value = args[self._order.index(item)]
             if value != "??":
-                value = from_tcl(self.binding_substitutions[item][1], value)
+                value = Tcl.from_(self.binding_substitutions[item][1], value)
             else:
                 value = None
             setattr(self, item, value)
@@ -174,7 +175,7 @@ class KeyboardEvent(Event):
         for item in self._relevant_attributes:
             value = args[self._order.index(item)]
             if value != "??":
-                value = from_tcl(self.binding_substitutions[item][1], value)
+                value = Tcl.from_(self.binding_substitutions[item][1], value)
             else:
                 value = None
 
@@ -228,7 +229,7 @@ class MouseEvent(Event):
         for item in self._relevant_attributes:
             value = args[self._order.index(item)]
             if value != "??":
-                value = from_tcl(self.binding_substitutions[item][1], value)
+                value = Tcl.from_(self.binding_substitutions[item][1], value)
             else:
                 value = None
 
@@ -259,15 +260,15 @@ class ScrollEvent(Event):
 
     def __init__(self, *args) -> None:
         if System.win_sys == "X11":
-            num = from_tcl(int, args[self._order.index("button")])
+            num = Tcl.from_(int, args[self._order.index("button")])
             if num == 4:
                 self.delta = -1
             else:
                 self.delta = 1
         else:
-            self.delta = from_tcl(int, args[self._order.index("delta")])
+            self.delta = Tcl.from_(int, args[self._order.index("delta")])
 
-        self.modifiers = self._get_modifiers(from_tcl(int, args[self._order.index("modifiers")]))
+        self.modifiers = self._get_modifiers(Tcl.from_(int, args[self._order.index("modifiers")]))
 
 
 class VirtualEvent(Event):
@@ -282,7 +283,7 @@ class VirtualEvent(Event):
         return sequence
 
     def __init__(self, *args) -> None:
-        data_key = from_tcl(str, args[0])
+        data_key = Tcl.from_(str, args[0])
 
         if data_key:
             self.data = _virtual_event_data_container.pop(
@@ -389,7 +390,7 @@ class DnDEvent(Event):
 
         for (attr, (_, type_)), value in zip(self.binding_substitutions.items(), args):
             if value != "??":
-                value = from_tcl(type_, value)
+                value = Tcl.from_(type_, value)
             else:
                 value = None
 
@@ -406,7 +407,7 @@ class DnDEvent(Event):
         self._image_regex = re.compile(r'(.*?)<img (.*?)src="(.*?)"(.*?)>(.*?)', re.DOTALL)
 
         if dropped_data_type == "file":
-            data = from_tcl([str], result["_data"])
+            data = Tcl.from_([str], result["_data"])
 
             if len(data) > 1:
                 result["_data"] = [Path(x) for x in data]
@@ -421,7 +422,7 @@ class DnDEvent(Event):
 
         elif dropped_data_type == "color":
             color = "#"
-            splitted_color = from_tcl([str], result["_data"])
+            splitted_color = Tcl.from_([str], result["_data"])
 
             if len(splitted_color) == 4:
                 for i in splitted_color[:3]:
@@ -432,10 +433,10 @@ class DnDEvent(Event):
             result["_data"] = Color(color)
 
         elif dropped_data_type == "custom":
-            ord_list = from_tcl([str], result["_data"])
+            ord_list = Tcl.from_([str], result["_data"])
             char_tuple = tuple(
                 chr(int(x)) for x in ord_list
-            )  # faster to int() here than in from_tcl
+            )  # faster to int() here than in Tcl.from_
 
             result["_data"] = "".join(char_tuple)
 
@@ -539,7 +540,7 @@ class EventMixin:
         script_str = func  # for internal bindings, where i use strings for tcl scripts, or when unbinding where func is ""
 
         if callable(func):
-            cmd = create_command(partial(real_func, func))
+            cmd = Tcl.create_cmd(partial(real_func, func))
 
             sequence = event._parse(sequence)
 
@@ -556,12 +557,13 @@ class EventMixin:
         if tcl_path == ".app":
             tcl_path = "."
 
-        self._tcl_call(None, "bind", tcl_path, sequence, script_str)
+        Tcl.call(None, "bind", tcl_path, sequence, script_str)
 
     def bind(
         self,
         sequence: str,
-        func: Callable[[], Optional[bool]] | Callable[[Event], Optional[bool]],
+        func: str | Callable[[], Optional[bool]] | Callable[[Event], Optional[bool]],
+        *,
         overwrite: bool = False,
         send_event: bool = False,
     ) -> None:
@@ -591,8 +593,8 @@ class EventMixin:
         if data is not None:
             key = _virtual_event_data_container.add(data)
 
-        self._tcl_call(
-            None, "event", "generate", self.tcl_path, sequence, *py_to_tcl_args(data=key)
+        Tcl.call(
+            None, "event", "generate", self, sequence, *Tcl.to_tcl_args(data=key)
         )
 
 
@@ -613,14 +615,14 @@ def DragObject(
             type_ = DnDEvent._dnd_type_aliases[type_]
         except KeyError:
             if type_ not in DnDEvent._existing_types:
-                get_tcl_interp()._tcl_eval(
+                Tcl.eval(
                     None,
                     f"lappend tkdnd::generic::_platform2tkdnd {type_} DND_UserDefined"
                     "\n"
                     f"lappend tkdnd::generic::_tkdnd2platform [dict get $tkdnd::generic::_platform2tkdnd {type_}] {type_}",
                 )
 
-    return (action, type_, to_tcl(data))
+    return (action, type_, Tcl.to(data))
 
 
 class KeySeq:

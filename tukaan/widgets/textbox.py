@@ -10,23 +10,22 @@ import _tkinter as tk
 from PIL import Image  # type: ignore
 
 from ._base import BaseWidget, GetSetAttrMixin, TkWidget
-from ._constants import _cursor_styles, _inactive_cursor_styles, _wraps
-from ._font import Font
-from ._images import Icon
-from ._misc import Color
-from ._units import ScreenDistance
-from ._utils import (
+from tukaan._constants import _cursor_styles, _inactive_cursor_styles, _wraps
+from tukaan._font import Font
+from tukaan._images import Icon
+from tukaan._structures import Color
+from tukaan._units import ScreenDistance
+from tukaan._utils import (
     ClassPropertyMetaClass,
     _images,
     _text_tags,
     classproperty,
     counts,
-    py_to_tcl_args,
-    update_before,
 )
-from ._variables import Integer
-from .exceptions import TclError
+from tukaan._variables import Integer
+from tukaan.exceptions import TclError
 from .scrollbar import Scrollbar
+from tukaan._tcl import Tcl
 
 
 class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
@@ -129,7 +128,7 @@ class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
             subcommand,
             self._name,
             *args,
-            *py_to_tcl_args(**kwargs),
+            *Tcl.to_tcl_args(**kwargs),
         )
 
     def add(self, *indexes) -> None:
@@ -665,7 +664,7 @@ class TextBox(BaseWidget):
             align = kwargs.pop("align", None)
 
             # fmt: off
-            to_call = ("image", "create", index, *py_to_tcl_args(image=content, padx=padx, pady=pady, align=align))
+            to_call = ("image", "create", index, *Tcl.to_tcl_args(image=content, padx=padx, pady=pady, align=align))
             # fmt: on
         elif isinstance(content, TkWidget):
             if content is self._frame.parent:
@@ -691,7 +690,7 @@ class TextBox(BaseWidget):
                 align = None
 
             # fmt: off
-            to_call = ("window", "create", index, *py_to_tcl_args(window=content, padx=padx, pady=pady, align=align, stretch=stretch))
+            to_call = ("window", "create", index, *Tcl.to_tcl_args(window=content, padx=padx, pady=pady, align=align, stretch=stretch))
             # fmt: on
         elif isinstance(content, Path):
             with open(str(content.resolve())) as file:
@@ -893,7 +892,7 @@ class TextBox(BaseWidget):
         self._tcl_call(str, self, "dump", "-all", "-command", add_item, "1.0", "end - 1 chars")
         return result
 
-    @update_before
+    @Tcl.update_before
     def line_info(self, index: TextIndex) -> LineInfo:
         """Returns the accurate height only if the TextBox widget has already laid out"""
         result = self._tcl_call(

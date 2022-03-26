@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Callable, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._constants import _image_positions
-from ._helpers import convert_4side, convert_4side_back
-from ._images import Icon, Image, _image_converter_class
-from ._utils import py_to_tcl_args
-from .exceptions import TclError
+from tukaan._constants import _image_positions
+from tukaan._helpers import convert_4side, convert_4side_back
+from tukaan._images import Icon, Image, _image_converter_class
+from tukaan._tcl import Tcl
+from tukaan.exceptions import TclError
 from .frame import Frame
 
 
@@ -57,7 +57,7 @@ class Tab(Frame):
             self.margin = kwargs.pop("margin", (0,) * 4)
 
         if self in self._widget:
-            self._tcl_call(None, self._widget, "tab", self, *py_to_tcl_args(**kwargs))
+            self._tcl_call(None, self._widget, "tab", self, *Tcl.to_tcl_args(**kwargs))
         else:
             self._store_options.update(kwargs)
 
@@ -82,7 +82,7 @@ class Tab(Frame):
             self.move(-1)
             return
 
-        self._tcl_call(None, self._widget, "add", self, *py_to_tcl_args(**self._store_options))
+        self._tcl_call(None, self._widget, "add", self, *Tcl.to_tcl_args(**self._store_options))
         self._widget.tabs.append(self)
 
     def move(self, new_index: int) -> None:

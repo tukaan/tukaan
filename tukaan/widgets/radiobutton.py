@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable, Optional
 
 from ._base import Any, BaseWidget, TkWidget
-from ._variables import String, _TclVariable
+from tukaan._variables import String, _TclVariable
 from .frame import Frame
 
 

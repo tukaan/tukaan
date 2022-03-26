@@ -5,9 +5,9 @@ from typing import Literal, Optional
 from PIL import Image  # type: ignore
 
 from ._base import BaseWidget, TkWidget
-from ._constants import _anchors, _image_positions
-from ._images import Icon, _image_converter_class
-from ._misc import Color
+from tukaan._constants import _anchors, _image_positions
+from tukaan._images import Icon, _image_converter_class
+from tukaan._structures import Color
 
 
 class Label(BaseWidget):
@@ -27,15 +27,17 @@ class Label(BaseWidget):
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
+        text: Optional[str] = None,
+        *,
         align_content: Optional[str] = None,
         align_text: Optional[Literal["left", "center", "right"]] = None,
+        bg_color: Optional[str] = None,
+        fg_color: Optional[str] = None,
         focusable: Optional[bool] = None,
         image: Optional[Image.Image | Icon] = None,
         image_pos: Optional[str] = None,
         max_line_length: Optional[int] = None,
         style: Optional[str] = None,
-        text: Optional[str] = None,
-        bg_color: Optional[str] = None,
     ) -> None:
 
         if align_content is not None:
@@ -54,5 +56,6 @@ class Label(BaseWidget):
             takefocus=focusable,
             wraplength=max_line_length,
             background=bg_color,
+            foreground=fg_color,
         )
         self.config(text=text)

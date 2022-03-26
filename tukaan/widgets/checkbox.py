@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._variables import Boolean, _TclVariable
+from tukaan._variables import Boolean, _TclVariable
 
 
 class CheckBox(BaseWidget):

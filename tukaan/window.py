@@ -1,57 +1,22 @@
 from __future__ import annotations
 
 import ctypes
-import os
 import platform
 import re
 import sys
-from collections import namedtuple
+import warnings
 from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-import _tkinter as tk
-
-from ._base import BaseWidget, TkWidget
 from ._constants import _resizable
 from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
-from ._misc import Color
-from ._utils import _callbacks, from_tcl, reversed_dict, to_tcl, windows_only
-from .exceptions import ApplicationError, TclError
-
-tcl_interp = None
-tkdnd_inited = False
-
-Position = namedtuple("Position", ["x", "y"])
-Size = namedtuple("Size", ["width", "height"])
-
-
-def updated(func: Callable) -> Callable:
-    def wrapper(self, *args, **kwargs) -> Any:
-        self._tcl_call(None, "update", "idletasks")
-        result = func(self, *args, **kwargs)
-        self._tcl_call(None, "update", "idletasks")
-        return result
-
-    return wrapper
-
-
-def update_before(func: Callable) -> Callable:
-    def wrapper(self, *args, **kwargs) -> Any:
-        self._tcl_call(None, "update", "idletasks")
-        return func(self, *args, **kwargs)
-
-    return wrapper
-
-
-def update_after(func: Callable) -> Callable:
-    def wrapper(self, *args, **kwargs) -> Any:
-        result = func(self, *args, **kwargs)
-        self._tcl_call(None, "update", "idletasks")
-        return result
-
-    return wrapper
+from ._structures import Color, Position, Size
+from ._tcl import Tcl
+from ._utils import _commands, reversed_dict, windows_only
+from .exceptions import TclError
+from .widgets._base import BaseWidget, TkWidget
 
 
 class AccentPolicy(ctypes.Structure):
@@ -83,9 +48,7 @@ DWMWA_MICA_EFFECT = 1029  # https://github.com/Brouilles/win32-mica/blob/main/ma
 
 
 class Titlebar:
-    _tcl_call: Callable
-    _tcl_eval: Callable
-    wm_path: str
+    _wm_path: str
 
     _is_immersive_dark_mode_used = False
     _is_preview_disabled = False
@@ -153,14 +116,12 @@ class Titlebar:
 
 class DesktopWindowManager:
     _border_color = None
-    _tcl_call: Callable
-    _tcl_eval: Callable
     bind: Callable
     minimize: Callable
     restore: Callable
     unbind: Callable
     _wm_frame: int
-    wm_path: str
+    _wm_path: str
 
     def _dwm_set_window_attribute(self, rendering_policy: int, value: Any) -> None:
         value = ctypes.c_int(value)
@@ -188,11 +149,11 @@ class DesktopWindowManager:
 
     @windows_only
     def get_tool_window(self) -> bool:
-        return self._tcl_call(bool, "wm", "attributes", self.wm_path, "-toolwindow")
+        return Tcl.call(bool, "wm", "attributes", self._wm_path, "-toolwindow")
 
     @windows_only
     def set_tool_window(self, is_toolwindow: bool = False) -> None:
-        self._tcl_call(None, "wm", "attributes", self.wm_path, "-toolwindow", is_toolwindow)
+        Tcl.call(None, "wm", "attributes", self._wm_path, "-toolwindow", is_toolwindow)
 
     tool_window = property(get_tool_window, set_tool_window)
 
@@ -240,17 +201,17 @@ class DesktopWindowManager:
             gradient_color = 0
 
             # Remove `-transparentcolor`
-            self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {{}}")
+            Tcl.eval(None, f"wm attributes {self._wm_path} -transparentcolor {{}}")
 
             # Remove <<Unmaximize>> binding
             self.unbind("<<Unmaximize>>")
         else:
             # Make an ABGR color from `tint` and `tint_opacity`
             # If `tint` is None, use the window background color
-            bg_color = self._tcl_eval(str, "ttk::style lookup . -background")
+            bg_color = Tcl.eval(str, "ttk::style lookup . -background")
 
             if tint is None:
-                res = self._tcl_eval((int,), f"winfo rgb . {bg_color}")
+                res = Tcl.eval((int,), f"winfo rgb . {bg_color}")
                 tint = Color(rgb=tuple(value >> 8 for value in res)).hex
             else:
                 tint = tint.hex
@@ -261,7 +222,7 @@ class DesktopWindowManager:
 
             # Make the window background, and each pixel with the same colour as the window background fully transparent.
             # These are the areas that will be blurred.
-            self._tcl_eval(None, f"wm attributes {self.wm_path} -transparentcolor {bg_color}")
+            Tcl.eval(None, f"wm attributes {self._wm_path} -transparentcolor {bg_color}")
 
             # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing.
             # Therefore we bind it to the <<Unmaximize>> event (see it below: WindowMixin._generate_state_event),
@@ -314,64 +275,60 @@ class DesktopWindowManager:
 
 class WindowMixin(DesktopWindowManager):
     _current_state = "normal"
-
-    _tcl_call: Callable
-    _tcl_eval: Callable
-    _winsys: str
-    tcl_path: str
-    wm_path: str
+    _name: str
+    _wm_path: str
 
     def maximize(self) -> None:
-        if self._tcl_call(str, "tk", "windowingsystem") == "win32":
-            self._tcl_call(None, "wm", "state", self.wm_path, "zoomed")
+        if Tcl.call(str, "tk", "windowingsystem") == "win32":
+            Tcl.call(None, "wm", "state", self._wm_path, "zoomed")
         else:
-            self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", True)
+            Tcl.call(None, "wm", "attributes", self._wm_path, "-zoomed", True)
 
     def restore(self) -> None:
         state = self.state
 
         if state in {"hidden", "minimized"}:
-            self._tcl_call(None, "wm", "deiconify", self.wm_path)
+            Tcl.call(None, "wm", "deiconify", self._wm_path)
         elif state == "maximized":
-            if self._winsys == "x11":
-                self._tcl_call(None, "wm", "attributes", self.wm_path, "-zoomed", False)
+            if Tcl.windowing_system == "x11":
+                Tcl.call(None, "wm", "attributes", self._wm_path, "-zoomed", False)
             else:
-                self._tcl_call(None, "wm", "state", self.wm_path, "normal")
+                Tcl.call(None, "wm", "state", self._wm_path, "normal")
         elif state == "fullscreen":
-            self._tcl_call(None, "wm", "attributes", self.wm_path, "-fullscreen", False)
+            Tcl.call(None, "wm", "attributes", self._wm_path, "-fullscreen", False)
 
     def minimize(self) -> None:
-        self._tcl_call(None, "wm", "iconify", self.wm_path)
+        Tcl.call(None, "wm", "iconify", self._wm_path)
 
     def fullscreen(self) -> None:
-        self._tcl_call(None, "wm", "attributes", self.wm_path, "-fullscreen", True)
+        Tcl.call(None, "wm", "attributes", self._wm_path, "-fullscreen", True)
 
     def focus(self) -> None:
-        self._tcl_call(None, "focus", "-force", self.wm_path)
+        Tcl.call(None, "focus", "-force", self._wm_path)
 
     def group(self, other: WindowMixin) -> None:
-        self._tcl_call(None, "wm", "group", self.wm_path, other.tcl_path)
+        Tcl.call(None, "wm", "group", self._wm_path, other._name)
 
     def hide(self):
-        self._tcl_call(None, "wm", "withdraw", self.wm_path)
+        Tcl.call(None, "wm", "withdraw", self._wm_path)
 
     def unhide(self):
-        self._tcl_call(None, "wm", "deiconify", self.wm_path)
+        Tcl.call(None, "wm", "deiconify", self._wm_path)
 
     def on_close(self, func: Callable[[WindowMixin], None]) -> Callable[[], None]:
         def wrapper() -> None:
             if func(self):
                 self.destroy()
 
-        self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", wrapper)
+        Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", wrapper)
         return wrapper
 
     @property
     def state(self):
         try:
-            state = self._tcl_call(str, "wm", "state", self.wm_path)
+            state = Tcl.call(str, "wm", "state", self._wm_path)
         except TclError as e:
-            if not self._tcl_call(bool, "winfo", "exists", self.wm_path):
+            if not Tcl.call(bool, "winfo", "exists", self._wm_path):
                 return "closed"
             raise e
 
@@ -381,81 +338,81 @@ class WindowMixin(DesktopWindowManager):
             return "hidden"
         elif state == "zoomed":
             return "maximized"
-        elif self._winsys == "x11" and self._tcl_call(
-            bool, "wm", "attributes", self.wm_path, "-zoomed"
+        elif Tcl.windowing_system == "x11" and Tcl.call(
+            bool, "wm", "attributes", self._wm_path, "-zoomed"
         ):
             return "maximized"
-        elif self._tcl_call(bool, "wm", "attributes", self.wm_path, "-fullscreen"):
+        elif Tcl.call(bool, "wm", "attributes", self._wm_path, "-fullscreen"):
             return "fullscreen"
 
         return "normal"
 
     @property
     def is_focused(self) -> int:
-        return self._tcl_call(str, "focus", "-displayof", self.wm_path)
+        return Tcl.call(str, "focus", "-displayof", self._wm_path)
 
     @property
-    @update_before
+    @Tcl.update_before
     def visible(self) -> bool:
-        return self._tcl_call(bool, "winfo", "ismapped", self.wm_path)
+        return Tcl.call(bool, "winfo", "ismapped", self._wm_path)
 
     @property
     def id(self) -> int:
-        return int(self._tcl_call(str, "winfo", "id", self.wm_path), 16)
+        return int(Tcl.call(str, "winfo", "id", self._wm_path), 16)
 
     @property
     def _wm_frame(self):
-        return int(self._tcl_call(str, "wm", "frame", self.wm_path), 16)
+        return int(Tcl.call(str, "wm", "frame", self._wm_path), 16)
 
     # WM getters, setters
 
-    @update_before
+    @Tcl.update_before
     def get_x(self) -> int:
-        return self._tcl_call(int, "winfo", "x", self.wm_path)
+        return Tcl.call(int, "winfo", "x", self._wm_path)
 
-    @update_after
+    @Tcl.update_after
     def set_x(self, new_x: int) -> None:
-        self._tcl_call(None, "wm", "geometry", self.wm_path, f"+{new_x}+{self.y}")
+        Tcl.call(None, "wm", "geometry", self._wm_path, f"+{new_x}+{self.y}")
 
     x = property(get_x, set_x)
 
-    @update_before
+    @Tcl.update_before
     def get_y(self) -> int:
-        return self._tcl_call(int, "winfo", "y", self.wm_path)
+        return Tcl.call(int, "winfo", "y", self._wm_path)
 
-    @update_after
+    @Tcl.update_after
     def set_y(self, new_y: int) -> None:
-        self._tcl_call(None, "wm", "geometry", self.wm_path, f"+{self.x}+{new_y}")
+        Tcl.call(None, "wm", "geometry", self._wm_path, f"+{self.x}+{new_y}")
 
     y = property(get_y, set_y)
 
-    @update_before
+    @Tcl.update_before
     def get_width(self) -> int:
-        return self._tcl_call(int, "winfo", "width", self.wm_path)
+        return Tcl.call(int, "winfo", "width", self._wm_path)
 
-    @update_after
+    @Tcl.update_after
     def set_width(self, new_width: int) -> None:
-        self._tcl_call(None, "wm", "geometry", self.wm_path, f"{new_width}x{self.height}")
+        Tcl.call(None, "wm", "geometry", self._wm_path, f"{new_width}x{self.height}")
 
     width = property(get_width, set_width)
 
-    @update_before
+    @Tcl.update_before
     def get_height(self) -> int:
-        return self._tcl_call(int, "winfo", "height", self.wm_path)
+        return Tcl.call(int, "winfo", "height", self._wm_path)
 
-    @update_after
+    @Tcl.update_after
     def set_height(self, new_height: int) -> None:
-        self._tcl_call(None, "wm", "geometry", self.wm_path, f"{self.width}x{new_height}")
+        Tcl.call(None, "wm", "geometry", self._wm_path, f"{self.width}x{new_height}")
 
     height = property(get_height, set_height)
 
-    @update_before
+    @Tcl.update_before
     def get_position(self) -> Position:
         return Position(
-            *map(int, re.split(r"x|\+", self._tcl_call(str, "wm", "geometry", self.wm_path))[2:])
+            *map(int, re.split(r"x|\+", Tcl.call(str, "wm", "geometry", self._wm_path))[2:])
         )
 
-    @update_after
+    @Tcl.update_after
     def set_position(self, new_position: Position | tuple[int, int] | int | str) -> None:
         if isinstance(new_position, int):
             new_position = (new_position,) * 2
@@ -486,98 +443,98 @@ class WindowMixin(DesktopWindowManager):
 
             new_position = (x, y)
 
-        self._tcl_call(None, "wm", "geometry", self.wm_path, "+{}+{}".format(*new_position))
+        Tcl.call(None, "wm", "geometry", self._wm_path, "+{}+{}".format(*new_position))
 
     position = property(get_position, set_position)
 
-    @update_before
+    @Tcl.update_before
     def get_size(self) -> Size:
         return Size(
-            *map(int, re.split(r"x|\+", self._tcl_call(str, "wm", "geometry", self.wm_path))[:2])
+            *map(int, re.split(r"x|\+", Tcl.call(str, "wm", "geometry", self._wm_path))[:2])
         )
 
-    @update_after
+    @Tcl.update_after
     def set_size(self, new_size: Size | tuple[int, int] | int) -> None:
         if isinstance(new_size, int):
             new_size = (new_size,) * 2
-        self._tcl_call(None, "wm", "geometry", self.wm_path, "{}x{}".format(*new_size))
+        Tcl.call(None, "wm", "geometry", self._wm_path, "{}x{}".format(*new_size))
 
     size = property(get_size, set_size)
 
-    @update_before
+    @Tcl.update_before
     def get_min_size(self) -> Size:
-        return Size(*self._tcl_call([str], "wm", "minsize", self.wm_path))
+        return Size(*Tcl.call([str], "wm", "minsize", self._wm_path))
 
-    @update_after
+    @Tcl.update_after
     def set_min_size(self, new_min_size: Size | tuple[int, int] | int) -> None:
         if isinstance(new_min_size, int):
             new_min_size = (new_min_size,) * 2
-        self._tcl_call(None, "wm", "minsize", self.wm_path, *new_min_size)
+        Tcl.call(None, "wm", "minsize", self._wm_path, *new_min_size)
 
     min_size = property(get_min_size, set_min_size)
 
-    @update_before
+    @Tcl.update_before
     def get_max_size(self) -> Size:
-        return Size(*self._tcl_call([str], "wm", "maxsize", self.wm_path))
+        return Size(*Tcl.call([str], "wm", "maxsize", self._wm_path))
 
-    @update_after
+    @Tcl.update_after
     def set_max_size(self, new_max_size: Size | tuple[int, int] | int) -> None:
         if isinstance(new_max_size, int):
             new_max_size = (new_max_size,) * 2
-        self._tcl_call(None, "wm", "maxsize", self.wm_path, *new_max_size)
+        Tcl.call(None, "wm", "maxsize", self._wm_path, *new_max_size)
 
     max_size = property(get_max_size, set_max_size)
 
     def get_title(self) -> str:
-        return self._tcl_call(str, "wm", "title", self.wm_path)
+        return Tcl.call(str, "wm", "title", self._wm_path)
 
     def set_title(self, new_title: str) -> None:
-        self._tcl_call(None, "wm", "title", self.wm_path, new_title)
+        Tcl.call(None, "wm", "title", self._wm_path, new_title)
 
     title = property(get_title, set_title)
 
     def get_always_on_top(self) -> bool:
-        return self._tcl_call(bool, "wm", "attributes", self.wm_path, "-topmost")
+        return Tcl.call(bool, "wm", "attributes", self._wm_path, "-topmost")
 
     def set_always_on_top(self, is_topmost: bool = False) -> None:
-        self._tcl_call(None, "wm", "attributes", self.wm_path, "-topmost", is_topmost)
+        Tcl.call(None, "wm", "attributes", self._wm_path, "-topmost", is_topmost)
 
     always_on_top = property(get_always_on_top, set_always_on_top)
 
     def get_opacity(self) -> float:
-        return self._tcl_call(float, "wm", "attributes", self.wm_path, "-alpha")
+        return Tcl.call(float, "wm", "attributes", self._wm_path, "-alpha")
 
     def set_opacity(self, alpha: float, wait_till_visible: bool = False) -> None:
         if wait_till_visible:
-            self._tcl_call(None, "tkwait", "visibility", self.wm_path)
-        self._tcl_call(None, "wm", "attributes", self.wm_path, "-alpha", alpha)
+            Tcl.call(None, "tkwait", "visibility", self._wm_path)
+        Tcl.call(None, "wm", "attributes", self._wm_path, "-alpha", alpha)
 
     opacity = property(get_opacity, set_opacity)
 
     def get_size_increment(self) -> Size:
-        return Size(*self._tcl_call([str], "wm", "grid", self.wm_path)[2:])
+        return Size(*Tcl.call([str], "wm", "grid", self._wm_path)[2:])
 
     def set_size_increment(self, increment: Size | tuple[int, int] | int) -> None:
         if isinstance(increment, int):
             increment = (increment,) * 2
-        self._tcl_call(None, "wm", "grid", self.wm_path, 1, 1, *increment)
+        Tcl.call(None, "wm", "grid", self._wm_path, 1, 1, *increment)
 
     size_increment = property(get_size_increment, set_size_increment)
 
-    @update_before
+    @Tcl.update_before
     def get_aspect_ratio(self) -> None | tuple[Fraction, Fraction]:
-        result = self._tcl_call((int,), "wm", "aspect", self.wm_path)
+        result = Tcl.call((int,), "wm", "aspect", self._wm_path)
         if result == ():
             return None
         return Fraction(*result[:2]), Fraction(*result[2:])
 
-    @update_after
+    @Tcl.update_after
     def set_aspect_ratio(
         self,
         new_aspect: Optional[tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction],
     ) -> None:
         if new_aspect is None:
-            return self._tcl_call(None, "wm", "aspect", self.wm_path, *("",) * 4)
+            return Tcl.call(None, "wm", "aspect", self._wm_path, *("",) * 4)
 
         if isinstance(new_aspect, (int, float)):
             min = max = new_aspect
@@ -590,46 +547,46 @@ class WindowMixin(DesktopWindowManager):
         if not isinstance(max, Fraction):
             max = Fraction.from_float(max)
 
-        self._tcl_call(
-            None, "wm", "aspect", self.wm_path, *min.as_integer_ratio(), *max.as_integer_ratio()
+        Tcl.call(
+            None, "wm", "aspect", self._wm_path, *min.as_integer_ratio(), *max.as_integer_ratio()
         )
 
     aspect_ratio = property(get_aspect_ratio, set_aspect_ratio)
 
     def get_resizable(self) -> str:
         return reversed_dict(_resizable)[
-            self._tcl_call((bool, bool), "wm", "resizable", self.wm_path)
+            Tcl.call((bool, bool), "wm", "resizable", self._wm_path)
         ]
 
     def set_resizable(self, directions: str) -> None:
-        self._tcl_call(None, "wm", "resizable", self.wm_path, *_resizable[directions])
+        Tcl.call(None, "wm", "resizable", self._wm_path, *_resizable[directions])
 
     resizable = property(get_resizable, set_resizable)
 
     def get_icon(self) -> str:
-        return self._tcl_call(_image_converter_class, "wm", "iconphoto", self.wm_path)
+        return Tcl.call(_image_converter_class, "wm", "iconphoto", self._wm_path)
 
     def set_icon(self, image) -> None:
-        self._tcl_call(None, "wm", "iconphoto", self.wm_path, image)
+        Tcl.call(None, "wm", "iconphoto", self._wm_path, image)
 
     icon = property(get_icon, set_icon)
 
     def get_on_close_callback(self) -> Callable[[WindowMixin], None]:
-        return _callbacks[self._tcl_call(str, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW")]
+        return _commands[Tcl.call(str, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW")]
 
     def set_on_close_callback(self, callback: Optional[Callable[[WindowMixin], None]]) -> None:
         if callback is None:
             callback = self.destroy
 
-        self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", callback)
+        Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", callback)
 
     on_close_callback = property(get_on_close_callback, set_on_close_callback)
 
     def get_scaling(self) -> float:
-        return self._tcl_call(float, "tk", "scaling", "-displayof", self.wm_path)
+        return Tcl.call(float, "tk", "scaling", "-displayof", self._wm_path)
 
     def set_scaling(self, factor: float) -> None:
-        self._tcl_call(None, "tk", "scaling", "-displayof", self.wm_path, factor)
+        Tcl.call(None, "tk", "scaling", "-displayof", self._wm_path, factor)
 
     scaling = property(get_scaling, set_scaling)
 
@@ -675,8 +632,9 @@ class WindowMixin(DesktopWindowManager):
 
 
 class App(WindowMixin, TkWidget):
-    wm_path = "."
-    tcl_path = ".app"
+    _exists = False
+    _name = ".app"
+    _wm_path = "."
 
     def __init__(
         self,
@@ -687,30 +645,22 @@ class App(WindowMixin, TkWidget):
 
         TkWidget.__init__(self)
 
-        global tcl_interp
-        if tcl_interp is self:
+        if App._exists:
             raise TclError("can't create multiple App objects. Use tukaan.Window instead.")
-        tcl_interp = self
+        App._exists = True
 
-        self.app = tk.create(
-            None, os.path.basename(sys.argv[0]), "Tukaan window", True, True, True, False, None
-        )
-
-        self.app.loadtk()
-        self._winsys = self._tcl_call(str, "tk", "windowingsystem").lower()
-        self.tcl_interp_address = self.app.interpaddr()  # only for PIL
-
+        self.__interp = Tcl()
         self.layout: BaseLayoutManager = BaseLayoutManager(self)
 
-        self._tcl_eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
+        Tcl.eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
 
         self.title = title
         self.size = width, height
         self.Titlebar = Titlebar(self)
 
-        self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
-        self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
-        self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
+        Tcl.call(None, "bind", self._name, "<Map>", self._generate_state_event)
+        Tcl.call(None, "bind", self._name, "<Unmap>", self._generate_state_event)
+        Tcl.call(None, "bind", self._name, "<Configure>", self._generate_state_event)
 
         self._init_tukaan_ext_pkg("Serif")
         self._init_tkdnd()
@@ -723,60 +673,9 @@ class App(WindowMixin, TkWidget):
             return self.run()
         raise exc_type(exc_value) from None
 
-    def _tcl_call(self, return_type: Any, *args) -> Any:
-        try:
-            result = self.app.call(*map(to_tcl, args))
-            if return_type is None:
-                return
-            return from_tcl(return_type, result)
-
-        except tk.TclError as e:
-            msg = str(e)
-
-            if "application has been destroyed" in msg:
-                raise ApplicationError("can't invoke Tcl callback. Application has been destroyed.")
-
-            if msg.startswith("couldn't read file"):
-                # FileNotFoundError is a bit more pythonic than TclError: couldn't read file
-                path = msg.split('"')[1]  # path is between ""
-                sys.tracebacklimit = 0
-                raise FileNotFoundError(f"No such file or directory: {path!r}") from None
-            else:
-                raise TclError(msg) from None
-
-    def _tcl_eval(self, return_type: Any, code: str) -> Any:
-        try:
-            result = self.app.eval(code)
-        except tk.TclError:
-            raise TclError
-        else:
-            return from_tcl(return_type, result)
-
-    def _get_boolean(self, arg) -> bool:
-        return self.app.getboolean(arg)
-
-    def _get_string(self, obj) -> str:
-        if isinstance(obj, str):
-            return obj
-
-        if isinstance(obj, tk.Tcl_Obj):
-            return obj.string
-
-        return self._tcl_call(str, "format", obj)
-
-    def _split_list(self, arg) -> tuple:
-        return self.app.splitlist(arg)
-
-    def _lappend_auto_path(self, path: str | Path):
-        self._tcl_call(None, "lappend", "auto_path", path)
-
-    @property
-    def _auto_path(self):
-        return self._tcl_call([str], "set", "auto_path")
-
     def _init_tukaan_ext_pkg(self, name: str) -> None:
-        self._tcl_call(None, "lappend", "auto_path", Path(__file__).parent / name / "pkg")
-        self._tcl_call(None, "package", "require", name)
+        Tcl.call(None, "lappend", "auto_path", Path(__file__).parent / name / "pkg")
+        Tcl.call(None, "package", "require", name)
 
     def _init_tkdnd(self):
         os = {"Linux": "linux", "Darwin": "mac", "Windows": "win"}[platform.system()]
@@ -786,35 +685,31 @@ class App(WindowMixin, TkWidget):
         else:
             os += "-x32"
 
-        self._lappend_auto_path(Path(__file__).parent / "tkdnd" / os)
-        self._tcl_call(None, "package", "require", "tkdnd")
-
-    def run(self) -> None:
-        self.app.mainloop(0)
+        Tcl.call(None, "lappend", "auto_path", Path(__file__).parent / "tkdnd" / os)
+        Tcl.call(None, "package", "require", "tkdnd")
 
     def destroy(self) -> None:
         """Quit the entire Tcl interpreter"""
 
-        global tcl_interp
+        Tcl.call(None, "destroy", self._name)
+        Tcl.call(None, "destroy", self._wm_path)
 
-        self._tcl_call(None, "destroy", self.tcl_path)
-        self._tcl_call(None, "destroy", self.wm_path)
+        Tcl.quit_interp()
 
-        tcl_interp = None
-
-        self.app.quit()
+    def run(self) -> None:
+        Tcl.main_loop()
 
     @property
     def user_last_active(self) -> int:
-        return self._tcl_call(int, "tk", "inactive") / 1000
+        return Tcl.call(int, "tk", "inactive") / 1000
 
     @property
     def scaling(self) -> int:
-        return self._tcl_call(int, "tk", "scaling", "-displayof", ".")
+        return Tcl.call(int, "tk", "scaling", "-displayof", ".")
 
     @scaling.setter
     def scaling(self, factor: int) -> None:
-        self._tcl_call(None, "tk", "scaling", "-displayof", ".", factor)
+        Tcl.call(None, "tk", "scaling", "-displayof", ".", factor)
 
 
 class Window(WindowMixin, BaseWidget):
@@ -827,31 +722,76 @@ class Window(WindowMixin, BaseWidget):
             raise RuntimeError
 
         BaseWidget.__init__(self, parent)
-        self.wm_path = self.tcl_path
-        self._winsys = self.parent._winsys
+        self._wm_path = self._name
         self.Titlebar = Titlebar(self)
 
-        self._tcl_call(None, "bind", self.tcl_path, "<Map>", self._generate_state_event)
-        self._tcl_call(None, "bind", self.tcl_path, "<Unmap>", self._generate_state_event)
-        self._tcl_call(None, "bind", self.tcl_path, "<Configure>", self._generate_state_event)
+        Tcl.call(None, "bind", self._name, "<Map>", self._generate_state_event)
+        Tcl.call(None, "bind", self._name, "<Unmap>", self._generate_state_event)
+        Tcl.call(None, "bind", self._name, "<Configure>", self._generate_state_event)
 
     def wait_till_closed(self):
-        self._tcl_call(None, "tkwait", "window", self.wm_path)
+        Tcl.call(None, "tkwait", "window", self._wm_path)
 
     def get_modal(self) -> str:
-        return bool(self._tcl_call(str, "wm", "transient", self.wm_path))
+        return bool(Tcl.call(str, "wm", "transient", self._wm_path))
 
     def set_modal(self, is_modal) -> None:
         if is_modal:
-            other = self.parent.wm_path
+            other = self.parent._wm_path
         else:
             other = ""
 
-        self._tcl_call(None, "wm", "transient", self.wm_path, other)
+        Tcl.call(None, "wm", "transient", self._wm_path, other)
 
-        if self._winsys == "aqua":
-            self._tcl_call(
-                "::tk::unsupported::MacWindowStyle", "style", self.wm_path, "moveableModal", ""
+        if Tcl.windowing_system == "aqua":
+            Tcl.call(
+                "::tk::unsupported::MacWindowStyle", "style", self._wm_path, "moveableModal", ""
             )
 
     modal = property(get_modal, set_modal)
+
+
+class _ConfigObject:
+    tk_focusFollowsMouse = False
+
+    @property
+    def focus_follows_mouse(self) -> None:
+        return self.tk_focusFollowsMouse
+
+    @focus_follows_mouse.setter
+    def focus_follows_mouse(self, value) -> None:
+        if value:
+            Tcl.call(None, "tk_focusFollowsMouse")
+            self.tk_focusFollowsMouse = True
+        else:
+            warnings.warn("Config.focus_follows_mouse can't be disabled.")
+
+    @staticmethod
+    def _get_theme_aliases() -> dict[str, str]:
+        theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
+        winsys = Tcl.windowing_system
+
+        if winsys == "win32":
+            theme_dict["native"] = "vista"
+        elif winsys == "aqua":
+            theme_dict["native"] = "aqua"
+
+        return theme_dict
+
+    @property
+    def theme(self) -> str:
+        theme_dict = {"clam": "clam", "default": "legacy", "vista": "native", "aqua": "native"}
+        current = Tcl.call(str, "ttk::style", "theme", "use")
+
+        try:
+            return theme_dict[current]
+        except KeyError:
+            return current
+
+    @theme.setter
+    def theme(self, theme) -> None:
+        aliases = self._get_theme_aliases()
+        if theme in aliases:
+            theme = aliases[theme]
+
+        Tcl.call(None, "ttk::style", "theme", "use", theme)

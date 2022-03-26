@@ -4,8 +4,8 @@ from collections import namedtuple
 from typing import Callable, Optional
 
 from ._base import BaseWidget, TkWidget
-from ._misc import Color
-from ._utils import py_to_tcl_args
+from tukaan._structures import Color
+from tukaan._tcl import Tcl
 from .entry import Entry
 
 SpinBox_values = namedtuple("SpinBox_values", ["start", "stop", "step"])
@@ -98,7 +98,7 @@ class SpinBox(Entry):
         return result
 
     @values.setter
-    def values(self, values: [str]) -> None:
+    def values(self, values: list[str | float]) -> None:
         self._set_values(values)
 
     def _set_values(
@@ -129,5 +129,5 @@ class SpinBox(Entry):
             None,
             self.tcl_path,
             "configure",
-            *py_to_tcl_args(from_=min_, to=max_ - increment, increment=increment),
+            *Tcl.to_tcl_args(from_=min_, to=max_ - increment, increment=increment),
         )
