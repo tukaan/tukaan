@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ._utils import _variables, counts
 from ._tcl import Tcl
+from ._utils import _variables, counts
 
 
 class _TclVariable:
@@ -52,7 +52,7 @@ class _TclVariable:
 class String(_TclVariable):
     _type_spec = str
     _default = ""
-    
+
 
 class Integer(_TclVariable):
     _type_spec = int

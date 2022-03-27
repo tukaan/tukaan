@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Iterable, Optional
 
-from ._base import BaseWidget, TkWidget
 from tukaan._structures import Bbox, Color
-from tukaan.exceptions import TclError
 from tukaan._tcl import Tcl
+from tukaan.exceptions import TclError
+
+from ._base import BaseWidget, TkWidget
 
 
 class Entry(BaseWidget):

@@ -39,7 +39,7 @@ class Label(BaseWidget):
         justify: Optional[Justify] = None,
         max_line_length: Optional[int] = None,
         style: Optional[str] = None,
-    ) -> None:            
+    ) -> None:
 
         BaseWidget.__init__(
             self,

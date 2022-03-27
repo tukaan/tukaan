@@ -56,11 +56,13 @@ class _System:
     @property
     def win_sys(self) -> str:
         from ._tcl import Tcl
+
         return {"win32": "DWM", "x11": "X11", "aqua": "Quartz"}[Tcl.windowing_system]
 
     @property
     def tcl_version(self) -> Version:
         from ._tcl import Tcl
+
         return Version(*map(int, Tcl.version.split(".")))
 
     @property

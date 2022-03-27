@@ -3,9 +3,10 @@ from __future__ import annotations
 from collections import namedtuple
 from typing import Callable, Optional
 
-from ._base import BaseWidget, TkWidget
 from tukaan._structures import Color
 from tukaan._tcl import Tcl
+
+from ._base import BaseWidget, TkWidget
 from .entry import Entry
 
 SpinBox_values = namedtuple("SpinBox_values", ["start", "stop", "step"])

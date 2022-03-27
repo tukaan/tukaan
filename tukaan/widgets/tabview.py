@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from ._base import BaseWidget, TkWidget
 from tukaan._enums import ImagePosition
 from tukaan._helpers import convert_4side, convert_4side_back
 from tukaan._images import Icon, Image, _image_converter_class
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TclError
+
+from ._base import BaseWidget, TkWidget
 from .frame import Frame
 
 

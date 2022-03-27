@@ -9,7 +9,7 @@ from typing import Any, Iterator, Optional, Type
 import _tkinter as tk
 from PIL import Image  # type: ignore
 
-from tukaan._enums import Wrap, CaretStyle, InactiveCaretStyle
+from tukaan._enums import CaretStyle, InactiveCaretStyle, Wrap
 from tukaan._font import Font
 from tukaan._images import Icon
 from tukaan._structures import Color
@@ -115,7 +115,9 @@ class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
     def __from_tcl__(cls, value: str) -> Tag:
         return _text_tags[value]
 
-    def _call_tag_subcmd(self, returntype: Any, _dumb_self, subcommand: str, *args, **kwargs) -> Any:
+    def _call_tag_subcmd(
+        self, returntype: Any, _dumb_self, subcommand: str, *args, **kwargs
+    ) -> Any:
         return Tcl.call(
             returntype,
             self._widget,
@@ -179,9 +181,7 @@ class TextIndex(namedtuple("TextIndex", ["line", "column"])):
                 if index in {0, 1}:
                     line, col = 1, 0
                 elif index == -1:
-                    result = Tcl.call(
-                        str, cls._widget._name, "index", "end - 1 chars"
-                    )
+                    result = Tcl.call(str, cls._widget._name, "index", "end - 1 chars")
             elif isinstance(index, (str, Icon, Image.Image, TkWidget, tk.Tcl_Obj)):
                 # string from from_tcl() OR mark name, image name or widget name
                 result = Tcl.call(str, cls._widget._name, "index", index)
@@ -552,9 +552,7 @@ class TextBox(BaseWidget):
         else:
             self._frame = _textbox_frame(_peer_of._frame.parent)
             _name = f"{self._frame._name}.textbox_peer_{_peer_of.peer_count}_of_{_peer_of._name.split('.')[-1]}"
-            BaseWidget.__init__(
-                self, self._frame, (_peer_of, "peer", "create", _name), **to_call
-            )
+            BaseWidget.__init__(self, self._frame, (_peer_of, "peer", "create", _name), **to_call)
             self._name = _name
 
         self.peer_count: int = 0

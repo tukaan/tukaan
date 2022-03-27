@@ -30,8 +30,7 @@ class ChildStatistics:
     @property
     def grid_managed_children(self) -> tuple:
         return tuple(
-            self._widget.from_tcl(elem)
-            for elem in Tcl.call((str,), "grid", "slaves", self._widget)
+            self._widget.from_tcl(elem) for elem in Tcl.call((str,), "grid", "slaves", self._widget)
         )
 
     @property

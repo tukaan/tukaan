@@ -11,11 +11,11 @@ Size = namedtuple("Size", ["width", "height"])
 class Color:
     ...
 
-    
+
 class ColorFactory(ABC):
     def __new__(cls, r, g, b):
         return hex._to(r, g, b)
-    
+
     @abstractstaticmethod
     def _to(r, g, b):
         ...
@@ -36,7 +36,7 @@ class rgb(ColorFactory):
 class hex(ColorFactory):
     def __new__(cls, string):
         return string
-    
+
     def _to(r, g, b) -> str:
         return f"#{r:02x}{g:02x}{b:02x}"
 
@@ -48,7 +48,7 @@ class hex(ColorFactory):
 class hsl(ColorFactory):
     def __new__(cls, h, s, l):
         return hex._to(*cls._from(h, s, l))
-    
+
     def _to(r, g, b) -> tuple[int, ...]:
         r, g, b = r / 255, g / 255, b / 255
         min_value = min(r, g, b)
@@ -106,7 +106,7 @@ class hsl(ColorFactory):
 class hsv:
     def __new__(cls, h, s, v):
         return hex._to(*cls._from(h, s, v))
-    
+
     def _to(r, g, b) -> tuple[int, ...]:
         r, g, b = tuple(x / 255 for x in (r, g, b))
 
@@ -155,7 +155,7 @@ class hsv:
 class cmyk(ColorFactory):
     def __new__(cls, c, m, y, k):
         return hex._to(*cls._from(c, m, y, k))
-    
+
     def _to(r, g, b) -> tuple[int, ...]:
         if (r, g, b) == (0, 0, 0):
             return (0, 0, 0, 100)

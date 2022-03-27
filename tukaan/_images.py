@@ -5,10 +5,10 @@ from typing import Optional
 
 from PIL import Image as PIL_Image  # type: ignore
 
-from .widgets._base import BaseWidget, ConfigMixin
-from ._utils import _images, _pil_images, counts
 from ._tcl import Tcl
+from ._utils import _images, _pil_images, counts
 from .exceptions import TclError
+from .widgets._base import BaseWidget, ConfigMixin
 
 
 class _image_converter_class:

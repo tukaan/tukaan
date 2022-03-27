@@ -4,8 +4,8 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Type
 
-from ._utils import _fonts, seq_pairs, counts
 from ._tcl import Tcl
+from ._utils import _fonts, counts, seq_pairs
 from .exceptions import FontError, TclError
 
 font_props = [
@@ -218,9 +218,7 @@ class Font:
 
     @property
     def families(cls):
-        return sorted(
-            list(set(Tcl.call([str], "font", "families")))  # set to remove duplicates
-        )
+        return sorted(list(set(Tcl.call([str], "font", "families"))))  # set to remove duplicates
 
     def measure(self, text: str) -> int:
         return Tcl.call(int, "font", "measure", self, text)

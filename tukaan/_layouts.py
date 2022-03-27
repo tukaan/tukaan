@@ -100,9 +100,7 @@ class GridTemplates:
 
         try:
             for index, weight in enumerate(template):
-                Tcl.call(
-                    None, "grid", command, self._widget, index, "-weight", weight
-                )
+                Tcl.call(None, "grid", command, self._widget, index, "-weight", weight)
         except TypeError:
             Tcl.call(None, "grid", command, self._widget, "all", "-weight", template)
 
@@ -434,9 +432,7 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
         lm = self._get_manager()
         if lm == "place":
             raise LayoutError("widget not managed by grid, can't set propagation")
-        Tcl.call(
-            None, self._get_manager(), "propagate", self._widget, new_propagation
-        )
+        Tcl.call(None, self._get_manager(), "propagate", self._widget, new_propagation)
 
     def remove(self):
         Tcl.call(None, self._get_manager(), "forget", self._widget)

@@ -20,13 +20,13 @@ class Tcl:
     interp_address = None
     windowing_system = None
     version = None
-    
+
     def __init__(self) -> None:
         global _tcl_interp
 
         if _tcl_interp is not None:
             raise AppError("can't create multiple Tcl interpreter.")
-        
+
         _tcl_interp = tk.create(None, sys.argv[0], "Tukaan", False, False, True, False, None)
         _tcl_interp.loadtk()
 
@@ -38,7 +38,7 @@ class Tcl:
     def get_interp() -> tk.tkapp:
         if _tcl_interp is None:
             Tcl()
-            
+
         return _tcl_interp
 
     @staticmethod
@@ -76,7 +76,7 @@ class Tcl:
                 result = {}
                 for key, value in seq_pairs(items):
                     result[str(key)] = Tcl.from_(type_spec.get(key, str), value)
-                    
+
                 return result
 
         if isinstance(type_spec, EnumMeta):
@@ -120,7 +120,9 @@ class Tcl:
         try:
             return tuple(map(Tcl.to, value))
         except TypeError:
-            raise TypeError("can't convert object to Tcl. Please provide a __to_tcl__ method.") from None
+            raise TypeError(
+                "can't convert object to Tcl. Please provide a __to_tcl__ method."
+            ) from None
 
     @staticmethod
     def call(return_type: Any, *args) -> Any:
@@ -194,7 +196,7 @@ class Tcl:
     def get_number(type_spec: Type[int] | Type[float], value: str | tk.Tcl_obj) -> float | None:
         if not Tcl.get_str(value):
             return None
-        
+
         return type_spec(_tcl_interp.getdouble(value))
 
     @staticmethod
@@ -232,6 +234,7 @@ class Tcl:
             result = func(self, *args, **kwargs)
             _tcl_interp.eval("update idletasks")
             return result
+
         return wrapper
 
     @staticmethod
@@ -239,6 +242,7 @@ class Tcl:
         def wrapper(self, *args, **kwargs) -> Any:
             _tcl_interp.eval("update idletasks")
             return func(self, *args, **kwargs)
+
         return wrapper
 
     @staticmethod
@@ -247,4 +251,5 @@ class Tcl:
             result = func(self, *args, **kwargs)
             _tcl_interp.eval("update idletasks")
             return result
+
         return wrapper

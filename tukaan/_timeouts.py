@@ -7,7 +7,7 @@ class Timeout:
     _id: Optional[str] = None
     _repeat: bool = False
     state: str = "not started"
-    
+
     def __init__(self, seconds: float, target: Callable[[], Any], *, args=(), kwargs={}) -> None:
         self.seconds = seconds
         self.target = target
@@ -23,7 +23,7 @@ class Timeout:
             self.state = "failed"
         else:
             self.state = "succesfully completed"
-            
+
         if self._repeat:
             self.start()
 
@@ -58,7 +58,9 @@ class Timeout:
 class Timer:
     @staticmethod
     def schedule(seconds: float, target: Callable[[Any], Any], *, args=(), kwargs={}) -> None:
-        Tcl.call(str, "after", int(seconds * 1000), Tcl.create_cmd(target, args=args, kwargs=kwargs))
+        Tcl.call(
+            str, "after", int(seconds * 1000), Tcl.create_cmd(target, args=args, kwargs=kwargs)
+        )
 
     @staticmethod
     def wait(seconds: float) -> None:
@@ -74,5 +76,7 @@ class Timer:
             def wrapper(*args, **kwargs) -> Any:
                 Timer.wait(seconds)
                 return func(*args, **kwargs)
+
             return wrapper
+
         return real_decorator

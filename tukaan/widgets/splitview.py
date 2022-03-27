@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ._base import BaseWidget, TkWidget
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TclError
+
+from ._base import BaseWidget, TkWidget
 from .frame import Frame
 
 

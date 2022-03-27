@@ -1,8 +1,10 @@
 from typing import Literal, Optional
 
-from ._base import BaseWidget, TkWidget
-from tukaan._variables import Float
 from tukaan._tcl import Tcl
+from tukaan._variables import Float
+
+from ._base import BaseWidget, TkWidget
+
 
 class ProgressBar(BaseWidget):
     _tcl_class = "ttk::progressbar"

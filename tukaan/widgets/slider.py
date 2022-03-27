@@ -1,9 +1,10 @@
 from typing import Callable, Literal, Optional, Union
 
-from ._base import BaseWidget, TkWidget
+from tukaan._tcl import Tcl
 from tukaan._units import ScreenDistance
 from tukaan._variables import Float
-from tukaan._tcl import Tcl
+
+from ._base import BaseWidget, TkWidget
 
 
 class Slider(BaseWidget):

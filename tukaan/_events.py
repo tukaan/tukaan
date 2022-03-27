@@ -505,7 +505,7 @@ class DnDEvent(Event):
 
 class EventMixin:
     _name: str
-    
+
     def _bind(self, sequence: str, func: Callable | str, overwrite: bool, send_event: bool) -> None:
         event: type[KeyboardEvent | MouseEvent | ScrollEvent | DnDEvent | VirtualEvent]
 
@@ -588,9 +588,7 @@ class EventMixin:
         if data is not None:
             key = _virtual_event_data_container.add(data)
 
-        Tcl.call(
-            None, "event", "generate", self, sequence, *Tcl.to_tcl_args(data=key)
-        )
+        Tcl.call(None, "event", "generate", self, sequence, *Tcl.to_tcl_args(data=key))
 
 
 def DragObject(

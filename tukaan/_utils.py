@@ -73,14 +73,16 @@ def linux_only(func):
 
     return wrapper
 
+
 flatten = itertools.chain.from_iterable
+
 
 def reversed_dict(dictionary: dict) -> dict:
     return {value: key for key, value in dictionary.items()}
 
 
 def seq_pairs(sequence):
-    return zip(sequence[0::2], sequence[1::2])    
+    return zip(sequence[0::2], sequence[1::2])
 
 
 class ClassPropertyDescriptor:

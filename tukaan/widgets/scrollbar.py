@@ -1,7 +1,8 @@
 from typing import Literal, Optional
 
-from ._base import BaseWidget, TkWidget
 from tukaan._tcl import Tcl
+
+from ._base import BaseWidget, TkWidget
 
 
 class Scrollbar(BaseWidget):
