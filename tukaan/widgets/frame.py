@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import Optional
 
-from ._base import BaseWidget, TkWidget
 from tukaan._helpers import convert_4side, convert_4side_back
+from tukaan._tcl import Tcl
+
+from ._base import BaseWidget, TkWidget
 
 
 class Frame(BaseWidget):
@@ -29,8 +31,8 @@ class Frame(BaseWidget):
 
     @property
     def padding(self):
-        return convert_4side_back(tuple(map(int, self._tcl_call((str,), self, "cget", "-padding"))))
+        return convert_4side_back(tuple(map(int, Tcl.call((str,), self, "cget", "-padding"))))
 
     @padding.setter
     def padding(self, new_padding):
-        self._tcl_call(None, self, "configure", "-padding", convert_4side(new_padding))
+        Tcl.call(None, self, "configure", "-padding", convert_4side(new_padding))

@@ -23,17 +23,17 @@ class Pane(Frame):
         self.append()
 
     def __repr__(self):
-        return f"<tukaan.SplitView.Pane in {self.parent}; tcl_name={self.tcl_path}>"
+        return f"<tukaan.SplitView.Pane in {self.parent}; tcl_name={self._name}>"
 
     def _get(self, type_spec, key):
         if self in self._widget:
-            return self._tcl_call(type_spec, self._widget, "pane", self, f"-{key}")
+            return Tcl.call(type_spec, self._widget, "pane", self, f"-{key}")
         else:
             return self._store_options.get(key, None)
 
     def _set(self, **kwargs):
         if self in self._widget:
-            self._tcl_call(None, self._widget, "pane", self, *Tcl.to_tcl_args(**kwargs))
+            Tcl.call(None, self._widget, "pane", self, *Tcl.to_tcl_args(**kwargs))
         else:
             self._store_options.update(kwargs)
 
@@ -42,7 +42,7 @@ class Pane(Frame):
             self.move(-1)
             return
 
-        self._tcl_call(None, self._widget, "add", self, *Tcl.to_tcl_args(**self._store_options))
+        Tcl.call(None, self._widget, "add", self, *Tcl.to_tcl_args(**self._store_options))
         self._widget.panes.append(self)
 
     def move(self, new_index: int) -> None:
@@ -52,11 +52,11 @@ class Pane(Frame):
         if new_index == -1:
             new_index = "end"
 
-        self._tcl_call(None, self._widget, "insert", new_index, self)
+        Tcl.call(None, self._widget, "insert", new_index, self)
 
     def remove(self):
         try:
-            self._tcl_call(None, self._widget, "forget", self)
+            Tcl.call(None, self._widget, "forget", self)
         except TclError:  # Pane isn't added to SplitView
             pass
 
@@ -104,7 +104,7 @@ class SplitView(BaseWidget):
         return self._orientation
 
     def lock_panes(self):
-        self._tcl_call(None, "bindtags", self, (self, ".", "all"))
+        Tcl.call(None, "bindtags", self, (self, ".", "all"))
 
     def unlock_panes(self):
-        self._tcl_call(None, "bindtags", self, (self, "TPanedwindow", ".", "all"))
+        Tcl.call(None, "bindtags", self, (self, "TPanedwindow", ".", "all"))

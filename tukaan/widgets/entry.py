@@ -5,6 +5,7 @@ from typing import Iterable, Optional
 from ._base import BaseWidget, TkWidget
 from tukaan._structures import Bbox, Color
 from tukaan.exceptions import TclError
+from tukaan._tcl import Tcl
 
 
 class Entry(BaseWidget):
@@ -53,7 +54,7 @@ class Entry(BaseWidget):
             width=width,
         )
 
-        self.bind("<FocusOut>", f"+{self.tcl_path} selection clear")
+        self.bind("<FocusOut>", f"+{self._name} selection clear")
 
         if value:
             self.set(value)
@@ -72,16 +73,16 @@ class Entry(BaseWidget):
         return f"value='{value if len(value) <= 10 else value[:10] + '...'}'"
 
     def char_bbox(self, index: int | str):
-        return Bbox(*self._tcl_call((int,), self, "bbox", index))
+        return Bbox(*Tcl.call((int,), self, "bbox", index))
 
     def clear(self) -> None:
-        self._tcl_call(None, self, "delete", 0, "end")
+        Tcl.call(None, self, "delete", 0, "end")
 
     def delete(self, start: int | str, end: int | str = "end") -> None:
-        self._tcl_call(None, self, "delete", start, end)
+        Tcl.call(None, self, "delete", start, end)
 
     def get(self, *indices) -> str:
-        content = self._tcl_call(str, self, "get")
+        content = Tcl.call(str, self, "get")
 
         if indices and indices[0] != None:
             if not isinstance(indices[0], (str, float)):
@@ -91,21 +92,21 @@ class Entry(BaseWidget):
         return content
 
     def set(self, new_value: str) -> None:
-        self._tcl_call(None, self, "delete", 0, "end")
-        self._tcl_call(None, self, "insert", 0, new_value)
+        Tcl.call(None, self, "delete", 0, "end")
+        Tcl.call(None, self, "insert", 0, new_value)
 
     value = property(get, set)
 
     def insert(self, index: int | str, text: str) -> None:
-        self._tcl_call(None, self, "insert", index, text)
+        Tcl.call(None, self, "insert", index, text)
 
     @property
     def caret_pos(self) -> int:
-        return self._tcl_call(int, self, "index", "insert")
+        return Tcl.call(int, self, "index", "insert")
 
     @caret_pos.setter
     def caret_pos(self, new_pos: int) -> None:
-        self._tcl_call(None, self, "icursor", new_pos)
+        Tcl.call(None, self, "icursor", new_pos)
 
     @property
     def hide_chars(self) -> bool:
@@ -122,8 +123,8 @@ class Entry(BaseWidget):
     @property
     def selection(self) -> str | None:
         try:
-            first = self._tcl_call(int, self, "index", "sel.first")
-            last = self._tcl_call(int, self, "index", "sel.last")
+            first = Tcl.call(int, self, "index", "sel.first")
+            last = Tcl.call(int, self, "index", "sel.last")
         except TclError:
             return None
         else:
@@ -133,9 +134,9 @@ class Entry(BaseWidget):
     def selection(self, new_range: tuple[int | str, int | str] | list[int | str] | None) -> None:
         if isinstance(new_range, (tuple, list)) and len(new_range) == 2:
             start, end = new_range
-            self._tcl_call((int,), self, "selection", "range", start, end)
+            Tcl.call((int,), self, "selection", "range", start, end)
         elif new_range is None:
-            self._tcl_call((int,), self, "selection", "clear")
+            Tcl.call((int,), self, "selection", "clear")
 
     def x_scroll(self, *args) -> None:
-        self._tcl_call(None, self, "xview", *args)
+        Tcl.call(None, self, "xview", *args)

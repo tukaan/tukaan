@@ -504,9 +504,8 @@ class DnDEvent(Event):
 
 
 class EventMixin:
-    tcl_path: str
-    _tcl_call: Callable
-
+    _name: str
+    
     def _bind(self, sequence: str, func: Callable | str, overwrite: bool, send_event: bool) -> None:
         event: type[KeyboardEvent | MouseEvent | ScrollEvent | DnDEvent | VirtualEvent]
 
@@ -553,11 +552,7 @@ class EventMixin:
             else:
                 script_str = f"{'' if overwrite else '+'} if {{[{cmd} {subst_str}] == 0}} break"  # tcl: {+ if {[command %subst] == 0} break}
 
-        tcl_path = self.tcl_path
-        if tcl_path == ".app":
-            tcl_path = "."
-
-        Tcl.call(None, "bind", tcl_path, sequence, script_str)
+        Tcl.call(None, "bind", self._name if self._name == ".app" else ".", sequence, script_str)
 
     def bind(
         self,

@@ -2,7 +2,7 @@ from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
 from tukaan._variables import Float
-
+from tukaan._tcl import Tcl
 
 class ProgressBar(BaseWidget):
     _tcl_class = "ttk::progressbar"
@@ -18,8 +18,9 @@ class ProgressBar(BaseWidget):
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
-        focusable: Optional[bool] = None,
         max: Optional[int] = 100,
+        *,
+        focusable: Optional[bool] = None,
         mode: Optional[Literal["determinate", "indeterminate"]] = None,
         orientation: Optional[Literal["horizontal", "vertical"]] = None,
         value: Optional[int] = None,
@@ -49,13 +50,13 @@ class ProgressBar(BaseWidget):
         if steps_per_second > 1000:
             raise ValueError("error")
         interval = int(1000 / steps_per_second)
-        self._tcl_call(None, self, "start", interval)
+        Tcl.call(None, self, "start", interval)
 
     def stop(self) -> None:
-        self._tcl_call(None, self, "stop")
+        Tcl.call(None, self, "stop")
 
     def step(self, amount: int = 1) -> None:
-        self._tcl_call(None, self, "step", amount)
+        Tcl.call(None, self, "step", amount)
 
     def __add__(self, other: int):
         self.set(self.get() + other)

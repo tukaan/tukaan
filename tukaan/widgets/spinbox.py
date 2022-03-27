@@ -76,23 +76,23 @@ class SpinBox(Entry):
         else:
             self.set("0")
 
-        self.bind("<<Increment>>", f"+{self.tcl_path} selection clear")
-        self.bind("<<Decrement>>", f"+{self.tcl_path} selection clear")
-        self.bind("<FocusOut>", f"+{self.tcl_path} selection clear")
+        self.bind("<<Increment>>", f"+{self._name} selection clear")
+        self.bind("<<Decrement>>", f"+{self._name} selection clear")
+        self.bind("<FocusOut>", f"+{self._name} selection clear")
 
     def set(self, value: str) -> None:
-        self._tcl_call(None, self, "set", value)
+        Tcl.call(None, self, "set", value)
 
     value = property(Entry.get, set)
 
     @property
     def values(self) -> list[str | float]:
-        result = self._tcl_call([str], self, "cget", "-values")
+        result = Tcl.call([str], self, "cget", "-values")
 
         if not result:
-            min_ = self._tcl_call(float, self, "cget", "-from") or 0
-            max_ = self._tcl_call(float, self, "cget", "-to") or 0
-            increment = self._tcl_call(float, self, "cget", "-increment") or 1
+            min_ = Tcl.call(float, self, "cget", "-from") or 0
+            max_ = Tcl.call(float, self, "cget", "-to") or 0
+            increment = Tcl.call(float, self, "cget", "-increment") or 1
             return SpinBox_values(min_, max_ + increment, increment)
 
         return result
@@ -125,9 +125,9 @@ class SpinBox(Entry):
         else:
             return self.config(values=values)
 
-        self._tcl_call(
+        Tcl.call(
             None,
-            self.tcl_path,
+            self._name,
             "configure",
             *Tcl.to_tcl_args(from_=min_, to=max_ - increment, increment=increment),
         )

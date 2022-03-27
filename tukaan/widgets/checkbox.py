@@ -1,7 +1,9 @@
 from typing import Callable, Optional
 
-from ._base import BaseWidget, TkWidget
+from tukaan._tcl import Tcl
 from tukaan._variables import Boolean, _TclVariable
+
+from ._base import BaseWidget, TkWidget
 
 
 class CheckBox(BaseWidget):
@@ -49,7 +51,7 @@ class CheckBox(BaseWidget):
         self.config(text=text)
 
     def invoke(self):
-        self._tcl_call(None, self, "invoke")
+        Tcl.call(None, self, "invoke")
 
     def select(self):
         self._variable.set(True)

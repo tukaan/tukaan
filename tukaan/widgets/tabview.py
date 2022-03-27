@@ -41,14 +41,14 @@ class Tab(Frame):
         self.append()
 
     def __repr__(self):
-        return f"<tukaan.TabView.Tab in {self.parent}; tcl_name={self.tcl_path}>"
+        return f"<tukaan.TabView.Tab in {self.parent}; tcl_name={self._name}>"
 
     def _get(self, type_spec, key):
         if key == "margin":
             return self.margin
 
         if self in self._widget:
-            return self._tcl_call(type_spec, self._widget, "tab", self, f"-{key}")
+            return Tcl.call(type_spec, self._widget, "tab", self, f"-{key}")
         else:
             return self._store_options.get(key, None)
 
@@ -57,32 +57,32 @@ class Tab(Frame):
             self.margin = kwargs.pop("margin", (0,) * 4)
 
         if self in self._widget:
-            self._tcl_call(None, self._widget, "tab", self, *Tcl.to_tcl_args(**kwargs))
+            Tcl.call(None, self._widget, "tab", self, *Tcl.to_tcl_args(**kwargs))
         else:
             self._store_options.update(kwargs)
 
     @property
     def margin(self):
         return convert_4side_back(
-            tuple(map(int, self._tcl_call((str,), self._widget, "tab", self, "-padding")))
+            tuple(map(int, Tcl.call((str,), self._widget, "tab", self, "-padding")))
         )
 
     @margin.setter
     def margin(self, new_margin):
-        self._tcl_call(None, self._widget, "tab", self, "-padding", convert_4side(new_margin))
+        Tcl.call(None, self._widget, "tab", self, "-padding", convert_4side(new_margin))
 
     def select(self):
         if self not in self._widget:
             self.append()
 
-        self._tcl_call(None, self._widget, "select", self)
+        Tcl.call(None, self._widget, "select", self)
 
     def append(self):
         if self in self._widget:
             self.move(-1)
             return
 
-        self._tcl_call(None, self._widget, "add", self, *Tcl.to_tcl_args(**self._store_options))
+        Tcl.call(None, self._widget, "add", self, *Tcl.to_tcl_args(**self._store_options))
         self._widget.tabs.append(self)
 
     def move(self, new_index: int) -> None:
@@ -92,17 +92,17 @@ class Tab(Frame):
         if new_index == -1:
             new_index = "end"
 
-        self._tcl_call(None, self._widget, "insert", new_index, self)
+        Tcl.call(None, self._widget, "insert", new_index, self)
 
     def hide(self):
-        self._tcl_call(None, self._widget, "hide", self)
+        Tcl.call(None, self._widget, "hide", self)
 
     def unhide(self):
-        self._tcl_call(None, self._widget, "add", self)
+        Tcl.call(None, self._widget, "add", self)
 
     def remove(self):
         try:
-            self._tcl_call(None, self._widget, "forget", self)
+            Tcl.call(None, self._widget, "forget", self)
         except TclError:  # Tab isn't added to TabView
             pass
 
@@ -150,7 +150,7 @@ class TabView(BaseWidget):
     @property
     def selected(self):
         try:
-            selected = self._tcl_eval(int, f"{self.tcl_path} index [{self.tcl_path} select]")
+            selected = Tcl.eval(int, f"{self._name} index [{self._name} select]")
         except TclError:
             return None
 
@@ -168,7 +168,7 @@ class TabView(BaseWidget):
         return wrapper
 
     def enable_keyboard_traversal(self):
-        self._tcl_call(None, "ttk::notebook::enableTraversal", self)
+        Tcl.call(None, "ttk::notebook::enableTraversal", self)
 
     def enable_tab_dragging(self):
         self.events.bind("<Button1-Motion>", self._on_tab_drag, send_event=True)
@@ -176,10 +176,10 @@ class TabView(BaseWidget):
     def _on_tab_drag(self, event):
         x, y = event.x, event.y
 
-        if self._tcl_call(str, self, "identify", x, y) == "Notebook.tab":
+        if Tcl.call(str, self, "identify", x, y) == "Notebook.tab":
             # when the tab has a big image, 'Notebook.tab' glitches only at first tab, 'label' everywhere
-            self._tcl_eval(
+            Tcl.eval(
                 None,
-                f"{self.tcl_path} insert [{self.tcl_path} index @{x},{y}] [{self.tcl_path} select]",
+                f"{self._name} insert [{self._name} index @{x},{y}] [{self._name} select]",
             )
             return False  # like 'break' in tkinter

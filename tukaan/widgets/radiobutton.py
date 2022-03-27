@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from ._base import Any, BaseWidget, TkWidget
+from tukaan._tcl import Tcl
 from tukaan._variables import String, _TclVariable
+
+from ._base import Any, BaseWidget, TkWidget
 from .frame import Frame
 
 
@@ -47,7 +49,7 @@ class RadioButton(BaseWidget):
         self.config(text=text)
 
     def invoke(self):
-        self._tcl_call(None, self, "invoke")
+        Tcl.call(None, self, "invoke")
 
     def select(self):
         self.variable.set(self.value)

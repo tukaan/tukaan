@@ -4,9 +4,11 @@ from typing import Callable, Optional
 
 from PIL import Image  # type: ignore
 
-from ._base import BaseWidget, TkWidget
 from tukaan._enums import ImagePosition
 from tukaan._images import Icon, _image_converter_class
+from tukaan._tcl import Tcl
+
+from ._base import BaseWidget, TkWidget
 
 
 class Button(BaseWidget):
@@ -52,4 +54,4 @@ class Button(BaseWidget):
         self.config(text=text)
 
     def invoke(self):
-        self._tcl_call(None, self, "invoke")
+        Tcl.call(None, self, "invoke")
