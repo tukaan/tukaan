@@ -254,7 +254,7 @@ class TextIndex(namedtuple("TextIndex", ["line", "column"])):
         if lines:
             move_str += f" {dir_} {lines} lines"
 
-        return self.from_tcl(self.to_tcl() + move_str).clamp()
+        return self.__from_tcl__(self.__to_tcl__() + move_str).clamp()
 
     def forward(self, chars: int = 0, indices: int = 0, lines: int = 0) -> TextIndex:
         return self._move("+", chars, indices, lines)
@@ -263,7 +263,7 @@ class TextIndex(namedtuple("TextIndex", ["line", "column"])):
         return self._move("-", chars, indices, lines)
 
     def _apply_suffix(self, suffix) -> TextIndex:
-        return self.from_tcl(f"{self.to_tcl()} {suffix}").clamp()
+        return self.__from_tcl__(f"{self.__to_tcl__()} {suffix}").clamp()
 
     @property
     def linestart(self) -> TextIndex:
@@ -676,16 +676,16 @@ class TextBox(BaseWidget):
             index_or_range = indexes[0]
 
             if isinstance(index_or_range, self.range):
-                return tuple(index.to_tcl() for index in index_or_range)
+                return tuple(index.__to_tcl__() for index in index_or_range)
             elif isinstance(index_or_range, self.index):
-                return index_or_range.to_tcl(), index_or_range.forward(chars=1).to_tcl()
+                return index_or_range.__to_tcl__(), index_or_range.forward(chars=1).__to_tcl__()
             elif isinstance(index_or_range, tuple):
                 return (
-                    self.index(*index_or_range).to_tcl(),
-                    self.index(*index_or_range).forward(chars=1).to_tcl(),
+                    self.index(*index_or_range).__to_tcl__(),
+                    self.index(*index_or_range).forward(chars=1).__to_tcl__(),
                 )
         elif len(indexes) == 2:
-            return tuple(index.to_tcl() for index in self.range(*indexes))
+            return tuple(index.__to_tcl__() for index in self.range(*indexes))
         else:
             return "1.0", "end - 1 chars"
 
@@ -844,7 +844,7 @@ class TextBox(BaseWidget):
                         unclosed_tags[value][1],
                         (
                             self.range(self.index(unclosed_tags[value][0]), self.index(index)),
-                            Tag.from_tcl(value),
+                            Tag.__from_tcl__(value),
                         ),
                     )
                     return
@@ -853,7 +853,7 @@ class TextBox(BaseWidget):
                 "image": lambda x: _images[x],
                 "mark": lambda x: f"TextBox.marks[{x!r}]",
                 "text": str,
-                "window": TkWidget.from_tcl,
+                "window": TkWidget.__from_tcl__,
             }[type]
 
             result.append((self.index(index), convert(value)))  # type: ignore  # "object" not callable

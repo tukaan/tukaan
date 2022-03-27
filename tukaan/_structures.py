@@ -2,14 +2,74 @@ from __future__ import annotations
 
 from abc import ABC, abstractstaticmethod
 from collections import namedtuple
+from dataclasses import dataclass
+from fractions import Fraction
 
 Bbox = namedtuple("Bbox", ["x", "y", "width", "height"])
 Position = namedtuple("Position", ["x", "y"])
 Size = namedtuple("Size", ["width", "height"])
 
 
+@dataclass
 class Color:
-    ...
+    red: int
+    green: int
+    blue: int
+    
+    def __to_tcl__(self) -> str:
+        return self.hex
+
+    @classmethod
+    def __from_tcl__(cls, tcl_value: str) -> Color:
+        return cls(*hex._from(tcl_value))
+
+    def invert(self) -> Color:
+        self.red = 255 - self.red
+        self.green = 255 - self.green
+        self.blue = 255 - self.blue
+
+        return self
+
+    def mix(self, other, ratio):
+        if not isinstance(other, Color):
+            raise TypeError
+
+        a, b = Fraction.from_float(ratio).as_integer_ratio()
+        amount_of_clr_1 = 1 / (a + b) * a
+        amount_of_clr_2 = 1 / (a + b) * b
+
+        r, g, b = (
+            round(amount_of_clr_1 * value1 + amount_of_clr_2 * value2)
+            for value1, value2 in zip(self.rgb, other.rgb)
+        )
+        return Color(rgb=(r, g, b))
+
+    def __or__(self, other):
+        return self.mix(other, 1 / 1)
+
+    @property
+    def is_dark(self):
+        return ((self.red * 299 + self.green * 587 + self.blue * 114) / 1000) < 128
+
+    @property
+    def rgb(self) -> tuple[int, int, int]:
+        return (self.red, self.green, self.blue)
+
+    @property
+    def hex(self) -> str:
+        return hex._to(self.red, self.green, self.blue)
+
+    @property
+    def hsl(self) -> tuple[int, int, int]:
+        return hsl._to(self.red, self.green, self.blue)
+
+    @property
+    def hsv(self) -> tuple[int, int, int]:
+        return hsv._to(self.red, self.green, self.blue)
+
+    @property
+    def cmyk(self) -> tuple[int, int, int, int]:
+        return cmyk._to(self.red, self.green, self.blue)
 
 
 class ColorFactory(ABC):
@@ -41,7 +101,7 @@ class hex(ColorFactory):
         return f"#{r:02x}{g:02x}{b:02x}"
 
     def _from(string) -> tuple[int, ...]:
-        int_value = int(hex.lstrip("#"), 16)
+        int_value = int(string.lstrip("#"), 16)
         return int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF
 
 

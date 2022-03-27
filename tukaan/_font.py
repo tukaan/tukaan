@@ -155,11 +155,11 @@ class Font:
             # font already exists in tcl
             Tcl.call(None, "font", "configure", self._name, *args)
 
-    def to_tcl(self) -> str:
+    def __to_tcl__(self) -> str:
         return self._name
 
     @classmethod
-    def from_tcl(cls, tcl_value: str) -> Font:
+    def __from_tcl__(cls, tcl_value: str) -> Font:
         return _fonts[tcl_value]
 
     def _get(self, type_spec: Type[int] | Type[str] | Type[bool], option: str) -> int | str | bool:

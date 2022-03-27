@@ -30,13 +30,13 @@ class ChildStatistics:
     @property
     def grid_managed_children(self) -> tuple:
         return tuple(
-            self._widget.from_tcl(elem) for elem in Tcl.call((str,), "grid", "slaves", self._widget)
+            self._widget.__from_tcl__(elem) for elem in Tcl.call((str,), "grid", "slaves", self._widget)
         )
 
     @property
     def position_managed_children(self) -> tuple:
         return tuple(
-            self._widget.from_tcl(elem)
+            self._widget.__from_tcl__(elem)
             for elem in Tcl.call((str,), "place", "slaves", self._widget)
         )
 
@@ -67,7 +67,7 @@ class WidgetMixin:
         # teek.Button.from_tcl(teek.Label().to_tcl())
         # >>> TypeError: blablabla
 
-        # tukaan.Button.from_tcl(tukaan.Label().to_tcl())
+        # tukaan.Button.__from_tcl__(tukaan.Label().__to_tcl__())
         # >>> '.app.label_1'
 
         return _widgets[tcl_value]

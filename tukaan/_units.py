@@ -72,11 +72,11 @@ class ScreenDistance:
     def __float__(self):
         return round2(self.amount)
 
-    def to_tcl(self) -> str:
+    def __to_tcl__(self) -> str:
         return str(self.amount)
 
     @classmethod
-    def from_tcl(cls, tcl_value: str) -> ScreenDistance:
+    def __from_tcl__(cls, tcl_value: str) -> ScreenDistance:
         unit = tcl_value[-1]
         value = int(tcl_value[:-1])
 
