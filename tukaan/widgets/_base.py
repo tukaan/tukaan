@@ -102,13 +102,13 @@ class ConfigMixin:
         for key, value in tuple(kwargs.items()):
             if key in self._keys and isinstance(self._keys[key], tuple):
                 # If the key has an alias in Tukaan, use the tuple[1] as the Tcl key
-                alias = self._keys[key]
+                type_spec, tcl_name = self._keys[key]
                 value = kwargs.pop(key)
 
-                if isinstance(alias[0], dict):
-                    value = alias[0][value]
+                if isinstance(type_spec, dict):
+                    value = type_spec[value]
 
-                kwargs[alias[1]] = value
+                kwargs[tcl_name] = value
 
             if key == "text":
                 if isinstance(value, String):

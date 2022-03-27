@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections
 import sys
 import traceback
+from enum import Enum, EnumMeta
 from numbers import Real
 from pathlib import Path
 from typing import Any, Callable, Type
@@ -78,6 +79,9 @@ class Tcl:
                     
                 return result
 
+        if isinstance(type_spec, EnumMeta):
+            return type_spec(value)
+
         if type_spec is Path:
             return Path(value).resolve()
 
@@ -101,6 +105,9 @@ class Tcl:
         if hasattr(value, "__to_tcl__"):
             return value.__to_tcl__()
 
+        if isinstance(value, Enum):
+            return str(value.value)
+
         if isinstance(value, collections.abc.Mapping):
             return tuple(map(Tcl.to, flatten(value.items())))
 
@@ -113,7 +120,7 @@ class Tcl:
         try:
             return tuple(map(Tcl.to, value))
         except TypeError:
-            raise TypeError("can't convert object to Tcl. Please provide a __to_tcl__ method.")
+            raise TypeError("can't convert object to Tcl. Please provide a __to_tcl__ method.") from None
 
     @staticmethod
     def call(return_type: Any, *args) -> Any:

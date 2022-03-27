@@ -9,12 +9,12 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from ._constants import _resizable
+from ._enums import Resizable, BackdropEffect
 from ._images import _image_converter_class
 from ._layouts import BaseLayoutManager
 from ._structures import Color, Position, Size
 from ._tcl import Tcl
-from ._utils import _commands, reversed_dict, windows_only
+from ._utils import _commands, windows_only
 from .exceptions import TclError
 from .widgets._base import BaseWidget, TkWidget
 
@@ -173,29 +173,20 @@ class DesktopWindowManager:
     @windows_only
     def set_backdrop_effect(
         self,
-        effect: str = "blur",
+        effect: BackdropEffect = BackdropEffect.Blur,
         tint: Optional[Color] = None,
         tint_opacity: float = 0.2,
     ) -> None:
         # https://github.com/Peticali/PythonBlurBehind/blob/main/blurWindow/blurWindow.py
         # https://github.com/sourcechord/FluentWPF/blob/master/FluentWPF/Utility/AcrylicHelper.cs
 
-        effect = {
-            None: 0,
-            "opaque-color": 1,
-            "transparent-color": 2,
-            "blur": 3,
-            "acrylic": 4,
-            "mica": 5,
-        }[effect]
-
         build = sys.getwindowsversion().build
         has_mica = build >= 22000
         has_backdrop_type = build >= 22523
 
-        if not has_mica and effect == 5:
+        if not has_mica and effect is BackdropEffect.Mica:
             # Mica is available only on Windows 11 build 22000+, fall back to acrylic
-            effect = 4
+            effect == BackdropEffect.Acrylic
 
         if effect == 0:
             gradient_color = 0
@@ -232,7 +223,7 @@ class DesktopWindowManager:
         # Set up AccentPolicy struct
         ap = AccentPolicy()
         ap.AccentFlags = 2  # ACCENT_ENABLE_BLURBEHIND  <- try this with 4 bruhh :D
-        ap.AccentState = effect
+        ap.AccentState = effect.value
         ap.GradientColor = gradient_color
 
         # Set up WindowCompositionAttributeData struct
@@ -243,14 +234,14 @@ class DesktopWindowManager:
 
         self._set_window_composition_attribute(wcad)
 
-        if effect == 5:
+        if effect is BackdropEffect.Mica:
             if has_backdrop_type:
                 # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/PInvoke/DWM_SYSTEMBACKDROP_TYPE.cs
                 # Mica effect is 2
                 self._dwm_set_window_attribute(DWMWA_SYSTEMBACKDROP_TYPE, 2)
             elif has_mica:
                 self._dwm_set_window_attribute(DWMWA_MICA_EFFECT, 1)
-        elif effect == 0:
+        elif effect is BackdropEffect.No:
             # Remove Mica
             if has_backdrop_type:
                 # None effect is 1
@@ -553,13 +544,11 @@ class WindowMixin(DesktopWindowManager):
 
     aspect_ratio = property(get_aspect_ratio, set_aspect_ratio)
 
-    def get_resizable(self) -> str:
-        return reversed_dict(_resizable)[
-            Tcl.call((bool, bool), "wm", "resizable", self._wm_path)
-        ]
+    def get_resizable(self) -> Resizable:
+        return Resizable(Tcl.call((bool, bool), "wm", "resizable", self._wm_path))
 
-    def set_resizable(self, directions: str) -> None:
-        Tcl.call(None, "wm", "resizable", self._wm_path, *_resizable[directions])
+    def set_resizable(self, directions: Resizable) -> None:
+        Tcl.call(None, "wm", "resizable", self._wm_path, *directions.value)
 
     resizable = property(get_resizable, set_resizable)
 

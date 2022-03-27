@@ -1,6 +1,7 @@
 from typing import Literal, Optional
 
 from ._base import BaseWidget, TkWidget
+from tukaan._tcl import Tcl
 
 
 class Scrollbar(BaseWidget):
@@ -52,7 +53,7 @@ class Scrollbar(BaseWidget):
                 self.hide()
             else:
                 self.unhide()
-        self._tcl_call(None, self, "set", start, end)
+        Tcl.call(None, self, "set", start, end)
 
     def get(self) -> None:
-        return self._tcl_call((float,), self, "get")
+        return Tcl.call((float,), self, "get")

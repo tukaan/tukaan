@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable, Optional
 
 from ._base import BaseWidget, TkWidget
-from tukaan._constants import _image_positions
+from tukaan._enums import ImagePosition
 from tukaan._helpers import convert_4side, convert_4side_back
 from tukaan._images import Icon, Image, _image_converter_class
 from tukaan._tcl import Tcl
@@ -14,7 +14,7 @@ from .frame import Frame
 class Tab(Frame):
     _keys = {
         "icon": (_image_converter_class, "image"),
-        "image_pos": (_image_positions, "compound"),
+        "image_pos": (ImagePosition, "compound"),
         "title": (str, "text"),
         "underline": int,
     }
@@ -24,7 +24,7 @@ class Tab(Frame):
         title: Optional[str] = None,
         *,
         icon: Optional[Icon | Image] = None,
-        image_pos: str = "left",
+        image_pos: ImagePosition = ImagePosition.Left,
         margin: Optional[int | tuple[int, ...]] = None,
         padding: Optional[int | tuple[int, ...]] = None,
         underline: Optional[int] = None,
@@ -32,7 +32,7 @@ class Tab(Frame):
         Frame.__init__(self, self._widget, padding=padding)
 
         self._store_options = {
-            "compound": _image_positions[image_pos],
+            "compound": image_pos,
             "image": icon,
             "text": title,
             "underline": underline,

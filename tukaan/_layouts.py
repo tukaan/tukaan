@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import enum
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from ._base import BaseWidget, TkWidget
 
-from ._constants import AnchorAnnotation
-from ._units import ScreenDistance
+from ._enums import Alignment
 from ._tcl import Tcl
+from ._units import ScreenDistance
 from .exceptions import CellNotFoundError, LayoutError
 
 HorAlignAlias = Optional[Literal["left", "right", "stretch"]]
@@ -18,23 +18,23 @@ ScrDstRtrnAlias = Dict[str, Union[float, ScreenDistance]]
 VertAlignAlias = Optional[Literal["bottom", "stretch", "top"]]
 
 
-class StickyValues(enum.Enum):
-    SW = ("left", "bottom")
-    NSW = ("left", "stretch")
-    NW = ("left", "top")
-    W = ("left", None)
-    ES = ("right", "bottom")
-    NES = ("right", "stretch")
-    NE = ("right", "top")
-    E = ("right", None)
-    ESW = ("stretch", "bottom")
-    NESW = ("stretch", "stretch")
-    NEW = ("stretch", "top")
-    EW = ("stretch", None)
-    S = (None, "bottom")
-    NS = (None, "stretch")
-    N = (None, "top")
-    NONE = (None, None)
+class StickyValues(Enum):
+    sw = ("left", "bottom")
+    nsw = ("left", "stretch")
+    nw = ("left", "top")
+    w = ("left", None)
+    es = ("right", "bottom")
+    nes = ("right", "stretch")
+    ne = ("right", "top")
+    e = ("right", None)
+    esw = ("stretch", "bottom")
+    nesw = ("stretch", "stretch")
+    new = ("stretch", "top")
+    ew = ("stretch", None)
+    s = (None, "bottom")
+    ns = (None, "stretch")
+    n = (None, "top")
+    none = (None, None)
 
 
 class GridCells:
@@ -206,14 +206,14 @@ class Grid:
 
     def _parse_sticky_values(self, hor: HorAlignAlias, vert: VertAlignAlias) -> str:
         try:
-            result = StickyValues((hor, vert)).name.lower()
+            result = StickyValues((hor, vert)).name
             return "" if result == "none" else result
         except KeyError:
             raise LayoutError(f"invalid alignment value: {(hor, vert)}")
 
     def _get_sticky_values(self, key: str) -> tuple[HorAlignAlias, VertAlignAlias]:
         if key == "":
-            key = "NONE"
+            key = "none"
         return StickyValues[key].value
 
     @property
@@ -317,7 +317,7 @@ class Position:
 
     def position(
         self,
-        anchor: AnchorAnnotation = None,
+        align: Alignment = None,
         height: ScrDstAlias = None,
         width: ScrDstAlias = None,
         x: ScrDstAlias = 0,
@@ -332,7 +332,7 @@ class Position:
             "place",
             "configure",
             self._widget,
-            *Tcl.to_tcl_args(**possibly_relative_values_dict, anchor=anchor),
+            *Tcl.to_tcl_args(**possibly_relative_values_dict, anchor=align),
         )
 
         if self._widget in self._widget.parent.layout._cell_managed_children:

@@ -9,23 +9,18 @@ from typing import Any, Iterator, Optional, Type
 import _tkinter as tk
 from PIL import Image  # type: ignore
 
-from ._base import BaseWidget, GetSetAttrMixin, TkWidget
-from tukaan._constants import _cursor_styles, _inactive_cursor_styles, _wraps
+from tukaan._enums import Wrap, CaretStyle, InactiveCaretStyle
 from tukaan._font import Font
 from tukaan._images import Icon
 from tukaan._structures import Color
+from tukaan._tcl import Tcl
 from tukaan._units import ScreenDistance
-from tukaan._utils import (
-    ClassPropertyMetaClass,
-    _images,
-    _text_tags,
-    classproperty,
-    counts,
-)
+from tukaan._utils import ClassPropertyMetaClass, _images, _text_tags, classproperty, counts
 from tukaan._variables import Integer
 from tukaan.exceptions import TclError
+
+from ._base import BaseWidget, GetSetAttrMixin, TkWidget
 from .scrollbar import Scrollbar
-from tukaan._tcl import Tcl
 
 
 class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
@@ -50,7 +45,7 @@ class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
         "tab_stops": (str, "tabs"),
         "tab_style": (str, "tabstyle"),
         "underline_color": (Color, "underlinefg"),
-        "wrap": _wraps,
+        "wrap": Wrap,
     }
 
     def __init__(
@@ -76,15 +71,15 @@ class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
         tab_stops: Optional[tuple[str | int, ...]] = None,
         tab_style: Optional[str] = None,
         underline_color: Optional[Color] = None,
-        wrap: Optional[str] = None,
+        wrap: Optional[Wrap] = None,
     ) -> None:
-        self._name = _name or f"{self._widget.tcl_path}:tag_{next(counts['textbox_tag'])}"
+        self._name = _name or f"{self._widget._name}:tag_{next(counts['textbox_tag'])}"
         _text_tags[self._name] = self
 
         if not font:
             font = self._widget.font.copy()
 
-        self._tcl_call(
+        Tcl.call(
             None,
             self,
             "configure",
@@ -107,21 +102,21 @@ class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
             tabs=tab_stops,
             tabstyle=tab_style,
             underlinefg=underline_color,
-            wrap=_wraps[wrap],
+            wrap=wrap,
         )
 
     def __repr__(self) -> str:
         return f"<tukaan.TextBox.Tag named {self._name!r}>"
 
-    def to_tcl(self):
+    def __to_tcl__(self):
         return self._name
 
     @classmethod
-    def from_tcl(cls, value: str) -> Tag:
+    def __from_tcl__(cls, value: str) -> Tag:
         return _text_tags[value]
 
-    def _tcl_call(self, returntype: Any, _dumb_self, subcommand: str, *args, **kwargs) -> Any:
-        return self._widget._tcl_call(
+    def _call_tag_subcmd(self, returntype: Any, _dumb_self, subcommand: str, *args, **kwargs) -> Any:
+        return Tcl.call(
             returntype,
             self._widget,
             "tag",
@@ -132,17 +127,17 @@ class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
         )
 
     def add(self, *indexes) -> None:
-        self._tcl_call(None, self, "add", *self._widget._get_tcl_index_range(indexes))
+        self._call_tag_subcmd(None, self, "add", *self._widget._get_tcl_index_range(indexes))
 
     def delete(self) -> None:
-        self._tcl_call(None, self, "delete")
+        self._call_tag_subcmd(None, self, "delete")
 
     def remove(self, *indexes) -> None:
-        self._tcl_call(None, self, "remove", *self._widget._get_tcl_index_range(indexes))
+        self._call_tag_subcmd(None, self, "remove", *self._widget._get_tcl_index_range(indexes))
 
     @property
     def ranges(self):
-        result = self._tcl_call((self._widget.index,), self, "ranges")
+        result = self._call_tag_subcmd((self._widget.index,), self, "ranges")
 
         for start, end in zip(result[0::2], result[1::2]):
             yield self._widget.range(start, end)
@@ -153,7 +148,7 @@ class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
         if end is None:
             end = {"prev": self._widget.start, "next": self._widget.end}[direction]
 
-        result = self._tcl_call((self._widget.index,), self, f"{direction}range", start, end)
+        result = self._call_tag_subcmd((self._widget.index,), self, f"{direction}range", start, end)
 
         if not result:
             return None
@@ -166,30 +161,6 @@ class Tag(GetSetAttrMixin, metaclass=ClassPropertyMetaClass):
     @classproperty
     def hidden(cls) -> Tag:
         return cls.Tag(_name="hidden", hidden=True)
-
-    @classproperty
-    def bold(cls) -> Tag:
-        font = cls._widget.font.named_copy()
-        font.bold = True
-        return cls.Tag(font=font)
-
-    @classproperty
-    def italic(cls) -> Tag:
-        font = cls._widget.font.named_copy()
-        font.italic = True
-        return cls.Tag(font=font)
-
-    @classproperty
-    def underline(cls) -> Tag:
-        font = cls._widget.font.named_copy()
-        font.underline = True
-        return cls.Tag(font=font)
-
-    @classproperty
-    def strikethrough(cls) -> Tag:
-        font = cls._widget.font.named_copy()
-        font.strikethrough = True
-        return cls.Tag(font=font)
 
 
 class TextIndex(namedtuple("TextIndex", ["line", "column"])):
@@ -208,12 +179,12 @@ class TextIndex(namedtuple("TextIndex", ["line", "column"])):
                 if index in {0, 1}:
                     line, col = 1, 0
                 elif index == -1:
-                    result = cls._widget._tcl_call(
-                        str, cls._widget.tcl_path, "index", "end - 1 chars"
+                    result = Tcl.call(
+                        str, cls._widget._name, "index", "end - 1 chars"
                     )
             elif isinstance(index, (str, Icon, Image.Image, TkWidget, tk.Tcl_Obj)):
                 # string from from_tcl() OR mark name, image name or widget name
-                result = cls._widget._tcl_call(str, cls._widget.tcl_path, "index", index)
+                result = Tcl.call(str, cls._widget._name, "index", index)
             elif isinstance(index, tuple):
                 line, col = index
             else:
@@ -230,15 +201,15 @@ class TextIndex(namedtuple("TextIndex", ["line", "column"])):
 
         return super(TextIndex, cls).__new__(cls, line, col)  # type: ignore
 
-    def to_tcl(self) -> str:
+    def __to_tcl__(self) -> str:
         return f"{self.line}.{self.column}"
 
     @classmethod
-    def from_tcl(cls, string: str) -> TextIndex:
+    def __from_tcl__(cls, string: str) -> TextIndex:
         return cls(string)
 
     def _compare(self, other: TextIndex, operator: str) -> bool:
-        return self._widget._tcl_call(bool, self._widget, "compare", self, operator, other)
+        return Tcl.call(bool, self._widget, "compare", self, operator, other)
 
     def __eq__(self, other: TextIndex) -> bool:  # type: ignore[override]
         if not isinstance(other, TextIndex):
@@ -348,7 +319,7 @@ class TextMarks(abc.MutableMapping):
     __slots__ = "_widget"
 
     def __get_names(self) -> list[str]:
-        return self._widget._tcl_call([str], self._widget.tcl_path, "mark", "names")
+        return Tcl.call([str], self._widget._name, "mark", "names")
 
     def __iter__(self) -> Iterator:
         return iter(self.__get_names())
@@ -360,7 +331,7 @@ class TextMarks(abc.MutableMapping):
         return mark in self.__get_names()
 
     def __setitem__(self, name: str, index: TextIndex) -> None:
-        self._widget._tcl_call(None, self._widget.tcl_path, "mark", "set", name, index)
+        Tcl.call(None, self._widget._name, "mark", "set", name, index)
 
     def __getitem__(self, name: str) -> TextIndex | None:
         if name not in self.__get_names():
@@ -371,7 +342,7 @@ class TextMarks(abc.MutableMapping):
     def __delitem__(self, name: str) -> None:
         if name == "insert":
             raise RuntimeError("can't delete caret")
-        self._widget._tcl_call(None, self._widget.tcl_path, "mark", "unset", name)
+        Tcl.call(None, self._widget._name, "mark", "unset", name)
 
 
 class TextHistory:
@@ -384,7 +355,7 @@ class TextHistory:
                 "undoing is disabled on this textbox widget. Use `track_history=True` to enable it.",
                 stacklevel=3,
             )
-        return self._widget._tcl_call(bool, self._widget, "edit", *args)
+        return Tcl.call(bool, self._widget, "edit", *args)
 
     @property
     def can_redo(self) -> bool:
@@ -420,11 +391,11 @@ class TextHistory:
 
     @property
     def limit(self) -> int:
-        return self._widget._tcl_call(int, self._widget, "cget", "-maxundo")
+        return Tcl.call(int, self._widget, "cget", "-maxundo")
 
     @limit.setter
     def limit(self, new_limit: int) -> None:
-        self._widget._tcl_call(None, self._widget, "configure", "-maxundo", new_limit)
+        Tcl.call(None, self._widget, "configure", "-maxundo", new_limit)
 
 
 LineInfo = namedtuple("LineInfo", ["x", "y", "width", "height", "baseline"])
@@ -464,13 +435,13 @@ class TextBox(BaseWidget):
         "caret_color": (Color, "insertbackground"),
         "caret_offtime": (int, "insertofftime"),
         "caret_ontime": (int, "insertontime"),
-        "caret_style": (_cursor_styles, "blockcursor"),
+        "caret_style": (CaretStyle, "blockcursor"),
         "caret_width": (ScreenDistance, "insertwidth"),
         "fg_color": (Color, "foreground"),
         "focusable": (bool, "takefocus"),
         "font": Font,
         "height": ScreenDistance,
-        "inactive_caret_style": (_inactive_cursor_styles, "insertunfocussed"),
+        "inactive_caret_style": (InactiveCaretStyle, "insertunfocussed"),
         "inactive_selection_bg": (Color, "inactiveselectbackground"),
         "on_xscroll": ("func", "xscrollcommand"),
         "on_yscroll": ("func", "yscrollcommand"),
@@ -484,7 +455,7 @@ class TextBox(BaseWidget):
         "tab_style": (str, "tabstyle"),
         "track_history": (bool, "undo"),
         "width": ScreenDistance,
-        "wrap": _wraps,
+        "wrap": Wrap,
     }
     # todo: padding cget, configure
 
@@ -496,7 +467,7 @@ class TextBox(BaseWidget):
         caret_color: Optional[Color] = None,
         caret_offtime: Optional[int] = None,
         caret_ontime: Optional[int] = None,
-        caret_style: str = "normal",
+        caret_style: str = CaretStyle.Beam,
         caret_width: Optional[int | ScreenDistance] = None,
         fg_color: Optional[Color] = None,
         focusable: Optional[bool] = None,
@@ -516,7 +487,7 @@ class TextBox(BaseWidget):
         tab_style: Optional[str] = None,
         track_history: Optional[bool] = None,
         width: Optional[int | ScreenDistance] = None,
-        wrap: Optional[str] = None,
+        wrap: Optional[Wrap] = None,
         _peer_of: Optional[TextBox] = None,
     ) -> None:
 
@@ -549,7 +520,7 @@ class TextBox(BaseWidget):
             "highlightthickness": 0,
             "relief": "flat",
             "background": bg_color,
-            "blockcursor": _cursor_styles[caret_style],
+            "blockcursor": caret_style,
             "font": font,
             "foreground": fg_color,
             "height": height,
@@ -557,7 +528,7 @@ class TextBox(BaseWidget):
             "insertbackground": caret_color,
             "insertofftime": caret_offtime,
             "insertontime": caret_ontime,
-            "insertunfocussed": _inactive_cursor_styles[inactive_caret_style],
+            "insertunfocussed": inactive_caret_style,
             "insertwidth": caret_width,
             "padx": padx,
             "pady": pady,
@@ -572,7 +543,7 @@ class TextBox(BaseWidget):
             "takefocus": focusable,
             "undo": track_history,
             "width": width,
-            "wrap": _wraps[wrap],
+            "wrap": wrap,
         }
 
         if _peer_of is None:
@@ -580,19 +551,19 @@ class TextBox(BaseWidget):
             BaseWidget.__init__(self, self._frame, None, **to_call)
         else:
             self._frame = _textbox_frame(_peer_of._frame.parent)
-            tcl_path = f"{self._frame.tcl_path}.textbox_peer_{_peer_of.peer_count}_of_{_peer_of.tcl_path.split('.')[-1]}"
+            _name = f"{self._frame._name}.textbox_peer_{_peer_of.peer_count}_of_{_peer_of._name.split('.')[-1]}"
             BaseWidget.__init__(
-                self, self._frame, (_peer_of, "peer", "create", tcl_path), **to_call
+                self, self._frame, (_peer_of, "peer", "create", _name), **to_call
             )
-            self.tcl_path = tcl_path
+            self._name = _name
 
         self.peer_count: int = 0
 
-        self._tcl_eval(
+        Tcl.eval(
             None,
-            f"grid rowconfigure {self._frame.tcl_path} 0 -weight 1 \n"
-            + f"grid columnconfigure {self._frame.tcl_path} 0 -weight 1 \n"
-            + f"grid {self.tcl_path} -row 0 -column 0 -sticky nsew",
+            f"grid rowconfigure {self._frame._name} 0 -weight 1 \n"
+            + f"grid columnconfigure {self._frame._name} 0 -weight 1 \n"
+            + f"grid {self._name} -row 0 -column 0 -sticky nsew",
         )
         if overflow is not None:
             self.overflow = overflow
@@ -700,7 +671,7 @@ class TextBox(BaseWidget):
 
         if kwargs:
             raise TypeError(f"insert() got unexpected keyword argument(s): {tuple(kwargs.keys())}")
-        self._tcl_call(None, self, *to_call)
+        Tcl.call(None, self, *to_call)
 
     def _get_tcl_index_range(self, indexes):
         if len(indexes) == 1:
@@ -721,10 +692,10 @@ class TextBox(BaseWidget):
             return "1.0", "end - 1 chars"
 
     def delete(self, *indexes) -> None:
-        self._tcl_call(None, self, "delete", *self._get_tcl_index_range(indexes))
+        Tcl.call(None, self, "delete", *self._get_tcl_index_range(indexes))
 
     def get(self, *indexes) -> str:
-        return self._tcl_call(str, self, "get", *self._get_tcl_index_range(indexes))
+        return Tcl.call(str, self, "get", *self._get_tcl_index_range(indexes))
 
     def replace(self, *args, tag: Optional[Tag] = None) -> None:
         if isinstance(args[0], TextRange) and isinstance(args[1], str):
@@ -742,7 +713,7 @@ class TextBox(BaseWidget):
         else:
             raise ValueError("invalid arguments. See help(TextBox.replace).")
 
-        self._tcl_call(None, self, "replace", start, end, text, tag)
+        Tcl.call(None, self, "replace", start, end, text, tag)
 
     def search(
         self,
@@ -790,8 +761,8 @@ class TextBox(BaseWidget):
             to_call += "--"
 
         while True:
-            result = self._tcl_call(
-                str, self.tcl_path, "search", "-count", variable, *to_call, pattern, start, stop
+            result = Tcl.call(
+                str, self._name, "search", "-count", variable, *to_call, pattern, start, stop
             )
             if not result:
                 break
@@ -799,13 +770,13 @@ class TextBox(BaseWidget):
             start = result + "+ 1 chars"
 
     def scroll_to(self, index: TextIndex) -> None:
-        self._tcl_call(None, self, "see", index)
+        Tcl.call(None, self, "see", index)
 
     def x_scroll(self, *args) -> None:
-        self._tcl_call(None, self, "xview", *args)
+        Tcl.call(None, self, "xview", *args)
 
     def y_scroll(self, *args) -> None:
-        self._tcl_call(None, self, "yview", *args)
+        Tcl.call(None, self, "yview", *args)
 
     @property
     def overflow(self) -> tuple[bool | str, bool | str]:
@@ -889,13 +860,13 @@ class TextBox(BaseWidget):
 
             result.append((self.index(index), convert(value)))  # type: ignore  # "object" not callable
 
-        self._tcl_call(str, self, "dump", "-all", "-command", add_item, "1.0", "end - 1 chars")
+        Tcl.call(str, self, "dump", "-all", "-command", add_item, "1.0", "end - 1 chars")
         return result
 
     @Tcl.update_before
     def line_info(self, index: TextIndex) -> LineInfo:
         """Returns the accurate height only if the TextBox widget has already laid out"""
-        result = self._tcl_call(
+        result = Tcl.call(
             (ScreenDistance, ScreenDistance, ScreenDistance, ScreenDistance, ScreenDistance),
             self,
             "dlineinfo",
@@ -905,7 +876,7 @@ class TextBox(BaseWidget):
         return LineInfo(*result)
 
     def range_info(self, *indexes) -> RangeInfo:
-        result = self._tcl_call(
+        result = Tcl.call(
             (int, int, int, int, int, int, ScreenDistance, ScreenDistance),
             self,
             "count",
