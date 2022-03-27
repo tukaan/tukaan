@@ -15,7 +15,7 @@ class Color:
     red: int
     green: int
     blue: int
-    
+
     def __to_tcl__(self) -> str:
         return self.hex
 
