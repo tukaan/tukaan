@@ -58,28 +58,15 @@ class WidgetMixin:
     def id(self) -> int:
         return Tcl.call(int, "winfo", "id", self._name)
 
-    @classmethod
-    def __from_tcl__(cls, tcl_value: str) -> TkWidget:
-        # unlike in teek, this method won't raise a TypeError,
-        # if the return widget, and the class you call it on isn't the same
-        # this could be annoying, but very useful if you don't know
-        # what kind of widget it is and just want to get it
-
-        # teek.Button.from_tcl(teek.Label().to_tcl())
-        # >>> TypeError: blablabla
-
-        # tukaan.Button.__from_tcl__(tukaan.Label().__to_tcl__())
-        # >>> '.app.label_1'
-
-        return _widgets[tcl_value]
-
     def __to_tcl__(self) -> str:
         return self._name
 
+    @classmethod
+    def __from_tcl__(cls, tcl_value: str) -> TkWidget:
+        return _widgets[tcl_value]
+
 
 class ConfigMixin:
-    _keys: dict[str, Any | tuple[Any, str]]
-
     def _cget(self, key: str) -> Any:
         if key in self._keys:
             if isinstance(self._keys[key], tuple):
@@ -273,46 +260,31 @@ class TkWidget(TukaanWidget, GetSetAttrMixin, WidgetMixin, EventMixin):
         self.child_stats = ChildStatistics(self)
 
 
-class StateSet(collections.abc.MutableSet):
-    """
-    Object that contains the state of the widget
-    """
-
+class StateSet:
     def __init__(self, widget: TkWidget) -> None:
         self._widget = widget
 
     def __repr__(self) -> str:
-        return f"<state object of {self._widget}: state={list(self)}>"
+        return str(set(self))
 
     def __iter__(self) -> Iterator[str]:
-        return iter(Tcl.call([str], self._widget, "state"))
+        tcl_state = Tcl.call((str,), self._widget, "state")
+        if tcl_state:
+            return iter(tcl_state)
+        yield None
 
     def __len__(self) -> int:
-        return len(Tcl.call([str], self._widget, "state"))
+        return len(set(self))
 
     def __contains__(self, state: object) -> bool:
         return Tcl.call(bool, self._widget, "instate", state)
 
-    def add_or_discard(self, action: str, state: str) -> None:
-        assert state in _VALID_STATES
-
-        if action == "discard":
-            state = f"!{state}"
-
+    def __or__(self, state: str) -> StateSet:
         Tcl.call(None, self._widget, "state", state)
-
-    def add(self, state: str) -> None:
-        self.add_or_discard("add", state)
-
-    def discard(self, state: str) -> None:
-        self.add_or_discard("discard", state)
-
-    def __add__(self, other: str) -> StateSet:
-        self.add(other)
         return self
 
-    def __sub__(self, other: str) -> StateSet:  # type: ignore[override]
-        self.discard(other)
+    def __sub__(self, state: str) -> StateSet:
+        Tcl.call(None, self._widget, "state", "!" + state)
         return self
 
 

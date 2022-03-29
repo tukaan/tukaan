@@ -58,8 +58,8 @@ class Tcl:
         if type_spec is int or type_spec is float:
             return Tcl.get_number(type_spec, value)
 
-        if hasattr(type_spec, "_from__tcl__"):
-            return type_spec._from__tcl__(value)
+        if hasattr(type_spec, "__from_tcl__"):
+            return type_spec.__from_tcl__(value)
 
         if isinstance(type_spec, (list, tuple, dict)):
             items = Tcl.get_list(value)

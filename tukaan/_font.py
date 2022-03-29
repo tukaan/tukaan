@@ -8,6 +8,7 @@ from ._tcl import Tcl
 from ._utils import _fonts, counts, seq_pairs
 from .exceptions import FontError, TclError
 
+
 font_props = [
     "compatible_full_name",
     "copyright",
@@ -99,37 +100,42 @@ class Font:
         file: str = None,
     ) -> None:
 
-        if file and not isinstance(file, Path):
-            self.path = Path(file)
-        else:
-            self.path = file
-
+        self.path = None
         self.metadata = None
-        file_family = None
 
-        if self.path:
-            try:
-                file_family = Tcl.call(str, "Serif::load", self.path)
-            except TclError as e:
-                if "not known in dictionary" in str(e):
-                    raise FontError(f"missing or invalid metadata in file {self.path!r}") from None
-                raise e
+        if file:
+            if not isinstance(file, Path):
+                self.path = Path(file)
+            else:
+                self.path = file
 
+            file_family = self.__load_font_file(self.path)
+            if not family:
+                family = file_family
+                
             self.metadata = FontMetadata(self)
-
-        if not family and file_family:
-            family = file_family
-        elif not family and not self.path:
+        elif not family:
             family = "TkDefaultFont"
 
-        if family in _preset_fonts:
-            self._name = family
-        else:
+        if family not in _preset_fonts:
             self._name = f"tukaan_font_{next(counts['fonts'])}"
+        else:
+            self._name = family
 
         self.config(family, size, bold, italic, underline, strikethrough)
 
         _fonts[self._name] = self
+
+    def __repr__(self) -> str:
+        return f"Font(family={self.family!r}, size={self.size})"
+
+    def _load_font_file(self, path: Path) -> str:
+        try:
+            return Tcl.call(str, "Serif::load", self.path)
+        except TclError as e:
+            if "not known in dictionary" in str(e):
+                raise FontError(f"missing or invalid metadata in file {self.path!r}") from None
+            raise e
 
     def config(
         self,
@@ -152,7 +158,7 @@ class Font:
         try:
             Tcl.call(None, "font", "create", self._name, *args)
         except TclError:
-            # font already exists in tcl
+            # font already exists
             Tcl.call(None, "font", "configure", self._name, *args)
 
     def __to_tcl__(self) -> str:

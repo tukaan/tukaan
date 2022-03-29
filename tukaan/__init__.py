@@ -20,7 +20,7 @@ from ._enums import (
 from ._events import DragObject, KeySeq
 from ._font import Font
 from ._images import Icon, IconFactory, Image
-from ._info import Machine, Memory, Screen, System
+from ._info import Machine, Memory, Screen, System, Pointer, Clipboard
 from ._structures import Color, cmyk, hex, hsl, hsv, rgb
 from ._timeouts import Timeout, Timer
 from ._units import MemoryUnit, ScreenDistance
@@ -41,6 +41,7 @@ from .widgets.splitview import SplitView
 from .widgets.tabview import TabView
 from .widgets.textbox import TextBox
 from .window import App, Window, _ConfigObject
+
 
 Config = _ConfigObject()
 
