@@ -111,9 +111,7 @@ class Tag(GetSetAttrMixin):
     def __from_tcl__(cls, value: str) -> Tag:
         return _text_tags[value]
 
-    def _call_tag_subcmd(
-        self, returntype: Any, subcommand: str, *args, **kwargs
-    ) -> Any:
+    def _call_tag_subcmd(self, returntype: Any, subcommand: str, *args, **kwargs) -> Any:
         return Tcl.call(
             returntype,
             self._widget,
@@ -137,7 +135,9 @@ class Tag(GetSetAttrMixin):
         self._call_tag_subcmd(None, "delete")
 
     def remove(self, *indexes) -> None:
-        self._call_tag_subcmd(None, "remove", *self._widget._convert_indices_or_range_to_tcl(indexes))
+        self._call_tag_subcmd(
+            None, "remove", *self._widget._convert_indices_or_range_to_tcl(indexes)
+        )
 
     @property
     def ranges(self):
@@ -575,12 +575,12 @@ class TextBox(BaseWidget):
 
         self.layout = self._frame.layout
 
-    def _make_hor_scroll(self, hide: bool=True) -> None:
+    def _make_hor_scroll(self, hide: bool = True) -> None:
         self._h_scroll = Scrollbar(self._frame, orientation="horizontal", auto_hide=hide)
         self._h_scroll.attach(self)
         self._h_scroll.layout.grid(row=1, hor_align="stretch")
 
-    def _make_vert_scroll(self, hide: bool=True) -> None:
+    def _make_vert_scroll(self, hide: bool = True) -> None:
         self._v_scroll = Scrollbar(self._frame, orientation="vertical", auto_hide=hide)
         self._v_scroll.attach(self)
         self._v_scroll.layout.grid(col=1, vert_align="stretch")
