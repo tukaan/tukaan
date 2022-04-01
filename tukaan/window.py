@@ -17,6 +17,7 @@ from ._tcl import Tcl
 from ._utils import _commands, windows_only
 from .exceptions import TclError
 from .widgets._base import BaseWidget, TkWidget
+from .themes.theme import Theme
 
 
 class AccentPolicy(ctypes.Structure):
@@ -654,6 +655,8 @@ class App(WindowMixin, TkWidget):
         self._init_tukaan_ext_pkg("Serif")
         self._init_tkdnd()
 
+        self._theme = None
+
     def __enter__(self):
         return self
 
@@ -699,6 +702,15 @@ class App(WindowMixin, TkWidget):
     @scaling.setter
     def scaling(self, factor: int) -> None:
         Tcl.call(None, "tk", "scaling", "-displayof", ".", factor)
+
+    @property
+    def theme(self) -> Theme:
+        return self._theme
+
+    @theme.setter
+    def theme(self, theme: Theme) -> None:
+        theme._set_theme()
+        self._theme = theme
 
 
 class Window(WindowMixin, BaseWidget):
