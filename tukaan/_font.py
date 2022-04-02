@@ -8,7 +8,6 @@ from ._tcl import Tcl
 from ._utils import _fonts, counts, seq_pairs
 from .exceptions import FontError, TclError
 
-
 font_props = [
     "compatible_full_name",
     "copyright",
@@ -112,7 +111,7 @@ class Font:
             file_family = self.__load_font_file(self.path)
             if not family:
                 family = file_family
-                
+
             self.metadata = FontMetadata(self)
         elif not family:
             family = "TkDefaultFont"

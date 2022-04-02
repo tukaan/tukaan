@@ -44,7 +44,7 @@ class CssThemeParser:
         parent_list = re.findall(cls.parent_re, css_theme_str)
         if parent_list:
             return parent_list[-1]
-        
+
         return "clam"
 
     @classmethod
@@ -58,7 +58,7 @@ class CssThemeParser:
         variables_dict = {}
         for var_key_value in result:
             variables_dict[var_key_value[0]] = var_key_value[1]
-            
+
         return variables_dict
 
     @classmethod
@@ -96,7 +96,7 @@ class CssThemeParser:
         parent = cls.get_parent_theme(file_content)
         img_res_path = cls.get_image_resource_paths(file_content)
         rules_dict = cls.get_rules(file_content)
-        
+
         return ThemeContainer(filename.stem, parent, img_res_path, rules_dict)
 
 

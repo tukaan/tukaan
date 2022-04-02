@@ -16,8 +16,8 @@ from ._structures import Color, Position, Size
 from ._tcl import Tcl
 from ._utils import _commands, windows_only
 from .exceptions import TclError
-from .widgets._base import BaseWidget, TkWidget
 from .themes.theme import Theme
+from .widgets._base import BaseWidget, TkWidget
 
 
 class AccentPolicy(ctypes.Structure):
