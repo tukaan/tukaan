@@ -8,7 +8,7 @@ import _tkinter as tk
 import psutil
 from screeninfo import get_monitors  # type: ignore
 
-from ._structures import OsVersion, Version, Position
+from ._structures import OsVersion, Position, Version
 from ._units import MemoryUnit, ScreenDistance
 from .exceptions import TclError
 
@@ -273,10 +273,12 @@ class _Clipboard:
 
     def clear(self) -> None:
         from ._tcl import Tcl
+
         Tcl.call(None, "clipboard", "clear")
 
     def append(self, content) -> None:
         from ._tcl import Tcl
+
         Tcl.call(None, "clipboard", "append", content)
 
     def __add__(self, content) -> _Clipboard:
@@ -285,6 +287,7 @@ class _Clipboard:
 
     def get(self) -> str | None:
         from ._tcl import Tcl
+
         try:
             return Tcl.call(str, "clipboard", "get")
         except TclError:
@@ -306,15 +309,17 @@ class _Clipboard:
 class _Pointer:
     def __repr__(self) -> str:
         return f"<tukaan.Pointer object; position: {tuple(self.position)}>"
-    
+
     @property
     def x(cls) -> int:
         from ._tcl import Tcl
+
         return Tcl.call(int, "winfo", "pointerx", ".")
 
     @property
     def y(cls) -> int:
         from ._tcl import Tcl
+
         return Tcl.call(int, "winfo", "pointery", ".")
 
     @property
