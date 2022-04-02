@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from ._utils import _variables, counts, get_tcl_interp
+from ._tcl import Tcl
+from ._utils import _variables, counts
 
 
 class _TclVariable:
@@ -14,8 +15,8 @@ class _TclVariable:
         if value is None:
             value = self._default
 
-        self._name = name
         _variables[name] = self
+        self._name = name
         self.set(value)
 
     def __repr__(self):
@@ -26,18 +27,18 @@ class _TclVariable:
     def __hash__(self):
         return hash((self._type_spec, self._name))
 
-    def to_tcl(self):
+    def __to_tcl__(self):
         return self._name
 
     @classmethod
-    def from_tcl(cls, value):
+    def __from_tcl__(cls, value):
         return _variables[value]
 
     def set(self, new_value) -> None:
-        get_tcl_interp()._tcl_call(None, "set", self._name, new_value)
+        Tcl.call(None, "set", self._name, new_value)
 
     def get(self):
-        return get_tcl_interp()._tcl_call(self._type_spec, "set", self._name)
+        return Tcl.call(self._type_spec, "set", self._name)
 
     @property
     def value(self):
@@ -47,18 +48,10 @@ class _TclVariable:
     def value(self, value: float | str | bool):
         self.set(value)
 
-    def wait(self) -> None:
-        get_tcl_interp()._tcl_call(None, "tkwait", "variable", self._name)
-
 
 class String(_TclVariable):
     _type_spec = str
     _default = ""
-
-    def __iadd__(self, string: str) -> String:
-        # ???
-        self.set(self.get() + string)
-        return self
 
 
 class Integer(_TclVariable):

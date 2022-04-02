@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from typing import Callable, Iterable, Optional
 
+from tukaan._structures import Color
+from tukaan._tcl import Tcl
+from tukaan.exceptions import TclError
+
 from ._base import BaseWidget, TkWidget
-from ._misc import Color
 from .entry import Entry
-from .exceptions import TclError
 
 
 class ComboBox(Entry):
@@ -61,8 +63,8 @@ class ComboBox(Entry):
             width=width,
         )
 
-        self.bind("<<ComboboxSelected>>", f"{self.tcl_path} selection clear")
-        self.bind("<FocusOut>", f"+{self.tcl_path} selection clear")
+        self.bind("<<ComboboxSelected>>", f"{self._name} selection clear")
+        self.bind("<FocusOut>", f"+{self._name} selection clear")
 
         if on_select:
             self.bind("<<ComboboxSelected>>", on_select)
@@ -73,16 +75,16 @@ class ComboBox(Entry):
             self.current = 0
 
     def __len__(self) -> int:
-        return len(self._tcl_call([str], self, "cget", "-values"))
+        return len(Tcl.call([str], self, "cget", "-values"))
 
     def __iter__(self) -> Iterable[str]:
-        return iter(self._tcl_call([str], self, "cget", "-values"))
+        return iter(Tcl.call([str], self, "cget", "-values"))
 
     def __contains__(self, item: str) -> bool:
-        return str(item) in self._tcl_call([str], self, "cget", "-values")
+        return str(item) in Tcl.call([str], self, "cget", "-values")
 
     def set(self, value: str) -> None:
-        self._tcl_call(None, self, "set", value)
+        Tcl.call(None, self, "set", value)
 
     value = property(Entry.get, set)
 
@@ -93,6 +95,6 @@ class ComboBox(Entry):
     @current.setter
     def current(self, index: int) -> None:
         try:
-            self._tcl_call(None, self, "current", index)
+            Tcl.call(None, self, "current", index)
         except TclError:
             raise IndexError("ComboBox index out of range")

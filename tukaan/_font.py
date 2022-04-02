@@ -4,7 +4,8 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Type
 
-from ._utils import _fonts, _sequence_pairs, counts, get_tcl_interp, py_to_tcl_args
+from ._tcl import Tcl
+from ._utils import _fonts, counts, seq_pairs
 from .exceptions import FontError, TclError
 
 font_props = [
@@ -54,10 +55,10 @@ FontMetrics = namedtuple("FontMetrics", ["ascent", "descent", "linespace", "mono
 
 class FontMetadata(namedtuple("FontMetadata", font_props)):
     def __new__(cls, owner: Font) -> FontMetadata:
-        items = owner._interp._tcl_call([str], "Serif::getFontMetadata", owner.path)
+        items = Tcl.call([str], "Serif::getFontMetadata", owner.path)
 
         result = {}
-        for key, value in _sequence_pairs(items):
+        for key, value in seq_pairs(items):
             result[str(key)] = str(value)
 
         for property_ in font_props:
@@ -98,39 +99,42 @@ class Font:
         file: str = None,
     ) -> None:
 
-        if file and not isinstance(file, Path):
-            self.path = Path(file)
-        else:
-            self.path = file
-
+        self.path = None
         self.metadata = None
-        file_family = None
 
-        self._interp = get_tcl_interp()
+        if file:
+            if not isinstance(file, Path):
+                self.path = Path(file)
+            else:
+                self.path = file
 
-        if self.path:
-            try:
-                file_family = self._interp._tcl_call(str, "Serif::load", self.path)
-            except TclError as e:
-                if "not known in dictionary" in str(e):
-                    raise FontError(f"missing or invalid metadata in file {self.path!r}") from None
-                raise e
+            file_family = self.__load_font_file(self.path)
+            if not family:
+                family = file_family
 
             self.metadata = FontMetadata(self)
-
-        if not family and file_family:
-            family = file_family
-        elif not family and not self.path:
+        elif not family:
             family = "TkDefaultFont"
 
-        if family in _preset_fonts:
-            self._name = family
-        else:
+        if family not in _preset_fonts:
             self._name = f"tukaan_font_{next(counts['fonts'])}"
+        else:
+            self._name = family
 
         self.config(family, size, bold, italic, underline, strikethrough)
 
         _fonts[self._name] = self
+
+    def __repr__(self) -> str:
+        return f"Font(family={self.family!r}, size={self.size})"
+
+    def _load_font_file(self, path: Path) -> str:
+        try:
+            return Tcl.call(str, "Serif::load", self.path)
+        except TclError as e:
+            if "not known in dictionary" in str(e):
+                raise FontError(f"missing or invalid metadata in file {self.path!r}") from None
+            raise e
 
     def config(
         self,
@@ -141,7 +145,7 @@ class Font:
         underline: bool = False,
         strikethrough: bool = False,
     ) -> None:
-        args = py_to_tcl_args(
+        args = Tcl.to_tcl_args(
             family=family,
             size=size,
             weight="bold" if bold else "normal",
@@ -151,23 +155,23 @@ class Font:
         )
 
         try:
-            self._interp._tcl_call(None, "font", "create", self._name, *args)
+            Tcl.call(None, "font", "create", self._name, *args)
         except TclError:
-            # font already exists in tcl
-            self._interp._tcl_call(None, "font", "configure", self._name, *args)
+            # font already exists
+            Tcl.call(None, "font", "configure", self._name, *args)
 
-    def to_tcl(self) -> str:
+    def __to_tcl__(self) -> str:
         return self._name
 
     @classmethod
-    def from_tcl(cls, tcl_value: str) -> Font:
+    def __from_tcl__(cls, tcl_value: str) -> Font:
         return _fonts[tcl_value]
 
     def _get(self, type_spec: Type[int] | Type[str] | Type[bool], option: str) -> int | str | bool:
-        return self._interp._tcl_call(type_spec, "font", "actual", self, f"-{option}")
+        return Tcl.call(type_spec, "font", "actual", self, f"-{option}")
 
     def _set(self, option: str, value: int | str | bool) -> None:
-        self._interp._tcl_call(None, "font", "configure", self._name, f"-{option}", value)
+        Tcl.call(None, "font", "configure", self._name, f"-{option}", value)
 
     @property
     def family(self) -> str:
@@ -219,16 +223,14 @@ class Font:
 
     @property
     def families(cls):
-        return sorted(
-            list(set(cls._interp._tcl_call([str], "font", "families")))  # set to remove duplicates
-        )
+        return sorted(list(set(Tcl.call([str], "font", "families"))))  # set to remove duplicates
 
     def measure(self, text: str) -> int:
-        return get_tcl_interp()._tcl_call(int, "font", "measure", self, text)
+        return Tcl.call(int, "font", "measure", self, text)
 
     @property
     def metrics(self) -> FontMetrics:
-        result = self._interp._tcl_call(
+        result = Tcl.call(
             {"-ascent": int, "-descent": int, "-linespace": int, "-fixed": bool},
             "font",
             "metrics",
@@ -237,5 +239,5 @@ class Font:
         return FontMetrics(*tuple(result.values()))
 
     def delete(self) -> None:
-        get_tcl_interp()._tcl_call(None, "font", "delete", self._name)
+        Tcl.call(None, "font", "delete", self._name)
         del _fonts[self._name]

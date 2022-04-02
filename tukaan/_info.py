@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import platform
-from collections import namedtuple
 from datetime import datetime
 from fractions import Fraction
 
@@ -9,13 +8,12 @@ import _tkinter as tk
 import psutil
 from screeninfo import get_monitors  # type: ignore
 
+from ._structures import OsVersion, Position, Version
+from ._units import MemoryUnit, ScreenDistance
+from .exceptions import TclError
+
 if platform.system() == "Linux":
     import distro  # type: ignore
-
-from ._units import MemoryUnit, ScreenDistance
-
-OsVersion = namedtuple("OsVersion", ["major", "minor", "build"])
-Version = namedtuple("Version", ["major", "minor", "patchlevel"])
 
 
 class _System:
@@ -55,17 +53,15 @@ class _System:
 
     @property
     def win_sys(self) -> str:
-        from ._utils import get_tcl_interp
+        from ._tcl import Tcl
 
-        return {"win32": "DWM", "x11": "X11", "aqua": "Quartz"}[
-            get_tcl_interp()._tcl_call(str, "tk", "windowingsystem")
-        ]
+        return {"win32": "DWM", "x11": "X11", "aqua": "Quartz"}[Tcl.windowing_system]
 
     @property
     def tcl_version(self) -> Version:
-        from ._utils import get_tcl_interp
+        from ._tcl import Tcl
 
-        return Version(*map(int, get_tcl_interp()._tcl_call(str, "info", "patchlevel").split(".")))
+        return Version(*map(int, Tcl.version.split(".")))
 
     @property
     def dark_mode(self):
@@ -87,7 +83,7 @@ class _System:
             from subprocess import PIPE, Popen
 
             p = Popen(["defaults", "read", "-g", "AppleInterfaceStyle"], stdout=PIPE, stderr=PIPE)
-            return "Dark" in p.communicate()[0]
+            return "dark" in p.communicate()[0].lower()
 
         return False
 
@@ -246,9 +242,9 @@ class _Screen:
 
     @property
     def color_depth(self) -> int:
-        from ._utils import get_tcl_interp
+        from ._tcl import Tcl
 
-        return get_tcl_interp()._tcl_call(int, "winfo", "screendepth", ".")
+        return Tcl.call(int, "winfo", "screendepth", ".")
 
     @property
     def color_depth_alias(self) -> str:
@@ -259,9 +255,9 @@ class _Screen:
 
     @property
     def dpi(self) -> float:
-        from ._utils import get_tcl_interp
+        from ._tcl import Tcl
 
-        return get_tcl_interp()._tcl_call(float, "winfo", "fpixels", ".", "1i")
+        return Tcl.call(float, "winfo", "fpixels", ".", "1i")
 
     @property
     def ppi(self) -> float:
@@ -271,8 +267,70 @@ class _Screen:
         return screen_diagonal_px / screen_diagonal_inch
 
 
+class _Clipboard:
+    def __repr__(self) -> str:
+        return f"<tukaan.Clipboard object; content: {self.get()}>"
+
+    def clear(self) -> None:
+        from ._tcl import Tcl
+
+        Tcl.call(None, "clipboard", "clear")
+
+    def append(self, content) -> None:
+        from ._tcl import Tcl
+
+        Tcl.call(None, "clipboard", "append", content)
+
+    def __add__(self, content) -> _Clipboard:
+        self.append(content)
+        return self
+
+    def get(self) -> str | None:
+        from ._tcl import Tcl
+
+        try:
+            return Tcl.call(str, "clipboard", "get")
+        except TclError:
+            return None
+
+    def set(self, new_content: str) -> None:
+        self.clear()
+        self.append(new_content)
+
+    @property
+    def content(self) -> str:
+        return self.get()
+
+    @content.setter
+    def content(self, new_content: str) -> None:
+        self.set(new_content)
+
+
+class _Pointer:
+    def __repr__(self) -> str:
+        return f"<tukaan.Pointer object; position: {tuple(self.position)}>"
+
+    @property
+    def x(cls) -> int:
+        from ._tcl import Tcl
+
+        return Tcl.call(int, "winfo", "pointerx", ".")
+
+    @property
+    def y(cls) -> int:
+        from ._tcl import Tcl
+
+        return Tcl.call(int, "winfo", "pointery", ".")
+
+    @property
+    def position(cls) -> tuple[int, int]:
+        return Position(cls.x, cls.y)
+
+
 # Instantiate them
+Clipboard = _Clipboard()
 Machine = _Machine()
 Memory = _Memory()
-System = _System()
+Pointer = _Pointer()
 Screen = _Screen()
+System = _System()
