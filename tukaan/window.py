@@ -668,63 +668,6 @@ class App(WindowMixin, TkWidget):
 
         raise exc_type(exc_value) from None
 
-<<<<<<< HEAD
-    def _tcl_call(self, return_type: Any, *args) -> Any:
-        try:
-            result = self.app.call(*map(to_tcl, args))
-            if return_type is None:
-                return
-            return from_tcl(return_type, result)
-
-        except tk.TclError as e:
-            msg = str(e)
-
-            if "application has been destroyed" in msg:
-                raise ApplicationError("can't invoke Tcl callback. Application has been destroyed.")
-
-            if msg.startswith("couldn't read file"):
-                # FileNotFoundError is a bit more pythonic than TclError: couldn't read file
-                path = msg.split('"')[1]  # path is between ""
-                sys.tracebacklimit = 0
-                raise FileNotFoundError(f"No such file or directory: {path!r}") from None
-            else:
-                raise TclError(msg) from None
-
-    def _tcl_eval(self, return_type: Any, code: str) -> Any:
-        try:
-            result = self.app.eval(code)
-        except tk.TclError:
-            raise TclError
-        else:
-            return from_tcl(return_type, result)
-
-    def _get_boolean(self, arg) -> bool:
-        return self.app.getboolean(arg)
-
-    def _get_float(self, arg) -> float:
-        return float(self.app.getdouble(arg))
-
-    def _get_string(self, obj) -> str:
-        if isinstance(obj, str):
-            return obj
-
-        if isinstance(obj, tk.Tcl_Obj):
-            return obj.string
-
-        return self._tcl_call(str, "format", obj)
-
-    def _split_list(self, arg) -> tuple:
-        return self.app.splitlist(arg)
-
-    def _lappend_auto_path(self, path: str | Path):
-        self._tcl_call(None, "lappend", "auto_path", path)
-
-    @property
-    def _auto_path(self):
-        return self._tcl_call([str], "set", "auto_path")
-
-=======
->>>>>>> 4493be2063f482905b3b46a096d7c508316a114c
     def _init_tukaan_ext_pkg(self, name: str) -> None:
         Tcl.call(None, "lappend", "auto_path", Path(__file__).parent / name / "pkg")
         Tcl.call(None, "package", "require", name)
@@ -742,17 +685,9 @@ class App(WindowMixin, TkWidget):
 
     def destroy(self) -> None:
         """Quit the entire Tcl interpreter"""
-
-<<<<<<< HEAD
-        global tcl_interp
-
-        self._tcl_call(None, "Snack::audio", "stop")
-        self._tcl_call(None, "destroy", self.tcl_path)
-        self._tcl_call(None, "destroy", self.wm_path)
-=======
+        Tcl.call(None, "Snack::audio", "stop")
         Tcl.call(None, "destroy", self._name)
         Tcl.call(None, "destroy", self._wm_path)
->>>>>>> 4493be2063f482905b3b46a096d7c508316a114c
 
         Tcl.quit_interp()
 
