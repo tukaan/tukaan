@@ -3,9 +3,10 @@ from __future__ import annotations
 from collections import namedtuple
 from typing import Callable, Optional
 
+from tukaan._structures import Color
+from tukaan._tcl import Tcl
+
 from ._base import BaseWidget, TkWidget
-from ._misc import Color
-from ._utils import py_to_tcl_args
 from .entry import Entry
 
 SpinBox_values = namedtuple("SpinBox_values", ["start", "stop", "step"])
@@ -76,29 +77,29 @@ class SpinBox(Entry):
         else:
             self.set("0")
 
-        self.bind("<<Increment>>", f"+{self.tcl_path} selection clear")
-        self.bind("<<Decrement>>", f"+{self.tcl_path} selection clear")
-        self.bind("<FocusOut>", f"+{self.tcl_path} selection clear")
+        self.bind("<<Increment>>", f"+{self._name} selection clear")
+        self.bind("<<Decrement>>", f"+{self._name} selection clear")
+        self.bind("<FocusOut>", f"+{self._name} selection clear")
 
     def set(self, value: str) -> None:
-        self._tcl_call(None, self, "set", value)
+        Tcl.call(None, self, "set", value)
 
     value = property(Entry.get, set)
 
     @property
     def values(self) -> list[str | float]:
-        result = self._tcl_call([str], self, "cget", "-values")
+        result = Tcl.call([str], self, "cget", "-values")
 
         if not result:
-            min_ = self._tcl_call(float, self, "cget", "-from") or 0
-            max_ = self._tcl_call(float, self, "cget", "-to") or 0
-            increment = self._tcl_call(float, self, "cget", "-increment") or 1
+            min_ = Tcl.call(float, self, "cget", "-from") or 0
+            max_ = Tcl.call(float, self, "cget", "-to") or 0
+            increment = Tcl.call(float, self, "cget", "-increment") or 1
             return SpinBox_values(min_, max_ + increment, increment)
 
         return result
 
     @values.setter
-    def values(self, values: [str]) -> None:
+    def values(self, values: list[str | float]) -> None:
         self._set_values(values)
 
     def _set_values(
@@ -125,9 +126,9 @@ class SpinBox(Entry):
         else:
             return self.config(values=values)
 
-        self._tcl_call(
+        Tcl.call(
             None,
-            self.tcl_path,
+            self._name,
             "configure",
-            *py_to_tcl_args(from_=min_, to=max_ - increment, increment=increment),
+            *Tcl.to_tcl_args(from_=min_, to=max_ - increment, increment=increment),
         )

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import enum
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from ._base import BaseWidget, TkWidget
 
-from ._constants import AnchorAnnotation
+from ._enums import Alignment
+from ._tcl import Tcl
 from ._units import ScreenDistance
-from ._utils import py_to_tcl_args
 from .exceptions import CellNotFoundError, LayoutError
 
 HorAlignAlias = Optional[Literal["left", "right", "stretch"]]
@@ -18,23 +18,23 @@ ScrDstRtrnAlias = Dict[str, Union[float, ScreenDistance]]
 VertAlignAlias = Optional[Literal["bottom", "stretch", "top"]]
 
 
-class StickyValues(enum.Enum):
-    SW = ("left", "bottom")
-    NSW = ("left", "stretch")
-    NW = ("left", "top")
-    W = ("left", None)
-    ES = ("right", "bottom")
-    NES = ("right", "stretch")
-    NE = ("right", "top")
-    E = ("right", None)
-    ESW = ("stretch", "bottom")
-    NESW = ("stretch", "stretch")
-    NEW = ("stretch", "top")
-    EW = ("stretch", None)
-    S = (None, "bottom")
-    NS = (None, "stretch")
-    N = (None, "top")
-    NONE = (None, None)
+class StickyValues(Enum):
+    sw = ("left", "bottom")
+    nsw = ("left", "stretch")
+    nw = ("left", "top")
+    w = ("left", None)
+    es = ("right", "bottom")
+    nes = ("right", "stretch")
+    ne = ("right", "top")
+    e = ("right", None)
+    esw = ("stretch", "bottom")
+    nesw = ("stretch", "stretch")
+    new = ("stretch", "top")
+    ew = ("stretch", None)
+    s = (None, "bottom")
+    ns = (None, "stretch")
+    n = (None, "top")
+    none = (None, None)
 
 
 class GridCells:
@@ -100,11 +100,9 @@ class GridTemplates:
 
         try:
             for index, weight in enumerate(template):
-                self._widget._tcl_call(
-                    None, "grid", command, self._widget, index, "-weight", weight
-                )
+                Tcl.call(None, "grid", command, self._widget, index, "-weight", weight)
         except TypeError:
-            self._widget._tcl_call(None, "grid", command, self._widget, "all", "-weight", template)
+            Tcl.call(None, "grid", command, self._widget, "all", "-weight", template)
 
     @property
     def grid_row_template(self) -> tuple[int, ...]:
@@ -149,12 +147,12 @@ class Grid:
         elif align:
             raise LayoutError("both align and hor_align and/or vert_align given")
 
-        self._widget._tcl_call(
+        Tcl.call(
             None,
             "grid",
             "configure",
             self._widget,
-            *py_to_tcl_args(
+            *Tcl.to_tcl_args(
                 column=col,
                 columnspan=colspan,
                 padx=padx,
@@ -179,12 +177,12 @@ class Grid:
             raise CellNotFoundError(f"cell {cell!r} doesn't exists")
         except AttributeError:
             raise CellNotFoundError(f"{self._widget.parent} has no cell layout set up")
-        self._widget._tcl_call(
+        Tcl.call(
             None,
             "grid",
             "configure",
             self._widget,
-            *py_to_tcl_args(row=row, column=col, rowspan=rowspan, columnspan=colspan),
+            *Tcl.to_tcl_args(row=row, column=col, rowspan=rowspan, columnspan=colspan),
         )
 
         self._widget.parent.layout._cell_managed_children[self._widget] = cell
@@ -206,14 +204,14 @@ class Grid:
 
     def _parse_sticky_values(self, hor: HorAlignAlias, vert: VertAlignAlias) -> str:
         try:
-            result = StickyValues((hor, vert)).name.lower()
+            result = StickyValues((hor, vert)).name
             return "" if result == "none" else result
         except KeyError:
             raise LayoutError(f"invalid alignment value: {(hor, vert)}")
 
     def _get_sticky_values(self, key: str) -> tuple[HorAlignAlias, VertAlignAlias]:
         if key == "":
-            key = "NONE"
+            key = "none"
         return StickyValues[key].value
 
     @property
@@ -317,7 +315,7 @@ class Position:
 
     def position(
         self,
-        anchor: AnchorAnnotation = None,
+        align: Alignment = None,
         height: ScrDstAlias = None,
         width: ScrDstAlias = None,
         x: ScrDstAlias = 0,
@@ -327,12 +325,12 @@ class Position:
             ("x", "y", "width", "height"), (x, y, width, height)
         )
 
-        self._widget._tcl_call(
+        Tcl.call(
             None,
             "place",
             "configure",
             self._widget,
-            *py_to_tcl_args(**possibly_relative_values_dict, anchor=anchor),
+            *Tcl.to_tcl_args(**possibly_relative_values_dict, anchor=align),
         )
 
         if self._widget in self._widget.parent.layout._cell_managed_children:
@@ -405,7 +403,7 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
     _widget: BaseWidget
 
     def _get_manager(self):
-        return self._widget._tcl_call(str, "winfo", "manager", self._widget)
+        return Tcl.call(str, "winfo", "manager", self._widget)
 
     @property
     def manager(self):
@@ -427,19 +425,17 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
         lm = self._get_manager()
         if lm == "place":
             raise LayoutError("widget not managed by grid, can't get propagation")
-        return self._widget._tcl_call(bool, self._get_manager(), "propagate", self._widget)
+        return Tcl.call(bool, self._get_manager(), "propagate", self._widget)
 
     @propagation.setter
     def propagation(self, new_propagation: bool):
         lm = self._get_manager()
         if lm == "place":
             raise LayoutError("widget not managed by grid, can't set propagation")
-        self._widget._tcl_call(
-            None, self._get_manager(), "propagate", self._widget, new_propagation
-        )
+        Tcl.call(None, self._get_manager(), "propagate", self._widget, new_propagation)
 
     def remove(self):
-        self._widget._tcl_call(None, self._get_manager(), "forget", self._widget)
+        Tcl.call(None, self._get_manager(), "forget", self._widget)
 
     def move(self, **kwargs) -> None:
         for key, value in kwargs.items():
@@ -454,10 +450,10 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
         if _lm is None:
             _lm = self._get_manager()
         self._real_manager = _lm
-        self._widget._tcl_call(None, _lm, "configure", self._widget, *py_to_tcl_args(**kwargs))
+        Tcl.call(None, _lm, "configure", self._widget, *Tcl.to_tcl_args(**kwargs))
 
     def _info(self):
-        result = self._widget._tcl_call(
+        result = Tcl.call(
             {
                 "-column": int,
                 "-columnspan": int,
