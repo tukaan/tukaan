@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import warnings
 from collections import abc, namedtuple
 from functools import partialmethod
@@ -15,7 +14,8 @@ from tukaan._images import Icon
 from tukaan._structures import Color
 from tukaan._tcl import Tcl
 from tukaan._units import ScreenDistance
-from tukaan._utils import _images, _text_tags, counts
+from tukaan._utils import _images, _text_tags, counts, seq_pairs
+from tukaan.data import TabStop
 from tukaan._variables import Integer
 from tukaan.exceptions import TclError
 
@@ -32,7 +32,23 @@ from .frame import Frame
 from .scrollbar import Scrollbar
 
 
-class Tag(GetSetAttrMixin):
+class _TabStopsProperty:
+    @property
+    def tab_stops(self) -> list[TabStop]:
+        result = []
+        for pos, align in seq_pairs(self._get([str], "tabs")):
+            result.append(TabStop(pos, align))
+        return result
+
+    @tab_stops.setter
+    def tab_stops(self, tab_stops: TabStop | list[TabStop]) -> None:
+        if not isinstance(tab_stops, (list, tuple)):
+            tab_stops = (tab_stops,)
+            
+        self._set(tabs=[y for x in tab_stops for y in x.__to_tcl__()])
+
+
+class Tag(GetSetAttrMixin, _TabStopsProperty):
     _widget: TextBox
     _keys = {
         "bg_color": (Color, "background"),
@@ -51,7 +67,6 @@ class Tag(GetSetAttrMixin):
         "space_before_paragraph": (ScreenDistance, "spacing1"),
         "space_before_wrapped_line": (ScreenDistance, "spacing2"),
         "strikethrough_color": (Color, "overstrikefg"),
-        "tab_stops": (str, "tabs"),
         "tab_style": (str, "tabstyle"),
         "underline_color": (Color, "underlinefg"),
         "wrap": Wrap,
@@ -77,7 +92,7 @@ class Tag(GetSetAttrMixin):
         space_before_paragraph: Optional[int | ScreenDistance] = None,
         space_before_wrapped_line: Optional[int | ScreenDistance] = None,
         strikethrough_color: Optional[Color] = None,
-        tab_stops: Optional[tuple[str | int, ...]] = None,
+        tab_stops: Optional[TabStop | list[TabStop] | tuple[TabStop]] = None,
         tab_style: Optional[str] = None,
         underline_color: Optional[Color] = None,
         wrap: Optional[Wrap] = None,
@@ -104,11 +119,11 @@ class Tag(GetSetAttrMixin):
             spacing1=space_before_paragraph,
             spacing2=space_before_wrapped_line,
             spacing3=space_after_paragraph,
-            tabs=tab_stops,
             tabstyle=tab_style,
             underlinefg=underline_color,
             wrap=wrap,
         )
+        self.tab_stops = tab_stops
 
     def __repr__(self) -> str:
         return f"<tukaan.TextBox.Tag named {self._name!r}>"
@@ -421,7 +436,7 @@ RangeInfo = namedtuple(
 )
 
 
-class TextBox(BaseWidget, InputControlWidget, OutputDisplayWidget, XScrollable, YScrollable):
+class TextBox(BaseWidget, _TabStopsProperty, InputControlWidget, OutputDisplayWidget, XScrollable, YScrollable):
     index: Type[TextIndex]
     range: Type[TextRange]
     Tag: Type[Tag]
@@ -450,14 +465,12 @@ class TextBox(BaseWidget, InputControlWidget, OutputDisplayWidget, XScrollable, 
         "space_after_paragraph": (ScreenDistance, "spacing3"),
         "space_before_paragraph": (ScreenDistance, "spacing1"),
         "space_before_wrapped_line": (ScreenDistance, "spacing2"),
-        "tab_stops": (str, "tabs"),
         "tab_style": (str, "tabstyle"),
         "track_history": (bool, "undo"),
         "width": ScreenDistance,
         "wrap": Wrap,
     }
     # TODO: padding cget, configure
-    # TODO: tab stops helper
 
     def __init__(
         self,
@@ -483,7 +496,7 @@ class TextBox(BaseWidget, InputControlWidget, OutputDisplayWidget, XScrollable, 
         space_after_paragraph: Optional[int | ScreenDistance] = None,
         space_before_paragraph: Optional[int | ScreenDistance] = None,
         space_before_wrapped_line: Optional[int | ScreenDistance] = None,
-        tab_stops: Optional[tuple[str | int, ...]] = None,
+        tab_stops: Optional[TabStop | list[TabStop]] = None,
         tab_style: Optional[str] = None,
         track_history: Optional[bool] = None,
         width: Optional[int | ScreenDistance] = None,
@@ -493,19 +506,6 @@ class TextBox(BaseWidget, InputControlWidget, OutputDisplayWidget, XScrollable, 
 
         if not font:
             font = Font("TkFixedFont")
-
-        padx = pady = None
-        if padding is not None:
-            if isinstance(padding, int):
-                padx = pady = padding
-            elif len(padding) == 1:
-                padx = pady = padding[0]
-            elif len(padding) == 2:
-                padx, pady = padding
-            else:
-                raise ValueError(
-                    "unfortunately 4 side paddings aren't supported for TextBox padding"
-                )
 
         if caret_offtime is not None:
             caret_offtime = int(caret_offtime * 1000)
@@ -530,15 +530,12 @@ class TextBox(BaseWidget, InputControlWidget, OutputDisplayWidget, XScrollable, 
             "insertontime": caret_ontime,
             "insertunfocussed": inactive_caret_style,
             "insertwidth": caret_width,
-            "padx": padx,
-            "pady": pady,
             "selectbackground": selection_bg,
             "selectforeground": selection_fg,
             "setgrid": resize_along_chars,
             "spacing1": space_before_paragraph,
             "spacing2": space_before_wrapped_line,
             "spacing3": space_after_paragraph,
-            "tabs": tab_stops,
             "tabstyle": tab_style,
             "takefocus": focusable,
             "undo": track_history,
@@ -554,6 +551,9 @@ class TextBox(BaseWidget, InputControlWidget, OutputDisplayWidget, XScrollable, 
             _name = f"{self._frame._name}.textbox_peer_{_peer_of.peer_count}_of_{_peer_of._name.split('.')[-1]}"
             BaseWidget.__init__(self, self._frame, (_peer_of, "peer", "create", _name), **to_call)
             self._name = _name
+
+        self.padding = padding
+        self.tab_stops = tab_stops
 
         self.peer_count: int = 0
 
@@ -604,21 +604,40 @@ class TextBox(BaseWidget, InputControlWidget, OutputDisplayWidget, XScrollable, 
         else:
             return "1.0", "end - 1 chars"
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.end.line
 
-    def __matmul__(self, index: tuple[int, int] | int | Icon | Image.Image | TkWidget):
+    def __matmul__(self, index: tuple[int, int] | int | Icon | Image.Image | TkWidget) -> TextBox.index:
         return self.index(index)
 
-    def __contains__(self, text: str):
+    def __contains__(self, text: str) -> bool:
         return text in self.get()
 
-    def __getitem__(self, index: slice | tuple | TextBox.index):
+    def __getitem__(self, index: slice | tuple | TextBox.index) -> str:
         if isinstance(index, slice):
             return self.get(self.range(index))
         elif isinstance(index, (tuple, self.index)):
             return self.get(index)
-        raise TypeError("expected a tuple, a slice or a `TextBox.index` object")
+        raise TypeError("expected a tuple, a slice or a TextBox.index object")
+
+    @property
+    def padding(self):
+        return self._get(int, "padx"), self._get(int, "pady")
+
+    @padding.setter
+    def padding(self, new_padding: int | tuple[int, int] | list[int]) -> None:
+        padx = pady = None
+        
+        if isinstance(new_padding, int):
+            padx = pady = new_padding
+        elif len(new_padding) == 1:
+            padx = pady = new_padding[0]
+        elif len(new_padding) == 2:
+            padx, pady = new_padding
+        else:
+            raise ValueError("4 side padding isn't supported for TextBox")
+            
+        self._set(padx=padx, pady=pady)
 
     def Peer(self, **kwargs):
         if self.peer_of is None:
@@ -644,7 +663,7 @@ class TextBox(BaseWidget, InputControlWidget, OutputDisplayWidget, XScrollable, 
         self.marks["insert"] = new_pos
 
     @property
-    def mouse_index(self) -> TextIndex:
+    def mouse_pos(self) -> TextIndex:
         return self.index("current")
 
     def coord_to_index(self, x, y) -> TextIndex:
@@ -700,7 +719,7 @@ class TextBox(BaseWidget, InputControlWidget, OutputDisplayWidget, XScrollable, 
             to_call = ("window", "create", index, *Tcl.to_tcl_args(window=content, padx=padx, pady=pady, align=align, stretch=stretch))
             # fmt: on
         elif isinstance(content, Path):
-            with open(str(content.resolve())) as file:
+            with content.resolve().open() as file:
                 to_call = ("insert", index, file.read())
         else:
             to_call = ("insert", index, content)

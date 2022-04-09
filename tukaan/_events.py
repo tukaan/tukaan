@@ -552,7 +552,7 @@ class EventMixin:
             else:
                 script_str = f"{'' if overwrite else '+'} if {{[{cmd} {subst_str}] == 0}} break"  # tcl: {+ if {[command %subst] == 0} break}
 
-        Tcl.call(None, "bind", self._name if self._name == ".app" else ".", sequence, script_str)
+        Tcl.call(None, "bind", self._name if self._name != ".app" else ".", sequence, script_str)
 
     def bind(
         self,

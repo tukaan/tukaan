@@ -43,6 +43,7 @@ from .widgets.splitview import SplitView
 from .widgets.tabview import TabView
 from .widgets.textbox import TextBox
 from .window import App, Window, _ConfigObject
+from .data import TabStop
 
 Config = _ConfigObject()
 
