@@ -2,10 +2,10 @@ from typing import Literal, Optional
 
 from tukaan._tcl import Tcl
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget
 
 
-class Scrollbar(BaseWidget):
+class Scrollbar(BaseWidget, InputControlWidget):
     _tcl_class = "ttk::scrollbar"
     _keys = {
         "focusable": (bool, "takefocus"),
@@ -58,7 +58,7 @@ class Scrollbar(BaseWidget):
             elif self._hidden:
                 self.unhide()
                 self._hidden = False
-                
+
         Tcl.call(None, self, "set", start, end)
 
     def get(self) -> None:

@@ -3,10 +3,10 @@ from typing import Literal, Optional
 from tukaan._tcl import Tcl
 from tukaan._variables import Float
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, OutputDisplayWidget, TkWidget
 
 
-class ProgressBar(BaseWidget):
+class ProgressBar(BaseWidget, OutputDisplayWidget):
     _tcl_class = "ttk::progressbar"
     _keys = {
         "focusable": (bool, "takefocus"),

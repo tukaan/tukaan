@@ -8,7 +8,7 @@ from tukaan._images import Icon, Image, _image_converter_class
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TclError
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, ContainerWidget, TkWidget
 from .frame import Frame
 
 
@@ -116,7 +116,7 @@ class Tab(Frame):
         return self._set(state="normal" if is_enabled else "disabled")
 
 
-class TabView(BaseWidget):
+class TabView(BaseWidget, ContainerWidget):
     _tcl_class = "ttk::notebook"
     _keys = {
         "focusable": (bool, "takefocus"),

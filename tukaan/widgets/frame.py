@@ -5,10 +5,10 @@ from typing import Optional
 from tukaan._helpers import convert_4side, convert_4side_back
 from tukaan._tcl import Tcl
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, ContainerWidget, TkWidget
 
 
-class Frame(BaseWidget):
+class Frame(BaseWidget, ContainerWidget):
     _tcl_class = "ttk::frame"
     _keys = {}
 

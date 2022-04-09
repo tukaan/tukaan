@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from tukaan._tcl import Tcl
 from tukaan._variables import String, _TclVariable
 
-from ._base import Any, BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget
 from .frame import Frame
 
 
-class RadioButton(BaseWidget):
+class RadioButton(BaseWidget, InputControlWidget):
     _tcl_class = "ttk::radiobutton"
     _keys = {
         "focusable": (bool, "takefocus"),
@@ -59,7 +59,7 @@ class RadioButton(BaseWidget):
         return self.variable.get() == self.value
 
 
-class RadioGroup(Frame):
+class RadioGroup(Frame, InputControlWidget):
     _keys = {}
 
     def __init__(

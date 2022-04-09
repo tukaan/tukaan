@@ -64,7 +64,7 @@ class Event:
         0x100: "MouseButton:Left",
         0x80: "AltGr",
         0x40: "Super",
-        0x20: "idk",
+        0x20: "idk",  # TODO
         0x10: "NumLock",
         0x8: "Alt",
         0x4: "Control",

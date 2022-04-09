@@ -19,7 +19,16 @@ from tukaan._utils import _images, _text_tags, counts
 from tukaan._variables import Integer
 from tukaan.exceptions import TclError
 
-from ._base import BaseWidget, GetSetAttrMixin, TkWidget
+from ._base import (
+    BaseWidget,
+    GetSetAttrMixin,
+    InputControlWidget,
+    OutputDisplayWidget,
+    TkWidget,
+    XScrollable,
+    YScrollable,
+)
+from .frame import Frame
 from .scrollbar import Scrollbar
 
 
@@ -412,15 +421,7 @@ RangeInfo = namedtuple(
 )
 
 
-class _textbox_frame(BaseWidget):
-    _tcl_class = "ttk::frame"
-    _keys: dict[str, Any | tuple[Any, str]] = {}
-
-    def __init__(self, parent) -> None:
-        BaseWidget.__init__(self, parent)
-
-
-class TextBox(BaseWidget):
+class TextBox(BaseWidget, InputControlWidget, OutputDisplayWidget, XScrollable, YScrollable):
     index: Type[TextIndex]
     range: Type[TextRange]
     Tag: Type[Tag]
@@ -546,10 +547,10 @@ class TextBox(BaseWidget):
         }
 
         if _peer_of is None:
-            self._frame = _textbox_frame(parent)
+            self._frame = Frame(parent)
             BaseWidget.__init__(self, self._frame, None, **to_call)
         else:
-            self._frame = _textbox_frame(_peer_of._frame.parent)
+            self._frame = Frame(_peer_of._frame.parent)
             _name = f"{self._frame._name}.textbox_peer_{_peer_of.peer_count}_of_{_peer_of._name.split('.')[-1]}"
             BaseWidget.__init__(self, self._frame, (_peer_of, "peer", "create", _name), **to_call)
             self._name = _name
@@ -788,12 +789,6 @@ class TextBox(BaseWidget):
 
     def scroll_to(self, index: TextIndex) -> None:
         Tcl.call(None, self, "see", index)
-
-    def x_scroll(self, *args) -> None:
-        Tcl.call(None, self, "xview", *args)
-
-    def y_scroll(self, *args) -> None:
-        Tcl.call(None, self, "yview", *args)
 
     @property
     def overflow(self) -> tuple[bool | str, bool | str]:

@@ -8,10 +8,10 @@ from tukaan._enums import Alignment, ImagePosition, Justify
 from tukaan._images import Icon, _image_converter_class
 from tukaan._structures import Color
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, OutputDisplayWidget, TkWidget
 
 
-class Label(BaseWidget):
+class Label(BaseWidget, OutputDisplayWidget):
     _tcl_class = "ttk::label"
     _keys = {
         "align_content": Alignment,

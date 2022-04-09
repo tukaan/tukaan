@@ -42,28 +42,32 @@ class ChildStatistics:
         )
 
 
-class WidgetMixin:
+class StateSet:
+    def __init__(self, widget: TkWidget) -> None:
+        self._widget = widget
+
     def __repr__(self) -> str:
-        details = self._repr_details()
-        return (
-            f"<tukaan.{type(self).__name__} widget:"
-            + f" tcl_name={self._name!r}{', ' + details if details else ''}>"
-        )
+        return str(set(self))
 
-    def _repr_details(self) -> str:
-        # overridden in subclasses
-        return ""
+    def __iter__(self) -> Iterator[str]:
+        tcl_state = Tcl.call((str,), self._widget, "state")
+        if tcl_state:
+            return iter(tcl_state)
+        yield None
 
-    @property
-    def id(self) -> int:
-        return Tcl.call(int, "winfo", "id", self._name)
+    def __len__(self) -> int:
+        return len(set(self))
 
-    def __to_tcl__(self) -> str:
-        return self._name
+    def __contains__(self, state: str) -> bool:
+        return Tcl.call(bool, self._widget, "instate", state)
 
-    @classmethod
-    def __from_tcl__(cls, tcl_value: str) -> TkWidget:
-        return _widgets[tcl_value]
+    def __or__(self, state: str) -> StateSet:
+        Tcl.call(None, self._widget, "state", state)
+        return self
+
+    def __sub__(self, state: str) -> StateSet:
+        Tcl.call(None, self._widget, "state", "!" + state)
+        return self
 
 
 class ConfigMixin:
@@ -239,6 +243,40 @@ class DnDMixin:
         Tcl.call(None, "tkdnd::drag_source", "unregister", self)
 
 
+class XScrollable:
+    def x_scroll(self, *args) -> None:
+        Tcl.call(None, self, "xview", *args)
+
+
+class YScrollable:
+    def y_scroll(self, *args) -> None:
+        Tcl.call(None, self, "yview", *args)
+
+
+class WidgetMixin:
+    def __repr__(self) -> str:
+        details = self._repr_details()
+        return (
+            f"<tukaan.{type(self).__name__} widget:"
+            + f" tcl_name={self._name!r}{', ' + details if details else ''}>"
+        )
+
+    def _repr_details(self) -> str:
+        # overridden in subclasses
+        return ""
+
+    @property
+    def id(self) -> int:
+        return Tcl.call(int, "winfo", "id", self._name)
+
+    def __to_tcl__(self) -> str:
+        return self._name
+
+    @classmethod
+    def __from_tcl__(cls, tcl_value: str) -> TkWidget:
+        return _widgets[tcl_value]
+
+
 class TukaanWidget:
     """Base class for every Tukaan widget"""
 
@@ -258,34 +296,6 @@ class TkWidget(TukaanWidget, GetSetAttrMixin, WidgetMixin, EventMixin):
             Type[BaseWidget], Iterator[int]
         ] = collections.defaultdict(lambda: count())
         self.child_stats = ChildStatistics(self)
-
-
-class StateSet:
-    def __init__(self, widget: TkWidget) -> None:
-        self._widget = widget
-
-    def __repr__(self) -> str:
-        return str(set(self))
-
-    def __iter__(self) -> Iterator[str]:
-        tcl_state = Tcl.call((str,), self._widget, "state")
-        if tcl_state:
-            return iter(tcl_state)
-        yield None
-
-    def __len__(self) -> int:
-        return len(set(self))
-
-    def __contains__(self, state: object) -> bool:
-        return Tcl.call(bool, self._widget, "instate", state)
-
-    def __or__(self, state: str) -> StateSet:
-        Tcl.call(None, self._widget, "state", state)
-        return self
-
-    def __sub__(self, state: str) -> StateSet:
-        Tcl.call(None, self._widget, "state", "!" + state)
-        return self
 
 
 class BaseWidget(TkWidget, StateMixin, DnDMixin, SizePosMixin, VisibilityMixin):
@@ -327,3 +337,15 @@ class BaseWidget(TkWidget, StateMixin, DnDMixin, SizePosMixin, VisibilityMixin):
         Tcl.call(None, "destroy", self._name)
         del self.parent._children[self._name]
         del _widgets[self._name]
+
+
+class ContainerWidget:
+    ...
+
+
+class InputControlWidget:
+    ...
+
+
+class OutputDisplayWidget:
+    ...

@@ -8,10 +8,10 @@ from tukaan._enums import ImagePosition
 from tukaan._images import Icon, _image_converter_class
 from tukaan._tcl import Tcl
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget
 
 
-class Button(BaseWidget):
+class Button(BaseWidget, InputControlWidget):
     _tcl_class = "ttk::button"
     _keys = {
         "default": str,

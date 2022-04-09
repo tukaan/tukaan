@@ -143,7 +143,7 @@ class Tcl:
     def call(return_type: Any, *args) -> Any:
         try:
             _args = tuple(map(Tcl.to, args))
-            print(_args)
+            print(_args)  # TODO: remove
             result = _tcl_interp.call(*_args)
             if return_type is None:
                 return

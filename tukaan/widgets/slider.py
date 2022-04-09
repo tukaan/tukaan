@@ -4,10 +4,10 @@ from tukaan._tcl import Tcl
 from tukaan._units import ScreenDistance
 from tukaan._variables import Float
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget
 
 
-class Slider(BaseWidget):
+class Slider(BaseWidget, InputControlWidget):
     _tcl_class = "ttk::scale"
     _keys = {
         "focusable": (bool, "takefocus"),

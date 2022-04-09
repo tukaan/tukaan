@@ -1,9 +1,9 @@
 from typing import Literal, Optional
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, OutputDisplayWidget, TkWidget
 
 
-class Separator(BaseWidget):
+class Separator(BaseWidget, OutputDisplayWidget):
     _tcl_class = "ttk::separator"
     _keys = {"orientation": (str, "orient")}
 

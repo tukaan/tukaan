@@ -6,10 +6,10 @@ from tukaan._structures import Bbox, Color
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TclError
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget, XScrollable
 
 
-class Entry(BaseWidget):
+class Entry(BaseWidget, InputControlWidget, XScrollable):
     _tcl_class = "ttk::entry"
     _keys = {
         "fg_color": (Color, "foreground"),
@@ -138,6 +138,3 @@ class Entry(BaseWidget):
             Tcl.call((int,), self, "selection", "range", start, end)
         elif new_range is None:
             Tcl.call((int,), self, "selection", "clear")
-
-    def x_scroll(self, *args) -> None:
-        Tcl.call(None, self, "xview", *args)

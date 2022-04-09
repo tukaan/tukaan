@@ -5,7 +5,7 @@ from typing import Optional
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TclError
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, ContainerWidget, TkWidget
 from .frame import Frame
 
 
@@ -62,7 +62,7 @@ class Pane(Frame):
             pass
 
 
-class SplitView(BaseWidget):
+class SplitView(BaseWidget, ContainerWidget):
     _tcl_class = "ttk::panedwindow"
     _keys = {
         "focusable": (bool, "takefocus"),

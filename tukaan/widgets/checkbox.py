@@ -3,10 +3,10 @@ from typing import Callable, Optional
 from tukaan._tcl import Tcl
 from tukaan._variables import Boolean, _TclVariable
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget
 
 
-class CheckBox(BaseWidget):
+class CheckBox(BaseWidget, InputControlWidget):
     """To turn it on or off you have to use a control variable"""
 
     _tcl_class = "ttk::checkbutton"
