@@ -21,7 +21,7 @@ class CheckBox(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: Optional[TkWidget],
         focusable: Optional[bool] = None,
         on_click: Optional[Callable] = None,
         style: Optional[str] = None,

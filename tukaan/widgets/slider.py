@@ -22,7 +22,7 @@ class Slider(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: Optional[TkWidget],
         max: Optional[int] = 100,
         *,
         focusable: Optional[bool] = None,

@@ -27,7 +27,7 @@ class Label(BaseWidget, OutputDisplayWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: Optional[TkWidget],
         text: Optional[str] = None,
         *,
         align_content: Alignment = Alignment.Center,

@@ -27,7 +27,7 @@ class ComboBox(Entry):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: Optional[TkWidget],
         values: Optional[list | tuple] = None,
         *,
         current: Optional[int] = None,

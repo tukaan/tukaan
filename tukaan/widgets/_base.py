@@ -9,7 +9,7 @@ from tukaan._layouts import ContainerLayoutManager, PackableLayoutManager
 from tukaan._structures import Bbox
 from tukaan._tcl import Tcl
 from tukaan._utils import _commands, _widgets, count, reversed_dict
-from tukaan._variables import String
+from tukaan._variables import _TclVariable
 
 
 class ChildStatistics:
@@ -101,7 +101,7 @@ class ConfigMixin:
                 kwargs[tcl_name] = value
 
             if key == "text":
-                if isinstance(value, String):
+                if isinstance(value, _TclVariable):
                     kwargs["textvariable"] = kwargs.pop("text")
                 else:
                     kwargs["textvariable"] = ""

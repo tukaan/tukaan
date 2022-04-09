@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import warnings
 from collections import abc, namedtuple
 from functools import partialmethod
@@ -15,8 +16,8 @@ from tukaan._structures import Color
 from tukaan._tcl import Tcl
 from tukaan._units import ScreenDistance
 from tukaan._utils import _images, _text_tags, counts, seq_pairs
-from tukaan.data import TabStop
 from tukaan._variables import Integer
+from tukaan.data import TabStop
 from tukaan.exceptions import TclError
 
 from ._base import (
@@ -44,7 +45,7 @@ class _TabStopsProperty:
     def tab_stops(self, tab_stops: TabStop | list[TabStop]) -> None:
         if not isinstance(tab_stops, (list, tuple)):
             tab_stops = (tab_stops,)
-            
+
         self._set(tabs=[y for x in tab_stops for y in x.__to_tcl__()])
 
 
@@ -436,7 +437,9 @@ RangeInfo = namedtuple(
 )
 
 
-class TextBox(BaseWidget, _TabStopsProperty, InputControlWidget, OutputDisplayWidget, XScrollable, YScrollable):
+class TextBox(
+    BaseWidget, _TabStopsProperty, InputControlWidget, OutputDisplayWidget, XScrollable, YScrollable
+):
     index: Type[TextIndex]
     range: Type[TextRange]
     Tag: Type[Tag]
@@ -474,7 +477,7 @@ class TextBox(BaseWidget, _TabStopsProperty, InputControlWidget, OutputDisplayWi
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: Optional[TkWidget],
         *,
         bg_color: Optional[Color] = None,
         caret_color: Optional[Color] = None,
@@ -607,7 +610,9 @@ class TextBox(BaseWidget, _TabStopsProperty, InputControlWidget, OutputDisplayWi
     def __len__(self) -> int:
         return self.end.line
 
-    def __matmul__(self, index: tuple[int, int] | int | Icon | Image.Image | TkWidget) -> TextBox.index:
+    def __matmul__(
+        self, index: tuple[int, int] | int | Icon | Image.Image | TkWidget
+    ) -> TextBox.index:
         return self.index(index)
 
     def __contains__(self, text: str) -> bool:
@@ -627,7 +632,7 @@ class TextBox(BaseWidget, _TabStopsProperty, InputControlWidget, OutputDisplayWi
     @padding.setter
     def padding(self, new_padding: int | tuple[int, int] | list[int]) -> None:
         padx = pady = None
-        
+
         if isinstance(new_padding, int):
             padx = pady = new_padding
         elif len(new_padding) == 1:
@@ -636,7 +641,7 @@ class TextBox(BaseWidget, _TabStopsProperty, InputControlWidget, OutputDisplayWi
             padx, pady = new_padding
         else:
             raise ValueError("4 side padding isn't supported for TextBox")
-            
+
         self._set(padx=padx, pady=pady)
 
     def Peer(self, **kwargs):

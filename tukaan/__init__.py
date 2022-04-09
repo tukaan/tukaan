@@ -27,6 +27,7 @@ from ._structures import cmyk, hex, hsl, hsv, rgb
 from ._timeouts import Timeout, Timer
 from ._units import MemoryUnit, ScreenDistance
 from ._variables import Boolean, Float, Integer, String
+from .data import TabStop
 from .widgets.button import Button
 from .widgets.checkbox import CheckBox
 from .widgets.combobox import ComboBox
@@ -43,7 +44,6 @@ from .widgets.splitview import SplitView
 from .widgets.tabview import TabView
 from .widgets.textbox import TextBox
 from .window import App, Window, _ConfigObject
-from .data import TabStop
 
 Config = _ConfigObject()
 

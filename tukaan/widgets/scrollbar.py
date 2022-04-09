@@ -17,10 +17,11 @@ class Scrollbar(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: Optional[TkWidget],
+        orientation: Optional[Literal["horizontal", "vertical"]] = None,
+        *,
         auto_hide: bool = True,
         focusable: Optional[bool] = None,
-        orientation: Optional[Literal["horizontal", "vertical"]] = None,
     ) -> None:
         self._auto_hide = auto_hide
 

@@ -27,7 +27,7 @@ class Button(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: Optional[TkWidget],
         text: Optional[str] = None,
         on_click: Optional[Callable] = None,
         *,
