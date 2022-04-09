@@ -11,7 +11,7 @@ from typing import Any, Callable, Optional
 
 from ._enums import BackdropEffect, Resizable
 from ._images import _image_converter_class
-from ._layouts import BaseLayoutManager
+from ._layouts import ContainerLayoutManager
 from ._structures import Color, Position, Size
 from ._tcl import Tcl
 from ._utils import _commands, windows_only
@@ -641,7 +641,7 @@ class App(WindowMixin, TkWidget):
         App._exists = True
 
         self.__interp = Tcl()
-        self.layout: BaseLayoutManager = BaseLayoutManager(self)
+        self.layout: ContainerLayoutManager = ContainerLayoutManager(self)
 
         Tcl.eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
 

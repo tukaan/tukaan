@@ -4,9 +4,8 @@ import collections
 import contextlib
 from typing import Any, DefaultDict, Iterator, Type
 
-from tukaan._constants import _VALID_STATES
 from tukaan._events import EventMixin
-from tukaan._layouts import BaseLayoutManager, LayoutManager
+from tukaan._layouts import ContainerLayoutManager, PackableLayoutManager
 from tukaan._structures import Bbox
 from tukaan._tcl import Tcl
 from tukaan._utils import _commands, _widgets, count, reversed_dict
@@ -286,7 +285,7 @@ class TukaanWidget:
 class TkWidget(TukaanWidget, GetSetAttrMixin, WidgetMixin, EventMixin):
     """Base class for every Tk widget"""
 
-    layout: BaseLayoutManager
+    layout: ContainerLayoutManager
 
     def __init__(self):
         _widgets[self._name] = self
@@ -299,7 +298,7 @@ class TkWidget(TukaanWidget, GetSetAttrMixin, WidgetMixin, EventMixin):
 
 
 class BaseWidget(TkWidget, StateMixin, DnDMixin, SizePosMixin, VisibilityMixin):
-    layout: LayoutManager
+    layout: PackableLayoutManager
 
     def __init__(
         self, parent: TkWidget | None, creation_cmd: tuple[TkWidget | str, ...] = None, **kwargs
@@ -316,7 +315,7 @@ class BaseWidget(TkWidget, StateMixin, DnDMixin, SizePosMixin, VisibilityMixin):
         else:
             Tcl.call(None, *creation_cmd, *Tcl.to_tcl_args(**kwargs))
 
-        self.layout = LayoutManager(self)
+        self.layout = PackableLayoutManager(self)
         self._temp_manager = None
 
         if self._tcl_class.startswith("ttk::"):
