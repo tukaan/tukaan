@@ -323,7 +323,9 @@ class WindowMixin(DesktopWindowManager):
                 return "closed"
             raise e
 
-        if state == "iconic":
+        if state == "normal" and Tcl.windowing_system != "x11":  # needs further checking on X11
+            return "normal"
+        elif state == "iconic":
             return "minimized"
         elif state == "withdrawn":
             return "hidden"
@@ -653,6 +655,8 @@ class App(WindowMixin, TkWidget):
 
         self._init_tukaan_ext_pkg("Serif")
         self._init_tkdnd()
+
+        Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
 
     def __enter__(self):
         return self

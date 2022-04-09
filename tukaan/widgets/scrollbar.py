@@ -13,6 +13,8 @@ class Scrollbar(BaseWidget):
         "scrollcommand": ("func", "command"),
     }
 
+    _hidden = False
+
     def __init__(
         self,
         parent: Optional[TkWidget] = None,
@@ -48,12 +50,15 @@ class Scrollbar(BaseWidget):
                 )
             self.config(scrollcommand=widget.x_scroll)
 
-    def set(self, start: float, end: float) -> None:
+    def set(self, start: str, end: str) -> None:
         if self._auto_hide:
             if float(start) <= 0.0 and float(end) >= 1.0:
                 self.hide()
-            else:
+                self._hidden = True
+            elif self._hidden:
                 self.unhide()
+                self._hidden = False
+                
         Tcl.call(None, self, "set", start, end)
 
     def get(self) -> None:
