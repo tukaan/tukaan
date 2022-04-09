@@ -1,1 +1,1 @@
-from .audio import AudioDevice, Filter, Sound
+from .audio import Device, ByteOrder, Encoding, Filter, Format, Precision, Sound

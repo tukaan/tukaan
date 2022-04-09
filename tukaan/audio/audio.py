@@ -1,12 +1,46 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from enum import Enum
 from pathlib import Path
 from typing import Callable, Optional
 
-from tukaan._misc import Time, _Time
-from tukaan._utils import _sounds, counts, get_tcl_interp, py_to_tcl_args
+from tukaan._structures import Time, TimeConstructor
+from tukaan._tcl import Tcl
+from tukaan._utils import _sounds, counts
 from tukaan.exceptions import TclError
+
+
+class Format(Enum):
+    AIFF = "aiff"
+    AU = "au"
+    SD = "sd"
+    SMP = "smp"
+    SND = "snd"
+    CSL = "csl"
+    WAV = "wav"
+    RAW = "raw"
+
+
+class Encoding(Enum):
+    Alaw = "Alaw"
+    Float = "Float"
+    Lin16 = "Lin16"
+    Lin24 = "Lin24"
+    Lin32 = "Lin32"
+    Lin8 = "Lin8"
+    Lin8_Offset = "Lin8offset"
+    Mulaw = "Mulaw"
+
+
+class ByteOrder(Enum):
+    BigEndian = "BigEndian"
+    LittleEndian = "LittleEndian"
+
+
+class Precision(Enum):
+    Double = "double"
+    Single = "single"
 
 
 class BaseFilter:
@@ -16,45 +50,45 @@ class BaseFilter:
             return other
         return ComposeFilter(self, other)
 
-    def to_tcl(self):
-        return self._name
-
-    def delete(self):
-        get_tcl_interp()._tcl_call(None, self._name, "destroy")
-
     def __enter__(self):
-        AudioDevice._current_context_filter = self
+        Device._current_context_filter = self
         return self
 
     def __exit__(self, exc_type, exc_value, _):
-        AudioDevice._current_context_filter = None
+        Device._current_context_filter = None
 
         if exc_type is not None:
             raise exc_type(exc_value) from None
+
+    def __to_tcl__(self):
+        return self._name
+
+    def delete(self):
+        Tcl.call(None, self._name, "destroy")
 
 
 class ComposeFilter(BaseFilter):
     def __init__(self, filter_1, filter_2):
         self._filters = [filter_1, filter_2]
 
-        self._name = get_tcl_interp()._tcl_call(str, "Snack::filter", "compose", filter_1, filter_2)
-
-    def append(self, filter: BaseFilter):
-        self._filters.append(filter)
-        get_tcl_interp()._tcl_call(None, self, "configure", *self._filters)
+        self._name = Tcl.call(str, "Snack::filter", "compose", filter_1, filter_2)
 
     def __and__(self, other):
         self.append(other)
         return self
 
-    def to_tcl(self):
+    def append(self, filt: BaseFilter, /):
+        self._filters.append(filt)
+        Tcl.call(None, self, "configure", *self._filters)
+
+    def __to_tcl__(self):
         return self._name
 
 
 class AmplifierFilter(BaseFilter):
     # Echo with 0 delay is the easiest way to amplify sound
     def __init__(self, volume: float = 150):
-        self._name = get_tcl_interp()._tcl_call(str, "Snack::filter", "echo", 1, volume / 100, 1, 0)
+        self._name = Tcl.call(str, "Snack::filter", "echo", 1, volume / 100, 1, 0)
 
 
 class EchoFilter(BaseFilter):
@@ -68,39 +102,31 @@ class EchoFilter(BaseFilter):
         if delay < 0.001:
             delay = 0.001
 
-        self._name = get_tcl_interp()._tcl_call(
+        self._name = Tcl.call(
             str, "Snack::filter", "echo", gain_in, gain_out, delay * 1000, decay_factor
         )
 
 
 class FadeInFilter(BaseFilter):
     def __init__(self, length: float = 5, type: str = "linear") -> None:
-        self._name = get_tcl_interp()._tcl_call(
-            str, "Snack::filter", "fade", "in", type, length * 1000
-        )
+        self._name = Tcl.call(str, "Snack::filter", "fade", "in", type, length * 1000)
 
 
 class FadeOutFilter(BaseFilter):
     def __init__(self, length: float = 5, type: str = "linear") -> None:
-        self._name = get_tcl_interp()._tcl_call(
-            str, "Snack::filter", "fade", "out", type, length * 1000
-        )
+        self._name = Tcl.call(str, "Snack::filter", "fade", "out", type, length * 1000)
 
 
 class FormantFilter(BaseFilter):
     def __init__(self, frequency: float, bandwidth: int) -> None:
-        self._name = get_tcl_interp()._tcl_call(
-            str, "Snack::filter", "formant", frequency, bandwidth
-        )
+        self._name = Tcl.call(str, "Snack::filter", "formant", frequency, bandwidth)
 
 
 class GeneratorFilter(BaseFilter):
     def __init__(
         self, frequency: float, amplitude: int, shape: float = 0.5, type: str = "sine"
     ) -> None:
-        self._name = get_tcl_interp()._tcl_call(
-            str, "Snack::filter", "generator", frequency, amplitude, shape, type
-        )
+        self._name = Tcl.call(str, "Snack::filter", "generator", frequency, amplitude, shape, type)
 
 
 class IIRFilter(BaseFilter):
@@ -113,11 +139,11 @@ class IIRFilter(BaseFilter):
         noise: float = 1,
     ):
 
-        self._name = get_tcl_interp()._tcl_call(
+        self._name = Tcl.call(
             str,
             "Snack::filter",
             "iir",
-            *py_to_tcl_args(
+            *Tcl.to_tcl_args(
                 denominator=denom,
                 dither=dither,
                 impulse=impulse,
@@ -129,9 +155,7 @@ class IIRFilter(BaseFilter):
 
 class MapFilter(BaseFilter):
     def __init__(self, *args):
-        self._name = get_tcl_interp()._tcl_call(
-            str, "Snack::filter", "map", *(x / 100 for x in args)
-        )
+        self._name = Tcl.call(str, "Snack::filter", "map", *(x / 100 for x in args))
 
 
 class ReverbFilter(BaseFilter):
@@ -142,7 +166,7 @@ class ReverbFilter(BaseFilter):
         if delay < 0.001:
             delay = 0.001
 
-        self._name = get_tcl_interp()._tcl_call(
+        self._name = Tcl.call(
             str, "Snack::filter", "reverb", volume / 100, time * 1000, delay * 1000
         )
 
@@ -162,7 +186,7 @@ class Filter:
 class Sound:
     def __init__(
         self,
-        file=None,
+        file: Optional[Path | str] = None,
         format: Optional[str] = None,
         *,
         bitrate: int = None,
@@ -173,14 +197,13 @@ class Sound:
         guess_properties: Optional[bool] = None,
         precision: Optional[str] = None,
     ):
-        self._interp = get_tcl_interp()
         self._name = f"tukaan_sound_{next(counts['sounds'])}"
 
-        self._interp._tcl_call(
+        Tcl.call(
             None,
             "Snack::sound",
             self._name,
-            *py_to_tcl_args(
+            *Tcl.to_tcl_args(
                 buffersize=buffer_size,
                 byteorder=byteorder,
                 channels=channels,
@@ -194,8 +217,8 @@ class Sound:
         )
         _sounds[self._name] = self
 
-    def to_tcl(self):
-        # to_tcl is provided for compatibility reasons, i don't use because of performance
+    def __to_tcl__(self):
+        # __to_tcl__ is provided for compatibility reasons, i don't use it here because of performance
         return self._name
 
     def _get_sample(self, time):
@@ -217,7 +240,7 @@ class Sound:
     def __len__(self) -> int:
         return int(
             round(
-                self._interp._tcl_call(float, self._name, "length", "-unit", "seconds"),
+                Tcl.call(float, self._name, "length", "-unit", "seconds"),
                 0,
             )
         )
@@ -225,25 +248,29 @@ class Sound:
     def __getitem__(self, key: slice) -> SoundSection:
         if isinstance(key, slice):
             return SoundSection(self, key)
-        raise TypeError("should be a slice. Like sound[3.14:] instead of sound[3.14]")
+        raise TypeError("should be a slice. Like sound[Time[3.14]:] instead of sound[Time[3.14]]")
 
     def __delitem__(self, key: slice) -> None:
-        if isinstance(key, slice):
-            start, end = key.start, key.stop
+        if not isinstance(key, slice):
+            raise TypeError(
+                "should be a slice. Like sound[Time[3.14]:] instead of sound[Time[3.14]]"
+            )
 
-            if isinstance(start, Time):
-                start = int(start.total_seconds * self.bitrate)
-            if isinstance(end, Time):
-                end = int(end.total_seconds * self.bitrate)
+        start, end = key.start, key.stop
 
-            if start is None:
-                start = 0
-            if end is None:
-                end = self._interp._tcl_call(int, self._name, "length") - 1
+        if isinstance(start, Time):
+            start = int(start.total_seconds * self.bitrate)
 
-            return self._interp._tcl_call(None, self._name, "cut", start, end)
+        if isinstance(end, Time):
+            end = int(end.total_seconds * self.bitrate)
 
-        raise TypeError("should be a slice. Like sound[3.14:] instead of sound[3.14]")
+        if start in {None, ...}:
+            start = 0
+
+        if end in {None, ...}:
+            end = Tcl.call(int, self._name, "length") - 1
+
+        return Tcl.call(None, self._name, "cut", start, end)
 
     def play(
         self,
@@ -261,13 +288,13 @@ class Sound:
         if isinstance(start_time, Time):
             start_time = self._get_sample(start_time)
 
-        filter_ = AudioDevice._current_context_filter
+        filter_ = Device._current_context_filter
 
-        self._interp._tcl_call(
+        Tcl.call(
             None,
             self._name,
             "play",
-            *py_to_tcl_args(
+            *Tcl.to_tcl_args(
                 blocking=block,
                 command=on_end,
                 device=output,
@@ -278,40 +305,36 @@ class Sound:
         )
 
     def pause(self):
-        self._interp._tcl_call(None, self._name, "pause")
+        Tcl.call(None, self._name, "pause")
 
     def stop(self):
-        self._interp._tcl_call(None, self._name, "stop")
+        Tcl.call(None, self._name, "stop")
 
     @contextmanager
-    def record(self, input="default", overwrite=True):
+    def record(self, input: str = "default", overwrite: bool = True) -> None:
         if overwrite:
             self.stop()
 
-        self._interp._tcl_call(
-            None, self._name, "record", "-device", input, "-append", not overwrite
-        )
+        Tcl.call(None, self._name, "record", "-device", input, "-append", not overwrite)
 
         try:
             yield
         finally:
             self.stop()
 
-    def start_recording(self, input="default", overwrite=True):
+    def start_recording(self, input: str = "default", overwrite: bool = True) -> None:
         if overwrite:
             self.stop()
 
-        self._interp._tcl_call(
-            None, self._name, "record", "-device", input, "-append", not overwrite
-        )
+        Tcl.call(None, self._name, "record", "-device", input, "-append", not overwrite)
 
     def save(self, file_name: str | Path, format: str = None, *, byteorder: str = None) -> None:
-        self._interp._tcl_call(
+        Tcl.call(
             None,
             self._name,
             "write",
             file_name,
-            *py_to_tcl_args(byteorder=byteorder, fileformat=format),
+            *Tcl.to_tcl_args(byteorder=byteorder, fileformat=format),
         )
 
     def load(
@@ -327,12 +350,12 @@ class Sound:
         guess_properties: Optional[bool] = None,
         precision: Optional[str] = None,
     ) -> None:
-        self._interp._tcl_call(
+        Tcl.call(
             None,
             self._name,
             "read",
             file_name,
-            *py_to_tcl_args(
+            *Tcl.to_tcl_args(
                 buffersize=buffer_size,
                 byteorder=byteorder,
                 channels=channels,
@@ -347,6 +370,7 @@ class Sound:
     def convert(
         self,
         arg: Optional[str | int] = None,
+        /,
         *,
         bitrate: Optional[int] = None,
         encoding: Optional[str] = None,
@@ -357,35 +381,26 @@ class Sound:
                 channels = arg
             elif arg in {8000, 11025, 16000, 22050, 32000, 44100, 48000}:
                 bitrate = arg
-            elif arg in {
-                "Lin16",
-                "Lin8offset",
-                "Lin8",
-                "Lin24",
-                "Lin32",
-                "Float",
-                "Alaw",
-                "Mulaw",
-            }:
+            elif arg in Encoding:
                 encoding = arg
             else:
-                raise ValueError(f"invalid argument: {arg}")
+                raise ValueError(f"invalid positional argument: {arg}")
 
-        self._interp._tcl_call(
+        Tcl.call(
             None,
             self,
             "convert",
-            *py_to_tcl_args(rate=bitrate, encoding=encoding, channels=channels),
+            *Tcl.to_tcl_args(rate=bitrate, encoding=encoding, channels=channels),
         )
         return self
 
     def copy(self):
         new_sound = Sound()
-        self._interp._tcl_call(None, new_sound._name, "copy", self._name)
+        Tcl.call(None, new_sound._name, "copy", self._name)
         return new_sound
 
     def apply_filter(self, filter: BaseFilter) -> Sound:
-        self._interp._tcl_call(None, self._name, "filter", filter._name)
+        Tcl.call(None, self._name, "filter", filter._name)
         return self
 
     __imatmul__ = apply_filter
@@ -394,20 +409,20 @@ class Sound:
         if isinstance(other_sound, SoundSection):
             other_sound = other_sound.copy()
 
-        self._interp._tcl_call(None, self._name, "concatenate", other_sound._name)
+        Tcl.call(None, self._name, "concatenate", other_sound._name)
         return self
 
     def __iand__(self, other_sound: Sound | SoundSection) -> Sound:
         if isinstance(other_sound, SoundSection):
-            self._interp._tcl_call(
+            Tcl.call(
                 None,
                 self._name,
                 "mix",
                 other_sound._name,
-                *py_to_tcl_args(start=other_sound.start, end=other_sound.end),
+                *Tcl.to_tcl_args(start=other_sound.start, end=other_sound.end),
             )
         else:
-            self._interp._tcl_call(None, self._name, "mix", other_sound._name)
+            Tcl.call(None, self._name, "mix", other_sound._name)
         return self
 
     def insert(self, position, other_sound) -> Sound:
@@ -415,16 +430,16 @@ class Sound:
             position = self._get_sample(position)
 
         if isinstance(other_sound, SoundSection):
-            self._interp._tcl_call(
+            Tcl.call(
                 None,
                 self._name,
                 "insert",
                 other_sound._name,
                 position,
-                *py_to_tcl_args(start=other_sound.start, end=other_sound.end),
+                *Tcl.to_tcl_args(start=other_sound.start, end=other_sound.end),
             )
         else:
-            self._interp._tcl_call(
+            Tcl.call(
                 None,
                 self._name,
                 "insert",
@@ -434,7 +449,7 @@ class Sound:
         return self
 
     def reverse(self) -> Sound:
-        self._interp._tcl_call(None, self._name, "reverse")
+        Tcl.call(None, self._name, "reverse")
         return self
 
     def get_pitch(
@@ -453,13 +468,13 @@ class Sound:
         else:
             raise ValueError(f"invalid pitch method: {method}. Should be either 'amdf' or 'esps'")
 
-        return self._interp._tcl_call(
+        return Tcl.call(
             type_spec,
             self._name,
             "pitch",
             "-method",
             "amdf",
-            *py_to_tcl_args(
+            *Tcl.to_tcl_args(
                 framelength=frame_length,
                 windowlength=window_length,
                 minpitch=min,
@@ -468,14 +483,14 @@ class Sound:
         )
 
     def flush(self):
-        self._interp._tcl_call(None, self._name, "flush")
+        Tcl.call(None, self._name, "flush")
 
     def delete(self):
-        self._interp._tcl_call(None, self._name, "destroy")
+        Tcl.call(None, self._name, "destroy")
         del _sounds[self._name]
 
     def _get(self, type_spec, key):
-        return self._interp._tcl_call(type_spec, self._name, "cget", f"-{key}")
+        return Tcl.call(type_spec, self._name, "cget", f"-{key}")
 
     def config(
         self,
@@ -486,11 +501,11 @@ class Sound:
         precision=None,
         bitrate=None,
     ):
-        return self._interp._tcl_call(
+        return Tcl.call(
             None,
             self._name,
             "configure",
-            *py_to_tcl_args(
+            *Tcl.to_tcl_args(
                 buffersize=buffer_size,
                 channels=channels,
                 encoding=encoding,
@@ -501,16 +516,14 @@ class Sound:
 
     @property
     def length(self) -> float:
-        return _Time.from_secs(
-            self._interp._tcl_call(float, self._name, "length", "-unit", "seconds")
-        )
+        return TimeConstructor.from_secs(Tcl.call(float, self._name, "length", "-unit", "seconds"))
 
     @length.setter
     def length(self, new_length: float) -> None:
         if isinstance(new_length, Time):
             new_length = new_length.total_seconds
 
-        self._interp._tcl_call(None, self._name, "length", new_length, "-unit", "seconds")
+        Tcl.call(None, self._name, "length", new_length, "-unit", "seconds")
 
     @property
     def bitrate(self) -> int:
@@ -557,7 +570,7 @@ class SoundSection:
     def __init__(self, sound, slice_arg):
         self._name = sound._name
         self._sound = sound
-        bitrate = get_tcl_interp()._tcl_call(int, self._name, "cget", "-rate")
+        bitrate = Tcl.call(int, self._name, "cget", "-rate")
 
         start, end = slice_arg.start, slice_arg.stop
 
@@ -567,10 +580,10 @@ class SoundSection:
         if isinstance(end, Time):
             end = int(end.total_seconds * bitrate)
 
-        if start is None:
+        if start in {None, ...}:
             start = 0
-        if end is None:
-            end = get_tcl_interp()._tcl_call(int, self._name, "length") - 1
+        if end in {None, ...}:
+            end = Tcl.call(int, self._name, "length") - 1
 
         self.start, self.end = start, end
         self.length = Time(seconds=end / bitrate - start / bitrate)
@@ -587,13 +600,13 @@ class SoundSection:
         if after is not None:
             after *= 1000
 
-        filter_ = AudioDevice._current_context_filter
+        filter_ = Device._current_context_filter
 
-        get_tcl_interp()._tcl_call(
+        Tcl.call(
             None,
             self._name,
             "play",
-            *py_to_tcl_args(
+            *Tcl.to_tcl_args(
                 blocking=block,
                 command=on_end,
                 device=output,
@@ -605,53 +618,50 @@ class SoundSection:
         )
 
     def save(self, file_name: str | Path, format: str = None, *, byteorder: str = None) -> None:
-        get_tcl_interp()._tcl_call(
+        Tcl.call(
             None,
             self._name,
             "write",
             file_name,
-            *py_to_tcl_args(start=self.start, end=self.end, byteorder=byteorder, fileformat=format),
+            *Tcl.to_tcl_args(
+                start=self.start, end=self.end, byteorder=byteorder, fileformat=format
+            ),
         )
 
     @property
     def detached(self):
         new_sound = Sound()
-        get_tcl_interp()._tcl_call(
+        Tcl.call(
             None,
             new_sound._name,
             "copy",
             self._name,
-            *py_to_tcl_args(start=self.start, end=self.end),
+            *Tcl.to_tcl_args(start=self.start, end=self.end),
         )
         return new_sound
 
     def apply_filter(self, filter: BaseFilter) -> Sound:
-        get_tcl_interp()._tcl_call(
+        Tcl.call(
             None,
             self._name,
             "filter",
             filter._name,
-            *py_to_tcl_args(start=self.start, end=self.end),
+            *Tcl.to_tcl_args(start=self.start, end=self.end),
         )
         return self._sound
 
     __imatmul__ = apply_filter
 
     def crop(self):
-        get_tcl_interp()._tcl_call(None, self._name, "crop", self.start, self.end)
+        Tcl.call(None, self._name, "crop", self.start, self.end)
         return self._sound
 
     def cut(self):
-        get_tcl_interp()._tcl_call(None, self._name, "cut", self.start, self.end)
+        Tcl.call(None, self._name, "cut", self.start, self.end)
         return self._sound
 
     def reverse(self):
-        get_tcl_interp()._tcl_call(
-            None,
-            self._name,
-            "reverse",
-            *py_to_tcl_args(start=self.start, end=self.end),
-        )
+        Tcl.call(None, self._name, "reverse", *Tcl.to_tcl_args(start=self.start, end=self.end))
         return self._sound
 
     def get_pitch(
@@ -663,7 +673,7 @@ class SoundSection:
         max=None,
         min=None,
     ):
-        args = py_to_tcl_args(
+        args = Tcl.to_tcl_args(
             end=self.end,
             framelength=frame_length,
             maxpitch=max,
@@ -673,13 +683,9 @@ class SoundSection:
         )
 
         if method == "amdf":
-            return get_tcl_interp()._tcl_call(
-                [float], self._name, "pitch", "-method", "amdf", *args
-            )
+            return Tcl.call([float], self._name, "pitch", "-method", "amdf", *args)
         elif method == "esps":
-            return get_tcl_interp()._tcl_call(
-                [(float,)], self._name, "pitch", "-method", "esps", *args
-            )
+            return Tcl.call([(float,)], self._name, "pitch", "-method", "esps", *args)
         else:
             raise ValueError(f"invalid pitch method: {method}. Should be either 'amdf' or 'esps'")
 
@@ -691,27 +697,27 @@ class _AudioDevice:
 
     @property
     def supported_encodings(self) -> list[str]:
-        return get_tcl_interp()._tcl_call([str], "Snack::audio", "encodings")
+        return Tcl.call([str], "Snack::audio", "encodings")
 
     @property
     def supported_bitrates(self) -> list[str]:
-        return get_tcl_interp()._tcl_call([int], "Snack::audio", "rates")
+        return Tcl.call([int], "Snack::audio", "rates")
 
     @property
     def latency(self) -> float:
-        return get_tcl_interp()._tcl_call(float, "Snack::audio", "playLatency") / 1000
+        return Tcl.call(float, "Snack::audio", "playLatency") / 1000
 
     @latency.setter
     def latency(self, new_latency: float) -> None:
-        get_tcl_interp()._tcl_call(None, "Snack::audio", "playLatency", new_latency * 1000)
+        Tcl.call(None, "Snack::audio", "playLatency", new_latency * 1000)
 
     @property
     def inputs(self) -> list[str]:
-        return get_tcl_interp()._tcl_call([str], "Snack::audio", "inputDevices")
+        return Tcl.call([str], "Snack::audio", "inputDevices")
 
     @property
     def outputs(self) -> list[str]:
-        return get_tcl_interp()._tcl_call([str], "Snack::audio", "outputDevices")
+        return Tcl.call([str], "Snack::audio", "outputDevices")
 
     @property
     def default_input(self) -> str:
@@ -720,7 +726,7 @@ class _AudioDevice:
     @default_input.setter
     def default_input(self, device: str) -> str:
         self._current_input = device
-        return get_tcl_interp()._tcl_call(None, "Snack::audio", "selectInput", device)
+        return Tcl.call(None, "Snack::audio", "selectInput", device)
 
     @property
     def default_output(self) -> str:
@@ -729,20 +735,20 @@ class _AudioDevice:
     @default_output.setter
     def default_output(self, device: str) -> str:
         self._current_output = device
-        return get_tcl_interp()._tcl_call(None, "Snack::audio", "selectOutput", device)
+        return Tcl.call(None, "Snack::audio", "selectOutput", device)
 
     @property
     def is_playing(self) -> bool:
-        return get_tcl_interp()._tcl_call(bool, "Snack::audio", "active")
+        return Tcl.call(bool, "Snack::audio", "active")
 
     def resume_all(self) -> None:
-        return get_tcl_interp()._tcl_call(None, "Snack::audio", "play")
+        return Tcl.call(None, "Snack::audio", "play")
 
     def pause_all(self) -> None:
-        return get_tcl_interp()._tcl_call(None, "Snack::audio", "pause")
+        return Tcl.call(None, "Snack::audio", "pause")
 
     def stop_all(self) -> None:
-        return get_tcl_interp()._tcl_call(None, "Snack::audio", "stop")
+        return Tcl.call(None, "Snack::audio", "stop")
 
 
-AudioDevice = _AudioDevice()
+Device = _AudioDevice()
