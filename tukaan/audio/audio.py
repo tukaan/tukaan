@@ -154,8 +154,8 @@ class IIRFilter(BaseFilter):
 
 
 class MapFilter(BaseFilter):
-    def __init__(self, *args):
-        self._name = Tcl.call(str, "Snack::filter", "map", *(x / 100 for x in args))
+    def __init__(self, left_to_left: int = 0, right_to_left: int = 0, left_to_right: int = 0, right_to_right: int = 0):
+        self._name = Tcl.call(str, "Snack::filter", "map", left_to_left / 100, right_to_left / 100, left_to_right / 100, right_to_right / 100)
 
 
 class ReverbFilter(BaseFilter):

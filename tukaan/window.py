@@ -323,7 +323,7 @@ class WindowMixin(DesktopWindowManager):
                 return "closed"
             raise e
 
-        if state == "normal" and self._winsys != "x11":  # needs further checking on X11
+        if state == "normal" and Tcl.windowing_system != "x11":  # needs further checking on X11
             return "normal"
         elif state == "iconic":
             return "minimized"
@@ -657,7 +657,7 @@ class App(WindowMixin, TkWidget):
         self._init_tukaan_ext_pkg("Snack")
         self._init_tkdnd()
 
-        self._tcl_call(None, "wm", "protocol", self.wm_path, "WM_DELETE_WINDOW", self.destroy)
+        Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
 
     def __enter__(self):
         return self

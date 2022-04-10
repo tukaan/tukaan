@@ -310,4 +310,4 @@ class _TimeConstructor:
         return Time(h, m, s)
 
 
-_Time = _TimeConstructor()
+TimeConstructor = _TimeConstructor()
