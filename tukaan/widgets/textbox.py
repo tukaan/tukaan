@@ -17,7 +17,6 @@ from tukaan._tcl import Tcl
 from tukaan._units import ScreenDistance
 from tukaan._utils import _images, _text_tags, counts, seq_pairs
 from tukaan._variables import Integer
-from tukaan.data import TabStop
 from tukaan.exceptions import TclError
 
 from ._base import (
@@ -31,6 +30,20 @@ from ._base import (
 )
 from .frame import Frame
 from .scrollbar import ScrollBar
+
+
+class TabStop:
+    def __init__(self, position: float, align: str = "left"):
+        if align == "decimal":
+            align = "numeric"
+
+        self.position, self.align = position, align
+
+    def __repr__(self):
+        return f"TabStop({self.position!r}, {self.align!r})"
+
+    def __to_tcl__(self):
+        return self.position, self.align
 
 
 class _TabStopsProperty:
