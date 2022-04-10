@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from __future__ import annotations
 
 from ._base import BaseWidget, OutputDisplayWidget, TkWidget
 
@@ -9,8 +9,8 @@ class Separator(BaseWidget, OutputDisplayWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget],
-        orientation: Optional[Literal["horizontal", "vertical"]] = None,
+        parent: TkWidget | None,
+        orientation: str | None = None,
     ) -> None:
         BaseWidget.__init__(self, parent, orient=orientation)
 

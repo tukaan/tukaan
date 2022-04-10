@@ -4,7 +4,7 @@ import warnings
 from collections import abc, namedtuple
 from functools import partialmethod
 from pathlib import Path
-from typing import Any, Iterator, Optional, Type
+from typing import Any, Iterator
 
 import _tkinter as tk
 from PIL import Image  # type: ignore
@@ -30,7 +30,7 @@ from ._base import (
     YScrollable,
 )
 from .frame import Frame
-from .scrollbar import Scrollbar
+from .scrollbar import ScrollBar
 
 
 class _TabStopsProperty:
@@ -580,12 +580,12 @@ class TextBox(
         self.layout = self._frame.layout
 
     def _make_hor_scroll(self, hide: bool = True) -> None:
-        self._h_scroll = Scrollbar(self._frame, orientation="horizontal", auto_hide=hide)
+        self._h_scroll = ScrollBar(self._frame, orientation="horizontal", auto_hide=hide)
         self._h_scroll.attach(self)
         self._h_scroll.layout.grid(row=1, hor_align="stretch")
 
     def _make_vert_scroll(self, hide: bool = True) -> None:
-        self._v_scroll = Scrollbar(self._frame, orientation="vertical", auto_hide=hide)
+        self._v_scroll = ScrollBar(self._frame, orientation="vertical", auto_hide=hide)
         self._v_scroll.attach(self)
         self._v_scroll.layout.grid(col=1, vert_align="stretch")
 

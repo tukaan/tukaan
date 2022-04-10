@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable
 
 from tukaan._structures import Color
 from tukaan._tcl import Tcl

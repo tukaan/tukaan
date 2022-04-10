@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from tukaan._helpers import convert_4side, convert_4side_back
 from tukaan._tcl import Tcl
 

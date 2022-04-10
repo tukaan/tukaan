@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from PIL import Image  # type: ignore
 
 from tukaan._enums import Alignment, ImagePosition, Justify

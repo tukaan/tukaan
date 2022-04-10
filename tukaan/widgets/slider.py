@@ -1,4 +1,6 @@
-from typing import Callable, Literal, Optional, Union
+from __future__ import annotations
+
+from typing import Callable
 
 from tukaan._tcl import Tcl
 from tukaan._units import ScreenDistance
@@ -22,16 +24,16 @@ class Slider(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget],
-        max: Optional[int] = 100,
+        parent: TkWidget | None,
+        max: int | None = 100,
         *,
-        focusable: Optional[bool] = None,
-        length: Optional[Union[int, ScreenDistance]] = None,
-        min: Optional[int] = 0,
-        on_move: Optional[Callable] = None,
-        orientation: Optional[Literal["horizontal", "vertical"]] = None,
-        value: Optional[float] = None,
-        variable: Optional[Float] = None,
+        focusable: bool | None = None,
+        length: int | ScreenDistance | None = None,
+        min: int | None = 0,
+        on_move: Callable | None = None,
+        orientation: str | None = None,
+        value: float | None = None,
+        variable: Float | None = None,
     ) -> None:
         BaseWidget.__init__(
             self,

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TclError
 

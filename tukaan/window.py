@@ -7,7 +7,7 @@ import sys
 import warnings
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from ._enums import BackdropEffect, Resizable
 from ._images import _image_converter_class

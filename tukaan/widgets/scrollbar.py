@@ -1,11 +1,11 @@
-from typing import Literal, Optional
+from __future__ import annotations
 
 from tukaan._tcl import Tcl
 
 from ._base import BaseWidget, InputControlWidget, TkWidget
 
 
-class Scrollbar(BaseWidget, InputControlWidget):
+class ScrollBar(BaseWidget, InputControlWidget):
     _tcl_class = "ttk::scrollbar"
     _keys = {
         "focusable": (bool, "takefocus"),
@@ -17,11 +17,11 @@ class Scrollbar(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget],
-        orientation: Optional[Literal["horizontal", "vertical"]] = None,
+        parent: TkWidget | None,
+        orientation: str | None = None,
         *,
         auto_hide: bool = True,
-        focusable: Optional[bool] = None,
+        focusable: bool | None = None,
     ) -> None:
         self._auto_hide = auto_hide
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from tukaan._tcl import Tcl
 from tukaan._variables import String, _TclVariable

@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from __future__ import annotations
 
 from tukaan._tcl import Tcl
 from tukaan._variables import Float
@@ -19,14 +19,14 @@ class ProgressBar(BaseWidget, OutputDisplayWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget],
-        max: Optional[int] = 100,
+        parent: TkWidget | None,
+        max: int | None = 100,
         *,
-        focusable: Optional[bool] = None,
-        mode: Optional[Literal["determinate", "indeterminate"]] = None,
-        orientation: Optional[Literal["horizontal", "vertical"]] = None,
-        value: Optional[int] = None,
-        variable: Optional[Float] = None,
+        focusable: bool | None = None,
+        mode: str | None = None,
+        orientation: str | None = None,
+        value: int | None = None,
+        variable: Float | None = None,
     ) -> None:
         BaseWidget.__init__(
             self,

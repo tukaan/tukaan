@@ -6,7 +6,7 @@ import traceback
 from enum import Enum, EnumMeta
 from numbers import Real
 from pathlib import Path
-from typing import Any, Callable, Type
+from typing import Any, Callable
 
 import _tkinter as tk
 

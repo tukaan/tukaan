@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import namedtuple
 from pathlib import Path
-from typing import Type
 
 from ._tcl import Tcl
 from ._utils import _fonts, counts, seq_pairs

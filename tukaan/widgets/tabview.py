@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Callable
 
 from tukaan._enums import ImagePosition
 from tukaan._helpers import convert_4side, convert_4side_back

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from PIL import Image, UnidentifiedImageError  # type: ignore
 

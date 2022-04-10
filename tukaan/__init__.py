@@ -36,7 +36,7 @@ from .widgets.frame import Frame
 from .widgets.label import Label
 from .widgets.progressbar import ProgressBar
 from .widgets.radiobutton import RadioButton, RadioGroup
-from .widgets.scrollbar import Scrollbar
+from .widgets.scrollbar import ScrollBar
 from .widgets.separator import Separator
 from .widgets.slider import Slider
 from .widgets.spinbox import SpinBox

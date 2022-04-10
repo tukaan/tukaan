@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
-from typing import Any, DefaultDict, Iterator, Type
+from typing import Any, DefaultDict, Iterator
 
 from tukaan._events import EventMixin
 from tukaan._layouts import ContainerLayoutManager, PackableLayoutManager
