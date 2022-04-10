@@ -174,7 +174,7 @@ class DesktopWindowManager:
     def set_backdrop_effect(
         self,
         effect: BackdropEffect = BackdropEffect.Blur,
-        tint: Optional[Color] = None,
+        tint: Color | None = None,
         tint_opacity: float = 0.2,
     ) -> None:
         # https://github.com/Peticali/PythonBlurBehind/blob/main/blurWindow/blurWindow.py
@@ -524,7 +524,7 @@ class WindowMixin(DesktopWindowManager):
     @Tcl.update_after
     def set_aspect_ratio(
         self,
-        new_aspect: Optional[tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction],
+        new_aspect: tuple[float, float] | tuple[Fraction, Fraction] | float | Fraction | None,
     ) -> None:
         if new_aspect is None:
             return Tcl.call(None, "wm", "aspect", self._wm_path, *("",) * 4)
@@ -565,7 +565,7 @@ class WindowMixin(DesktopWindowManager):
     def get_on_close_callback(self) -> Callable[[WindowMixin], None]:
         return _commands[Tcl.call(str, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW")]
 
-    def set_on_close_callback(self, callback: Optional[Callable[[WindowMixin], None]]) -> None:
+    def set_on_close_callback(self, callback: Callable[[WindowMixin], None] | None) -> None:
         if callback is None:
             callback = self.destroy
 
@@ -710,7 +710,7 @@ class Window(WindowMixin, BaseWidget):
     _keys = {}
     parent: App | Window
 
-    def __init__(self, parent: Optional[App | Window] = None) -> None:
+    def __init__(self, parent: App | Window | None = None) -> None:
         if not isinstance(parent, (App, Window)) and parent is not None:
             raise RuntimeError
 

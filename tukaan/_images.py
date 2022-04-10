@@ -147,7 +147,7 @@ class Image(BaseWidget):
 class Icon(ConfigMixin):
     _keys = {"data": str, "file": Path}
 
-    def __init__(self, file: Optional[str | Path] = None, data: Optional[str] = None) -> None:
+    def __init__(self, file: str | Path | None = None, data: str | None = None) -> None:
         self._name = f"tukaan_icon_{next(counts['icons'])}"
         _images[self._name] = self
 

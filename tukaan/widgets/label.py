@@ -27,18 +27,18 @@ class Label(BaseWidget, OutputDisplayWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget],
-        text: Optional[str] = None,
+        parent: TkWidget | None,
+        text: str | None = None,
         *,
         align_content: Alignment = Alignment.Center,
-        bg_color: Optional[str] = None,
-        fg_color: Optional[str] = None,
-        focusable: Optional[bool] = None,
-        image: Optional[Image.Image | Icon] = None,
-        image_pos: Optional[ImagePosition] = None,
-        justify: Optional[Justify] = None,
-        max_line_length: Optional[int] = None,
-        style: Optional[str] = None,
+        bg_color: str | None = None,
+        fg_color: str | None = None,
+        focusable: bool | None = None,
+        image: Image.Image | Icon | None = None,
+        image_pos: ImagePosition | None = None,
+        justify: Justify | None = None,
+        max_line_length: int | None = None,
+        style: str | None = None,
     ) -> None:
 
         BaseWidget.__init__(

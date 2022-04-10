@@ -292,7 +292,7 @@ class TkWidget(TukaanWidget, GetSetAttrMixin, WidgetMixin, EventMixin):
 
         self._children: dict[str, BaseWidget] = {}
         self._child_type_count: DefaultDict[
-            Type[BaseWidget], Iterator[int]
+            type[BaseWidget], Iterator[int]
         ] = collections.defaultdict(lambda: count())
         self.child_stats = ChildStatistics(self)
 

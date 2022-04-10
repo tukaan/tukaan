@@ -131,13 +131,13 @@ class Grid:
     def grid(
         self,
         align: tuple[HorAlignAlias, VertAlignAlias] | HorAlignAlias | VertAlignAlias = None,
-        cell: Optional[str] = None,
-        col: Optional[int] = 0,
-        colspan: Optional[int] = None,
+        cell: str | None = None,
+        col: int | None = 0,
+        colspan: int | None = None,
         hor_align: HorAlignAlias = None,
         margin: MrgnAlias = None,
-        row: Optional[int] = 0,
-        rowspan: Optional[int] = None,
+        row: int | None = 0,
+        rowspan: int | None = None,
         vert_align: VertAlignAlias = None,
     ) -> None:
         padx, pady = self._parse_margin(margin)
@@ -446,7 +446,7 @@ class PackableLayoutManager(ContainerLayoutManager, Grid, Position):
                     raise TypeError(f"move() got an unexpected keyword argument {key!r}")
                 setattr(self, key, value)
 
-    def _config(self, _lm: Optional[str] = None, **kwargs) -> None:
+    def _config(self, _lm: str | None = None, **kwargs) -> None:
         if _lm is None:
             _lm = self._get_manager()
         self._real_manager = _lm

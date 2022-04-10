@@ -352,7 +352,7 @@ class DnDEvent(Event):
         "CF_RTFTEXT",
         "Rich Text Format",
         # tkdnd_unix.tcl
-        "text/plain\;charset=utf-8",
+        r"text/plain\;charset=utf-8",
         "UTF8_STRING",
         "text/plain",
         "text/rtf",
@@ -361,7 +361,7 @@ class DnDEvent(Event):
         "TEXT",
         "COMPOUND_TEXT",
         "text/uri-list",
-        "text/html\;charset=utf-8",
+        r"text/html\;charset=utf-8",
         "text/html",
         "application/x-color",
         # add more of these app-specific types?
@@ -557,7 +557,7 @@ class EventMixin:
     def bind(
         self,
         sequence: str,
-        func: str | Callable[[], Optional[bool]] | Callable[[Event], Optional[bool]],
+        func: str | Callable[[], bool | None] | Callable[[Event], bool | None],
         *,
         overwrite: bool = False,
         send_event: bool = False,
@@ -592,7 +592,7 @@ class EventMixin:
 
 
 def DragObject(
-    data: str | list | tuple | Path | Color, type_: Optional[str] = None, action: str = "copy"
+    data: str | list | tuple | Path | Color, type_: str | None = None, action: str = "copy"
 ) -> tuple[str, str, str]:
     if type_ is None:
         if isinstance(data, str):

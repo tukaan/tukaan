@@ -77,26 +77,26 @@ class Tag(GetSetAttrMixin, _TabStopsProperty):
         self,
         _name: str = None,
         *,
-        bg_color: Optional[Color] = None,
-        fg_color: Optional[Color] = None,
-        first_line_margin: Optional[int | ScreenDistance] = None,
-        font: Optional[Font] = None,
-        hanging_line_margin: Optional[int | ScreenDistance] = None,
-        hidden: Optional[bool] = None,
-        justify: Optional[str] = None,
-        offset: Optional[int | ScreenDistance] = None,
-        right_margin: Optional[int | ScreenDistance] = None,
-        right_margin_bg: Optional[Color] = None,
-        selection_bg: Optional[Color] = None,
-        selection_fg: Optional[Color] = None,
-        space_after_paragraph: Optional[int | ScreenDistance] = None,
-        space_before_paragraph: Optional[int | ScreenDistance] = None,
-        space_before_wrapped_line: Optional[int | ScreenDistance] = None,
-        strikethrough_color: Optional[Color] = None,
-        tab_stops: Optional[TabStop | list[TabStop] | tuple[TabStop]] = None,
-        tab_style: Optional[str] = None,
-        underline_color: Optional[Color] = None,
-        wrap: Optional[Wrap] = None,
+        bg_color: Color | None = None,
+        fg_color: Color | None = None,
+        first_line_margin: int | ScreenDistance | None = None,
+        font: Font | None = None,
+        hanging_line_margin: int | ScreenDistance | None = None,
+        hidden: bool | None = None,
+        justify: str | None = None,
+        offset: int | ScreenDistance | None = None,
+        right_margin: int | ScreenDistance | None = None,
+        right_margin_bg: Color | None = None,
+        selection_bg: Color | None = None,
+        selection_fg: Color | None = None,
+        space_after_paragraph: int | ScreenDistance | None = None,
+        space_before_paragraph: int | ScreenDistance | None = None,
+        space_before_wrapped_line: int | ScreenDistance | None = None,
+        strikethrough_color: Color | None = None,
+        tab_stops: TabStop | list[TabStop] | tuple[TabStop] | None = None,
+        tab_style: str | None = None,
+        underline_color: Color | None = None,
+        wrap: Wrap | None = None,
     ) -> None:
         self._name = _name or f"{self._widget._name}:tag_{next(counts['textbox_tag'])}"
         _text_tags[self._name] = self
@@ -172,7 +172,7 @@ class Tag(GetSetAttrMixin, _TabStopsProperty):
             yield self._widget.range(start, end)
 
     def _prev_next_range(
-        self, direction: str, start: TextIndex, end: Optional[TextIndex] = None
+        self, direction: str, start: TextIndex, end: TextIndex | None = None
     ) -> None | TextRange:
         if end is None:
             end = {"prev": self._widget.start, "next": self._widget.end}[direction]
@@ -222,7 +222,7 @@ class TextIndex(namedtuple("TextIndex", ["line", "column"])):
             if (line, col) > tuple(cls._widget.end):
                 return cls._widget.end
 
-        return super(TextIndex, cls).__new__(cls, line, col)  # type: ignore
+        return super().__new__(cls, line, col)  # type: ignore
 
     def __to_tcl__(self) -> str:
         return f"{self.line}.{self.column}"
@@ -328,7 +328,7 @@ class TextRange(namedtuple("TextRange", ["start", "end"])):
         if stop is None:
             stop = cls._widget.end
 
-        return super(TextRange, cls).__new__(cls, start, stop)  # type: ignore
+        return super().__new__(cls, start, stop)  # type: ignore
 
     def get(self):
         return self._widget.get(self)
@@ -440,9 +440,9 @@ RangeInfo = namedtuple(
 class TextBox(
     BaseWidget, _TabStopsProperty, InputControlWidget, OutputDisplayWidget, XScrollable, YScrollable
 ):
-    index: Type[TextIndex]
-    range: Type[TextRange]
-    Tag: Type[Tag]
+    index: type[TextIndex]
+    range: type[TextRange]
+    Tag: type[Tag]
     marks: TextMarks
     history: TextHistory
 
@@ -477,34 +477,34 @@ class TextBox(
 
     def __init__(
         self,
-        parent: Optional[TkWidget],
+        parent: TkWidget | None,
         *,
-        bg_color: Optional[Color] = None,
-        caret_color: Optional[Color] = None,
-        caret_offtime: Optional[int] = None,
-        caret_ontime: Optional[int] = None,
+        bg_color: Color | None = None,
+        caret_color: Color | None = None,
+        caret_offtime: int | None = None,
+        caret_ontime: int | None = None,
         caret_style: str = CaretStyle.Beam,
-        caret_width: Optional[int | ScreenDistance] = None,
-        fg_color: Optional[Color] = None,
-        focusable: Optional[bool] = None,
-        font: Optional[Font] = None,
-        height: Optional[int | ScreenDistance] = None,
-        inactive_caret_style: Optional[str] = None,
-        inactive_selection_bg: Optional[Color] = None,
+        caret_width: int | ScreenDistance | None = None,
+        fg_color: Color | None = None,
+        focusable: bool | None = None,
+        font: Font | None = None,
+        height: int | ScreenDistance | None = None,
+        inactive_caret_style: str | None = None,
+        inactive_selection_bg: Color | None = None,
         overflow: tuple[bool | str, bool | str] = ("auto", "auto"),
-        padding: Optional[int | tuple[int] | tuple[int, int]] = None,
-        resize_along_chars: Optional[bool] = None,
-        selection_bg: Optional[Color] = None,
-        selection_fg: Optional[Color] = None,
-        space_after_paragraph: Optional[int | ScreenDistance] = None,
-        space_before_paragraph: Optional[int | ScreenDistance] = None,
-        space_before_wrapped_line: Optional[int | ScreenDistance] = None,
-        tab_stops: Optional[TabStop | list[TabStop]] = None,
-        tab_style: Optional[str] = None,
-        track_history: Optional[bool] = None,
-        width: Optional[int | ScreenDistance] = None,
-        wrap: Optional[Wrap] = None,
-        _peer_of: Optional[TextBox] = None,
+        padding: int | tuple[int] | tuple[int, int] | None = None,
+        resize_along_chars: bool | None = None,
+        selection_bg: Color | None = None,
+        selection_fg: Color | None = None,
+        space_after_paragraph: int | ScreenDistance | None = None,
+        space_before_paragraph: int | ScreenDistance | None = None,
+        space_before_wrapped_line: int | ScreenDistance | None = None,
+        tab_stops: TabStop | list[TabStop] | None = None,
+        tab_style: str | None = None,
+        track_history: bool | None = None,
+        width: int | ScreenDistance | None = None,
+        wrap: Wrap | None = None,
+        _peer_of: TextBox | None = None,
     ) -> None:
 
         if not font:
@@ -739,7 +739,7 @@ class TextBox(
     def get(self, *indexes) -> str:
         return Tcl.call(str, self, "get", *self._convert_indices_or_range_to_tcl(indexes))
 
-    def replace(self, *args, tag: Optional[Tag] = None) -> None:
+    def replace(self, *args, tag: Tag | None = None) -> None:
         if isinstance(args[0], TextRange) and isinstance(args[1], str):
             start, end = args[0]
             text = args[1]

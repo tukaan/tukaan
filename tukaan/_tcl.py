@@ -57,7 +57,7 @@ class Tcl:
         return tuple(result)
 
     @staticmethod
-    def from_(type_spec: Type[Any], value: str | tk.Tcl_obj) -> Any:
+    def from_(type_spec: type[Any], value: str | tk.Tcl_obj) -> Any:
         if type_spec is None:
             return None
 
@@ -213,7 +213,7 @@ class Tcl:
         return _tcl_interp.call("format", value)
 
     @staticmethod
-    def get_number(type_spec: Type[int] | Type[float], value: str | tk.Tcl_obj) -> float | None:
+    def get_number(type_spec: type[int] | type[float], value: str | tk.Tcl_obj) -> float | None:
         if not Tcl.get_string(value):
             return None
 

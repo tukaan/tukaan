@@ -26,17 +26,17 @@ class Entry(BaseWidget, InputControlWidget, XScrollable):
 
     def __init__(
         self,
-        parent: Optional[TkWidget],
+        parent: TkWidget | None,
         *,
-        fg_color: Optional[str | Color] = None,
-        focusable: Optional[bool] = None,
+        fg_color: str | Color | None = None,
+        focusable: bool | None = None,
         hide_chars: bool = False,
-        hide_chars_with: Optional[str] = "•",
-        justify: Optional[str] = None,
-        style: Optional[str] = None,
-        user_edit: Optional[bool] = True,
-        value: Optional[str] = None,
-        width: Optional[int] = None,
+        hide_chars_with: str | None = "•",
+        justify: str | None = None,
+        style: str | None = None,
+        user_edit: bool | None = True,
+        value: str | None = None,
+        width: int | None = None,
     ) -> None:
 
         self._prev_show_char = hide_chars_with

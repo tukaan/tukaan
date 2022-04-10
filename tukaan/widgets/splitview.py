@@ -15,8 +15,8 @@ class Pane(Frame):
     def __init__(
         self,
         *,
-        padding: Optional[int | tuple[int, ...]] = None,
-        weight: Optional[int] = None,
+        padding: int | tuple[int, ...] | None = None,
+        weight: int | None = None,
     ):
         Frame.__init__(self, self._widget, padding=padding)
 
@@ -70,10 +70,10 @@ class SplitView(BaseWidget, ContainerWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget],
-        orientation: Optional[str] = None,
+        parent: TkWidget | None,
+        orientation: str | None = None,
         *,
-        focusable: Optional[bool] = None,
+        focusable: bool | None = None,
     ) -> None:
         BaseWidget.__init__(self, parent, takefocus=focusable, orient=orientation)
 

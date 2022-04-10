@@ -22,13 +22,13 @@ class Tab(Frame):
 
     def __init__(
         self,
-        title: Optional[str] = None,
+        title: str | None = None,
         *,
-        icon: Optional[Icon | Image] = None,
+        icon: Icon | Image | None = None,
         image_pos: ImagePosition = ImagePosition.Left,
-        margin: Optional[int | tuple[int, ...]] = None,
-        padding: Optional[int | tuple[int, ...]] = None,
-        underline: Optional[int] = None,
+        margin: int | tuple[int, ...] | None = None,
+        padding: int | tuple[int, ...] | None = None,
+        underline: int | None = None,
     ):
         Frame.__init__(self, self._widget, padding=padding)
 
@@ -122,7 +122,7 @@ class TabView(BaseWidget, ContainerWidget):
         "focusable": (bool, "takefocus"),
     }
 
-    def __init__(self, parent: Optional[TkWidget], *, focusable: Optional[bool] = None) -> None:
+    def __init__(self, parent: TkWidget | None, *, focusable: bool | None = None) -> None:
         BaseWidget.__init__(self, parent, takefocus=focusable)
 
         self.Tab = Tab

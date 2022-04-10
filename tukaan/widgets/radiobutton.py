@@ -24,16 +24,16 @@ class RadioButton(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget],
-        text: Optional[str] = None,
-        value: Optional[Any] = None,
-        variable: Optional[_TclVariable] = None,
+        parent: TkWidget | None,
+        text: str | None = None,
+        value: Any | None = None,
+        variable: _TclVariable | None = None,
         *,
-        focusable: Optional[bool] = None,
-        on_click: Optional[Callable] = None,
-        style: Optional[str] = None,
-        underline: Optional[int] = None,
-        width: Optional[int] = None,
+        focusable: bool | None = None,
+        on_click: Callable | None = None,
+        style: str | None = None,
+        underline: int | None = None,
+        width: int | None = None,
     ) -> None:
         BaseWidget.__init__(
             self,
@@ -64,10 +64,10 @@ class RadioGroup(Frame, InputControlWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: TkWidget | None = None,
         *,
         items: dict[str, str],
-        padding: Optional[int | tuple[int, ...]] = None,
+        padding: int | tuple[int, ...] | None = None,
     ) -> None:
         Frame.__init__(self, parent, padding=padding)
 
