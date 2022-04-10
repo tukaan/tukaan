@@ -24,7 +24,7 @@ class RadioButton(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: TkWidget | None,
+        parent: TkWidget,
         text: str | None = None,
         value: Any | None = None,
         variable: _TclVariable | None = None,

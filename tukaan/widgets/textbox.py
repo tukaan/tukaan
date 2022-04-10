@@ -473,11 +473,10 @@ class TextBox(
         "width": ScreenDistance,
         "wrap": Wrap,
     }
-    # TODO: padding cget, configure
 
     def __init__(
         self,
-        parent: TkWidget | None,
+        parent: TkWidget,
         *,
         bg_color: Color | None = None,
         caret_color: Color | None = None,

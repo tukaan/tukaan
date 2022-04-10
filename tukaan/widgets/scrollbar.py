@@ -17,7 +17,7 @@ class ScrollBar(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: TkWidget | None,
+        parent: TkWidget,
         orientation: str | None = None,
         *,
         auto_hide: bool = True,

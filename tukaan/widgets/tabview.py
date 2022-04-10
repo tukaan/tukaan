@@ -122,7 +122,7 @@ class TabView(BaseWidget, ContainerWidget):
         "focusable": (bool, "takefocus"),
     }
 
-    def __init__(self, parent: TkWidget | None, *, focusable: bool | None = None) -> None:
+    def __init__(self, parent: TkWidget, *, focusable: bool | None = None) -> None:
         BaseWidget.__init__(self, parent, takefocus=focusable)
 
         self.Tab = Tab

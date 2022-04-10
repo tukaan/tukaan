@@ -27,7 +27,7 @@ class Button(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: TkWidget | None,
+        parent: TkWidget,
         text: str | None = None,
         on_click: Callable | None = None,
         *,

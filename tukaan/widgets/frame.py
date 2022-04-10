@@ -11,7 +11,7 @@ class Frame(BaseWidget, ContainerWidget):
     _keys = {}
 
     def __init__(
-        self, parent: TkWidget | None, padding: int | tuple[int, ...] | None = None
+        self, parent: TkWidget, padding: int | tuple[int, ...] | None = None
     ) -> None:
         BaseWidget.__init__(self, parent, padding=convert_4side(padding))
 

@@ -9,7 +9,7 @@ class Separator(BaseWidget, OutputDisplayWidget):
 
     def __init__(
         self,
-        parent: TkWidget | None,
+        parent: TkWidget,
         orientation: str | None = None,
     ) -> None:
         BaseWidget.__init__(self, parent, orient=orientation)

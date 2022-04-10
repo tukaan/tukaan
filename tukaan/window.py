@@ -450,6 +450,7 @@ class WindowMixin(DesktopWindowManager):
     def set_size(self, new_size: Size | tuple[int, int] | int) -> None:
         if isinstance(new_size, int):
             new_size = (new_size,) * 2
+            
         Tcl.call(None, "wm", "geometry", self._wm_path, "{}x{}".format(*new_size))
 
     size = property(get_size, set_size)
@@ -645,8 +646,9 @@ class App(WindowMixin, TkWidget):
 
         Tcl.eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
 
-        self.title = title
-        self.size = width, height
+        self.set_title(title)
+        self.set_size((width, height))
+        
         self.Titlebar = Titlebar(self)
 
         Tcl.call(None, "bind", self._name, "<Map>", self._generate_state_event)
@@ -710,12 +712,23 @@ class Window(WindowMixin, BaseWidget):
     _keys = {}
     parent: App | Window
 
-    def __init__(self, parent: App | Window | None = None) -> None:
-        if not isinstance(parent, (App, Window)) and parent is not None:
-            raise RuntimeError
+    def __init__(
+        self,
+        parent: App | Window,
+        title: str = "Tukaan window",
+        width: int = 200,
+        height: int = 200
+    ) -> None:
+        if not isinstance(parent, (App, Window)):
+            raise TypeError
 
         BaseWidget.__init__(self, parent)
+        self.layout: ContainerLayoutManager = ContainerLayoutManager(self)
+        
         self._wm_path = self._name
+
+        self.set_title(title)
+        self.set_size((width, height))
         self.Titlebar = Titlebar(self)
 
         Tcl.call(None, "bind", self._name, "<Map>", self._generate_state_event)
