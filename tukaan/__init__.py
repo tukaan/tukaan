@@ -21,7 +21,9 @@ from ._events import DragObject, KeySeq
 from ._font import Font
 from ._images import Icon, IconFactory, Image
 from ._info import Clipboard, Machine, Memory, Pointer, Screen, System
-from ._structures import Color, cmyk, hex, hsl, hsv, rgb
+from ._structures import Color
+from ._structures import TimeConstructor as Time
+from ._structures import cmyk, hex, hsl, hsv, rgb
 from ._timeouts import Timeout, Timer
 from ._units import MemoryUnit, ScreenDistance
 from ._variables import Boolean, Float, Integer, String

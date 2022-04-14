@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from ._font import Font
     from ._images import Icon, _image_converter_class
     from ._variables import _TclVariable
+    from .media import Sound
     from .textbox import Tag
     from .timeout import Timeout
 
@@ -48,6 +49,7 @@ _variables: dict[str, _TclVariable] = {}
 _text_tags: dict[str, Tag] = {}
 _widgets: dict[str, TkWidget] = {}
 _fonts: dict[str, Font] = {}
+_sounds: dict[str, Sound] = {}
 
 
 def windows_only(func):

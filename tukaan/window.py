@@ -323,7 +323,9 @@ class WindowMixin(DesktopWindowManager):
                 return "closed"
             raise e
 
-        if state == "iconic":
+        if state == "normal" and Tcl.windowing_system != "x11":  # needs further checking on X11
+            return "normal"
+        elif state == "iconic":
             return "minimized"
         elif state == "withdrawn":
             return "hidden"
@@ -652,7 +654,10 @@ class App(WindowMixin, TkWidget):
         Tcl.call(None, "bind", self._name, "<Configure>", self._generate_state_event)
 
         self._init_tukaan_ext_pkg("Serif")
+        self._init_tukaan_ext_pkg("Snack")
         self._init_tkdnd()
+
+        Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
 
     def __enter__(self):
         return self
@@ -660,6 +665,7 @@ class App(WindowMixin, TkWidget):
     def __exit__(self, exc_type, exc_value, _):
         if exc_type is None:
             return self.run()
+
         raise exc_type(exc_value) from None
 
     def _init_tukaan_ext_pkg(self, name: str) -> None:
@@ -679,7 +685,7 @@ class App(WindowMixin, TkWidget):
 
     def destroy(self) -> None:
         """Quit the entire Tcl interpreter"""
-
+        Tcl.call(None, "Snack::audio", "stop")
         Tcl.call(None, "destroy", self._name)
         Tcl.call(None, "destroy", self._wm_path)
 
