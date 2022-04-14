@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable
 
 from tukaan._structures import Time, TimeConstructor
 from tukaan._tcl import Tcl
@@ -11,6 +11,7 @@ from tukaan._utils import _sounds, counts
 from tukaan.exceptions import TclError
 
 
+### Enums ###
 class Format(Enum):
     AIFF = "aiff"
     AU = "au"
@@ -43,7 +44,16 @@ class Precision(Enum):
     Single = "single"
 
 
-class BaseFilter:
+class PitchMethod(Enum):
+    AMDF = "amdf"
+    ESPS = "esps"
+
+
+### Filters ###
+class Filter:
+    def __init_subclass__(cls):
+        setattr(Filter, cls.__name__.replace("Filter", ""), cls)
+
     def __and__(self, other):
         if isinstance(other, ComposeFilter):
             other.append(self)
@@ -64,11 +74,11 @@ class BaseFilter:
         return self._name
 
     def delete(self):
-        Tcl.call(None, self._name, "destroy")
+        Tcl.call(None, self, "destroy")
 
 
-class ComposeFilter(BaseFilter):
-    def __init__(self, filter_1, filter_2):
+class ComposeFilter(Filter):
+    def __init__(self, filter_1, filter_2, /):
         self._filters = [filter_1, filter_2]
 
         self._name = Tcl.call(str, "Snack::filter", "compose", filter_1, filter_2)
@@ -77,27 +87,24 @@ class ComposeFilter(BaseFilter):
         self.append(other)
         return self
 
-    def append(self, filt: BaseFilter, /):
+    def append(self, filt: Filter, /):
         self._filters.append(filt)
         Tcl.call(None, self, "configure", *self._filters)
 
-    def __to_tcl__(self):
-        return self._name
 
-
-class AmplifierFilter(BaseFilter):
+class AmplifierFilter(Filter):
     # Echo with 0 delay is the easiest way to amplify sound
-    def __init__(self, volume: float = 150):
+    def __init__(self, volume: float = 125):
         self._name = Tcl.call(str, "Snack::filter", "echo", 1, volume / 100, 1, 0)
 
 
-class EchoFilter(BaseFilter):
+class EchoFilter(Filter):
     def __init__(
         self,
         delay: float = 0.5,
         decay_factor: float = 0.5,
-        gain_in: float = 1,
-        gain_out: float = 1,
+        gain_in: float = 0.5,
+        gain_out: float = 0.5,
     ):
         if delay < 0.001:
             delay = 0.001
@@ -107,35 +114,41 @@ class EchoFilter(BaseFilter):
         )
 
 
-class FadeInFilter(BaseFilter):
+class FadeInFilter(Filter):
     def __init__(self, length: float = 5, type: str = "linear") -> None:
         self._name = Tcl.call(str, "Snack::filter", "fade", "in", type, length * 1000)
 
 
-class FadeOutFilter(BaseFilter):
+class FadeOutFilter(Filter):
     def __init__(self, length: float = 5, type: str = "linear") -> None:
         self._name = Tcl.call(str, "Snack::filter", "fade", "out", type, length * 1000)
 
 
-class FormantFilter(BaseFilter):
+class FormantFilter(Filter):
     def __init__(self, frequency: float, bandwidth: int) -> None:
         self._name = Tcl.call(str, "Snack::filter", "formant", frequency, bandwidth)
 
 
-class GeneratorFilter(BaseFilter):
+class GeneratorFilter(Filter):
     def __init__(
-        self, frequency: float, amplitude: int, shape: float = 0.5, type: str = "sine"
+        self,
+        frequency: float,
+        amplitude: int,
+        type: str = "sine",
+        *,
+        shape: float = 0.5,
     ) -> None:
         self._name = Tcl.call(str, "Snack::filter", "generator", frequency, amplitude, shape, type)
 
 
-class IIRFilter(BaseFilter):
+class IIRFilter(Filter):
     def __init__(
         self,
-        denom: list = [1],
-        numer: list = [1],
+        *,
+        denom: list[float] = [1],
+        numer: list[float] = [1],
         dither: float = 1,
-        impulse: list = [1, 2],
+        impulse: list[float] = [1, 2],
         noise: float = 1,
     ):
 
@@ -153,12 +166,26 @@ class IIRFilter(BaseFilter):
         )
 
 
-class MapFilter(BaseFilter):
-    def __init__(self, left_to_left: int = 0, right_to_left: int = 0, left_to_right: int = 0, right_to_right: int = 0):
-        self._name = Tcl.call(str, "Snack::filter", "map", left_to_left / 100, right_to_left / 100, left_to_right / 100, right_to_right / 100)
+class MixChannelsFilter(Filter):
+    def __init__(
+        self,
+        left_to_left: int = 0,
+        right_to_left: int = 0,
+        left_to_right: int = 0,
+        right_to_right: int = 0,
+    ):
+        self._name = Tcl.call(
+            str,
+            "Snack::filter",
+            "map",
+            left_to_left / 100,
+            right_to_left / 100,
+            left_to_right / 100,
+            right_to_right / 100,
+        )
 
 
-class ReverbFilter(BaseFilter):
+class ReverbFilter(Filter):
     def __init__(self, time: float = 5, delay: float = 1, volume: float = 100):
         if time < 0.001:
             time = 0.001
@@ -171,38 +198,27 @@ class ReverbFilter(BaseFilter):
         )
 
 
-class Filter:
-    Amplifier = AmplifierFilter
-    Echo = EchoFilter
-    FadeIn = FadeInFilter
-    FadeOut = FadeOutFilter
-    Formant = FormantFilter
-    Generator = GeneratorFilter
-    IIR = IIRFilter
-    Map = MapFilter
-    Reverb = ReverbFilter
-
-
+### Sound ###
 class Sound:
     def __init__(
         self,
-        file: Optional[Path | str] = None,
-        format: Optional[str] = None,
+        file: Path | str | None = None,
+        format: str | None = None,
         *,
         bitrate: int = None,
-        buffer_size: Optional[float] = None,
-        byteorder: Optional[str] = None,
-        channels: Optional[int] = None,
-        encoding: Optional[str] = None,
-        guess_properties: Optional[bool] = None,
-        precision: Optional[str] = None,
+        buffer_size: float | None = None,
+        byteorder: ByteOrder | None = None,
+        channels: int | None = None,
+        encoding: str | Encoding | None = None,
+        guess_properties: bool | None = None,
+        precision: Precision | None = None,
     ):
         self._name = f"tukaan_sound_{next(counts['sounds'])}"
 
         Tcl.call(
             None,
             "Snack::sound",
-            self._name,
+            self,
             *Tcl.to_tcl_args(
                 buffersize=buffer_size,
                 byteorder=byteorder,
@@ -217,12 +233,11 @@ class Sound:
         )
         _sounds[self._name] = self
 
-    def __to_tcl__(self):
-        # __to_tcl__ is provided for compatibility reasons, i don't use it here because of performance
-        return self._name
-
     def _get_sample(self, time):
         return time.total_seconds * self.bitrate
+
+    def __to_tcl__(self):
+        return self._name
 
     def __enter__(self):
         return self
@@ -240,7 +255,7 @@ class Sound:
     def __len__(self) -> int:
         return int(
             round(
-                Tcl.call(float, self._name, "length", "-unit", "seconds"),
+                Tcl.call(float, self, "length", "-unit", "seconds"),
                 0,
             )
         )
@@ -268,20 +283,20 @@ class Sound:
             start = 0
 
         if end in {None, ...}:
-            end = Tcl.call(int, self._name, "length") - 1
+            end = Tcl.call(int, self, "length") - 1
 
-        return Tcl.call(None, self._name, "cut", start, end)
+        return Tcl.call(None, self, "cut", start, end)
 
     def play(
         self,
-        start_time=None,
+        start_time: int | Time | None = None,
         *,
-        after=None,
-        block=None,
+        after: int | Time | None = None,
+        block: bool | None = None,
         on_end: Callable = None,
-        output=None,
-        repeat=False,
-    ):
+        output: str | None = None,
+        repeat: bool = False,
+    ) -> Sound:
         if after is not None:
             after *= 1000
 
@@ -292,7 +307,7 @@ class Sound:
 
         Tcl.call(
             None,
-            self._name,
+            self,
             "play",
             *Tcl.to_tcl_args(
                 blocking=block,
@@ -303,56 +318,67 @@ class Sound:
                 starttime=after,
             ),
         )
+        return self
 
-    def pause(self):
-        Tcl.call(None, self._name, "pause")
+    def pause(self) -> Sound:
+        Tcl.call(None, self, "pause")
+        return self
 
-    def stop(self):
-        Tcl.call(None, self._name, "stop")
+    def stop(self) -> Sound:
+        Tcl.call(None, self, "stop")
+        return self
 
     @contextmanager
     def record(self, input: str = "default", overwrite: bool = True) -> None:
         if overwrite:
             self.stop()
 
-        Tcl.call(None, self._name, "record", "-device", input, "-append", not overwrite)
+        Tcl.call(None, self, "record", "-device", input, "-append", not overwrite)
 
         try:
             yield
         finally:
             self.stop()
 
-    def start_recording(self, input: str = "default", overwrite: bool = True) -> None:
+    def start_recording(self, input: str = "default", overwrite: bool = True) -> Sound:
         if overwrite:
             self.stop()
 
-        Tcl.call(None, self._name, "record", "-device", input, "-append", not overwrite)
+        Tcl.call(None, self, "record", "-device", input, "-append", not overwrite)
+        return self
 
-    def save(self, file_name: str | Path, format: str = None, *, byteorder: str = None) -> None:
+    def save(
+        self,
+        file_name: str | Path,
+        format: str | Format | None = None,
+        *,
+        byteorder: ByteOrder | None = None,
+    ) -> Sound:
         Tcl.call(
             None,
-            self._name,
+            self,
             "write",
             file_name,
             *Tcl.to_tcl_args(byteorder=byteorder, fileformat=format),
         )
+        return self
 
     def load(
         self,
         file_name: str | Path,
-        format: Optional[str] = None,
+        format: str | None = None,
         *,
-        bitrate: int = 44100,
-        buffer_size: Optional[float] = None,
-        byteorder: Optional[str] = None,
-        channels: Optional[int] = None,
-        encoding: Optional[str] = None,
-        guess_properties: Optional[bool] = None,
-        precision: Optional[str] = None,
-    ) -> None:
+        bitrate: int | None = None,
+        buffer_size: float | None = None,
+        byteorder: ByteOrder | None = None,
+        channels: int | None = None,
+        encoding: str | Encoding | None = None,
+        guess_properties: bool | None = None,
+        precision: Precision | None = None,
+    ) -> Sound:
         Tcl.call(
             None,
-            self._name,
+            self,
             "read",
             file_name,
             *Tcl.to_tcl_args(
@@ -366,16 +392,17 @@ class Sound:
                 rate=bitrate,
             ),
         )
+        return self
 
     def convert(
         self,
-        arg: Optional[str | int] = None,
+        arg: str | int | Encoding | None = None,
         /,
         *,
-        bitrate: Optional[int] = None,
-        encoding: Optional[str] = None,
-        channels: Optional[int] = None,
-    ):
+        bitrate: int | None = None,
+        encoding: str | None = None,
+        channels: int | None = None,
+    ) -> Sound:
         if arg is not None:
             if arg in {"mono", "stereo"}:
                 channels = arg
@@ -394,116 +421,104 @@ class Sound:
         )
         return self
 
-    def copy(self):
+    def copy(self) -> Sound:
         new_sound = Sound()
-        Tcl.call(None, new_sound._name, "copy", self._name)
+        Tcl.call(None, new_sound, "copy", self)
         return new_sound
 
-    def apply_filter(self, filter: BaseFilter) -> Sound:
-        Tcl.call(None, self._name, "filter", filter._name)
+    def filter(self, filter_: Filter, /) -> Sound:
+        Tcl.call(None, self, "filter", filter_)
         return self
 
-    __imatmul__ = apply_filter
+    __imatmul__ = filter
 
-    def __iadd__(self, other_sound: Sound) -> Sound:
+    def concat(self, other_sound: Sound, /) -> Sound:
         if isinstance(other_sound, SoundSection):
             other_sound = other_sound.copy()
 
-        Tcl.call(None, self._name, "concatenate", other_sound._name)
+        Tcl.call(None, self, "concatenate", other_sound)
         return self
 
-    def __iand__(self, other_sound: Sound | SoundSection) -> Sound:
+    __iadd__ = concat
+
+    def mix(self, other_sound: Sound | SoundSection, /) -> Sound:
+        args = ()
         if isinstance(other_sound, SoundSection):
-            Tcl.call(
-                None,
-                self._name,
-                "mix",
-                other_sound._name,
-                *Tcl.to_tcl_args(start=other_sound.start, end=other_sound.end),
-            )
-        else:
-            Tcl.call(None, self._name, "mix", other_sound._name)
+            args = (*Tcl.to_tcl_args(start=other_sound.start, end=other_sound.end),)
+
+        Tcl.call(None, self, "mix", other_sound, *args)
         return self
 
-    def insert(self, position, other_sound) -> Sound:
+    __iand__ = mix
+
+    def insert(self, position: int | Time, other_sound: Sound | SoundSection, /) -> Sound:
         if isinstance(position, Time):
             position = self._get_sample(position)
 
+        args = ()
         if isinstance(other_sound, SoundSection):
-            Tcl.call(
-                None,
-                self._name,
-                "insert",
-                other_sound._name,
-                position,
-                *Tcl.to_tcl_args(start=other_sound.start, end=other_sound.end),
-            )
-        else:
-            Tcl.call(
-                None,
-                self._name,
-                "insert",
-                other_sound._name,
-                position,
-            )
+            args = (*Tcl.to_tcl_args(start=other_sound.start, end=other_sound.end),)
+
+        Tcl.call(None, self, "insert", other_sound, position, *args)
         return self
 
     def reverse(self) -> Sound:
-        Tcl.call(None, self._name, "reverse")
+        Tcl.call(None, self, "reverse")
         return self
+
+    __reversed__ = reverse
 
     def get_pitch(
         self,
-        method="amdf",
+        method: PitchMethod = PitchMethod.AMDF,
         *,
-        frame_length=None,
-        window_length=None,
-        max=None,
-        min=None,
-    ):
-        if method == "amdf":
-            type_spec = [float]
-        elif method == "esps":
-            type_spec = [(float,)]
-        else:
-            raise ValueError(f"invalid pitch method: {method}. Should be either 'amdf' or 'esps'")
+        frame_length: float | None = None,
+        window_length: float | None = None,
+        max: float | None = None,
+        min: float | None = None,
+    ) -> list[float] | list[tuple[float, float, float, float]]:
+        if method is PitchMethod.AMDF:
+            return_type = [float]
+        elif method is PitchMethod.ESPS:
+            return_type = [(float,)]
 
         return Tcl.call(
-            type_spec,
-            self._name,
+            return_type,
+            self,
             "pitch",
             "-method",
-            "amdf",
+            method,
             *Tcl.to_tcl_args(
                 framelength=frame_length,
-                windowlength=window_length,
-                minpitch=min,
                 maxpitch=max,
+                minpitch=min,
+                windowlength=window_length,
             ),
         )
 
-    def flush(self):
-        Tcl.call(None, self._name, "flush")
+    def flush(self) -> Sound:
+        Tcl.call(None, self, "flush")
+        return self
 
-    def delete(self):
-        Tcl.call(None, self._name, "destroy")
-        del _sounds[self._name]
+    def delete(self) -> None:
+        Tcl.call(None, self, "destroy")
+        del _sounds[self]
 
-    def _get(self, type_spec, key):
-        return Tcl.call(type_spec, self._name, "cget", f"-{key}")
+    def _get(self, type_spec: Any, key: str) -> Any:
+        return Tcl.call(type_spec, self, "cget", f"-{key}")
 
     def config(
         self,
         *,
-        buffer_size=None,
-        channels=None,
-        encoding=None,
-        precision=None,
+        buffer_size: float | None = None,
+        channels: str | int | None = None,
+        encoding: str | Encoding | None = None,
+        precision: Precision | None = None,
         bitrate=None,
-    ):
-        return Tcl.call(
+    ) -> Sound:
+        Tcl.call(
             None,
-            self._name,
+            self,
             "configure",
             *Tcl.to_tcl_args(
                 buffersize=buffer_size,
@@ -513,17 +528,18 @@ class Sound:
                 rate=bitrate,
             ),
         )
+        return self
 
     @property
     def length(self) -> float:
-        return TimeConstructor.from_secs(Tcl.call(float, self._name, "length", "-unit", "seconds"))
+        return TimeConstructor.from_secs(Tcl.call(float, self, "length", "-unit", "seconds"))
 
     @length.setter
     def length(self, new_length: float) -> None:
         if isinstance(new_length, Time):
             new_length = new_length.total_seconds
 
-        Tcl.call(None, self._name, "length", new_length, "-unit", "seconds")
+        Tcl.call(None, self, "length", new_length, "-unit", "seconds")
 
     @property
     def bitrate(self) -> int:
@@ -562,15 +578,15 @@ class Sound:
         return self._get(str, "precision")
 
     @precision.setter
-    def precision(self, new_precision: str) -> None:
+    def precision(self, new_precision: Precision) -> None:
         return self.config(encoding=new_precision)
 
 
 class SoundSection:
-    def __init__(self, sound, slice_arg):
+    def __init__(self, sound: Sound, slice_arg: slice, /) -> None:
         self._name = sound._name
         self._sound = sound
-        bitrate = Tcl.call(int, self._name, "cget", "-rate")
+        bitrate = Tcl.call(int, self, "cget", "-rate")
 
         start, end = slice_arg.start, slice_arg.stop
 
@@ -582,8 +598,9 @@ class SoundSection:
 
         if start in {None, ...}:
             start = 0
+
         if end in {None, ...}:
-            end = Tcl.call(int, self._name, "length") - 1
+            end = Tcl.call(int, self, "length") - 1
 
         self.start, self.end = start, end
         self.length = Time(seconds=end / bitrate - start / bitrate)
@@ -591,12 +608,12 @@ class SoundSection:
     def play(
         self,
         *,
-        after=None,
-        block=None,
+        after: int | Time | None = None,
+        block: bool | None = None,
         on_end: Callable = None,
-        output=None,
-        repeat=False,
-    ):
+        output: str | None = None,
+        repeat: bool = False,
+    ) -> SoundSection:
         if after is not None:
             after *= 1000
 
@@ -604,7 +621,7 @@ class SoundSection:
 
         Tcl.call(
             None,
-            self._name,
+            self,
             "play",
             *Tcl.to_tcl_args(
                 blocking=block,
@@ -616,80 +633,96 @@ class SoundSection:
                 starttime=after,
             ),
         )
+        return self
 
-    def save(self, file_name: str | Path, format: str = None, *, byteorder: str = None) -> None:
+    def save(
+        self,
+        file_name: str | Path,
+        format: str | Format | None = None,
+        *,
+        byteorder: ByteOrder | None = None,
+    ) -> SoundSection:
         Tcl.call(
             None,
-            self._name,
+            self,
             "write",
             file_name,
             *Tcl.to_tcl_args(
                 start=self.start, end=self.end, byteorder=byteorder, fileformat=format
             ),
         )
+        return self
 
     @property
-    def detached(self):
+    def detached(self) -> Sound:
         new_sound = Sound()
         Tcl.call(
             None,
-            new_sound._name,
+            new_sound,
             "copy",
-            self._name,
+            self,
             *Tcl.to_tcl_args(start=self.start, end=self.end),
         )
         return new_sound
 
-    def apply_filter(self, filter: BaseFilter) -> Sound:
+    def filter(self, filter_: Filter, /) -> SoundSection:
         Tcl.call(
             None,
-            self._name,
+            self,
             "filter",
-            filter._name,
+            filter_,
             *Tcl.to_tcl_args(start=self.start, end=self.end),
         )
-        return self._sound
+        return self
 
-    __imatmul__ = apply_filter
+    __imatmul__ = filter
 
-    def crop(self):
-        Tcl.call(None, self._name, "crop", self.start, self.end)
-        return self._sound
+    def crop(self) -> SoundSection:
+        Tcl.call(None, self, "crop", self.start, self.end)
+        return self
 
-    def cut(self):
-        Tcl.call(None, self._name, "cut", self.start, self.end)
-        return self._sound
+    def cut(self) -> SoundSection:
+        Tcl.call(None, self, "cut", self.start, self.end)
+        return self
 
-    def reverse(self):
-        Tcl.call(None, self._name, "reverse", *Tcl.to_tcl_args(start=self.start, end=self.end))
-        return self._sound
+    def reverse(self) -> SoundSection:
+        Tcl.call(None, self, "reverse", *Tcl.to_tcl_args(start=self.start, end=self.end))
+        return self
+
+    __reversed__ = reverse
 
     def get_pitch(
         self,
-        method="amdf",
+        method: PitchMethod = PitchMethod.AMDF,
         *,
-        frame_length=None,
-        window_length=None,
-        max=None,
-        min=None,
-    ):
-        args = Tcl.to_tcl_args(
-            end=self.end,
-            framelength=frame_length,
-            maxpitch=max,
-            minpitch=min,
-            start=self.start,
-            windowlength=window_length,
+        frame_length: float | None = None,
+        window_length: float | None = None,
+        max: float | None = None,
+        min: float | None = None,
+    ) -> list[float] | list[tuple[float, float, float, float]]:
+        if method is PitchMethod.AMDF:
+            return_type = [float]
+        elif method is PitchMethod.ESPS:
+            return_type = [(float,)]
+
+        return Tcl.call(
+            return_type,
+            self,
+            "pitch",
+            "-method",
+            method,
+            *Tcl.to_tcl_args(
+                end=self.end,
+                framelength=frame_length,
+                maxpitch=max,
+                minpitch=min,
+                start=self.start,
+                windowlength=window_length,
+            ),
         )
 
-        if method == "amdf":
-            return Tcl.call([float], self._name, "pitch", "-method", "amdf", *args)
-        elif method == "esps":
-            return Tcl.call([(float,)], self._name, "pitch", "-method", "esps", *args)
-        else:
-            raise ValueError(f"invalid pitch method: {method}. Should be either 'amdf' or 'esps'")
 
-
+### AudioDevice ###
 class _AudioDevice:
     _current_input = "default"
     _current_output = "default"
