@@ -279,7 +279,7 @@ class Time:
         time_values = [self.hours, self.minutes, self.seconds]
         if not time_values[0]:
             del time_values[0]
-            
+
         return f"Time[{':'.join(map(str, time_values))}]"
 
     @property

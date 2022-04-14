@@ -1,1 +1,1 @@
-from .audio import Device, ByteOrder, Encoding, Filter, Format, Precision, Sound
+from .audio import ByteOrder, Device, Encoding, Filter, Format, PitchMethod, Precision, Sound
