@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import namedtuple
 from pathlib import Path
-from typing import Type
 
 from ._tcl import Tcl
 from ._utils import _fonts, counts, seq_pairs
@@ -65,7 +64,7 @@ class FontMetadata(namedtuple("FontMetadata", font_props)):
             if property_ not in result:
                 result[property_] = None
 
-        return super(FontMetadata, cls).__new__(cls, **result)
+        return super().__new__(cls, **result)
 
     def __init__(self, owner: Font) -> None:
         self.owner = owner
@@ -167,7 +166,7 @@ class Font:
     def __from_tcl__(cls, tcl_value: str) -> Font:
         return _fonts[tcl_value]
 
-    def _get(self, type_spec: Type[int] | Type[str] | Type[bool], option: str) -> int | str | bool:
+    def _get(self, type_spec: type[int] | type[str] | type[bool], option: str) -> int | str | bool:
         return Tcl.call(type_spec, "font", "actual", self, f"-{option}")
 
     def _set(self, option: str, value: int | str | bool) -> None:

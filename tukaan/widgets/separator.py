@@ -1,16 +1,16 @@
-from typing import Literal, Optional
+from __future__ import annotations
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, OutputDisplayWidget, TkWidget
 
 
-class Separator(BaseWidget):
+class Separator(BaseWidget, OutputDisplayWidget):
     _tcl_class = "ttk::separator"
     _keys = {"orientation": (str, "orient")}
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
-        orientation: Optional[Literal["horizontal", "vertical"]] = None,
+        parent: TkWidget | None,
+        orientation: str | None = None,
     ) -> None:
         BaseWidget.__init__(self, parent, orient=orientation)
 

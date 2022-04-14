@@ -1,12 +1,14 @@
-from typing import Callable, Optional
+from __future__ import annotations
+
+from typing import Callable
 
 from tukaan._tcl import Tcl
 from tukaan._variables import Boolean, _TclVariable
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget
 
 
-class CheckBox(BaseWidget):
+class CheckBox(BaseWidget, InputControlWidget):
     """To turn it on or off you have to use a control variable"""
 
     _tcl_class = "ttk::checkbutton"
@@ -21,15 +23,16 @@ class CheckBox(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
-        focusable: Optional[bool] = None,
-        on_click: Optional[Callable] = None,
-        style: Optional[str] = None,
-        text: Optional[str] = None,
-        underline: Optional[int] = None,
+        parent: TkWidget | None,
+        *,
+        focusable: bool | None = None,
+        on_click: Callable | None = None,
+        style: str | None = None,
+        text: str | None = None,
+        underline: int | None = None,
         value: bool = False,
-        variable: Optional[_TclVariable] = None,
-        width: Optional[int] = None,
+        variable: _TclVariable | None = None,
+        width: int | None = None,
     ) -> None:
         if variable is None:
             self._variable = variable = Boolean(value)

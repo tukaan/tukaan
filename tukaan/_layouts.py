@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, Literal, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Union
 
 if TYPE_CHECKING:
     from ._base import BaseWidget, TkWidget
@@ -11,11 +11,11 @@ from ._tcl import Tcl
 from ._units import ScreenDistance
 from .exceptions import CellNotFoundError, LayoutError
 
-HorAlignAlias = Optional[Literal["left", "right", "stretch"]]
+HorAlignAlias = Optional[str]
 MrgnAlias = Optional[Union[int, Tuple[int, ...]]]
 ScrDstAlias = Optional[Union[int, str, ScreenDistance]]
 ScrDstRtrnAlias = Dict[str, Union[float, ScreenDistance]]
-VertAlignAlias = Optional[Literal["bottom", "stretch", "top"]]
+VertAlignAlias = Optional[str]
 
 
 class StickyValues(Enum):
@@ -131,13 +131,13 @@ class Grid:
     def grid(
         self,
         align: tuple[HorAlignAlias, VertAlignAlias] | HorAlignAlias | VertAlignAlias = None,
-        cell: Optional[str] = None,
-        col: Optional[int] = 0,
-        colspan: Optional[int] = None,
+        cell: str | None = None,
+        col: int | None = 0,
+        colspan: int | None = None,
         hor_align: HorAlignAlias = None,
         margin: MrgnAlias = None,
-        row: Optional[int] = 0,
-        rowspan: Optional[int] = None,
+        row: int | None = 0,
+        rowspan: int | None = None,
         vert_align: VertAlignAlias = None,
     ) -> None:
         padx, pady = self._parse_margin(margin)
@@ -388,7 +388,7 @@ class Position:
         self._set_lm_properties("place", "height", new_height)
 
 
-class BaseLayoutManager(GridCells, GridTemplates):
+class ContainerLayoutManager(GridCells, GridTemplates):
     def __init__(self, widget):
         self._widget = widget
         self._cell_managed_children = {}
@@ -397,7 +397,7 @@ class BaseLayoutManager(GridCells, GridTemplates):
         self._col_template = ()
 
 
-class LayoutManager(BaseLayoutManager, Grid, Position):
+class PackableLayoutManager(ContainerLayoutManager, Grid, Position):
     _real_manager: str
     _cell_managed_children: dict[BaseWidget, str]
     _widget: BaseWidget
@@ -413,7 +413,7 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
         return result
 
     @manager.setter
-    def manager(self, new_manager: Literal["grid", "position"]) -> None:
+    def manager(self, new_manager: str) -> None:
         try:
             self.remove()
             getattr(self, new_manager)()  # lol
@@ -446,7 +446,7 @@ class LayoutManager(BaseLayoutManager, Grid, Position):
                     raise TypeError(f"move() got an unexpected keyword argument {key!r}")
                 setattr(self, key, value)
 
-    def _config(self, _lm: Literal["grid", "place"] = None, **kwargs) -> None:
+    def _config(self, _lm: str | None = None, **kwargs) -> None:
         if _lm is None:
             _lm = self._get_manager()
         self._real_manager = _lm

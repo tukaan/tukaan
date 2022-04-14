@@ -27,6 +27,7 @@ from ._structures import cmyk, hex, hsl, hsv, rgb
 from ._timeouts import Timeout, Timer
 from ._units import MemoryUnit, ScreenDistance
 from ._variables import Boolean, Float, Integer, String
+from .data import TabStop
 from .widgets.button import Button
 from .widgets.checkbox import CheckBox
 from .widgets.combobox import ComboBox
@@ -35,7 +36,7 @@ from .widgets.frame import Frame
 from .widgets.label import Label
 from .widgets.progressbar import ProgressBar
 from .widgets.radiobutton import RadioButton, RadioGroup
-from .widgets.scrollbar import Scrollbar
+from .widgets.scrollbar import ScrollBar
 from .widgets.separator import Separator
 from .widgets.slider import Slider
 from .widgets.spinbox import SpinBox

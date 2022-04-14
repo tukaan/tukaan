@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import Iterable, Optional
+from typing import Iterable
 
 from tukaan._structures import Bbox, Color
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TclError
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget, XScrollable
 
 
-class Entry(BaseWidget):
+class Entry(BaseWidget, InputControlWidget, XScrollable):
     _tcl_class = "ttk::entry"
     _keys = {
         "fg_color": (Color, "foreground"),
@@ -26,17 +26,17 @@ class Entry(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: TkWidget | None,
         *,
-        fg_color: Optional[str | Color] = None,
-        focusable: Optional[bool] = None,
+        fg_color: str | Color | None = None,
+        focusable: bool | None = None,
         hide_chars: bool = False,
-        hide_chars_with: Optional[str] = "•",
-        justify: Optional[str] = None,
-        style: Optional[str] = None,
-        user_edit: Optional[bool] = True,
-        value: Optional[str] = None,
-        width: Optional[int] = None,
+        hide_chars_with: str | None = "•",
+        justify: str | None = None,
+        style: str | None = None,
+        user_edit: bool | None = True,
+        value: str | None = None,
+        width: int | None = None,
     ) -> None:
 
         self._prev_show_char = hide_chars_with
@@ -138,6 +138,3 @@ class Entry(BaseWidget):
             Tcl.call((int,), self, "selection", "range", start, end)
         elif new_range is None:
             Tcl.call((int,), self, "selection", "clear")
-
-    def x_scroll(self, *args) -> None:
-        Tcl.call(None, self, "xview", *args)

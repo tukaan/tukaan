@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Any, Callable
 
 from tukaan._tcl import Tcl
 from tukaan._variables import String, _TclVariable
 
-from ._base import Any, BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget
 from .frame import Frame
 
 
-class RadioButton(BaseWidget):
+class RadioButton(BaseWidget, InputControlWidget):
     _tcl_class = "ttk::radiobutton"
     _keys = {
         "focusable": (bool, "takefocus"),
@@ -24,16 +24,16 @@ class RadioButton(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
-        text: Optional[str] = None,
-        value: Optional[Any] = None,
-        variable: Optional[_TclVariable] = None,
+        parent: TkWidget | None,
+        text: str | None = None,
+        value: Any | None = None,
+        variable: _TclVariable | None = None,
         *,
-        focusable: Optional[bool] = None,
-        on_click: Optional[Callable] = None,
-        style: Optional[str] = None,
-        underline: Optional[int] = None,
-        width: Optional[int] = None,
+        focusable: bool | None = None,
+        on_click: Callable | None = None,
+        style: str | None = None,
+        underline: int | None = None,
+        width: int | None = None,
     ) -> None:
         BaseWidget.__init__(
             self,
@@ -59,15 +59,15 @@ class RadioButton(BaseWidget):
         return self.variable.get() == self.value
 
 
-class RadioGroup(Frame):
+class RadioGroup(Frame, InputControlWidget):
     _keys = {}
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: TkWidget | None = None,
         *,
         items: dict[str, str],
-        padding: Optional[int | tuple[int, ...]] = None,
+        padding: int | tuple[int, ...] | None = None,
     ) -> None:
         Frame.__init__(self, parent, padding=padding)
 

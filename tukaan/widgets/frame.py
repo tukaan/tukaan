@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from tukaan._helpers import convert_4side, convert_4side_back
 from tukaan._tcl import Tcl
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, ContainerWidget, TkWidget
 
 
-class Frame(BaseWidget):
+class Frame(BaseWidget, ContainerWidget):
     _tcl_class = "ttk::frame"
     _keys = {}
 
     def __init__(
-        self, parent: Optional[TkWidget] = None, padding: Optional[int | tuple[int, ...]] = None
+        self, parent: TkWidget | None, padding: int | tuple[int, ...] | None = None
     ) -> None:
         BaseWidget.__init__(self, parent, padding=convert_4side(padding))
 

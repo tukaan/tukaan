@@ -3,7 +3,6 @@ from __future__ import annotations
 import collections
 import collections.abc
 import itertools
-from inspect import isclass
 from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
 from ._info import System
@@ -79,53 +78,9 @@ def linux_only(func):
 flatten = itertools.chain.from_iterable
 
 
-def reversed_dict(dictionary: dict) -> dict:
+def reversed_dict(dictionary: dict, /) -> dict:
     return {value: key for key, value in dictionary.items()}
 
 
-def seq_pairs(sequence):
+def seq_pairs(sequence, /):
     return zip(sequence[0::2], sequence[1::2])
-
-
-class ClassPropertyDescriptor:
-    # Source: https://stackoverflow.com/a/5191224
-    def __init__(self, fget, fset=None):
-        self.fget = fget
-        self.fset = fset
-
-    def __get__(self, obj, owner: object | None = None):
-        return self.fget.__get__(obj, owner or type(obj))()
-
-    def __set__(self, obj, value):
-        if not self.fset:
-            raise AttributeError("can't set attribute")
-        if isclass(obj):
-            type_ = obj
-            obj = None
-        else:
-            type_ = type(obj)
-        return self.fset.__get__(obj, type_)(value)
-
-    def setter(self, func: Callable | classmethod) -> ClassPropertyDescriptor:
-        if not isinstance(func, classmethod):
-            func = classmethod(func)
-        self.fset = func
-        return self
-
-
-class ClassPropertyMetaClass(type):
-    def __setattr__(self, key: str, value: Any):
-        if key in self.__dict__:
-            obj = self.__dict__.get(key)
-
-            if obj and type(obj) is ClassPropertyDescriptor:
-                return obj.__set__(self, value)
-
-        return super(ClassPropertyMetaClass, self).__setattr__(key, value)
-
-
-def classproperty(func: Callable | classmethod) -> ClassPropertyDescriptor:
-    if not isinstance(func, classmethod):
-        func = classmethod(func)
-
-    return ClassPropertyDescriptor(func)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Callable
 
 from tukaan._enums import ImagePosition
 from tukaan._helpers import convert_4side, convert_4side_back
@@ -8,7 +8,7 @@ from tukaan._images import Icon, Image, _image_converter_class
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TclError
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, ContainerWidget, TkWidget
 from .frame import Frame
 
 
@@ -22,13 +22,13 @@ class Tab(Frame):
 
     def __init__(
         self,
-        title: Optional[str] = None,
+        title: str | None = None,
         *,
-        icon: Optional[Icon | Image] = None,
+        icon: Icon | Image | None = None,
         image_pos: ImagePosition = ImagePosition.Left,
-        margin: Optional[int | tuple[int, ...]] = None,
-        padding: Optional[int | tuple[int, ...]] = None,
-        underline: Optional[int] = None,
+        margin: int | tuple[int, ...] | None = None,
+        padding: int | tuple[int, ...] | None = None,
+        underline: int | None = None,
     ):
         Frame.__init__(self, self._widget, padding=padding)
 
@@ -116,13 +116,13 @@ class Tab(Frame):
         return self._set(state="normal" if is_enabled else "disabled")
 
 
-class TabView(BaseWidget):
+class TabView(BaseWidget, ContainerWidget):
     _tcl_class = "ttk::notebook"
     _keys = {
         "focusable": (bool, "takefocus"),
     }
 
-    def __init__(self, parent: Optional[TkWidget] = None, focusable: Optional[bool] = None) -> None:
+    def __init__(self, parent: TkWidget | None, *, focusable: bool | None = None) -> None:
         BaseWidget.__init__(self, parent, takefocus=focusable)
 
         self.Tab = Tab

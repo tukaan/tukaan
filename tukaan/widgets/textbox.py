@@ -4,7 +4,7 @@ import warnings
 from collections import abc, namedtuple
 from functools import partialmethod
 from pathlib import Path
-from typing import Any, Iterator, Optional, Type
+from typing import Any, Iterator
 
 import _tkinter as tk
 from PIL import Image  # type: ignore
@@ -15,15 +15,41 @@ from tukaan._images import Icon
 from tukaan._structures import Color
 from tukaan._tcl import Tcl
 from tukaan._units import ScreenDistance
-from tukaan._utils import _images, _text_tags, counts
+from tukaan._utils import _images, _text_tags, counts, seq_pairs
 from tukaan._variables import Integer
+from tukaan.data import TabStop
 from tukaan.exceptions import TclError
 
-from ._base import BaseWidget, GetSetAttrMixin, TkWidget
-from .scrollbar import Scrollbar
+from ._base import (
+    BaseWidget,
+    GetSetAttrMixin,
+    InputControlWidget,
+    OutputDisplayWidget,
+    TkWidget,
+    XScrollable,
+    YScrollable,
+)
+from .frame import Frame
+from .scrollbar import ScrollBar
 
 
-class Tag(GetSetAttrMixin):
+class _TabStopsProperty:
+    @property
+    def tab_stops(self) -> list[TabStop]:
+        result = []
+        for pos, align in seq_pairs(self._get([str], "tabs")):
+            result.append(TabStop(pos, align))
+        return result
+
+    @tab_stops.setter
+    def tab_stops(self, tab_stops: TabStop | list[TabStop]) -> None:
+        if not isinstance(tab_stops, (list, tuple)):
+            tab_stops = (tab_stops,)
+
+        self._set(tabs=[y for x in tab_stops for y in x.__to_tcl__()])
+
+
+class Tag(GetSetAttrMixin, _TabStopsProperty):
     _widget: TextBox
     _keys = {
         "bg_color": (Color, "background"),
@@ -42,7 +68,6 @@ class Tag(GetSetAttrMixin):
         "space_before_paragraph": (ScreenDistance, "spacing1"),
         "space_before_wrapped_line": (ScreenDistance, "spacing2"),
         "strikethrough_color": (Color, "overstrikefg"),
-        "tab_stops": (str, "tabs"),
         "tab_style": (str, "tabstyle"),
         "underline_color": (Color, "underlinefg"),
         "wrap": Wrap,
@@ -52,26 +77,26 @@ class Tag(GetSetAttrMixin):
         self,
         _name: str = None,
         *,
-        bg_color: Optional[Color] = None,
-        fg_color: Optional[Color] = None,
-        first_line_margin: Optional[int | ScreenDistance] = None,
-        font: Optional[Font] = None,
-        hanging_line_margin: Optional[int | ScreenDistance] = None,
-        hidden: Optional[bool] = None,
-        justify: Optional[str] = None,
-        offset: Optional[int | ScreenDistance] = None,
-        right_margin: Optional[int | ScreenDistance] = None,
-        right_margin_bg: Optional[Color] = None,
-        selection_bg: Optional[Color] = None,
-        selection_fg: Optional[Color] = None,
-        space_after_paragraph: Optional[int | ScreenDistance] = None,
-        space_before_paragraph: Optional[int | ScreenDistance] = None,
-        space_before_wrapped_line: Optional[int | ScreenDistance] = None,
-        strikethrough_color: Optional[Color] = None,
-        tab_stops: Optional[tuple[str | int, ...]] = None,
-        tab_style: Optional[str] = None,
-        underline_color: Optional[Color] = None,
-        wrap: Optional[Wrap] = None,
+        bg_color: Color | None = None,
+        fg_color: Color | None = None,
+        first_line_margin: int | ScreenDistance | None = None,
+        font: Font | None = None,
+        hanging_line_margin: int | ScreenDistance | None = None,
+        hidden: bool | None = None,
+        justify: str | None = None,
+        offset: int | ScreenDistance | None = None,
+        right_margin: int | ScreenDistance | None = None,
+        right_margin_bg: Color | None = None,
+        selection_bg: Color | None = None,
+        selection_fg: Color | None = None,
+        space_after_paragraph: int | ScreenDistance | None = None,
+        space_before_paragraph: int | ScreenDistance | None = None,
+        space_before_wrapped_line: int | ScreenDistance | None = None,
+        strikethrough_color: Color | None = None,
+        tab_stops: TabStop | list[TabStop] | tuple[TabStop] | None = None,
+        tab_style: str | None = None,
+        underline_color: Color | None = None,
+        wrap: Wrap | None = None,
     ) -> None:
         self._name = _name or f"{self._widget._name}:tag_{next(counts['textbox_tag'])}"
         _text_tags[self._name] = self
@@ -95,11 +120,11 @@ class Tag(GetSetAttrMixin):
             spacing1=space_before_paragraph,
             spacing2=space_before_wrapped_line,
             spacing3=space_after_paragraph,
-            tabs=tab_stops,
             tabstyle=tab_style,
             underlinefg=underline_color,
             wrap=wrap,
         )
+        self.tab_stops = tab_stops
 
     def __repr__(self) -> str:
         return f"<tukaan.TextBox.Tag named {self._name!r}>"
@@ -147,7 +172,7 @@ class Tag(GetSetAttrMixin):
             yield self._widget.range(start, end)
 
     def _prev_next_range(
-        self, direction: str, start: TextIndex, end: Optional[TextIndex] = None
+        self, direction: str, start: TextIndex, end: TextIndex | None = None
     ) -> None | TextRange:
         if end is None:
             end = {"prev": self._widget.start, "next": self._widget.end}[direction]
@@ -197,7 +222,7 @@ class TextIndex(namedtuple("TextIndex", ["line", "column"])):
             if (line, col) > tuple(cls._widget.end):
                 return cls._widget.end
 
-        return super(TextIndex, cls).__new__(cls, line, col)  # type: ignore
+        return super().__new__(cls, line, col)  # type: ignore
 
     def __to_tcl__(self) -> str:
         return f"{self.line}.{self.column}"
@@ -303,7 +328,7 @@ class TextRange(namedtuple("TextRange", ["start", "end"])):
         if stop is None:
             stop = cls._widget.end
 
-        return super(TextRange, cls).__new__(cls, start, stop)  # type: ignore
+        return super().__new__(cls, start, stop)  # type: ignore
 
     def get(self):
         return self._widget.get(self)
@@ -412,18 +437,12 @@ RangeInfo = namedtuple(
 )
 
 
-class _textbox_frame(BaseWidget):
-    _tcl_class = "ttk::frame"
-    _keys: dict[str, Any | tuple[Any, str]] = {}
-
-    def __init__(self, parent) -> None:
-        BaseWidget.__init__(self, parent)
-
-
-class TextBox(BaseWidget):
-    index: Type[TextIndex]
-    range: Type[TextRange]
-    Tag: Type[Tag]
+class TextBox(
+    BaseWidget, _TabStopsProperty, InputControlWidget, OutputDisplayWidget, XScrollable, YScrollable
+):
+    index: type[TextIndex]
+    range: type[TextRange]
+    Tag: type[Tag]
     marks: TextMarks
     history: TextHistory
 
@@ -449,62 +468,47 @@ class TextBox(BaseWidget):
         "space_after_paragraph": (ScreenDistance, "spacing3"),
         "space_before_paragraph": (ScreenDistance, "spacing1"),
         "space_before_wrapped_line": (ScreenDistance, "spacing2"),
-        "tab_stops": (str, "tabs"),
         "tab_style": (str, "tabstyle"),
         "track_history": (bool, "undo"),
         "width": ScreenDistance,
         "wrap": Wrap,
     }
     # TODO: padding cget, configure
-    # TODO: tab stops helper
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: TkWidget | None,
         *,
-        bg_color: Optional[Color] = None,
-        caret_color: Optional[Color] = None,
-        caret_offtime: Optional[int] = None,
-        caret_ontime: Optional[int] = None,
+        bg_color: Color | None = None,
+        caret_color: Color | None = None,
+        caret_offtime: int | None = None,
+        caret_ontime: int | None = None,
         caret_style: str = CaretStyle.Beam,
-        caret_width: Optional[int | ScreenDistance] = None,
-        fg_color: Optional[Color] = None,
-        focusable: Optional[bool] = None,
-        font: Optional[Font] = None,
-        height: Optional[int | ScreenDistance] = None,
-        inactive_caret_style: Optional[str] = None,
-        inactive_selection_bg: Optional[Color] = None,
+        caret_width: int | ScreenDistance | None = None,
+        fg_color: Color | None = None,
+        focusable: bool | None = None,
+        font: Font | None = None,
+        height: int | ScreenDistance | None = None,
+        inactive_caret_style: str | None = None,
+        inactive_selection_bg: Color | None = None,
         overflow: tuple[bool | str, bool | str] = ("auto", "auto"),
-        padding: Optional[int | tuple[int] | tuple[int, int]] = None,
-        resize_along_chars: Optional[bool] = None,
-        selection_bg: Optional[Color] = None,
-        selection_fg: Optional[Color] = None,
-        space_after_paragraph: Optional[int | ScreenDistance] = None,
-        space_before_paragraph: Optional[int | ScreenDistance] = None,
-        space_before_wrapped_line: Optional[int | ScreenDistance] = None,
-        tab_stops: Optional[tuple[str | int, ...]] = None,
-        tab_style: Optional[str] = None,
-        track_history: Optional[bool] = None,
-        width: Optional[int | ScreenDistance] = None,
-        wrap: Optional[Wrap] = None,
-        _peer_of: Optional[TextBox] = None,
+        padding: int | tuple[int] | tuple[int, int] | None = None,
+        resize_along_chars: bool | None = None,
+        selection_bg: Color | None = None,
+        selection_fg: Color | None = None,
+        space_after_paragraph: int | ScreenDistance | None = None,
+        space_before_paragraph: int | ScreenDistance | None = None,
+        space_before_wrapped_line: int | ScreenDistance | None = None,
+        tab_stops: TabStop | list[TabStop] | None = None,
+        tab_style: str | None = None,
+        track_history: bool | None = None,
+        width: int | ScreenDistance | None = None,
+        wrap: Wrap | None = None,
+        _peer_of: TextBox | None = None,
     ) -> None:
 
         if not font:
             font = Font("TkFixedFont")
-
-        padx = pady = None
-        if padding is not None:
-            if isinstance(padding, int):
-                padx = pady = padding
-            elif len(padding) == 1:
-                padx = pady = padding[0]
-            elif len(padding) == 2:
-                padx, pady = padding
-            else:
-                raise ValueError(
-                    "unfortunately 4 side paddings aren't supported for TextBox padding"
-                )
 
         if caret_offtime is not None:
             caret_offtime = int(caret_offtime * 1000)
@@ -529,15 +533,12 @@ class TextBox(BaseWidget):
             "insertontime": caret_ontime,
             "insertunfocussed": inactive_caret_style,
             "insertwidth": caret_width,
-            "padx": padx,
-            "pady": pady,
             "selectbackground": selection_bg,
             "selectforeground": selection_fg,
             "setgrid": resize_along_chars,
             "spacing1": space_before_paragraph,
             "spacing2": space_before_wrapped_line,
             "spacing3": space_after_paragraph,
-            "tabs": tab_stops,
             "tabstyle": tab_style,
             "takefocus": focusable,
             "undo": track_history,
@@ -546,13 +547,16 @@ class TextBox(BaseWidget):
         }
 
         if _peer_of is None:
-            self._frame = _textbox_frame(parent)
+            self._frame = Frame(parent)
             BaseWidget.__init__(self, self._frame, None, **to_call)
         else:
-            self._frame = _textbox_frame(_peer_of._frame.parent)
+            self._frame = Frame(_peer_of._frame.parent)
             _name = f"{self._frame._name}.textbox_peer_{_peer_of.peer_count}_of_{_peer_of._name.split('.')[-1]}"
             BaseWidget.__init__(self, self._frame, (_peer_of, "peer", "create", _name), **to_call)
             self._name = _name
+
+        self.padding = padding
+        self.tab_stops = tab_stops
 
         self.peer_count: int = 0
 
@@ -576,12 +580,12 @@ class TextBox(BaseWidget):
         self.layout = self._frame.layout
 
     def _make_hor_scroll(self, hide: bool = True) -> None:
-        self._h_scroll = Scrollbar(self._frame, orientation="horizontal", auto_hide=hide)
+        self._h_scroll = ScrollBar(self._frame, orientation="horizontal", auto_hide=hide)
         self._h_scroll.attach(self)
         self._h_scroll.layout.grid(row=1, hor_align="stretch")
 
     def _make_vert_scroll(self, hide: bool = True) -> None:
-        self._v_scroll = Scrollbar(self._frame, orientation="vertical", auto_hide=hide)
+        self._v_scroll = ScrollBar(self._frame, orientation="vertical", auto_hide=hide)
         self._v_scroll.attach(self)
         self._v_scroll.layout.grid(col=1, vert_align="stretch")
 
@@ -603,21 +607,42 @@ class TextBox(BaseWidget):
         else:
             return "1.0", "end - 1 chars"
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.end.line
 
-    def __matmul__(self, index: tuple[int, int] | int | Icon | Image.Image | TkWidget):
+    def __matmul__(
+        self, index: tuple[int, int] | int | Icon | Image.Image | TkWidget
+    ) -> TextBox.index:
         return self.index(index)
 
-    def __contains__(self, text: str):
+    def __contains__(self, text: str) -> bool:
         return text in self.get()
 
-    def __getitem__(self, index: slice | tuple | TextBox.index):
+    def __getitem__(self, index: slice | tuple | TextBox.index) -> str:
         if isinstance(index, slice):
             return self.get(self.range(index))
         elif isinstance(index, (tuple, self.index)):
             return self.get(index)
-        raise TypeError("expected a tuple, a slice or a `TextBox.index` object")
+        raise TypeError("expected a tuple, a slice or a TextBox.index object")
+
+    @property
+    def padding(self):
+        return self._get(int, "padx"), self._get(int, "pady")
+
+    @padding.setter
+    def padding(self, new_padding: int | tuple[int, int] | list[int]) -> None:
+        padx = pady = None
+
+        if isinstance(new_padding, int):
+            padx = pady = new_padding
+        elif len(new_padding) == 1:
+            padx = pady = new_padding[0]
+        elif len(new_padding) == 2:
+            padx, pady = new_padding
+        else:
+            raise ValueError("4 side padding isn't supported for TextBox")
+
+        self._set(padx=padx, pady=pady)
 
     def Peer(self, **kwargs):
         if self.peer_of is None:
@@ -643,7 +668,7 @@ class TextBox(BaseWidget):
         self.marks["insert"] = new_pos
 
     @property
-    def mouse_index(self) -> TextIndex:
+    def mouse_pos(self) -> TextIndex:
         return self.index("current")
 
     def coord_to_index(self, x, y) -> TextIndex:
@@ -699,7 +724,7 @@ class TextBox(BaseWidget):
             to_call = ("window", "create", index, *Tcl.to_tcl_args(window=content, padx=padx, pady=pady, align=align, stretch=stretch))
             # fmt: on
         elif isinstance(content, Path):
-            with open(str(content.resolve())) as file:
+            with content.resolve().open() as file:
                 to_call = ("insert", index, file.read())
         else:
             to_call = ("insert", index, content)
@@ -714,7 +739,7 @@ class TextBox(BaseWidget):
     def get(self, *indexes) -> str:
         return Tcl.call(str, self, "get", *self._convert_indices_or_range_to_tcl(indexes))
 
-    def replace(self, *args, tag: Optional[Tag] = None) -> None:
+    def replace(self, *args, tag: Tag | None = None) -> None:
         if isinstance(args[0], TextRange) and isinstance(args[1], str):
             start, end = args[0]
             text = args[1]
@@ -788,12 +813,6 @@ class TextBox(BaseWidget):
 
     def scroll_to(self, index: TextIndex) -> None:
         Tcl.call(None, self, "see", index)
-
-    def x_scroll(self, *args) -> None:
-        Tcl.call(None, self, "xview", *args)
-
-    def y_scroll(self, *args) -> None:
-        Tcl.call(None, self, "yview", *args)
 
     @property
     def overflow(self) -> tuple[bool | str, bool | str]:

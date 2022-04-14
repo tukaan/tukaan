@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import Callable, Optional
+from typing import Callable
 
 from tukaan._structures import Color
 from tukaan._tcl import Tcl
@@ -30,23 +30,23 @@ class SpinBox(Entry):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
-        values: Optional[list[str | float] | tuple[str | float, ...] | range] = None,
+        parent: TkWidget | None,
+        values: list[str | float] | tuple[str | float, ...] | range | None = None,
         *,
-        cycle: Optional[bool] = None,
-        value: Optional[str | float] = None,
-        fg_color: Optional[str | Color] = None,
-        focusable: Optional[bool] = None,
-        hide_chars: Optional[bool] = False,
-        hide_chars_with: Optional[str] = "•",
-        increment: Optional[int] = None,
-        max: Optional[int] = None,
-        min: Optional[int] = None,
-        on_select: Optional[Callable] = None,
-        style: Optional[str] = None,
-        text_align: Optional[str] = None,
+        cycle: bool | None = None,
+        value: str | float | None = None,
+        fg_color: str | Color | None = None,
+        focusable: bool | None = None,
+        hide_chars: bool | None = False,
+        hide_chars_with: str | None = "•",
+        increment: int | None = None,
+        max: int | None = None,
+        min: int | None = None,
+        on_select: Callable | None = None,
+        style: str | None = None,
+        text_align: str | None = None,
         user_edit: bool = True,
-        width: Optional[int] = None,
+        width: int | None = None,
     ) -> None:
 
         self._prev_show_char = hide_chars_with

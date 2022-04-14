@@ -1,11 +1,11 @@
-from typing import Literal, Optional
+from __future__ import annotations
 
 from tukaan._tcl import Tcl
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget
 
 
-class Scrollbar(BaseWidget):
+class ScrollBar(BaseWidget, InputControlWidget):
     _tcl_class = "ttk::scrollbar"
     _keys = {
         "focusable": (bool, "takefocus"),
@@ -13,12 +13,15 @@ class Scrollbar(BaseWidget):
         "scrollcommand": ("func", "command"),
     }
 
+    _hidden = False
+
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
+        parent: TkWidget | None,
+        orientation: str | None = None,
+        *,
         auto_hide: bool = True,
-        focusable: Optional[bool] = None,
-        orientation: Optional[Literal["horizontal", "vertical"]] = None,
+        focusable: bool | None = None,
     ) -> None:
         self._auto_hide = auto_hide
 
@@ -48,12 +51,15 @@ class Scrollbar(BaseWidget):
                 )
             self.config(scrollcommand=widget.x_scroll)
 
-    def set(self, start: float, end: float) -> None:
+    def set(self, start: str, end: str) -> None:
         if self._auto_hide:
             if float(start) <= 0.0 and float(end) >= 1.0:
                 self.hide()
-            else:
+                self._hidden = True
+            elif self._hidden:
                 self.unhide()
+                self._hidden = False
+
         Tcl.call(None, self, "set", start, end)
 
     def get(self) -> None:

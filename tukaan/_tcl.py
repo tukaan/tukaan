@@ -6,11 +6,11 @@ import traceback
 from enum import Enum, EnumMeta
 from numbers import Real
 from pathlib import Path
-from typing import Any, Callable, Type
+from typing import Any, Callable
 
 import _tkinter as tk
 
-from ._utils import _commands, counts, flatten, seq_pairs
+from ._utils import _commands, counts, flatten, reversed_dict, seq_pairs
 from .exceptions import AppError, TclError
 
 _tcl_interp = None
@@ -42,12 +42,27 @@ class Tcl:
         return _tcl_interp
 
     @staticmethod
-    def from_(type_spec: Type[Any], value: str | tk.Tcl_obj) -> Any:
+    def to_tcl_args(**kwargs) -> tuple:
+        result = []
+
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+
+            if key.endswith("_"):
+                key = key.rstrip("_")
+
+            result.extend([f"-{key}", value])
+
+        return tuple(result)
+
+    @staticmethod
+    def from_(type_spec: type[Any], value: str | tk.Tcl_obj) -> Any:
         if type_spec is None:
             return None
 
         if type_spec is str:
-            return Tcl.get_str(value)
+            return Tcl.get_string(value)
 
         if type_spec is bool:
             if not Tcl.from_(str, value):
@@ -62,7 +77,7 @@ class Tcl:
             return type_spec.__from_tcl__(value)
 
         if isinstance(type_spec, (list, tuple, dict)):
-            items = Tcl.get_list(value)
+            items = Tcl.get_iterable(value)
 
             if isinstance(type_spec, list):
                 return [Tcl.from_(type_spec[0], item) for item in items]
@@ -127,7 +142,9 @@ class Tcl:
     @staticmethod
     def call(return_type: Any, *args) -> Any:
         try:
-            result = _tcl_interp.call(*map(Tcl.to, args))
+            _args = tuple(map(Tcl.to, args))
+            print(_args)  # TODO: remove
+            result = _tcl_interp.call(*_args)
             if return_type is None:
                 return
             return Tcl.from_(return_type, result)
@@ -157,6 +174,9 @@ class Tcl:
 
     @staticmethod
     def create_cmd(func: Callable, *, args=(), kwargs={}) -> str:
+        if func in _commands.values():
+            return reversed_dict(_commands)[func]
+
         name = f"tukaan_command_{next(counts['commands'])}"
         _commands[name] = func
 
@@ -183,25 +203,25 @@ class Tcl:
         return _tcl_interp.getboolean(obj)
 
     @staticmethod
-    def get_str(obj) -> str:
-        if isinstance(obj, str):
-            return obj
+    def get_string(value: str | tk.Tcl_obj) -> str:
+        if isinstance(value, str):
+            return value
 
-        if isinstance(obj, tk.Tcl_Obj):
-            return obj.string
+        if isinstance(value, tk.Tcl_Obj):
+            return value.string
 
-        return _tcl_interp.call("format", obj)
+        return _tcl_interp.call("format", value)
 
     @staticmethod
-    def get_number(type_spec: Type[int] | Type[float], value: str | tk.Tcl_obj) -> float | None:
-        if not Tcl.get_str(value):
+    def get_number(type_spec: type[int] | type[float], value: str | tk.Tcl_obj) -> float | None:
+        if not Tcl.get_string(value):
             return None
 
         return type_spec(_tcl_interp.getdouble(value))
 
     @staticmethod
-    def get_list(obj) -> tuple:
-        return _tcl_interp.splitlist(obj)
+    def get_iterable(value: str | tk.Tcl_obj) -> tuple:
+        return _tcl_interp.splitlist(value)
 
     @staticmethod
     def main_loop() -> None:
@@ -212,20 +232,6 @@ class Tcl:
         global _tcl_interp
         _tcl_interp.quit()
         _tcl_interp = None
-
-    def to_tcl_args(**kwargs) -> tuple:
-        result = []
-
-        for key, value in kwargs.items():
-            if value is None:
-                continue
-
-            if key.endswith("_"):
-                key = key.rstrip("_")
-
-            result.extend([f"-{key}", value])
-
-        return tuple(result)
 
     @staticmethod
     def updated(func: Callable) -> Callable:

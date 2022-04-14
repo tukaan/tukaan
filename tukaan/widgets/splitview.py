@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TclError
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, ContainerWidget, TkWidget
 from .frame import Frame
 
 
@@ -15,8 +13,8 @@ class Pane(Frame):
     def __init__(
         self,
         *,
-        padding: Optional[int | tuple[int, ...]] = None,
-        weight: Optional[int] = None,
+        padding: int | tuple[int, ...] | None = None,
+        weight: int | None = None,
     ):
         Frame.__init__(self, self._widget, padding=padding)
 
@@ -62,7 +60,7 @@ class Pane(Frame):
             pass
 
 
-class SplitView(BaseWidget):
+class SplitView(BaseWidget, ContainerWidget):
     _tcl_class = "ttk::panedwindow"
     _keys = {
         "focusable": (bool, "takefocus"),
@@ -70,9 +68,10 @@ class SplitView(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
-        focusable: Optional[bool] = None,
-        orientation: Optional[str] = None,
+        parent: TkWidget | None,
+        orientation: str | None = None,
+        *,
+        focusable: bool | None = None,
     ) -> None:
         BaseWidget.__init__(self, parent, takefocus=focusable, orient=orientation)
 

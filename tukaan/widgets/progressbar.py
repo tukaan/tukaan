@@ -1,12 +1,12 @@
-from typing import Literal, Optional
+from __future__ import annotations
 
 from tukaan._tcl import Tcl
 from tukaan._variables import Float
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, OutputDisplayWidget, TkWidget
 
 
-class ProgressBar(BaseWidget):
+class ProgressBar(BaseWidget, OutputDisplayWidget):
     _tcl_class = "ttk::progressbar"
     _keys = {
         "focusable": (bool, "takefocus"),
@@ -19,14 +19,14 @@ class ProgressBar(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
-        max: Optional[int] = 100,
+        parent: TkWidget | None,
+        max: int | None = 100,
         *,
-        focusable: Optional[bool] = None,
-        mode: Optional[Literal["determinate", "indeterminate"]] = None,
-        orientation: Optional[Literal["horizontal", "vertical"]] = None,
-        value: Optional[int] = None,
-        variable: Optional[Float] = None,
+        focusable: bool | None = None,
+        mode: str | None = None,
+        orientation: str | None = None,
+        value: int | None = None,
+        variable: Float | None = None,
     ) -> None:
         BaseWidget.__init__(
             self,

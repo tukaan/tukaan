@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from PIL import Image, UnidentifiedImageError  # type: ignore
 
@@ -64,7 +64,7 @@ class Event:
         0x100: "MouseButton:Left",
         0x80: "AltGr",
         0x40: "Super",
-        0x20: "idk",
+        0x20: "idk",  # TODO
         0x10: "NumLock",
         0x8: "Alt",
         0x4: "Control",
@@ -352,7 +352,7 @@ class DnDEvent(Event):
         "CF_RTFTEXT",
         "Rich Text Format",
         # tkdnd_unix.tcl
-        "text/plain\;charset=utf-8",
+        r"text/plain\;charset=utf-8",
         "UTF8_STRING",
         "text/plain",
         "text/rtf",
@@ -361,7 +361,7 @@ class DnDEvent(Event):
         "TEXT",
         "COMPOUND_TEXT",
         "text/uri-list",
-        "text/html\;charset=utf-8",
+        r"text/html\;charset=utf-8",
         "text/html",
         "application/x-color",
         # add more of these app-specific types?
@@ -552,12 +552,12 @@ class EventMixin:
             else:
                 script_str = f"{'' if overwrite else '+'} if {{[{cmd} {subst_str}] == 0}} break"  # tcl: {+ if {[command %subst] == 0} break}
 
-        Tcl.call(None, "bind", self._name if self._name == ".app" else ".", sequence, script_str)
+        Tcl.call(None, "bind", self._name if self._name != ".app" else ".", sequence, script_str)
 
     def bind(
         self,
         sequence: str,
-        func: str | Callable[[], Optional[bool]] | Callable[[Event], Optional[bool]],
+        func: str | Callable[[], bool | None] | Callable[[Event], bool | None],
         *,
         overwrite: bool = False,
         send_event: bool = False,
@@ -592,7 +592,7 @@ class EventMixin:
 
 
 def DragObject(
-    data: str | list | tuple | Path | Color, type_: Optional[str] = None, action: str = "copy"
+    data: str | list | tuple | Path | Color, type_: str | None = None, action: str = "copy"
 ) -> tuple[str, str, str]:
     if type_ is None:
         if isinstance(data, str):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Callable
 
 from PIL import Image  # type: ignore
 
@@ -8,10 +8,10 @@ from tukaan._enums import ImagePosition
 from tukaan._images import Icon, _image_converter_class
 from tukaan._tcl import Tcl
 
-from ._base import BaseWidget, TkWidget
+from ._base import BaseWidget, InputControlWidget, TkWidget
 
 
-class Button(BaseWidget):
+class Button(BaseWidget, InputControlWidget):
     _tcl_class = "ttk::button"
     _keys = {
         "default": str,
@@ -27,17 +27,17 @@ class Button(BaseWidget):
 
     def __init__(
         self,
-        parent: Optional[TkWidget] = None,
-        text: Optional[str] = None,
-        on_click: Optional[Callable] = None,
+        parent: TkWidget | None,
+        text: str | None = None,
+        on_click: Callable | None = None,
         *,
-        default: Optional[str] = None,
-        focusable: Optional[bool] = None,
-        image: Optional[Image.Image | Icon] = None,
-        image_pos: Optional[ImagePosition] = None,
-        style: Optional[str] = None,
-        underline: Optional[int] = None,
-        width: Optional[int] = None,
+        default: str | None = None,
+        focusable: bool | None = None,
+        image: Image.Image | Icon | None = None,
+        image_pos: ImagePosition | None = None,
+        style: str | None = None,
+        underline: int | None = None,
+        width: int | None = None,
     ) -> None:
         BaseWidget.__init__(
             self,
