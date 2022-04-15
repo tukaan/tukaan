@@ -221,7 +221,7 @@ class Font:
         self._set("overstrike", value)
 
     @property
-    def families(cls):
+    def families(cls) -> list[str]:
         return sorted(list(set(Tcl.call([str], "font", "families"))))  # set to remove duplicates
 
     def measure(self, text: str) -> int:

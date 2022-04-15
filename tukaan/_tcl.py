@@ -142,9 +142,7 @@ class Tcl:
     @staticmethod
     def call(return_type: Any, *args) -> Any:
         try:
-            _args = tuple(map(Tcl.to, args))
-            print(_args)  # TODO: remove
-            result = _tcl_interp.call(*_args)
+            result = _tcl_interp.call(*map(Tcl.to, args))
             if return_type is None:
                 return
             return Tcl.from_(return_type, result)

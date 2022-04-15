@@ -143,7 +143,7 @@ class Grid:
         padx, pady = self._parse_margin(margin)
 
         if align and not any((hor_align, vert_align)):
-            hor_align, vert_align = (align,) * 2  # type: ignore
+            hor_align, vert_align = align
         elif align:
             raise LayoutError("both align and hor_align and/or vert_align given")
 
@@ -206,7 +206,7 @@ class Grid:
         try:
             result = StickyValues((hor, vert)).name
             return result if result != "none" else ""
-        except KeyError:
+        except ValueError:
             raise LayoutError(f"invalid alignment value: {(hor, vert)}")
 
     def _get_sticky_values(self, key: str) -> tuple[HorAlignAlias, VertAlignAlias]:

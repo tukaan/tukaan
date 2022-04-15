@@ -4,3 +4,6 @@
 [submodule "tukaan/Snack"]
 	path = tukaan/Snack
 	url = https://github.com/tukaan/Snack
+[submodule "tukaan/Gttk"]
+	path = tukaan/Gttk
+	url = https://github.com/tukaan/Gttk

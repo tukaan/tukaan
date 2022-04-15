@@ -119,4 +119,4 @@ class RadioGroup(Frame, InputControlWidget):
         for index, (id, text) in enumerate(tuple(new_items.items())):
             radio = RadioButton(self, variable=self.variable, value=id, text=text)
             radio.item_id = id
-            radio.layout.grid(row=index)
+            radio.layout.grid(row=index, hor_align="left")
