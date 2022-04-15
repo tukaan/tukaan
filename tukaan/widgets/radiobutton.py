@@ -64,9 +64,9 @@ class RadioGroup(Frame, InputControlWidget):
 
     def __init__(
         self,
-        parent: TkWidget | None = None,
-        *,
+        parent: TkWidget | None,
         items: dict[str, str],
+        *,
         padding: int | tuple[int, ...] | None = None,
     ) -> None:
         Frame.__init__(self, parent, padding=padding)

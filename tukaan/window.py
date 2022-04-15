@@ -9,6 +9,8 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable
 
+from tukaan.themes import AquaTheme, ClamTheme, Theme, Win32Theme, native_theme
+
 from ._enums import BackdropEffect, Resizable
 from ._images import _image_converter_class
 from ._layouts import ContainerLayoutManager
@@ -657,6 +659,8 @@ class App(WindowMixin, TkWidget):
         self._init_tukaan_ext_pkg("Snack")
         self._init_tkdnd()
 
+        self.theme = native_theme()
+
         Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
 
     def __enter__(self):
@@ -699,12 +703,19 @@ class App(WindowMixin, TkWidget):
         return Tcl.call(int, "tk", "inactive") / 1000
 
     @property
-    def scaling(self) -> int:
-        return Tcl.call(int, "tk", "scaling", "-displayof", ".")
+    def theme(self) -> Theme | None:
+        theme = Tcl.call(str, "ttk::style", "theme", "use")
 
-    @scaling.setter
-    def scaling(self, factor: int) -> None:
-        Tcl.call(None, "tk", "scaling", "-displayof", ".", factor)
+        if theme in {"vista", "xpnative"}:
+            return Win32Theme
+        elif theme == "aqua":
+            return AquaTheme
+        elif theme == "clam":
+            return ClamTheme
+
+    @theme.setter
+    def theme(self, new_theme: Theme) -> None:
+        new_theme._use()
 
 
 class Window(WindowMixin, BaseWidget):
@@ -761,32 +772,10 @@ class _ConfigObject:
         else:
             warnings.warn("Config.focus_follows_mouse can't be disabled.")
 
-    @staticmethod
-    def _get_theme_aliases() -> dict[str, str]:
-        theme_dict = {"clam": "clam", "legacy": "default", "native": "clam"}
-        winsys = Tcl.windowing_system
-
-        if winsys == "win32":
-            theme_dict["native"] = "vista"
-        elif winsys == "aqua":
-            theme_dict["native"] = "aqua"
-
-        return theme_dict
-
     @property
-    def theme(self) -> str:
-        theme_dict = {"clam": "clam", "default": "legacy", "vista": "native", "aqua": "native"}
-        current = Tcl.call(str, "ttk::style", "theme", "use")
+    def scaling(self) -> int:
+        return Tcl.call(int, "tk", "scaling", "-displayof", ".")
 
-        try:
-            return theme_dict[current]
-        except KeyError:
-            return current
-
-    @theme.setter
-    def theme(self, theme) -> None:
-        aliases = self._get_theme_aliases()
-        if theme in aliases:
-            theme = aliases[theme]
-
-        Tcl.call(None, "ttk::style", "theme", "use", theme)
+    @scaling.setter
+    def scaling(self, factor: int) -> None:
+        Tcl.call(None, "tk", "scaling", "-displayof", ".", factor)
