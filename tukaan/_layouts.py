@@ -205,7 +205,7 @@ class Grid:
     def _parse_sticky_values(self, hor: HorAlignAlias, vert: VertAlignAlias) -> str:
         try:
             result = StickyValues((hor, vert)).name
-            return "" if result == "none" else result
+            return result if result != "none" else ""
         except KeyError:
             raise LayoutError(f"invalid alignment value: {(hor, vert)}")
 
