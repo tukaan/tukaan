@@ -9,6 +9,8 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any, Callable
 
+from tukaan.themes import AquaTheme, ClamTheme, Theme, Win32Theme, native_theme
+
 from ._enums import BackdropEffect, Resizable
 from ._images import _image_converter_class
 from ._layouts import ContainerLayoutManager
@@ -17,7 +19,6 @@ from ._tcl import Tcl
 from ._utils import _commands, windows_only
 from .exceptions import TclError
 from .widgets._base import BaseWidget, TkWidget
-from tukaan.themes import Theme, AquaTheme, Win32Theme, ClamTheme, native_theme
 
 
 class AccentPolicy(ctypes.Structure):
@@ -704,7 +705,7 @@ class App(WindowMixin, TkWidget):
     @property
     def theme(self) -> Theme | None:
         theme = Tcl.call(str, "ttk::style", "theme", "use")
-        
+
         if theme in {"vista", "xpnative"}:
             return Win32Theme
         elif theme == "aqua":

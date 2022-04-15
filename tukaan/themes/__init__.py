@@ -1,1 +1,1 @@
-from .themes import Theme, Win32Theme, AquaTheme, native_theme, ClamTheme
+from .themes import AquaTheme, ClamTheme, Theme, Win32Theme, native_theme

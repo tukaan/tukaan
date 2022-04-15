@@ -1,8 +1,8 @@
 from abc import ABC, abstractclassmethod
 
+from tukaan._info import System
 from tukaan._tcl import Tcl
 from tukaan._utils import mac_only, windows_only
-from tukaan._info import System
 
 
 class Theme(ABC):
@@ -10,10 +10,12 @@ class Theme(ABC):
     def _use(cls):
         pass
 
+
 class ClamTheme(Theme):
     @classmethod
     def _use(cls):
         Tcl.call(None, "ttk::style", "theme", "use", "clam")
+
 
 class Win32Theme(Theme):
     @classmethod
