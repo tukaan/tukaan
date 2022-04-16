@@ -18,6 +18,7 @@ from ._structures import Color, Position, Size
 from ._tcl import Tcl
 from ._utils import _commands, windows_only
 from .exceptions import TclError
+from .Serif import load_serif
 from .widgets._base import BaseWidget, TkWidget
 
 
@@ -655,9 +656,9 @@ class App(WindowMixin, TkWidget):
         Tcl.call(None, "bind", self._name, "<Unmap>", self._generate_state_event)
         Tcl.call(None, "bind", self._name, "<Configure>", self._generate_state_event)
 
-        self._init_tukaan_ext_pkg("Serif")
         self._init_tukaan_ext_pkg("Snack")
         self._init_tkdnd()
+        load_serif()
 
         self.theme = native_theme()
 

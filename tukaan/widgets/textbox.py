@@ -10,7 +10,6 @@ import _tkinter as tk
 from PIL import Image  # type: ignore
 
 from tukaan._enums import CaretStyle, InactiveCaretStyle, Wrap
-from tukaan._font import Font
 from tukaan._images import Icon
 from tukaan._structures import Color
 from tukaan._tcl import Tcl
@@ -19,6 +18,7 @@ from tukaan._utils import _images, _text_tags, counts, seq_pairs
 from tukaan._variables import Integer
 from tukaan.data import TabStop
 from tukaan.exceptions import TclError
+from tukaan.fonts import Font
 
 from ._base import (
     BaseWidget,
@@ -43,6 +43,9 @@ class _TabStopsProperty:
 
     @tab_stops.setter
     def tab_stops(self, tab_stops: TabStop | list[TabStop]) -> None:
+        if tab_stops is None:
+            return
+
         if not isinstance(tab_stops, (list, tuple)):
             tab_stops = (tab_stops,)
 
@@ -80,7 +83,7 @@ class Tag(GetSetAttrMixin, _TabStopsProperty):
         bg_color: Color | None = None,
         fg_color: Color | None = None,
         first_line_margin: int | ScreenDistance | None = None,
-        font: Font | None = None,
+        font: Font | tuple[str | int| bool] | None = None,
         hanging_line_margin: int | ScreenDistance | None = None,
         hidden: bool | None = None,
         justify: str | None = None,
@@ -487,7 +490,7 @@ class TextBox(
         caret_width: int | ScreenDistance | None = None,
         fg_color: Color | None = None,
         focusable: bool | None = None,
-        font: Font | None = None,
+        font: Font | tuple[str | int| bool] | None = None,
         height: int | ScreenDistance | None = None,
         inactive_caret_style: str | None = None,
         inactive_selection_bg: Color | None = None,
@@ -631,6 +634,9 @@ class TextBox(
 
     @padding.setter
     def padding(self, new_padding: int | tuple[int, int] | list[int]) -> None:
+        if new_padding is None:
+            return
+
         padx = pady = None
 
         if isinstance(new_padding, int):
