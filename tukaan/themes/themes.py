@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractclassmethod
 
+from tukaan._behaviour import classproperty, instanceclassmethod
 from tukaan._info import System
 from tukaan._tcl import Tcl
 from tukaan._utils import linux_only, mac_only, windows_only
@@ -32,31 +33,29 @@ class AquaTheme(Theme):
 
 
 class GtkTheme(Theme):
-    __theme = None
+    _theme = None
 
     def __init__(self, theme: str | None = None) -> None:
-        GtkTheme.__theme = theme
+        self._theme = theme
 
-    @classmethod
+    @instanceclassmethod
     @linux_only
-    def _use(cls) -> None:
+    def _use(self_or_cls) -> None:
         Tcl.call(None, "ttk::style", "theme", "use", "Gttk")
-        if not cls.__theme:
-            return
+        if self_or_cls._theme:
+            try:
+                Tcl.call(None, "ttk::theme::Gttk::setGtkTheme", self_or_cls._theme)
+            except TclError:
+                raise ThemeError(f"invalid GTK theme name: {self_or_cls._theme}")
 
-        try:
-            Tcl.call(None, "ttk::theme::Gttk::setGtkTheme", cls.__theme)
-        except TclError:
-            raise ThemeError(f"invalid GTK theme name: {cls.__theme}")
-
-    @classmethod
+    @classproperty
     @linux_only
-    def get_themes(cls) -> list[str]:
+    def themes(cls) -> list[str]:
         return sorted(Tcl.call([str], "ttk::theme::Gttk::availableGtkThemes"))
 
-    @classmethod
+    @classproperty
     @linux_only
-    def get_system_theme(cls) -> str:
+    def system_theme(cls) -> str:
         return Tcl.call(str, "ttk::theme::Gttk::currentThemeName")
 
 
