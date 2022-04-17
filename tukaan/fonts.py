@@ -3,7 +3,7 @@ from __future__ import annotations
 import struct
 from collections import namedtuple
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, Iterator
 
 from tukaan._tcl import Tcl
 from tukaan._utils import _fonts, counts, seq_pairs
@@ -51,9 +51,20 @@ preset_fonts = {
 }
 
 
-class FontInfo:
+class FontNameInfo:
+    """A class that parses the font file with the help of `struct.unpack`.
+
+    This is a pure Python implementation, although I translated it from Tcl.
+    """
+    
     @classmethod
     def get_from_file(cls, file_path: Path) -> list[dict[str, str]]:
+        """Gets info from the specified font file.
+        
+        Raises:
+            FontError: If the magic-tag in the file header can't be recognized.
+        """
+        
         fonts_info = []
 
         with file_path.open("rb") as file:
@@ -66,17 +77,31 @@ class FontInfo:
             elif magic_tag in {b"\x00\x01\x00\x00", b"OTTO", b"true", b"typ1"}:
                 fonts_info.append(cls.read_simple_font_file(file))
             else:
-                raise FontError(f"unrecognized magic-number for OpenType font: 0x{magic_tag.hex()}")
+                raise FontError(f"unrecognized magic-tag for OpenType font: 0x{magic_tag.hex()}")
 
         return fonts_info
 
     @staticmethod
     def read_ttc_header(file: BinaryIO) -> tuple[int, ...]:
+        """Parses the header of a TrueType collection font
+        in order to get the offsets of the contained subfamilies.
+
+        Returns:
+            A tuple with the offsets counted in bytes.
+
+        """
+        
         *_, num_fonts = struct.unpack(">HHI", file.read(8))
         return struct.unpack(f">{num_fonts}I", file.read(num_fonts * 4))
 
     @classmethod
     def read_simple_font_file(cls, file: BinaryIO) -> dict[str, str]:
+        """Reads a simple font file, or a subfamily of a TTC font.
+
+        Returns:
+            The name info of the font family.
+        """
+        
         num_tables, *_ = struct.unpack(">4H", file.read(8))
         for _ in range(num_tables):
             table_name, _, start, _ = struct.unpack(">4sL2I", file.read(16))
@@ -85,14 +110,20 @@ class FontInfo:
 
     @staticmethod
     def read_name_table(file: BinaryIO, start: float) -> dict[str, str]:
+        """Parses the name table of the font file.
+
+        Returns:
+             A dictionary with the field-value pairs.
+        """
+        
         file.seek(start)
         _, num_records, str_offset = struct.unpack(">HHH", file.read(6))
 
         records = []
         for _ in range(num_records):
             records.append(
-                struct.unpack(">6H", file.read(12))
-            )  # Each record is made of 6 unsigned short
+                struct.unpack(">6H", file.read(12))  # Each record is made of 6 unsigned short
+            )
 
         name_info = {}
         storage_start = start + str_offset
@@ -114,23 +145,38 @@ class FontInfo:
 
 
 class Serif:
-    loaded_fonts = {}
+    """Interface class between the Serif C extension and Python.
+
+    Attributes:
+        loaded_fonts: A dictionary that contains the path of the
+            loaded files along with the font families contained in them.
+    """
+    
+    loaded_fonts: dict[Path, list[str]] = {}
 
     @classmethod
     def load(cls, file_path: Path) -> list[str]:
+        """Loads a font file specified by `file_path`.
+        The file may contain multiple font families.
+        If the font file is already loaded, does nothing.
+
+        Returns:
+            A list of the font family names contained in the file.
+        """
+        
         if file_path in cls.loaded_fonts:
             return cls.loaded_fonts[file_path]
 
         Tcl.call(None, "Serif::load_fontfile", file_path)
 
-        info = FontInfo.get_from_file(file_path)
+        info = FontNameInfo.get_from_file(file_path)
         families = []
         for family in info:
             family_name = family["family"]
 
             if family_name is None:
                 raise FontError(
-                    f"invalid or missing metadata in font file: {file_path.resolve()!s}"
+                    f"invalid or missing info in font file: {file_path.resolve()!s}"
                 )
 
             families.append(family_name)
@@ -139,24 +185,44 @@ class Serif:
 
         return families, info
 
-    @staticmethod
-    def unload(file_path: Path) -> None:
-        Tcl.call(None, "Serif::unload_fontfile", file_path)
+    @classmethod
+    def unload(cls, file_path: Path) -> None:
+        """
+        Unloads a previously loaded font file specified by `file_path`.
+        If the file wasn't loaded, does nothing.
+        """
+        
+        if file_path in cls.loaded_fonts:
+            Tcl.call(None, "Serif::unload_fontfile", file_path)
 
     @classmethod
-    def cleanup(cls):
+    def cleanup(cls) -> None:
+        """Unloads all loaded fonts."""
+        
         for font in cls.loaded_fonts:
             cls.unload(font)
 
     @classmethod
-    def get_metadata(cls, file_path: Path):
+    def get_info(cls, file_path: Path) -> list[dict[str, str]]:
+        """Gets info from the specified font file. If it was
+        previously loaded with Serif.load, returns the cached info.
+        """
+        
         if file_path in cls.loaded_fonts:
             return cls.loaded_fonts[file_path]
-        return FontInfo.get_from_file(file_path)
+        return FontNameInfo.get_from_file(file_path)
 
 
-class FontMetadata(namedtuple("FontMetadata", nameID_order)):
-    def __iter__(self):
+class FontInfo(namedtuple("FontInfo", nameID_order)):
+    """Stores information about a font family"""
+    
+    def __iter__(self) -> Iterator[str, str]:
+        """Makes it possible to convert the FontInfo to a dictionary.
+
+        Yields:
+            The field-value pairs.
+        """
+        
         for key in nameID_order:
             yield key, getattr(self, key)
 
@@ -165,8 +231,16 @@ FontMetrics = namedtuple("FontMetrics", ["ascent", "descent", "line_spacing", "f
 
 
 class Font:
+    """A mutable font object, that can be linked to a Tukaan widget.
+
+    Attributes:
+        info: If the font was loaded from a file, this object gives access
+            to it's name information
+        path: If the font was loaded from a file, stores the filepath
+    """
+    
+    info: FontInfo | None = None
     path: Path | None = None
-    metadata: FontMetadata | None = None
 
     def __init__(
         self,
@@ -200,7 +274,7 @@ class Font:
             elif family not in families:
                 raise FontError(f"the family {family} can't be found in this font file")
 
-            self.metadata = FontMetadata(**info[families.index(family)])
+            self.info = FontInfo(**info[families.index(family)])
         elif not family:
             family = "TkDefaultFont"
 
@@ -281,6 +355,7 @@ class Font:
 
     @property
     def family(self) -> str:
+        """Gets or sets the current font family."""
         return self._get(str, "family")
 
     @family.setter
@@ -289,6 +364,7 @@ class Font:
 
     @property
     def size(self) -> int:
+        """Gets or sets the current font size."""
         return self._get(int, "size")
 
     @size.setter
@@ -297,6 +373,7 @@ class Font:
 
     @property
     def bold(self) -> bool:
+        """Gets or sets whether the font should be drawn as bold."""
         return self._get(str, "weight") == "bold"
 
     @bold.setter
@@ -305,6 +382,7 @@ class Font:
 
     @property
     def italic(self) -> bool:
+        """Gets or sets whether the font should be drawn as italic."""
         return self._get(str, "slant") == "italic"
 
     @italic.setter
@@ -313,6 +391,7 @@ class Font:
 
     @property
     def underline(self) -> bool:
+        """Gets or sets whether the font should have underlining."""
         return self._get(bool, "underline")
 
     @underline.setter
@@ -321,6 +400,7 @@ class Font:
 
     @property
     def strikethrough(self) -> bool:
+        """Gets or sets whether the font should be striked through."""
         return self._get(bool, "overstrike")
 
     @strikethrough.setter
@@ -328,14 +408,20 @@ class Font:
         self._set("overstrike", value)
 
     def delete(self) -> None:
+        """Deletes the Python as well as the Tcl font object.
+        The font won't be usable again, but the previous uses will be preserved.
+        """
         Tcl.call(None, "font", "delete", self._name)
         del _fonts[self._name]
 
-    def measure(self, text: str) -> int:
+    def measure(self, text: str, /) -> int:
+        """Measures, how wide the text would be with the current font family."""
         return Tcl.call(int, "font", "measure", self, text)
 
     @property
     def metrics(self) -> FontMetrics:
+        """Computes the metrics of the current font family."""
+        
         result = Tcl.call(
             {"-ascent": int, "-descent": int, "-linespace": int, "-fixed": bool},
             "font",
@@ -353,6 +439,12 @@ def font(
     underline: bool | None = None,
     strikethrough: bool | None = None,
 ) -> tuple[str, ...]:
+    """This function doesn't create a font object, just converts the
+    font description to a form understandable by Tcl.
+
+    >>> t = tukaan.TextBox(app, font=tukaan.font(bold=True))
+    """
+    
     weight = {None: None, True: "bold", False: "normal"}[bold]
     slant = {None: None, True: "italic", False: "roman"}[italic]
 
