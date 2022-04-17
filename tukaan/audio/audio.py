@@ -205,13 +205,13 @@ class Sound:
         file: Path | str | None = None,
         format: str | None = None,
         *,
-        bitrate: int = None,
         buffer_size: float | None = None,
         byteorder: ByteOrder | None = None,
         channels: int | None = None,
         encoding: str | Encoding | None = None,
         guess_properties: bool | None = None,
         precision: Precision | None = None,
+        sample_rate: int = None,
     ):
         self._name = f"tukaan_sound_{next(counts['sounds'])}"
 
@@ -228,13 +228,13 @@ class Sound:
                 guessproperties=guess_properties,
                 load=file,
                 precision=precision,
-                rate=bitrate,
+                rate=sample_rate,
             ),
         )
         _sounds[self._name] = self
 
     def _get_sample(self, time):
-        return time.total_seconds * self.bitrate
+        return time.total_seconds * self.sample_rate
 
     def __to_tcl__(self):
         return self._name
@@ -274,10 +274,10 @@ class Sound:
         start, end = key.start, key.stop
 
         if isinstance(start, Time):
-            start = int(start.total_seconds * self.bitrate)
+            start = int(start.total_seconds * self.sample_rate)
 
         if isinstance(end, Time):
-            end = int(end.total_seconds * self.bitrate)
+            end = int(end.total_seconds * self.sample_rate)
 
         if start in {None, ...}:
             start = 0
@@ -295,7 +295,6 @@ class Sound:
         block: bool | None = None,
         on_end: Callable = None,
         output: str | None = None,
-        repeat: bool = False,
     ) -> Sound:
         if after is not None:
             after *= 1000
@@ -368,7 +367,7 @@ class Sound:
         file_name: str | Path,
         format: str | None = None,
         *,
-        bitrate: int | None = None,
+        sample_rate: int | None = None,
         buffer_size: float | None = None,
         byteorder: ByteOrder | None = None,
         channels: int | None = None,
@@ -389,7 +388,7 @@ class Sound:
                 encoding=encoding,
                 guessproperties=guess_properties,
                 precision=precision,
-                rate=bitrate,
+                rate=sample_rate,
             ),
         )
         return self
@@ -399,7 +398,7 @@ class Sound:
         arg: str | int | Encoding | None = None,
         /,
         *,
-        bitrate: int | None = None,
+        sample_rate: int | None = None,
         encoding: str | None = None,
         channels: int | None = None,
     ) -> Sound:
@@ -407,7 +406,7 @@ class Sound:
             if arg in {"mono", "stereo"}:
                 channels = arg
             elif arg in {8000, 11025, 16000, 22050, 32000, 44100, 48000}:
-                bitrate = arg
+                sample_rate = arg
             elif arg in Encoding:
                 encoding = arg
             else:
@@ -417,7 +416,7 @@ class Sound:
             None,
             self,
             "convert",
-            *Tcl.to_tcl_args(rate=bitrate, encoding=encoding, channels=channels),
+            *Tcl.to_tcl_args(rate=sample_rate, encoding=encoding, channels=channels),
         )
         return self
 
@@ -514,7 +513,7 @@ class Sound:
         channels: str | int | None = None,
         encoding: str | Encoding | None = None,
         precision: Precision | None = None,
-        bitrate=None,
+        sample_rate=None,
     ) -> Sound:
         Tcl.call(
             None,
@@ -525,7 +524,7 @@ class Sound:
                 channels=channels,
                 encoding=encoding,
                 precision=precision,
-                rate=bitrate,
+                rate=sample_rate,
             ),
         )
         return self
@@ -542,12 +541,12 @@ class Sound:
         Tcl.call(None, self, "length", new_length, "-unit", "seconds")
 
     @property
-    def bitrate(self) -> int:
+    def sample_rate(self) -> int:
         return self._get(int, "rate")
 
-    @bitrate.setter
-    def bitrate(self, new_bitrate: int) -> None:
-        return self.config(bitrate=new_bitrate)
+    @sample_rate.setter
+    def sample_rate(self, new_sample_rate: int) -> None:
+        return self.config(sample_rate=new_sample_rate)
 
     @property
     def buffer_size(self) -> float:
@@ -586,15 +585,15 @@ class SoundSection:
     def __init__(self, sound: Sound, slice_arg: slice, /) -> None:
         self._name = sound._name
         self._sound = sound
-        bitrate = Tcl.call(int, self, "cget", "-rate")
+        sample_rate = Tcl.call(int, self, "cget", "-rate")
 
         start, end = slice_arg.start, slice_arg.stop
 
         if isinstance(start, Time):
-            start = int(start.total_seconds * bitrate)
+            start = int(start.total_seconds * sample_rate)
 
         if isinstance(end, Time):
-            end = int(end.total_seconds * bitrate)
+            end = int(end.total_seconds * sample_rate)
 
         if start in {None, ...}:
             start = 0
@@ -603,7 +602,7 @@ class SoundSection:
             end = Tcl.call(int, self, "length") - 1
 
         self.start, self.end = start, end
-        self.length = Time(seconds=end / bitrate - start / bitrate)
+        self.length = Time(seconds=end / sample_rate - start / sample_rate)
 
     def play(
         self,
@@ -612,7 +611,6 @@ class SoundSection:
         block: bool | None = None,
         on_end: Callable = None,
         output: str | None = None,
-        repeat: bool = False,
     ) -> SoundSection:
         if after is not None:
             after *= 1000
@@ -627,9 +625,9 @@ class SoundSection:
                 blocking=block,
                 command=on_end,
                 device=output,
+                end=self.end,
                 filter=filter_,
                 start=self.start,
-                end=self.end,
                 starttime=after,
             ),
         )
@@ -696,9 +694,9 @@ class SoundSection:
         method: PitchMethod = PitchMethod.AMDF,
         *,
         frame_length: float | None = None,
-        window_length: float | None = None,
         max: float | None = None,
         min: float | None = None,
+        window_length: float | None = None,
     ) -> list[float] | list[tuple[float, float, float, float]]:
         if method is PitchMethod.AMDF:
             return_type = [float]
@@ -733,7 +731,7 @@ class _AudioDevice:
         return Tcl.call([str], "Snack::audio", "encodings")
 
     @property
-    def supported_bitrates(self) -> list[str]:
+    def supported_sample_rates(self) -> list[str]:
         return Tcl.call([int], "Snack::audio", "rates")
 
     @property
