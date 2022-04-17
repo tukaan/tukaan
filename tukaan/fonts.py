@@ -253,6 +253,24 @@ class Font:
         *,
         file: Path | None = None,
     ) -> None:
+        """__init__
+
+        Args:
+            family:
+                The font family to be used
+            size:
+                The font size to be used
+            bold:
+                Bold font ?
+            italic:
+                Italic font ?
+            underline:
+                Underlined font ?
+            strikethrough:
+                Throughstricken font ?
+            file:
+                A font file to load the family from.
+        """
         if isinstance(family, Path):
             file = family
 
@@ -299,6 +317,8 @@ class Font:
         underline: bool = False,
         strikethrough: bool = False,
     ) -> None:
+        """Configures the fonts parameters"""
+        
         args = Tcl.to_tcl_args(
             family=family,
             size=round(size),
