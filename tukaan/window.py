@@ -13,6 +13,7 @@ from tukaan.themes import AquaTheme, ClamTheme, Theme, Win32Theme, native_theme
 
 from ._enums import BackdropEffect, Resizable
 from ._images import _image_converter_class
+from ._info import System
 from ._layouts import ContainerLayoutManager
 from ._structures import Color, Position, Size
 from ._tcl import Tcl
@@ -655,11 +656,14 @@ class App(WindowMixin, TkWidget):
         Tcl.call(None, "bind", self._name, "<Unmap>", self._generate_state_event)
         Tcl.call(None, "bind", self._name, "<Configure>", self._generate_state_event)
 
+        self._init_tkdnd()
         self._init_tukaan_ext_pkg("Serif")
         self._init_tukaan_ext_pkg("Snack")
-        self._init_tkdnd()
 
-        self.theme = native_theme()
+        if System.os == "Linux":
+            self._init_tukaan_ext_pkg("Gttk")
+
+        self.theme = native_theme(use_gtk=False)
 
         Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
 
