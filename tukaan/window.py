@@ -656,6 +656,7 @@ class App(WindowMixin, TkWidget):
         self.Titlebar = Titlebar(self)
         self.layout: ContainerLayoutManager = ContainerLayoutManager(self)
 
+        # Three different type of pkg initialization, lol
         self._init_tukaan_ext_pkg("Snack")
         self._init_tkdnd()
         load_serif()
