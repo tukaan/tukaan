@@ -54,7 +54,7 @@ preset_fonts = {
 class FontNameInfo:
     """A class that parses the font file with the help of `struct.unpack`.
 
-    This is a pure Python implementation, although I translated it from Tcl.
+    This is a pure Python implementation, though I translated it from Tcl.
     """
     
     @classmethod
