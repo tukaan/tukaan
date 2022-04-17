@@ -25,7 +25,7 @@ class Tcl:
         version: Stores Tcl version info returned by the `info patchlevel` call.
         windowing_system: Stores the windowing system
             name returned by the `tk windowingsystem` call.
-        
+
     """
 
     interp_address = None

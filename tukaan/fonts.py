@@ -56,15 +56,15 @@ class FontNameInfo:
 
     This is a pure Python implementation, though I translated it from Tcl.
     """
-    
+
     @classmethod
     def get_from_file(cls, file_path: Path) -> list[dict[str, str]]:
         """Gets info from the specified font file.
-        
+
         Raises:
             FontError: If the magic-tag in the file header can't be recognized.
         """
-        
+
         fonts_info = []
 
         with file_path.open("rb") as file:
@@ -90,7 +90,7 @@ class FontNameInfo:
             A tuple with the offsets counted in bytes.
 
         """
-        
+
         *_, num_fonts = struct.unpack(">HHI", file.read(8))
         return struct.unpack(f">{num_fonts}I", file.read(num_fonts * 4))
 
@@ -101,7 +101,7 @@ class FontNameInfo:
         Returns:
             The name info of the font family.
         """
-        
+
         num_tables, *_ = struct.unpack(">4H", file.read(8))
         for _ in range(num_tables):
             table_name, _, start, _ = struct.unpack(">4sL2I", file.read(16))
@@ -115,7 +115,7 @@ class FontNameInfo:
         Returns:
              A dictionary with the field-value pairs.
         """
-        
+
         file.seek(start)
         _, num_records, str_offset = struct.unpack(">HHH", file.read(6))
 
@@ -151,7 +151,7 @@ class Serif:
         loaded_fonts: A dictionary that contains the path of the
             loaded files along with the font families contained in them.
     """
-    
+
     loaded_fonts: dict[Path, list[str]] = {}
 
     @classmethod
@@ -163,7 +163,7 @@ class Serif:
         Returns:
             A list of the font family names contained in the file.
         """
-        
+
         if file_path in cls.loaded_fonts:
             return cls.loaded_fonts[file_path]
 
@@ -175,9 +175,7 @@ class Serif:
             family_name = family["family"]
 
             if family_name is None:
-                raise FontError(
-                    f"invalid or missing info in font file: {file_path.resolve()!s}"
-                )
+                raise FontError(f"invalid or missing info in font file: {file_path.resolve()!s}")
 
             families.append(family_name)
 
@@ -191,14 +189,14 @@ class Serif:
         Unloads a previously loaded font file specified by `file_path`.
         If the file wasn't loaded, does nothing.
         """
-        
+
         if file_path in cls.loaded_fonts:
             Tcl.call(None, "Serif::unload_fontfile", file_path)
 
     @classmethod
     def cleanup(cls) -> None:
         """Unloads all loaded fonts."""
-        
+
         for font in cls.loaded_fonts:
             cls.unload(font)
 
@@ -207,7 +205,7 @@ class Serif:
         """Gets info from the specified font file. If it was
         previously loaded with Serif.load, returns the cached info.
         """
-        
+
         if file_path in cls.loaded_fonts:
             return cls.loaded_fonts[file_path]
         return FontNameInfo.get_from_file(file_path)
@@ -215,14 +213,14 @@ class Serif:
 
 class FontInfo(namedtuple("FontInfo", nameID_order)):
     """Stores information about a font family"""
-    
+
     def __iter__(self) -> Iterator[str, str]:
         """Makes it possible to convert the FontInfo to a dictionary.
 
         Yields:
             The field-value pairs.
         """
-        
+
         for key in nameID_order:
             yield key, getattr(self, key)
 
@@ -238,7 +236,7 @@ class Font:
             to it's name information
         path: If the font was loaded from a file, stores the filepath
     """
-    
+
     info: FontInfo | None = None
     path: Path | None = None
 
@@ -318,7 +316,7 @@ class Font:
         strikethrough: bool = False,
     ) -> None:
         """Configures the fonts parameters"""
-        
+
         args = Tcl.to_tcl_args(
             family=family,
             size=round(size),
@@ -351,7 +349,7 @@ class Font:
                 "underline": bool,
                 "strikethrough": bool,
             }
-            
+
             kwargs = {}
             for key, value in seq_pairs(flat_values):
                 key = key.lstrip("-")
@@ -441,7 +439,7 @@ class Font:
     @property
     def metrics(self) -> FontMetrics:
         """Computes the metrics of the current font family."""
-        
+
         result = Tcl.call(
             {"-ascent": int, "-descent": int, "-linespace": int, "-fixed": bool},
             "font",
@@ -464,7 +462,7 @@ def font(
 
     >>> t = tukaan.TextBox(app, font=tukaan.font(bold=True))
     """
-    
+
     weight = {None: None, True: "bold", False: "normal"}[bold]
     slant = {None: None, True: "italic", False: "roman"}[italic]
 

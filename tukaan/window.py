@@ -649,10 +649,10 @@ class App(WindowMixin, TkWidget):
         Tcl.call(None, "bind", self._name, "<Map>", self._generate_state_event)
         Tcl.call(None, "bind", self._name, "<Unmap>", self._generate_state_event)
         Tcl.call(None, "bind", self._name, "<Configure>", self._generate_state_event)
-        
+
         self.title = title
         self.size = width, height
-        
+
         self.Titlebar = Titlebar(self)
         self.layout: ContainerLayoutManager = ContainerLayoutManager(self)
 
