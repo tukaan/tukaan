@@ -23,7 +23,7 @@ class CheckBox(BaseWidget, InputControlWidget):
 
     def __init__(
         self,
-        parent: TkWidget | None,
+        parent: TkWidget,
         *,
         focusable: bool | None = None,
         on_click: Callable | None = None,

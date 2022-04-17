@@ -26,7 +26,7 @@ class Entry(BaseWidget, InputControlWidget, XScrollable):
 
     def __init__(
         self,
-        parent: TkWidget | None,
+        parent: TkWidget,
         *,
         fg_color: str | Color | None = None,
         focusable: bool | None = None,

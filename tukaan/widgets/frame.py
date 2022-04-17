@@ -10,9 +10,7 @@ class Frame(BaseWidget, ContainerWidget):
     _tcl_class = "ttk::frame"
     _keys = {}
 
-    def __init__(
-        self, parent: TkWidget | None, padding: int | tuple[int, ...] | None = None
-    ) -> None:
+    def __init__(self, parent: TkWidget, padding: int | tuple[int, ...] | None = None) -> None:
         BaseWidget.__init__(self, parent, padding=convert_4side(padding))
 
     def _get(self, type_spec, key):

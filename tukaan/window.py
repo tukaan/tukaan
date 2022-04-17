@@ -453,6 +453,7 @@ class WindowMixin(DesktopWindowManager):
     def set_size(self, new_size: Size | tuple[int, int] | int) -> None:
         if isinstance(new_size, int):
             new_size = (new_size,) * 2
+
         Tcl.call(None, "wm", "geometry", self._wm_path, "{}x{}".format(*new_size))
 
     size = property(get_size, set_size)
@@ -650,8 +651,8 @@ class App(WindowMixin, TkWidget):
         Tcl.call(None, "bind", self._name, "<Unmap>", self._generate_state_event)
         Tcl.call(None, "bind", self._name, "<Configure>", self._generate_state_event)
 
-        self.title = title
-        self.size = width, height
+        self.set_title(title)
+        self.set_size((width, height))
 
         self.Titlebar = Titlebar(self)
         self.layout: ContainerLayoutManager = ContainerLayoutManager(self)
@@ -662,6 +663,8 @@ class App(WindowMixin, TkWidget):
         load_serif()
 
         self.theme = native_theme()
+
+        Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
 
         Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
 
@@ -725,13 +728,24 @@ class Window(WindowMixin, BaseWidget):
     _keys = {}
     parent: App | Window
 
-    def __init__(self, parent: App | Window | None = None) -> None:
-        if not isinstance(parent, (App, Window)) and parent is not None:
-            raise RuntimeError
+    def __init__(
+        self,
+        parent: App | Window,
+        title: str = "Tukaan window",
+        width: int = 200,
+        height: int = 200,
+    ) -> None:
+        if not isinstance(parent, (App, Window)):
+            raise TypeError
 
         BaseWidget.__init__(self, parent)
         self._wm_path = self._name
+
+        self.set_title(title)
+        self.set_size((width, height))
+
         self.Titlebar = Titlebar(self)
+        self.layout: ContainerLayoutManager = ContainerLayoutManager(self)
 
         Tcl.call(None, "bind", self._name, "<Map>", self._generate_state_event)
         Tcl.call(None, "bind", self._name, "<Unmap>", self._generate_state_event)

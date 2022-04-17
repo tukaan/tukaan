@@ -68,7 +68,7 @@ class SplitView(BaseWidget, ContainerWidget):
 
     def __init__(
         self,
-        parent: TkWidget | None,
+        parent: TkWidget,
         orientation: str | None = None,
         *,
         focusable: bool | None = None,

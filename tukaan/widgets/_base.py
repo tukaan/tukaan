@@ -301,10 +301,12 @@ class BaseWidget(TkWidget, StateMixin, DnDMixin, SizePosMixin, VisibilityMixin):
     layout: PackableLayoutManager
 
     def __init__(
-        self, parent: TkWidget | None, creation_cmd: tuple[TkWidget | str, ...] = None, **kwargs
+        self, parent: TkWidget, creation_cmd: tuple[TkWidget | str, ...] = None, **kwargs
     ) -> None:
+        assert isinstance(parent, TkWidget), "parent must be a TkWidget instance"
+
+        self._name = self._give_me_a_name(parent)
         self.parent = parent
-        self._name = self._give_me_a_name()
 
         TkWidget.__init__(self)
 
@@ -323,11 +325,10 @@ class BaseWidget(TkWidget, StateMixin, DnDMixin, SizePosMixin, VisibilityMixin):
         # else:
         #     need to define separately for non-ttk widgets
 
-    def _give_me_a_name(self) -> str:
-        klass = type(self)
-        count = next(self.parent._child_type_count[klass])
-
-        return f"{self.parent._name}.{klass.__name__.lower()}_{count}"
+    def _give_me_a_name(self, parent: TkWidget) -> str:
+        class_ = type(self)
+        count = next(parent._child_type_count[class_])
+        return f"{parent._name}.{class_.__name__.lower()}_{count}"
 
     def destroy(self):
         for child in self.child_stats.children:

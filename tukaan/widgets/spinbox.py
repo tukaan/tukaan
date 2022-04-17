@@ -30,7 +30,7 @@ class SpinBox(Entry):
 
     def __init__(
         self,
-        parent: TkWidget | None,
+        parent: TkWidget,
         values: list[str | float] | tuple[str | float, ...] | range | None = None,
         *,
         cycle: bool | None = None,
