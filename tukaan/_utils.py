@@ -11,9 +11,9 @@ if TYPE_CHECKING:
     from PIL import Image  # type: ignore
 
     from ._base import TkWidget
-    from ._font import Font
     from ._images import Icon, _image_converter_class
     from ._variables import _TclVariable
+    from .fonts import Font
     from .media import Sound
     from .textbox import Tag
     from .timeout import Timeout

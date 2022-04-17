@@ -17,11 +17,23 @@ _tcl_interp = None
 
 
 class Tcl:
-    interp_address = None
-    windowing_system = None
-    version = None
+    """A Python interface to the Tcl interpreter.
 
-    def __init__(self) -> None:
+    Attributes:
+        interp_address: Stores the address of the Tcl interpreter.
+            This attribute is only ised by PIL.
+        version: Stores Tcl version info returned by the `info patchlevel` call.
+        windowing_system: Stores the windowing system
+            name returned by the `tk windowingsystem` call.
+
+    """
+
+    interp_address = None
+    version = None
+    windowing_system = None
+
+    @classmethod
+    def init(cls) -> None:
         global _tcl_interp
 
         if _tcl_interp is not None:
@@ -30,9 +42,9 @@ class Tcl:
         _tcl_interp = tk.create(None, sys.argv[0], "Tukaan", False, False, True, False, None)
         _tcl_interp.loadtk()
 
-        Tcl.interp_address = _tcl_interp.interpaddr()  # PIL needs this
-        Tcl.windowing_system = _tcl_interp.call("tk", "windowingsystem").lower()
-        Tcl.version = _tcl_interp.call("info", "patchlevel")
+        cls.interp_address = _tcl_interp.interpaddr()  # PIL needs this
+        cls.windowing_system = _tcl_interp.call("tk", "windowingsystem").lower()
+        cls.version = _tcl_interp.call("info", "patchlevel")
 
     @staticmethod
     def get_interp() -> tk.tkapp:
@@ -142,9 +154,7 @@ class Tcl:
     @staticmethod
     def call(return_type: Any, *args) -> Any:
         try:
-            _args = tuple(map(Tcl.to, args))
-            print(_args)  # TODO: remove
-            result = _tcl_interp.call(*_args)
+            result = _tcl_interp.call(*map(Tcl.to, args))
             if return_type is None:
                 return
             return Tcl.from_(return_type, result)

@@ -18,6 +18,7 @@ from ._structures import Color, Position, Size
 from ._tcl import Tcl
 from ._utils import _commands, windows_only
 from .exceptions import TclError
+from .Serif import load_serif
 from .widgets._base import BaseWidget, TkWidget
 
 
@@ -642,22 +643,23 @@ class App(WindowMixin, TkWidget):
             raise TclError("can't create multiple App objects. Use tukaan.Window instead.")
         App._exists = True
 
-        self.__interp = Tcl()
-        self.layout: ContainerLayoutManager = ContainerLayoutManager(self)
-
+        Tcl.init()
         Tcl.eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
-
-        self.title = title
-        self.size = width, height
-        self.Titlebar = Titlebar(self)
 
         Tcl.call(None, "bind", self._name, "<Map>", self._generate_state_event)
         Tcl.call(None, "bind", self._name, "<Unmap>", self._generate_state_event)
         Tcl.call(None, "bind", self._name, "<Configure>", self._generate_state_event)
 
-        self._init_tukaan_ext_pkg("Serif")
+        self.title = title
+        self.size = width, height
+
+        self.Titlebar = Titlebar(self)
+        self.layout: ContainerLayoutManager = ContainerLayoutManager(self)
+
+        # Three different type of pkg initialization, lol
         self._init_tukaan_ext_pkg("Snack")
         self._init_tkdnd()
+        load_serif()
 
         self.theme = native_theme()
 

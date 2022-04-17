@@ -18,7 +18,6 @@ from ._enums import (
     Wrap,
 )
 from ._events import DragObject, KeySeq
-from ._font import Font
 from ._images import Icon, IconFactory, Image
 from ._info import Clipboard, Machine, Memory, Pointer, Screen, System
 from ._structures import Color
@@ -28,6 +27,7 @@ from ._timeouts import Timeout, Timer
 from ._units import MemoryUnit, ScreenDistance
 from ._variables import Boolean, Float, Integer, String
 from .data import TabStop
+from .fonts import Font, font
 from .widgets.button import Button
 from .widgets.checkbox import CheckBox
 from .widgets.combobox import ComboBox
