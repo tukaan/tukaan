@@ -9,7 +9,7 @@ from tukaan._tcl import Tcl
 from tukaan._utils import _fonts, counts, seq_pairs
 from tukaan.exceptions import FontError, TclError
 
-nameID_order = [
+nameID_order = (
     "copyright",
     "family",
     "subfamily",
@@ -36,7 +36,7 @@ nameID_order = [
     "light_bg_palette",
     "dark_bg_palette",
     "variations_post_script_name_prefix",
-]
+)
 
 preset_fonts = {
     "TkCaptionFont",
@@ -127,19 +127,26 @@ class FontNameInfo:
 
         name_info = {}
         storage_start = start + str_offset
-        base_tripplet = struct.pack(">hhh", 1, 0, 0)
-        for platformID, encodingID, languageID, nameID, length, offset in records:
+
+        for platformID, encID, _, nameID, length, offset in records:
             if nameID > 25:
+                # Don't care about invalid records
                 break
+            
+            file.seek(storage_start + offset)
+            value, *_ = struct.unpack(f">{length}s", file.read(length))
+                
+            if (platformID, encID) == (1, 0):  # 1 == Macintosh
+                encoding = "utf-8"
+            elif (platformID, encID) == (3, 1):  # 3 == Windows
+                encoding = "utf-16-be"  # Microsoft: All string data for platform 3 must be encoded in UTF-16BE.
+            else:
+                raise FontError(f"unknown platform or encoding specification in font file: {file.name!r}")
 
-            if base_tripplet == struct.pack(">hhh", platformID, encodingID, languageID):
-                file.seek(storage_start + offset)
-                value, *_ = struct.unpack(f">{length}s", file.read(length))
-                name_info[nameID_order[nameID]] = value.decode("latin-1")
+            name_info[nameID_order[nameID]] = value.decode(encoding)
+            # If the value already exists, just update it with the newly decoded one
 
-        for key in nameID_order:
-            if key not in name_info:
-                name_info[key] = None
+        {name_info.setdefault(key) for key in nameID_order}
 
         return name_info
 
