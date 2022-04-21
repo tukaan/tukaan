@@ -666,8 +666,6 @@ class App(WindowMixin, TkWidget):
 
         Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
 
-        Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
-
     def __enter__(self):
         return self
 
