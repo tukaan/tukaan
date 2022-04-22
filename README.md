@@ -1,7 +1,7 @@
 # Tukaan
 [![Code style: black](https://img.shields.io/badge/code%20style-black-1c1c1c.svg)](https://github.com/psf/black)
 
-Website: https://tukaan.github.io/docs/
+Website: https://tukaan.github.io
 
 ## This is a work-in-progress project.
 I don't release a package to Pypi, because I break backwards-compatibility alomost with every commit, and because I still have to write tests, to see, what works, and what doesn't. You can still use it by downloading or cloning the repo, but there's no `setup.py` to install it on the system.
