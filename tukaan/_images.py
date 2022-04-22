@@ -10,7 +10,7 @@ from .exceptions import TclError
 from .widgets._base import BaseWidget, ConfigMixin
 
 
-class _image_converter_class:
+class PIL_TclConverter:
     def __init__(self, image):
         if image in tuple(_pil_images.values()):
             # Tk gets full with photoimages (or idk why?), and makes them grayscale
@@ -129,14 +129,14 @@ class _image_converter_class:
 
 
 def pil_image_to_tcl(self):
-    return _image_converter_class(self).__to_tcl__()
+    return PIL_TclConverter(self).__to_tcl__()
 
 
 PIL_Image.Image.__to_tcl__ = pil_image_to_tcl
 
 
 class Image(BaseWidget):
-    _keys = {"image": _image_converter_class}
+    _keys = {"image": PIL_TclConverter}
     _tcl_class = "ttk::label"
 
     def __init__(self, parent=None, image=None):

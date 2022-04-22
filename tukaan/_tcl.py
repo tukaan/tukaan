@@ -13,7 +13,7 @@ import _tkinter as tk
 from ._utils import _commands, counts, flatten, reversed_dict, seq_pairs
 from .exceptions import AppError, TclError
 
-_tcl_interp = None
+_tcl_interp: tk.tkapp | None = None
 
 
 class Tcl:

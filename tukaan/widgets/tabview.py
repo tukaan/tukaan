@@ -4,7 +4,7 @@ from typing import Callable
 
 from tukaan._enums import ImagePosition
 from tukaan._helpers import convert_4side, convert_4side_back
-from tukaan._images import Icon, Image, _image_converter_class
+from tukaan._images import Icon, Image, PIL_TclConverter
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TclError
 
@@ -14,7 +14,7 @@ from .frame import Frame
 
 class Tab(Frame):
     _keys = {
-        "icon": (_image_converter_class, "image"),
+        "icon": (PIL_TclConverter, "image"),
         "image_pos": (ImagePosition, "compound"),
         "title": (str, "text"),
         "underline": int,

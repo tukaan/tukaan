@@ -12,11 +12,12 @@ from typing import Any, Callable
 from tukaan.themes import AquaTheme, ClamTheme, Theme, Win32Theme, native_theme
 
 from ._enums import BackdropEffect, Resizable
-from ._images import _image_converter_class
+from ._images import PIL_TclConverter
 from ._layouts import ContainerLayoutManager
-from ._structures import Color, Position, Size
+from ._structures import Position, Size
 from ._tcl import Tcl
 from ._utils import _commands, windows_only
+from .colors import Color
 from .exceptions import TclError
 from .Serif import load_serif
 from .widgets._base import BaseWidget, TkWidget
@@ -559,7 +560,7 @@ class WindowMixin(DesktopWindowManager):
     resizable = property(get_resizable, set_resizable)
 
     def get_icon(self) -> str:
-        return Tcl.call(_image_converter_class, "wm", "iconphoto", self._wm_path)
+        return Tcl.call(PIL_TclConverter, "wm", "iconphoto", self._wm_path)
 
     def set_icon(self, image) -> None:
         Tcl.call(None, "wm", "iconphoto", self._wm_path, image)

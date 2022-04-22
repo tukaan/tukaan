@@ -132,16 +132,18 @@ class FontNameInfo:
             if nameID > 25:
                 # Don't care about invalid records
                 break
-            
+
             file.seek(storage_start + offset)
             value, *_ = struct.unpack(f">{length}s", file.read(length))
-                
+
             if (platformID, encID) == (1, 0):  # 1 == Macintosh
                 encoding = "utf-8"
             elif (platformID, encID) == (3, 1):  # 3 == Windows
                 encoding = "utf-16-be"  # Microsoft: All string data for platform 3 must be encoded in UTF-16BE.
             else:
-                raise FontError(f"unknown platform or encoding specification in font file: {file.name!r}")
+                raise FontError(
+                    f"unknown platform or encoding specification in font file: {file.name!r}"
+                )
 
             name_info[nameID_order[nameID]] = value.decode(encoding)
             # If the value already exists, just update it with the newly decoded one

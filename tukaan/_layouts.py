@@ -8,8 +8,8 @@ if TYPE_CHECKING:
 
 from ._enums import Alignment
 from ._tcl import Tcl
-from ._units import ScreenDistance
 from .exceptions import CellNotFoundError, LayoutError
+from .screen_distance import ScreenDistance
 
 HorAlignAlias = Optional[str]
 MrgnAlias = Optional[Union[int, Tuple[int, ...]]]

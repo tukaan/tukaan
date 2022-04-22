@@ -1,8 +1,8 @@
 __all__: list = []  # Making star imports impossible. Is it illegal?
 __author__ = "rdbende"
-__license__ = "MIT"
+__license__ = "MIT license"
 __package__ = "tukaan"
-__version__ = "0.0.0"
+__version__ = "0.0.1.dev0"
 
 
 import sys
@@ -19,15 +19,13 @@ from ._enums import (
 )
 from ._events import DragObject, KeySeq
 from ._images import Icon, IconFactory, Image
-from ._info import Clipboard, Machine, Memory, Pointer, Screen, System
-from ._structures import Color
-from ._structures import TimeConstructor as Time
-from ._structures import cmyk, hex, hsl, hsv, rgb
-from ._timeouts import Timeout, Timer
-from ._units import MemoryUnit, ScreenDistance
+from ._info import Clipboard, Machine, Pointer, Screen, System
 from ._variables import Boolean, Float, Integer, String
-from .data import TabStop
+from .colors import cmyk, hsl, hsv, rgb
 from .fonts import Font, font
+from .screen_distance import ScreenDistance, cm, inch, mm
+from .time import TimeConstructor as Time
+from .timeouts import Timeout, Timer
 from .widgets.button import Button
 from .widgets.checkbox import CheckBox
 from .widgets.combobox import ComboBox

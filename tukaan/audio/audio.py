@@ -5,10 +5,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
 
-from tukaan._structures import Time, TimeConstructor
 from tukaan._tcl import Tcl
 from tukaan._utils import _sounds, counts
 from tukaan.exceptions import TclError
+from tukaan.time import Time, TimeConstructor
 
 
 ### Enums ###

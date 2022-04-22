@@ -9,9 +9,9 @@ from PIL import Image, UnidentifiedImageError  # type: ignore
 
 from ._constants import _keysym_aliases
 from ._info import System
-from ._structures import Color
 from ._tcl import Tcl
 from ._utils import reversed_dict
+from .colors import Color
 
 if System.os == "macOS":
     button_numbers = {1: "left", 2: "right", 3: "middle"}

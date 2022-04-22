@@ -11,12 +11,12 @@ if TYPE_CHECKING:
     from PIL import Image  # type: ignore
 
     from ._base import TkWidget
-    from ._images import Icon, _image_converter_class
+    from ._images import Icon, PIL_TclConverter
     from ._variables import _TclVariable
+    from .audio import Sound
     from .fonts import Font
-    from .media import Sound
     from .textbox import Tag
-    from .timeout import Timeout
+    from .timeouts import Timeout
 
 
 class count:
@@ -41,7 +41,7 @@ counts: DefaultDict[Any, Iterator[int]] = collections.defaultdict(lambda: count(
 
 
 _commands: dict[str, Callable] = {}
-_images: dict[str, _image_converter_class | Icon] = {}
+_images: dict[str, PIL_TclConverter | Icon] = {}
 _pil_images: dict[str, Image] = {}
 _timeouts: dict[str, Timeout] = {}
 _variables: dict[str, _TclVariable] = {}

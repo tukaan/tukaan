@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections import namedtuple
 from typing import Callable
 
-from tukaan._structures import Color
 from tukaan._tcl import Tcl
+from tukaan.colors import Color
 
 from ._base import BaseWidget, TkWidget
 from .entry import Entry

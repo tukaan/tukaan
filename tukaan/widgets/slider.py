@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._tcl import Tcl
-from tukaan._units import ScreenDistance
 from tukaan._variables import Float
+from tukaan.screen_distance import ScreenDistance
 
 from ._base import BaseWidget, InputControlWidget, TkWidget
 

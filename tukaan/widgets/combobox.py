@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Callable, Iterable
 
-from tukaan._structures import Color
 from tukaan._tcl import Tcl
+from tukaan.colors import Color
 from tukaan.exceptions import TclError
 
 from ._base import BaseWidget, TkWidget

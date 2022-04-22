@@ -11,14 +11,14 @@ from PIL import Image  # type: ignore
 
 from tukaan._enums import CaretStyle, InactiveCaretStyle, Wrap
 from tukaan._images import Icon
-from tukaan._structures import Color
 from tukaan._tcl import Tcl
-from tukaan._units import ScreenDistance
 from tukaan._utils import _images, _text_tags, counts, seq_pairs
 from tukaan._variables import Integer
+from tukaan.colors import Color
 from tukaan.data import TabStop
 from tukaan.exceptions import TclError
 from tukaan.fonts import Font
+from tukaan.screen_distance import ScreenDistance
 
 from ._base import (
     BaseWidget,

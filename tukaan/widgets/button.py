@@ -5,7 +5,7 @@ from typing import Callable
 from PIL import Image  # type: ignore
 
 from tukaan._enums import ImagePosition
-from tukaan._images import Icon, _image_converter_class
+from tukaan._images import Icon, PIL_TclConverter
 from tukaan._tcl import Tcl
 
 from ._base import BaseWidget, InputControlWidget, TkWidget
@@ -16,7 +16,7 @@ class Button(BaseWidget, InputControlWidget):
     _keys = {
         "default": str,
         "focusable": (bool, "takefocus"),
-        "image": _image_converter_class,
+        "image": PIL_TclConverter,
         "image_pos": (ImagePosition, "compound"),
         "on_click": ("func", "command"),
         "style": str,

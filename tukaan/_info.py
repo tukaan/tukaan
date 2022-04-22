@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import platform
-from datetime import datetime
 from fractions import Fraction
 
 import _tkinter as tk
@@ -9,7 +8,6 @@ import psutil
 from screeninfo import get_monitors  # type: ignore
 
 from ._structures import OsVersion, Position, Version
-from ._units import MemoryUnit, ScreenDistance
 from .exceptions import TclError
 
 if platform.system() == "Linux":
@@ -46,10 +44,6 @@ class _System:
         if self.os == "Linux":
             return distro.codename()
         return None
-
-    @property
-    def uptime(self):
-        return datetime.now() - datetime.fromtimestamp(psutil.boot_time())
 
     @property
     def win_sys(self) -> str:
@@ -91,59 +85,6 @@ class _System:
 class _Machine:
     cpu: str = platform.processor()
     machine: str = platform.machine()
-
-
-class _Memory:
-    _root_path = {"Linux": "/", "Darwin": "/", "Windows": "C:\\"}[platform.system()]
-
-    @property
-    def ram_size(self):
-        return MemoryUnit(psutil.virtual_memory().total)
-
-    @property
-    def ram_available(self):
-        return MemoryUnit(psutil.virtual_memory().available)
-
-    @property
-    def ram_used(self):
-        return MemoryUnit(psutil.virtual_memory().used)
-
-    @property
-    def swap_size(self):
-        return MemoryUnit(psutil.swap_memory().total)
-
-    @property
-    def swap_free(self):
-        return MemoryUnit(psutil.swap_memory().free)
-
-    @property
-    def swap_used(self):
-        return MemoryUnit(psutil.swap_memory().used)
-
-    @property
-    def drive_size(self):
-        return MemoryUnit(psutil.disk_usage(self._root_path).total)
-
-    @property
-    def drive_space_free(self):
-        return MemoryUnit(psutil.disk_usage(self._root_path).free)
-
-    @property
-    def drive_space_used(self):
-        return MemoryUnit(psutil.disk_usage(self._root_path).used)
-
-    def _get_primary_drive(self):
-        for drive in psutil.disk_partitions():
-            if drive.mountpoint in {"/", "C:\\"}:
-                return drive
-
-    @property
-    def drive_filesystem(self):
-        return self._get_primary_drive().fstype
-
-    @property
-    def drive_device(self):
-        return self._get_primary_drive().device
 
 
 common_resolution_standards = {
@@ -207,10 +148,14 @@ class _Screen:
 
     @property
     def width(cls):
+        from .screen_distance import ScreenDistance
+
         return ScreenDistance(px=cls._width)
 
     @property
     def height(cls):
+        from .screen_distance import ScreenDistance
+
         return ScreenDistance(px=cls._height)
 
     @property
@@ -238,6 +183,8 @@ class _Screen:
 
     @property
     def diagonal(self) -> ScreenDistance:
+        from .screen_distance import ScreenDistance
+
         return ScreenDistance(px=(self._width**2 + self._height**2) ** 0.5)
 
     @property
@@ -269,7 +216,7 @@ class _Screen:
 
 class _Clipboard:
     def __repr__(self) -> str:
-        return f"<tukaan.Clipboard object; content: {self.get()}>"
+        return f"<tukaan.Clipboard; content: {self.get()}>"
 
     def clear(self) -> None:
         from ._tcl import Tcl
@@ -308,7 +255,7 @@ class _Clipboard:
 
 class _Pointer:
     def __repr__(self) -> str:
-        return f"<tukaan.Pointer object; position: {tuple(self.position)}>"
+        return f"<tukaan.Pointer; position: {tuple(self.position)}>"
 
     @property
     def x(cls) -> int:
@@ -330,7 +277,6 @@ class _Pointer:
 # Instantiate them
 Clipboard = _Clipboard()
 Machine = _Machine()
-Memory = _Memory()
 Pointer = _Pointer()
 Screen = _Screen()
 System = _System()

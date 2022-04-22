@@ -3,8 +3,8 @@ from __future__ import annotations
 from PIL import Image  # type: ignore
 
 from tukaan._enums import Alignment, ImagePosition, Justify
-from tukaan._images import Icon, _image_converter_class
-from tukaan._structures import Color
+from tukaan._images import Icon, PIL_TclConverter
+from tukaan.colors import Color
 
 from ._base import BaseWidget, OutputDisplayWidget, TkWidget
 
@@ -15,7 +15,7 @@ class Label(BaseWidget, OutputDisplayWidget):
         "align_content": Alignment,
         "align_text": Justify,
         "focusable": (bool, "takefocus"),
-        "image": _image_converter_class,
+        "image": PIL_TclConverter,
         "image_pos": (ImagePosition, "compound"),
         "max_line_length": (int, "wraplength"),
         "style": str,

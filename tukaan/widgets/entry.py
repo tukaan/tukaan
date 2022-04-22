@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from tukaan._structures import Bbox, Color
+from tukaan._structures import Bbox
 from tukaan._tcl import Tcl
+from tukaan.colors import Color
 from tukaan.exceptions import TclError
 
 from ._base import BaseWidget, InputControlWidget, TkWidget, XScrollable
