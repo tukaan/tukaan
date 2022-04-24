@@ -441,7 +441,7 @@ class Font:
         Tcl.call(None, "font", "delete", self._name)
         del _fonts[self._name]
 
-    def measure(self, text: str, /) -> int:
+    def measure(self, text: str) -> int:
         """Measures, how wide the text would be with the current font family."""
         return Tcl.call(int, "font", "measure", self, text)
 

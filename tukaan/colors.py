@@ -196,7 +196,7 @@ class Color:
     green: int
     blue: int
 
-    def __init__(self, color: str = None, /, **kwargs):
+    def __init__(self, color: str = None, **kwargs):
         if len(kwargs) != 1:
             if color:
                 value = color

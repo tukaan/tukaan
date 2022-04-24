@@ -78,7 +78,7 @@ class Filter:
 
 
 class ComposeFilter(Filter):
-    def __init__(self, filter_1, filter_2, /):
+    def __init__(self, filter_1, filter_2):
         self._filters = [filter_1, filter_2]
 
         self._name = Tcl.call(str, "Snack::filter", "compose", filter_1, filter_2)
@@ -87,8 +87,8 @@ class ComposeFilter(Filter):
         self.append(other)
         return self
 
-    def append(self, filt: Filter, /):
-        self._filters.append(filt)
+    def append(self, filter_: Filter):
+        self._filters.append(filter_)
         Tcl.call(None, self, "configure", *self._filters)
 
 
@@ -425,13 +425,13 @@ class Sound:
         Tcl.call(None, new_sound, "copy", self)
         return new_sound
 
-    def filter(self, filter_: Filter, /) -> Sound:
+    def filter(self, filter_: Filter) -> Sound:
         Tcl.call(None, self, "filter", filter_)
         return self
 
     __imatmul__ = filter
 
-    def concat(self, other_sound: Sound, /) -> Sound:
+    def concat(self, other_sound: Sound) -> Sound:
         if isinstance(other_sound, SoundSection):
             other_sound = other_sound.copy()
 
@@ -440,7 +440,7 @@ class Sound:
 
     __iadd__ = concat
 
-    def mix(self, other_sound: Sound | SoundSection, /) -> Sound:
+    def mix(self, other_sound: Sound | SoundSection) -> Sound:
         args = ()
         if isinstance(other_sound, SoundSection):
             args = (*Tcl.to_tcl_args(start=other_sound.start, end=other_sound.end),)
@@ -450,7 +450,7 @@ class Sound:
 
     __iand__ = mix
 
-    def insert(self, position: int | Time, other_sound: Sound | SoundSection, /) -> Sound:
+    def insert(self, position: int | Time, other_sound: Sound | SoundSection) -> Sound:
         if isinstance(position, Time):
             position = self._get_sample(position)
 
@@ -582,7 +582,7 @@ class Sound:
 
 
 class SoundSection:
-    def __init__(self, sound: Sound, slice_arg: slice, /) -> None:
+    def __init__(self, sound: Sound, slice_arg: slice) -> None:
         self._name = sound._name
         self._sound = sound
         sample_rate = Tcl.call(int, self, "cget", "-rate")
@@ -663,7 +663,7 @@ class SoundSection:
         )
         return new_sound
 
-    def filter(self, filter_: Filter, /) -> SoundSection:
+    def filter(self, filter_: Filter) -> SoundSection:
         Tcl.call(
             None,
             self,

@@ -78,9 +78,9 @@ def linux_only(func):
 flatten = itertools.chain.from_iterable
 
 
-def reversed_dict(dictionary: dict, /) -> dict:
+def reversed_dict(dictionary: dict) -> dict:
     return {value: key for key, value in dictionary.items()}
 
 
-def seq_pairs(sequence, /):
+def seq_pairs(sequence):
     return zip(sequence[0::2], sequence[1::2])
