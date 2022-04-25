@@ -1,13 +1,8 @@
-# Tukaan
+# Tukaan (https://tukaan.github.io)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-1c1c1c.svg)](https://github.com/psf/black)
-
-Website: https://tukaan.github.io
-
-## This is a work-in-progress project.
-I don't release a package to Pypi, because I break backwards-compatibility alomost with every commit, and because I still have to write tests, to see, what works, and what doesn't. You can still use it by downloading or cloning the repo, but there's no `setup.py` to install it on the system.
-
-## The goal of Tukaan
-The goal of Tukaan is to be an **easy-to-use**, **powerful** and **Pythonic** GUI framework.
+![#StandWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)
+<!-- Russian warship, go fuck yourself![#standWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/RussianWarship.svg) -->
+#### Tukaan is a modern, cross-platform GUI framework for Python, which aims to replace Tkiner.
 
 ## Why not Tkinter?
 Tkinter is just a wrapper around Tk, that is so thin, that you can see through it, and even has holes on it. If you have ever used Tkinter, you know, it's kinda dumb. There are a lot of things not implemented in Tkinter, that you can only access with Tcl calls. Tukaan has everything you could need, and maybe even more :)
