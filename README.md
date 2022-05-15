@@ -1,7 +1,13 @@
-# Tukaan (https://tukaan.github.io)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/tukaan/.github/master/assets/tukaan.png" alt="Tukaan" width="150px">
+  <h1 align="center">Tukaan</h1>
+</p>
+
+
+[![tukaan.github.io](https://img.shields.io/badge/Website-tukaan.github.io-%23ec9f30)](https://tukaan.github.io)
+[![#StandWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://www.standwithukraine.how/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-1c1c1c.svg)](https://github.com/psf/black)
-![#StandWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)
-<!-- Russian warship, go fuck yourself![#standWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/RussianWarship.svg) -->
+
 #### Tukaan is a modern, cross-platform GUI framework for Python, which aims to replace Tkiner.
 
 ## Why not Tkinter?
