@@ -1,6 +1,3 @@
 [submodule "tukaan/Serif"]
 	path = tukaan/Serif
 	url = https://github.com/tukaan/Serif
-[submodule "tukaan/Snack"]
-	path = tukaan/Snack
-	url = https://github.com/tukaan/Snack
