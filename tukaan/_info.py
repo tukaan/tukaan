@@ -4,7 +4,6 @@ import platform
 from fractions import Fraction
 
 import _tkinter as tk
-import psutil
 from screeninfo import get_monitors  # type: ignore
 
 from ._structures import OsVersion, Position, Version
