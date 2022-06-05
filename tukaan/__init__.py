@@ -2,7 +2,7 @@ __all__: list = []  # Making star imports impossible. Is it illegal?
 __author__ = "rdbende"
 __license__ = "MIT license"
 __package__ = "tukaan"
-__version__ = "0.0.1.dev0"
+__version__ = "0.0.1.dev1"
 
 
 import sys

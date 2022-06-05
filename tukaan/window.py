@@ -659,7 +659,9 @@ class App(WindowMixin, TkWidget):
         self.layout: ContainerLayoutManager = ContainerLayoutManager(self)
 
         self._init_tkdnd()
-        load_serif()
+
+        if sys.platform == "linux":
+            load_serif()
 
         self.theme = native_theme()
 

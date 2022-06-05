@@ -10,26 +10,23 @@ def get_requirements():
 
 setup(
     name="tukaan",
-    version="0.0.1.dev0",
+    version="0.0.1.dev1",
     author="rdbende",
     author_email="rdbende@gmail.com",
     url="https://github.com/tukaan/tukaan",
     license="MIT license",
     python_requires=">=3.7",
     install_requires=list(get_requirements()),
+    description="A modern, cross platform Python toolkit for creating desktop GUI applications, based on Tcl/Tk.",
     packages=[
         "tukaan",
         "tukaan/Serif",
-        "tukaan/Snack",
-        "tukaan/audio",
         "tukaan/themes",
         "tukaan/tkdnd",
         "tukaan/widgets",
     ],
     package_data={
         "": [
-            "Snack/pkg/*.tcl",
-            "Snack/pkg/*/*.*",
             "Serif/pkg/*.*",
             "tkdnd/*/*.*",
         ]

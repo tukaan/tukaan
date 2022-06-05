@@ -14,12 +14,12 @@ from ._utils import reversed_dict
 from .colors import Color
 
 if System.os == "macOS":
-    button_numbers = {1: "left", 2: "right", 3: "middle"}
+    button_numbers = {1: "left", 2: "right", 3: "middle", None: None}
     modifier_order = {"Alt_Opt": "⌥", "Shift": "⇧", "Ctrl_Ctrl": "⌃", "Ctrl_Cmd": "⌘"}
     platform_sortcuts = {"Preferences": ("Ctrl_Cmd", ","), "Help": ("Ctrl_Cmd", "?")}
     shortcut_separator = ""
 else:
-    button_numbers = {1: "left", 2: "middle", 3: "right"}
+    button_numbers = {1: "left", 2: "middle", 3: "right", None: None}
     modifier_order = {"Ctrl_Ctrl": "Ctrl", "Ctrl_Cmd": "Ctrl", "Alt_Opt": "Alt", "Shift": "Shift"}
     platform_sortcuts = {"Preferences": ("Ctrl_Cmd", "."), "Help": ("F1",)}  # type: ignore  # mypy doesn't like ("F1",)
     shortcut_separator = "+"
