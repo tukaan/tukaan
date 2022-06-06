@@ -8,7 +8,24 @@
 [![#StandWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://www.standwithukraine.how/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-1c1c1c.svg)](https://github.com/psf/black)
 
-#### Tukaan is a modern, cross-platform GUI framework for Python, which aims to replace Tkiner.
+#### Tukaan is a modern, cross platform Python toolkit for creating desktop GUI applications
+
+## Install
+
+You can use `pip` to install [Tukaan from Pypi](https://pypi.org/project/tukaan/)
+
+On Linux or macOS:
+```
+pip3 install tukaan
+```
+
+or Windows:
+```
+pip install tukaan
+```
+
+On Linux you may get an error that the `_tkinter` module is not found. In that case you need to install the `python3-tk` package with your package manager.
+
 
 ## Why not Tkinter?
 Tkinter is just a wrapper around Tk, that is so thin, that you can see through it, and even has holes on it. If you have ever used Tkinter, you know, it's kinda dumb. There are a lot of things not implemented in Tkinter, that you can only access with Tcl calls. Tukaan has everything you could need, and maybe even more :)
@@ -20,7 +37,7 @@ With Tukaan this is completely different. The apps look native by default on Win
 
 
 ## Credits
-- Many thing in Tukaan is based on:
+- Many things in Tukaan are based on:
   - [Akuli's Teek](https://github.com/Akuli/teek)
 - And there are some thing that are inspired by
   - [TkZero](https://github.com/UnsignedArduino/TkZero)
