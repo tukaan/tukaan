@@ -15,22 +15,28 @@ class ToolTip():
 
     def enter(self, *args):
         self.tooltip = Label(self.window, text=self.text)
+        X = self.widget.rel_x
+        Y = self.widget.rel_y
+        NY = int(self.widget.rel_y-self.tooltip.height-5)
+        EX = int(self.widget.abs_x+self.widget.width+5)
+        SY = int(self.widget.rel_y+self.widget.height+5)
+        WX = int(self.widget.abs_x-self.tooltip.width-5)
         if self.orient == "N":
-            self.tooltip.layout.position(x=self.widget.rel_x, y=int(self.widget.rel_y-self.tooltip.height-5))
+            self.tooltip.layout.position(x=X, y=NY)
         elif self.orient == "E":
-            self.tooltip.layout.position(x=int(self.widget.abs_x+self.widget.width+5), y=self.widget.rel_y)
+            self.tooltip.layout.position(x=EX, y=Y)
         elif self.orient == "S":
-            self.tooltip.layout.position(x=self.widget.rel_x, y=int(self.widget.rel_y+self.widget.height+5))
+            self.tooltip.layout.position(x=X, y=SY)
         elif self.orient == "W":
-            self.tooltip.layout.position(x=int(self.widget.abs_x-self.tooltip.width-5), y=self.widget.rel_y)
+            self.tooltip.layout.position(x=WX, y=Y)
         elif self.orient == "NE":
-            self.tooltip.layout.position(x=int(self.widget.abs_x+self.widget.width+5), y=int(self.widget.rel_y-self.tooltip.height-5))
+            self.tooltip.layout.position(x=EX, y=NY)
         elif self.orient == "SE":
-            self.tooltip.layout.position(x=int(self.widget.abs_x+self.widget.width+5), y=int(self.widget.rel_y+self.widget.height+5))
+            self.tooltip.layout.position(x=EX, y=SY)
         elif self.orient == "NW":
-            self.tooltip.layout.position(x=int(self.widget.abs_x-self.tooltip.width-5), y=int(self.widget.rel_y-self.tooltip.height-5))
+            self.tooltip.layout.position(x=WX, y=NY)
         elif self.orient == "SW":
-            self.tooltip.layout.position(x=int(self.widget.abs_x-self.tooltip.width-5), y=int(self.widget.rel_y+self.widget.height+5))
+            self.tooltip.layout.position(x=WX, y=SY)
     
     def leave(self, *args):
         self.tooltip.destroy()
