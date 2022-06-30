@@ -1,4 +1,5 @@
 from tukaan import Label
+from tukaan._tcl import Tcl
 
 class ToolTip():
     def __init__(self, window, widget=None, orient="E", *args, **kwargs):
@@ -15,6 +16,8 @@ class ToolTip():
 
     def enter(self, *args):
         self.tooltip = Label(self.window, text=self.text)
+        Tcl.call(None, self.tooltip, "configure", "-relief", "solid")
+        Tcl.call(None, self.tooltip, "configure", "-borderwidth", "1")
         X = self.widget.rel_x
         Y = self.widget.rel_y
         NY = int(self.widget.rel_y-self.tooltip.height-5)
