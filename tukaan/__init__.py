@@ -41,6 +41,7 @@ from .widgets.spinbox import SpinBox
 from .widgets.splitview import SplitView
 from .widgets.tabview import TabView
 from .widgets.textbox import TabStop, TextBox
+from .widgets.tooltip import ToolTip
 from .window import App, Window, _ConfigObject
 
 Config = _ConfigObject()
