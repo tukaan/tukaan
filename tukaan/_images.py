@@ -121,7 +121,7 @@ class Pillow2Tcl:
     def __from_tcl__(cls, value: str) -> PIL_Image.Image | None:
         if isinstance(value, (tuple, list)):
             [value] = value
-        return _pil_images[value]
+        return _pil_images.get(value)
 
 
 def pil_image_to_tcl(self):

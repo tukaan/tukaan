@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from typing import Callable
 
 from PIL import Image
+
 from tukaan._base import Container, TkWidget, WidgetBase
 from tukaan._images import Icon, Pillow2Tcl
 from tukaan._props import _convert_padding, _convert_padding_back, focusable
