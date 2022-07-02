@@ -2,54 +2,64 @@ from __future__ import annotations
 
 from PIL import Image  # type: ignore
 
-from tukaan._enums import Alignment, ImagePosition, Justify
-from tukaan._images import Icon, PIL_TclConverter
+from tukaan._base import OutputDisplay, TkWidget, WidgetBase
+from tukaan._images import Icon, image
+from tukaan._props import bg_color, cget, config, focusable, image_pos, text, text_align
 from tukaan.colors import Color
+from tukaan.enums import Anchor, ImagePosition, Justify
 
-from ._base import BaseWidget, OutputDisplayWidget, TkWidget
 
-
-class Label(BaseWidget, OutputDisplayWidget):
+class Label(WidgetBase, OutputDisplay):
     _tcl_class = "ttk::label"
-    _keys = {
-        "align_content": Alignment,
-        "align_text": Justify,
-        "focusable": (bool, "takefocus"),
-        "image": PIL_TclConverter,
-        "image_pos": (ImagePosition, "compound"),
-        "max_line_length": (int, "wraplength"),
-        "style": str,
-        "text": str,
-        "bg_color": (Color, "background"),
-    }
+
+    bg_color = bg_color
+    focusable = focusable
+    image = image
+    image_pos = image_pos
+    text = text
+    text_align = text_align
 
     def __init__(
         self,
         parent: TkWidget,
         text: str | None = None,
         *,
-        align_content: Alignment = Alignment.Center,
-        bg_color: str | None = None,
-        fg_color: str | None = None,
+        bg_color: Color | str | None = None,
+        content_align: Anchor = Anchor.Center,
+        fg_color: Color | str | None = None,
         focusable: bool | None = None,
         image: Image.Image | Icon | None = None,
         image_pos: ImagePosition | None = None,
-        justify: Justify | None = None,
         max_line_length: int | None = None,
-        style: str | None = None,
+        text_align: Justify = Justify.Left,
     ) -> None:
 
-        BaseWidget.__init__(
+        WidgetBase.__init__(
             self,
             parent,
-            anchor=align_content,
-            compound=image_pos,
-            image=image,
-            justify=justify,
-            style=style,
-            takefocus=focusable,
-            wraplength=max_line_length,
+            anchor=content_align,
             background=bg_color,
+            compound=image_pos,
             foreground=fg_color,
+            image=image,
+            justify=text_align,
+            takefocus=focusable,
+            text=text,
+            wraplength=max_line_length,
         )
-        self.config(text=text)
+
+    @property
+    def content_align(self) -> Anchor:
+        return cget(self, Anchor, "-anchor")
+
+    @content_align.setter
+    def content_align(self, value: Anchor) -> None:
+        config(self, anchor=value)
+
+    @property
+    def max_line_length(self) -> int:
+        return cget(self, int, "-wraplength")
+
+    @max_line_length.setter
+    def max_line_length(self, value: int) -> None:
+        config(self, wraplength=value)

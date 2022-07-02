@@ -2,33 +2,23 @@ from __future__ import annotations
 
 from typing import Callable, Iterable
 
+from tukaan._base import TkWidget, WidgetBase
+from tukaan._props import cget, config
 from tukaan._tcl import Tcl
+from tukaan._utils import _commands
 from tukaan.colors import Color
 from tukaan.exceptions import TclError
 
-from ._base import BaseWidget, TkWidget
-from .entry import Entry
+from .textbox import TextBox
 
 
-class ComboBox(Entry):
+class ComboBox(TextBox):
     _tcl_class = "ttk::combobox"
-    _keys = {
-        "fg_color": (Color, "foreground"),
-        "focusable": (bool, "takefocus"),
-        "hide_chars_with": (str, "show"),
-        "on_click": ("func", "postcommand"),
-        "on_xscroll": ("func", "xscrollcommand"),
-        "style": str,
-        "text_align": (str, "justify"),
-        "values": [str],
-        "visible_rows": (int, "height"),
-        "width": int,
-    }
 
     def __init__(
         self,
         parent: TkWidget,
-        values: list | tuple | None = None,
+        values: list[str | float] | None = None,
         *,
         current: int | None = None,
         fg_color: str | Color | None = None,
@@ -37,7 +27,6 @@ class ComboBox(Entry):
         hide_chars_with: str | None = "•",
         on_click: Callable | None = None,
         on_select: Callable | None = None,
-        style: str | None = None,
         text_align: str | None = None,
         user_edit: bool | None = True,
         visible_rows: int | None = None,
@@ -48,7 +37,7 @@ class ComboBox(Entry):
         if not hide_chars:
             hide_chars_with = None
 
-        BaseWidget.__init__(
+        WidgetBase.__init__(
             self,
             parent,
             foreground=fg_color,
@@ -57,22 +46,18 @@ class ComboBox(Entry):
             postcommand=on_click,
             show=hide_chars_with,
             state=None if user_edit else "readonly",
-            style=style,
             takefocus=focusable,
             values=values,
             width=width,
         )
 
-        self.bind("<<ComboboxSelected>>", f"{self._name} selection clear")
+        self.bind("<<ComboboxSelected>>", f"+{self._name} selection clear")
         self.bind("<FocusOut>", f"+{self._name} selection clear")
 
         if on_select:
             self.bind("<<ComboboxSelected>>", on_select)
 
-        if current is not None:
-            self.current = current
-        else:
-            self.current = 0
+        self.current = 0 if current is None else current
 
     def __len__(self) -> int:
         return len(Tcl.call([str], self, "cget", "-values"))
@@ -81,12 +66,14 @@ class ComboBox(Entry):
         return iter(Tcl.call([str], self, "cget", "-values"))
 
     def __contains__(self, item: str) -> bool:
-        return str(item) in Tcl.call([str], self, "cget", "-values")
+        return item in Tcl.call([str], self, "cget", "-values")
 
     def set(self, value: str) -> None:
         Tcl.call(None, self, "set", value)
 
-    value = property(Entry.get, set)
+    value = property(TextBox.get, set)
+
+    # Properties #
 
     @property
     def current(self) -> int:
@@ -97,4 +84,33 @@ class ComboBox(Entry):
         try:
             Tcl.call(None, self, "current", index)
         except TclError:
-            raise IndexError("ComboBox index out of range")
+            raise IndexError("ComboBox index out of range") from None
+
+    @property
+    def visible_rows(self) -> int:
+        return cget(self, int, "-height")
+
+    @visible_rows.setter
+    def visible_rows(self, value: int) -> None:
+        config(self, height=value)
+
+    @property
+    def values(self) -> list[str]:
+        return cget(self, [str], "-values")
+
+    @values.setter
+    def values(self, value: list[str | float] | None) -> None:
+        if value is None:
+            value = []
+        config(self, values=value)
+
+    @property
+    def on_click(self) -> Callable[..., None] | None:
+        return _commands.get(cget(self, str, "-postcommand"))
+
+    @on_click.setter
+    def on_click(self, func: Callable[..., None] | None) -> None:
+        value = func
+        if value is None:
+            value = ""
+        config(self, postcommand=value)

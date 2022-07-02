@@ -1,69 +1,86 @@
 from __future__ import annotations
 
+from typing import Generator
+
+from tukaan._base import OutputDisplay, TkWidget, WidgetBase
+from tukaan._props import cget, config, focusable, link, orientation, value
 from tukaan._tcl import Tcl
-from tukaan._variables import Float
+from tukaan._variables import Float, Integer
+from tukaan.enums import Orientation, ProgressMode
+from tukaan.timeouts import Timeout
 
-from ._base import BaseWidget, OutputDisplayWidget, TkWidget
 
-
-class ProgressBar(BaseWidget, OutputDisplayWidget):
+class ProgressBar(WidgetBase, OutputDisplay):
     _tcl_class = "ttk::progressbar"
-    _keys = {
-        "focusable": (bool, "takefocus"),
-        "max": float,
-        "mode": str,
-        "orientation": (str, "orient"),
-        "value": float,
-        "variable": Float,
-    }
+
+    focusable = focusable
+    orientation = orientation
+    value = value
+    link = link
+
+    _timeout = None
 
     def __init__(
         self,
         parent: TkWidget,
-        max: int | None = 100,
+        length: int = 100,
         *,
         focusable: bool | None = None,
-        mode: str | None = None,
-        orientation: str | None = None,
+        link: Integer | Float | None = None,
+        mode: ProgressMode | None = None,
+        orientation: Orientation | None = None,
         value: int | None = None,
-        variable: Float | None = None,
     ) -> None:
-        BaseWidget.__init__(
+        self._max = length
+
+        WidgetBase.__init__(
             self,
             parent,
-            maximum=max,
+            max=length,
             mode=mode,
             orient=orientation,
             takefocus=focusable,
             value=value,
-            variable=variable,
+            variable=link,
         )
 
     def _repr_details(self):
-        return f"mode={self.mode!r}, max={self.max!r}, value={self.value!r}"
-
-    def get(self) -> float:
-        return self.value
-
-    def set(self, value: float = 0) -> None:
-        self.value = value
-
-    def start(self, steps_per_second: int = 20) -> None:
-        if steps_per_second > 1000:
-            raise ValueError("error")
-        interval = int(1000 / steps_per_second)
-        Tcl.call(None, self, "start", interval)
-
-    def stop(self) -> None:
-        Tcl.call(None, self, "stop")
+        return f"mode={self.mode!r}, length={self.max!r}, value={self.value!r}"
 
     def step(self, amount: int = 1) -> None:
         Tcl.call(None, self, "step", amount)
 
-    def __add__(self, other: int):
-        self.set(self.get() + other)
-        return self
+    def start_progress(self, steps_per_second: int = 20) -> None:
+        self._timeout = Timeout(1 / steps_per_second, self.step)
+        self._timeout.repeat()
 
-    def __sub__(self, other: int):
-        self.set(self.get() - other)
-        return self
+    def stop_progress(self) -> None:
+        if self._timeout is not None:
+            self._timeout.cancel()
+
+    def through(self) -> Generator[int, None, None]:
+        self.value = 0
+        yield 0
+
+        for i in range(1, self._max):
+            Tcl.call(None, self._name, "step")
+            yield i
+
+    ### Properties ###
+
+    @property
+    def length(self) -> int:
+        return cget(self, int, "-max")
+
+    @length.setter
+    def length(self, value: int) -> None:
+        self._max = value
+        return config(self, max=value)
+
+    @property
+    def mode(self) -> ProgressMode:
+        return cget(self, ProgressMode, "-mode")
+
+    @mode.setter
+    def mode(self, value: ProgressMode) -> None:
+        return config(self, mode=value)

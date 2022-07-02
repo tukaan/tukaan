@@ -77,10 +77,7 @@ class Tcl:
             return Tcl.get_string(value)
 
         if type_spec is bool:
-            if not Tcl.from_(str, value):
-                return None
-
-            return Tcl.get_bool(value)
+            return Tcl.get_bool(value) if Tcl.from_(str, value) else None
 
         if type_spec is int or type_spec is float:
             return Tcl.get_number(type_spec, value)
@@ -163,22 +160,22 @@ class Tcl:
             msg = str(e)
 
             if "application has been destroyed" in msg:
-                raise AppError("can't invoke Tcl callback. Application has been destroyed.")
+                raise AppError(
+                    "can't invoke Tcl callback. Application has been destroyed."
+                ) from None
 
-            if msg.startswith("couldn't read file"):
-                # FileNotFoundError is a bit more pythonic than TclError: couldn't read file
-                path = msg.split('"')[1]  # path is between ""
-                sys.tracebacklimit = 0
-                raise FileNotFoundError(f"No such file or directory: {path!r}") from None
-            else:
+            if not msg.startswith("couldn't read file"):
                 raise TclError(msg) from None
+            path = msg.split('"')[1]
+            sys.tracebacklimit = 0
+            raise FileNotFoundError(f"No such file or directory: {path!r}") from None
 
     @staticmethod
     def eval(return_type: Any, script: str) -> Any:
         try:
             result = _tcl_interp.eval(script)
         except tk.TclError as e:
-            raise TclError(str(e))
+            raise TclError(str(e)) from None
         else:
             return Tcl.from_(return_type, result)
 
@@ -224,10 +221,7 @@ class Tcl:
 
     @staticmethod
     def get_number(type_spec: type[int] | type[float], value: str | tk.Tcl_obj) -> float | None:
-        if not Tcl.get_string(value):
-            return None
-
-        return type_spec(_tcl_interp.getdouble(value))
+        return type_spec(_tcl_interp.getdouble(value)) if Tcl.get_string(value) else None
 
     @staticmethod
     def get_iterable(value: str | tk.Tcl_obj) -> tuple:

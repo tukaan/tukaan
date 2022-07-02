@@ -4,7 +4,7 @@ from ._tcl import Tcl
 from ._utils import _variables, counts
 
 
-class _TclVariable:
+class ControlVariable:
     _type_spec: type
     _default: float | str | bool
 
@@ -34,8 +34,8 @@ class _TclVariable:
     def __from_tcl__(cls, value):
         return _variables[value]
 
-    def set(self, new_value) -> None:
-        Tcl.call(None, "set", self._name, new_value)
+    def set(self, new_value):
+        return Tcl.call(self._type_spec, "set", self._name, new_value)
 
     def get(self):
         return Tcl.call(self._type_spec, "set", self._name)
@@ -49,21 +49,26 @@ class _TclVariable:
         self.set(value)
 
 
-class String(_TclVariable):
+class String(ControlVariable):
     _type_spec = str
     _default = ""
 
 
-class Integer(_TclVariable):
+class Integer(ControlVariable):
     _type_spec = int
     _default = 0
 
 
-class Float(_TclVariable):
+class Float(ControlVariable):
     _type_spec = float
     _default = 0.0
 
 
-class Boolean(_TclVariable):
+class Boolean(ControlVariable):
     _type_spec = bool
     _default = False
+
+    def __invert__(self) -> bool:
+        inverted = not Tcl.call(bool, "set", self._name)
+        Tcl.call(None, "set", self._name, inverted)
+        return inverted

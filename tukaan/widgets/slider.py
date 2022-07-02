@@ -2,65 +2,99 @@ from __future__ import annotations
 
 from typing import Callable
 
-from tukaan._tcl import Tcl
-from tukaan._variables import Float
-from tukaan.screen_distance import ScreenDistance
+from tukaan._base import InputControl, TkWidget, WidgetBase
+from tukaan._props import cget, config, focusable, link, orientation, value
+from tukaan._variables import Float, Integer
+from tukaan.enums import Orientation
 
-from ._base import BaseWidget, InputControlWidget, TkWidget
 
-
-class Slider(BaseWidget, InputControlWidget):
+class Slider(WidgetBase, InputControl):
     _tcl_class = "ttk::scale"
-    _keys = {
-        "focusable": (bool, "takefocus"),
-        "length": ScreenDistance,
-        "max": (float, "to"),
-        "min": (float, "from"),
-        "on_move": ("func", "command"),
-        "orientation": (str, "orient"),
-        "value": float,
-        "variable": Float,
-    }
+
+    focusable = focusable
+    link = link
+    orientation = orientation
+    value = value
 
     def __init__(
         self,
         parent: TkWidget,
-        max: int | None = 100,
-        *,
+        *args,
         focusable: bool | None = None,
-        length: int | ScreenDistance | None = None,
-        min: int | None = 0,
-        on_move: Callable | None = None,
-        orientation: str | None = None,
-        value: float | None = None,
-        variable: Float | None = None,
+        link: Integer | Float | None = None,
+        max: float | None = None,
+        min: float | None = None,
+        on_move: Callable[[float], None] | None = None,
+        orientation: Orientation | None = None,
+        value: int | None = None,
     ) -> None:
-        BaseWidget.__init__(
+
+        if (max is not None and args) or (min is not None and len(args) == 2):
+            raise TypeError(
+                f"Slider() got multiple values for argument {('max' if max is not None else 'min')!r}"
+            )
+
+        if not args and max is None:
+            max = 100
+        elif len(args) == 1:
+            [max] = args
+        elif len(args) == 2:
+            min, max, *_ = args
+
+        self._original_cmd = on_move
+        if on_move is not None:
+            func = on_move
+            on_move = lambda x: func(float(x))
+
+        self._variable = link
+
+        WidgetBase.__init__(
             self,
             parent,
-            command=on_move,
-            from_=min,
-            length=length,
             orient=orientation,
             takefocus=focusable,
-            to=max,
             value=value,
-            variable=variable,
+            variable=link,
+            to=max,
+            from_=min,
+            command=on_move,
         )
 
     def _repr_details(self):
         return f"min={self.min!r}, max={self.max!r}, value={self.value!r}"
 
-    def get(self) -> float:
-        return Tcl.call(float, self, "get")
+    @property
+    def bounds(self):
+        return cget(self, float, "-from"), cget(self, float, "-to")
 
-    def set(self, value: float = 0) -> None:
-        Tcl.call(None, self, "set", value)
+    @bounds.setter
+    def bounds(self, value: tuple[float, float]):
+        from_, to = value
+        config(self, from_=from_)
+        config(self, to=to)
 
-    def __add__(self, other: int):
-        self.set(self.get() + other)
-        return self
+    @property
+    def min(self):
+        return cget(self, float, "-from")
 
-    def __sub__(self, other: int):
-        self.set(self.get() - other)
-        return self
+    @min.setter
+    def min(self, value: float):
+        config(self, from_=value)
+
+    @property
+    def max(self):
+        return cget(self, float, "-to")
+
+    @max.setter
+    def max(self, value: float):
+        config(self, to=value)
+
+    @property
+    def on_move(self) -> Callable[[float], None] | None:
+        return self._original_cmd
+
+    @on_move.setter
+    def on_move(self, func: Callable[[float], None]) -> None:
+        self._original_cmd = func
+        value = lambda x: func(float(x))
+        config(self, command=value)

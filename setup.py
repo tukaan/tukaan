@@ -1,4 +1,5 @@
 from setuptools import setup
+from tukaan import __version__
 
 
 def get_requirements():
@@ -7,10 +8,13 @@ def get_requirements():
             if line and not line.startswith("#"):
                 yield line
 
+with open("README.md", "r") as file:
+    long_description = file.read()
+
 
 setup(
     name="tukaan",
-    version="0.0.1.dev1",
+    version=__version__,
     author="rdbende",
     author_email="rdbende@gmail.com",
     url="https://github.com/tukaan/tukaan",
@@ -18,6 +22,9 @@ setup(
     python_requires=">=3.7",
     install_requires=list(get_requirements()),
     description="A modern, cross platform Python toolkit for creating desktop GUI applications, based on Tcl/Tk.",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    keywords=["gui", "ui", "tukaan", "tkinter", "ttk", "tcl", "tk", "tcl/tk"],
     packages=[
         "tukaan",
         "tukaan/Serif",

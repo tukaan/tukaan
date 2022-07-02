@@ -1,122 +1,140 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Callable
 
+from tukaan._base import InputControl, TkWidget, WidgetBase
+from tukaan._props import command, focusable, link, text, value, width
 from tukaan._tcl import Tcl
-from tukaan._variables import String, _TclVariable
+from tukaan._variables import ControlVariable, String
+from tukaan.enums import Orientation
 
-from ._base import BaseWidget, InputControlWidget, TkWidget
 from .frame import Frame
 
 
-class RadioButton(BaseWidget, InputControlWidget):
+class RadioButton(WidgetBase, InputControl):
     _tcl_class = "ttk::radiobutton"
-    _keys = {
-        "focusable": (bool, "takefocus"),
-        "on_click": ("func", "command"),
-        "style": str,
-        "text": str,
-        "underline": int,
-        "value": str,  # ???
-        "variable": _TclVariable,
-        "width": int,
-    }
+
+    focusable = focusable
+    link = link
+    on_click = command
+    text = text
+    value = value
+    width = width
 
     def __init__(
         self,
         parent: TkWidget,
-        text: str | None = None,
-        value: Any | None = None,
-        variable: _TclVariable | None = None,
+        text: str,
+        value: str | float | bool,
+        link: ControlVariable,
         *,
         focusable: bool | None = None,
-        on_click: Callable | None = None,
-        style: str | None = None,
-        underline: int | None = None,
+        on_click: Callable[..., None] | None = None,
         width: int | None = None,
     ) -> None:
-        BaseWidget.__init__(
+        self._variable = link
+
+        WidgetBase.__init__(
             self,
             parent,
             command=on_click,
-            style=style,
             takefocus=focusable,
-            underline=underline,
             value=value,
-            variable=variable,
+            variable=link,
             width=width,
+            text=text,
         )
-        self.config(text=text)
 
     def invoke(self):
+        """Invokes the radiobutton, as if it were clicked"""
+
         Tcl.call(None, self, "invoke")
 
     def select(self):
-        self.variable.set(self.value)
+        """Selects the radiobutton"""
+
+        self._variable.set(self.value)
 
     @property
-    def is_selected(self) -> bool:  # read-only
-        return self.variable.get() == self.value
+    def selected(self) -> bool:
+        """Returns if the radiobutton is selected or not"""
+
+        return self._variable.get() == self.value
 
 
-class RadioGroup(Frame, InputControlWidget):
-    _keys = {}
+class RadioGroup(Frame, InputControl):
+    _items: dict[str, RadioButton]
 
     def __init__(
         self,
         parent: TkWidget,
         items: dict[str, str],
         *,
+        selected: str | None = None,
+        orientation: Orientation = Orientation.Vertical,
         padding: int | tuple[int, ...] | None = None,
     ) -> None:
+        self._items = {}
+
         Frame.__init__(self, parent, padding=padding)
 
-        self.variable = String(tuple(items.keys())[0])
-        self.items = items  # RadioGroup.items setter
+        self.link = String(selected or tuple(items.keys())[0])
+        self._orient = orientation
+        self._set_items(items)
 
     def _repr_details(self) -> str:
-        item_id = self.variable.get()
+        item_id = self.link.get()
         if item_id not in self._items:
             item_id = None
 
         return f"number of items={len(self._items)}, selected={item_id!r}"
 
+    def _set_items(self, items: dict[str, str]) -> None:
+        for (value, text) in items.items():
+            radio = RadioButton(self, text, value, self.link)
+            self._items[value] = radio
+        self._regrid()
+
+    def _regrid(self):
+        is_vert = self._orient is Orientation.Vertical
+        for index, radio in enumerate(self._items.values()):
+            if is_vert:
+                Tcl.call(None, "grid", radio, "-row", index, "-column", 0, "-sticky", "w")
+            else:
+                Tcl.call(None, "grid", radio, "-row", 0, "-column", index)
+
+    def __getitem__(self, item: str) -> RadioButton | None:
+        return self._items.get(item)
+
+    def append(self, value: str, text: str) -> None:
+        radio = RadioButton(self, text, value, self.link)
+        self._items[value] = radio
+        self._regrid()
+
+    def remove(self, item: str) -> None:
+        self._items[item].destroy()
+
     @property
-    def value(self):
-        return self.variable.get()
+    def value(self) -> str:
+        return self.link.get()
 
-    def __getitem__(self, item: str) -> RadioButton:
-        for radio in self.child_stats.children:
-            if radio.item_id == item:
-                return radio
-
-        if item == self.variable.get():
-            # selected getter wants to return a radio that no longer exists
-            return None
-        else:
-            # user tries to select non-existent element
-            raise RuntimeError(f"item with id {item!r} is not in this RadioGroup")
+    @value.setter
+    def value(self, value: str) -> None:
+        self.link.set(value)
 
     @property
     def selected(self) -> RadioButton | None:
-        return self[self.variable.get()]
+        return self._items.get(self.link.get())
 
     @selected.setter
     def selected(self, value: str) -> None:
-        self.variable.set(value)
+        self.link.set(value)
 
     @property
-    def items(self) -> dict[str, str]:
-        return self._items
+    def orientation(self) -> Orientation:
+        return self._orient
 
-    @items.setter
-    def items(self, new_items: dict[str, str]) -> None:
-        self._items = new_items
-
-        for child in self.child_stats.children:
-            child.destroy()
-
-        for index, (id, text) in enumerate(tuple(new_items.items())):
-            radio = RadioButton(self, variable=self.variable, value=id, text=text)
-            radio.item_id = id
-            radio.layout.grid(row=index)
+    @orientation.setter
+    def orientation(self, value: str) -> None:
+        self._orient = value
+        self._regrid()

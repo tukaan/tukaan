@@ -2,75 +2,95 @@ from __future__ import annotations
 
 from typing import Callable
 
+from tukaan._base import InputControl, TkWidget, WidgetBase
+from tukaan._props import config, focusable, link, text, width
 from tukaan._tcl import Tcl
-from tukaan._variables import Boolean, _TclVariable
-
-from ._base import BaseWidget, InputControlWidget, TkWidget
+from tukaan._variables import Boolean
 
 
-class CheckBox(BaseWidget, InputControlWidget):
-    """To turn it on or off you have to use a control variable"""
-
+class CheckBox(WidgetBase, InputControl):
     _tcl_class = "ttk::checkbutton"
-    _keys = {
-        "focusable": (bool, "takefocus"),
-        "on_click": ("func", "command"),
-        "style": str,
-        "text": str,
-        "underline": int,
-        "width": int,
-    }
+
+    _variable: Boolean
+
+    focusable = focusable
+    link = link
+    text = text
+    width = width
 
     def __init__(
         self,
         parent: TkWidget,
+        text: str,
         *,
         focusable: bool | None = None,
-        on_click: Callable | None = None,
-        style: str | None = None,
-        text: str | None = None,
-        underline: int | None = None,
+        on_click: Callable[[bool], None] | None = None,
         value: bool = False,
-        variable: _TclVariable | None = None,
+        link: Boolean | None = None,
         width: int | None = None,
     ) -> None:
-        if variable is None:
-            self._variable = variable = Boolean(value)
-        else:
-            self._variable = variable
 
-        BaseWidget.__init__(
+        if link is None:
+            self._variable = link = Boolean(value)
+        else:
+            self._variable = link
+
+        self._original_cmd = on_click
+        if on_click is not None:
+            func = on_click
+            on_click = lambda: func(self._variable.get())  # type: ignore
+
+        WidgetBase.__init__(
             self,
             parent,
             command=on_click,
             offvalue=False,
             onvalue=True,
-            style=style,
             takefocus=focusable,
-            underline=underline,
-            variable=variable,
+            variable=link,
             width=width,
+            text=text,
         )
-        self.config(text=text)
 
-    def invoke(self):
+    def invoke(self) -> None:
+        """Invokes the checkbox, as if it were clicked"""
+
         Tcl.call(None, self, "invoke")
 
-    def select(self):
-        self._variable.set(True)
+    def select(self) -> bool:
+        """Selects the checkbox"""
 
-    def deselect(self):
-        self._variable.set(False)
+        return self._variable.set(True)
 
-    def toggle(self):
-        self._variable.set(not self._variable.get())
+    def deselect(self) -> bool:
+        """Deselects the checkbox"""
+
+        return self._variable.set(False)
+
+    def toggle(self) -> bool:
+        """Toggles the state of the checkbox"""
+
+        return ~self._variable.set()
 
     @property
-    def is_selected(self) -> bool:
+    def value(self) -> bool:
         return self._variable.get()
 
-    @is_selected.setter
-    def is_selected(self, is_selected: bool) -> None:
-        self._variable.set(is_selected)
+    @value.setter
+    def value(self, value: bool) -> None:
+        self._variable.set(value)
 
-    value = is_selected  # for consistency with RadioButton
+    selected = value
+
+    @property
+    def on_click(self) -> Callable[[bool], None] | None:
+        return self._original_cmd
+
+    @on_click.setter
+    def on_click(self, func: Callable[[bool], None] | None) -> None:
+        self._original_cmd = func
+        if func is not None:
+            value = lambda: func(self._variable.get())
+        else:
+            value = ""
+        config(self, command=value)

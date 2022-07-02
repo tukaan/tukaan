@@ -1,92 +1,99 @@
 from __future__ import annotations
 
 import platform
+import sys
 from fractions import Fraction
 
 import _tkinter as tk
 from screeninfo import get_monitors  # type: ignore
 
-from ._structures import OsVersion, Position, Version
+from ._behaviour import classproperty
+from ._data import Position, Size, Version
 from .exceptions import TclError
 
-if platform.system() == "Linux":
-    import distro  # type: ignore
 
+class System:
+    try:
+        os = {"linux": "Linux", "win32": "Windows", "darwin": "macOS"}[sys.platform]
+    except KeyError:
+        os = sys.platform
 
-class _System:
-    arch: tuple[str, str] = platform.architecture()
-    node: str = platform.node()
-    os: str = {"Linux": "Linux", "Windows": "Windows", "Darwin": "macOS"}[platform.system()]
-    py_version: tuple[int, int, int] = Version(*map(int, platform.python_version_tuple()))
-    release: str = platform.release()
-    tk_version = Version(*map(int, tk.TK_VERSION.split(".")), 0)
+    py_version = Version(*map(int, platform.python_version_tuple()))
+    tk_version = Version(*map(int, tk.TK_VERSION.split(".")[:2]), None)  # type: ignore
 
-    @property
-    def os_version(self) -> OsVersion | None:
-        if self.os == "Linux":
-            return OsVersion(*distro.version_parts())
-        elif self.os == "Windows":
-            return OsVersion(*platform.version().split("."))
-        elif self.os == "macOS":
-            return OsVersion(*platform.mac_ver()[0].split("."), 0)
-
-        return None
-
-    @property
-    def os_distro(self) -> str | None:
-        if self.os == "Linux":
-            return distro.name()
-        return None
-
-    @property
-    def os_codename(self) -> str | None:
-        if self.os == "Linux":
-            return distro.codename()
-        return None
-
-    @property
-    def win_sys(self) -> str:
-        from ._tcl import Tcl
-
-        return {"win32": "DWM", "x11": "X11", "aqua": "Quartz"}[Tcl.windowing_system]
-
-    @property
+    @classproperty
     def tcl_version(self) -> Version:
         from ._tcl import Tcl
 
+        assert Tcl.version is not None
         return Version(*map(int, Tcl.version.split(".")))
 
-    @property
-    def dark_mode(self):
-        if self.os == "Windows":
-            from winreg import HKEY_CURRENT_USER, OpenKey, QueryValueEx
-
-            try:
-                key = OpenKey(
-                    HKEY_CURRENT_USER,
-                    r"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize",
-                )
-                result = QueryValueEx(key, "AppsUseLightTheme")[0]
-            except FileNotFoundError:
-                return False
-
-            return bool(result)
-
-        elif self.os == "macOS":
-            from subprocess import PIPE, Popen
-
-            p = Popen(["defaults", "read", "-g", "AppleInterfaceStyle"], stdout=PIPE, stderr=PIPE)
-            return "dark" in p.communicate()[0].lower()
-
-        return False
+    # @classproperty
+    # def win_sys(self) -> str:
+    #     from ._tcl import Tcl
+    #     assert Tcl.windowing_system is not None
+    #
+    #     return {"win32": "Win32", "x11": "X11", "aqua": "Quartz"}[Tcl.windowing_system]
 
 
-class _Machine:
-    cpu: str = platform.processor()
-    machine: str = platform.machine()
+class Clipboard:
+    def __repr__(self) -> str:
+        return f"<tukaan.Clipboard; content: {self.paste()}>"
+
+    def clear(self) -> None:
+        from ._tcl import Tcl
+
+        Tcl.call(None, "clipboard", "clear")
+
+    def append(self, content: str) -> None:
+        from ._tcl import Tcl
+
+        Tcl.call(None, "clipboard", "append", content)
+
+    def paste(self) -> str | None:
+        from ._tcl import Tcl
+
+        try:
+            return Tcl.call(str, "clipboard", "get")
+        except TclError:
+            return None
+
+    def copy(self, content: str) -> None:
+        from ._tcl import Tcl
+
+        Tcl.call(None, "clipboard", "clear")
+        Tcl.call(None, "clipboard", "append", content)
 
 
-common_resolution_standards = {
+class Pointer:
+    def __repr__(self) -> str:
+        return f"<tukaan.Pointer; position: {tuple(self.position)}>"
+
+    @classproperty
+    def x(self) -> int:
+        from ._tcl import Tcl
+
+        return Tcl.call(int, "winfo", "pointerx", ".")
+
+    @classproperty
+    def y(self) -> int:
+        from ._tcl import Tcl
+
+        return Tcl.call(int, "winfo", "pointery", ".")
+
+    @classproperty
+    def position(self) -> tuple[int, int]:
+        return Position(self.x, self.y)
+
+
+common_resolution_standards: dict[tuple[int, int], str] = {
+    (320, 200): "CGA",
+    (320, 240): "QVGA",
+    (640, 480): "VGA",
+    (768, 576): "PAL",
+    (800, 480): "WVGA",
+    (800, 600): "SVGA",
+    (854, 480): "FWVGA",
     (1024, 600): "WSVGA",
     (1024, 768): "XGA",
     (1280, 1024): "SXGA",
@@ -102,26 +109,19 @@ common_resolution_standards = {
     (2048, 1536): "QXGA",
     (2560, 1600): "WQXGA",
     (2560, 2048): "QSXGA",
-    (320, 200): "CGA",
-    (320, 240): "QVGA",
-    (640, 480): "VGA",
-    (768, 576): "PAL",
-    (800, 480): "WVGA",
-    (800, 600): "SVGA",
-    (854, 480): "FWVGA",
 }
 
-common_aspect_ratios = {
-    16 / 10: "16:10",
-    16 / 9: "16:9",
-    17 / 9: "17:9",
+common_aspect_ratios: dict[float, str] = {
     3 / 2: "3:2",
     4 / 3: "4:3",
     5 / 3: "5:3",
     5 / 4: "5:4",
+    16 / 10: "16:10",
+    16 / 9: "16:9",
+    17 / 9: "17:9",
 }
 
-common_color_depths = {
+common_color_depths: dict[int, str] = {
     1: "monochrome",
     15: "high color",
     16: "high color",
@@ -132,40 +132,74 @@ common_color_depths = {
 }
 
 
-class _Screen:
-    _width: int = 0
-    _height: int = 0
-    _mm_width: int = 0
-    _mm_height: int = 0
+class Screen:
+    try:
+        for monitor in get_monitors():
+            if monitor.is_primary:
+                _width = monitor.width or 0
+                _height = monitor.height or 0
+                _mm_width = monitor.width_mm or 0
+                _mm_height = monitor.height_mm or 0
+    except Exception:
+        # FIXME: Use Tcl winfo command, tho it's influenced by dpi :(
+        _width = 0
+        _height = 0
+        _mm_width = 0
+        _mm_height = 0
 
-    for _monitor in get_monitors():
-        if _monitor.is_primary:
-            _width = _monitor.width or 0
-            _height = _monitor.height or 0
-            _mm_width = _monitor.width_mm or 0
-            _mm_height = _monitor.height_mm or 0
+    @classproperty
+    def dpi(self) -> float:
+        from ._tcl import Tcl
 
-    @property
-    def width(cls):
+        return Tcl.call(float, "winfo", "fpixels", ".", "1i")
+
+    @classproperty
+    def ppi(self) -> float:
+        screen_diagonal_inch = ((self._mm_width / 25.4) ** 2 + (self._mm_height / 25.4) ** 2) ** 0.5
+        screen_diagonal_px = (self._width**2 + self._height**2) ** 0.5
+
+        return screen_diagonal_px / screen_diagonal_inch
+
+    @classproperty
+    def width(self):
         from .screen_distance import ScreenDistance
 
-        return ScreenDistance(px=cls._width)
+        return ScreenDistance(px=self._width)
 
-    @property
-    def height(cls):
+    @classproperty
+    def height(self):
         from .screen_distance import ScreenDistance
 
-        return ScreenDistance(px=cls._height)
+        return ScreenDistance(px=self._height)
 
-    @property
-    def size(self):
-        return (self._width, self._height)
+    @classproperty
+    def size(self) -> Size:
+        return Size(self._width, self._height)
 
-    @property
-    def area(self):
+    @classproperty
+    def area(self) -> float:
         return self._width * self._height
 
-    @property
+    @classproperty
+    def diagonal(self):
+        from .screen_distance import ScreenDistance
+
+        return ScreenDistance(px=(self._width**2 + self._height**2) ** 0.5)
+
+    @classproperty
+    def color_depth(self) -> int:
+        from ._tcl import Tcl
+
+        return Tcl.call(int, "winfo", "screendepth", ".")
+
+    @classproperty
+    def color_depth_alias(self) -> str:
+        try:
+            return common_color_depths[self.color_depth]
+        except KeyError:
+            return ""
+
+    @classproperty
     def aspect_ratio(self) -> str:
         try:
             return common_aspect_ratios[self._width / self._height]
@@ -173,109 +207,9 @@ class _Screen:
             fraction = Fraction(self._width, self._height)  # reduce the ratio
             return f"{fraction.numerator}:{fraction.denominator}"
 
-    @property
+    @classproperty
     def resolution_standard(self) -> str:
         try:
             return common_resolution_standards[(self._width, self._height)]
         except KeyError:
             return ""
-
-    @property
-    def diagonal(self) -> ScreenDistance:
-        from .screen_distance import ScreenDistance
-
-        return ScreenDistance(px=(self._width**2 + self._height**2) ** 0.5)
-
-    @property
-    def color_depth(self) -> int:
-        from ._tcl import Tcl
-
-        return Tcl.call(int, "winfo", "screendepth", ".")
-
-    @property
-    def color_depth_alias(self) -> str:
-        try:
-            return common_color_depths[self.color_depth]
-        except KeyError:
-            return ""
-
-    @property
-    def dpi(self) -> float:
-        from ._tcl import Tcl
-
-        return Tcl.call(float, "winfo", "fpixels", ".", "1i")
-
-    @property
-    def ppi(self) -> float:
-        screen_diagonal_inch = ((self._mm_width / 25.4) ** 2 + (self._mm_height / 25.4) ** 2) ** 0.5
-        screen_diagonal_px = (self._width**2 + self._height**2) ** 0.5
-
-        return screen_diagonal_px / screen_diagonal_inch
-
-
-class _Clipboard:
-    def __repr__(self) -> str:
-        return f"<tukaan.Clipboard; content: {self.get()}>"
-
-    def clear(self) -> None:
-        from ._tcl import Tcl
-
-        Tcl.call(None, "clipboard", "clear")
-
-    def append(self, content) -> None:
-        from ._tcl import Tcl
-
-        Tcl.call(None, "clipboard", "append", content)
-
-    def __add__(self, content) -> _Clipboard:
-        self.append(content)
-        return self
-
-    def get(self) -> str | None:
-        from ._tcl import Tcl
-
-        try:
-            return Tcl.call(str, "clipboard", "get")
-        except TclError:
-            return None
-
-    def set(self, new_content: str) -> None:
-        self.clear()
-        self.append(new_content)
-
-    @property
-    def content(self) -> str:
-        return self.get()
-
-    @content.setter
-    def content(self, new_content: str) -> None:
-        self.set(new_content)
-
-
-class _Pointer:
-    def __repr__(self) -> str:
-        return f"<tukaan.Pointer; position: {tuple(self.position)}>"
-
-    @property
-    def x(cls) -> int:
-        from ._tcl import Tcl
-
-        return Tcl.call(int, "winfo", "pointerx", ".")
-
-    @property
-    def y(cls) -> int:
-        from ._tcl import Tcl
-
-        return Tcl.call(int, "winfo", "pointery", ".")
-
-    @property
-    def position(cls) -> tuple[int, int]:
-        return Position(cls.x, cls.y)
-
-
-# Instantiate them
-Clipboard = _Clipboard()
-Machine = _Machine()
-Pointer = _Pointer()
-Screen = _Screen()
-System = _System()
