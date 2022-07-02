@@ -13,7 +13,7 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install black
-    - run: python3 -m black --check tukaan/*.py
+    - run: python3 -m black --check tukaan/*.py tukaan/*/*.py
   isort:
     runs-on: ubuntu-latest
     steps:
@@ -22,4 +22,4 @@ jobs:
       with:
         python-version: "3.9"
     - run: pip install isort
-    - run: python3 -m isort --check tukaan/*.py
+    - run: python3 -m isort --check tukaan/*.py tukaan/*/*.py

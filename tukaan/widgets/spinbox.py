@@ -1,77 +1,61 @@
 from __future__ import annotations
 
-from collections import namedtuple
-from typing import Callable
+from typing import Callable, Iterable
 
+from tukaan._base import TkWidget, WidgetBase
+from tukaan._props import cget, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
 
-from ._base import BaseWidget, TkWidget
-from .entry import Entry
-
-SpinBox_values = namedtuple("SpinBox_values", ["start", "stop", "step"])
+from .textbox import TextBox
 
 
-class SpinBox(Entry):
+class SpinBox(TextBox):
     _tcl_class = "ttk::spinbox"
-    _keys = {
-        "cycle": (bool, "wrap"),
-        "fg_color": (Color, "foreground"),
-        "focusable": (bool, "takefocus"),
-        "hide_chars_with": (str, "show"),
-        "increment": float,
-        "max": (float, "to"),
-        "min": (float, "from"),
-        "on_xscroll": ("func", "xscrollcommand"),
-        "style": str,
-        "text_align": (str, "justify"),
-        "width": int,
-    }
 
     def __init__(
         self,
         parent: TkWidget,
-        values: list[str | float] | tuple[str | float, ...] | range | None = None,
+        values: Iterable[str | float] | range | None = None,
         *,
         cycle: bool | None = None,
-        value: str | float | None = None,
         fg_color: str | Color | None = None,
         focusable: bool | None = None,
         hide_chars: bool | None = False,
         hide_chars_with: str | None = "•",
-        increment: int | None = None,
-        max: int | None = None,
-        min: int | None = None,
-        on_select: Callable | None = None,
-        style: str | None = None,
+        on_select: Callable[[str], None] | None = None,
+        step: int | None = None,
         text_align: str | None = None,
         user_edit: bool = True,
+        value: str | float | None = None,
         width: int | None = None,
     ) -> None:
-
         self._prev_show_char = hide_chars_with
         if not hide_chars:
             hide_chars_with = None
 
-        BaseWidget.__init__(
+        self._original_cmd = on_select
+        if on_select is not None:
+            func = on_select
+            on_select = lambda: func(self.get())  # type: ignore
+
+        WidgetBase.__init__(
             self,
             parent,
+            command=on_select,
             foreground=fg_color,
             justify=text_align,
             show=hide_chars_with,
             state=None if user_edit else "readonly",
-            style=style,
             takefocus=focusable,
             width=width,
             wrap=cycle,
         )
 
-        self._set_values(values, min, max, increment)
+        self._set_values(values, step)
 
         if value is not None:
             self.set(value)
-        elif min:
-            self.set(min)
         elif values:
             self.set(values[0])
         else:
@@ -81,54 +65,69 @@ class SpinBox(Entry):
         self.bind("<<Decrement>>", f"+{self._name} selection clear")
         self.bind("<FocusOut>", f"+{self._name} selection clear")
 
-    def set(self, value: str) -> None:
+    def _set_values(self, values, arg_step) -> None:
+        if isinstance(values, range):
+            start, stop, step = values.start, values.stop, values.step
+            if arg_step:
+                step = arg_step
+
+            return Tcl.call(
+                None,
+                self,
+                "configure",
+                *Tcl.to_tcl_args(from_=start, to=stop - step, increment=step),
+            )
+
+        Tcl.call(None, self, "configure", *Tcl.to_tcl_args(values=values))
+
+    def set(self, value: str | float | None) -> None:
         Tcl.call(None, self, "set", value)
 
-    value = property(Entry.get, set)
+    value = property(TextBox.get, set)
 
     @property
-    def values(self) -> list[str | float]:
+    def values(self) -> list[str] | range:
         result = Tcl.call([str], self, "cget", "-values")
 
         if not result:
-            min_ = Tcl.call(float, self, "cget", "-from") or 0
-            max_ = Tcl.call(float, self, "cget", "-to") or 0
-            increment = Tcl.call(float, self, "cget", "-increment") or 1
-            return SpinBox_values(min_, max_ + increment, increment)
+            start = Tcl.call(float, self, "cget", "-from") or 0
+            stop = Tcl.call(float, self, "cget", "-to") or 0
+            step = Tcl.call(float, self, "cget", "-increment")
+            if isinstance(step, float):
+                step = 1
+            return range(start, stop, step)
 
         return result
 
     @values.setter
-    def values(self, values: list[str | float]) -> None:
-        self._set_values(values)
+    def values(self, values: Iterable[str | float] | range | None) -> None:
+        self._set_values(values, None)
 
-    def _set_values(
-        self,
-        values: list[str | float] | tuple[str | float, ...] | range = None,
-        min_: int = None,
-        max_: int = None,
-        increment: int = None,
-    ) -> None:
-        if isinstance(values, range):
-            if min_ is None:
-                min_ = values.start
-            if max_ is None:
-                max_ = values.stop
-            if increment is None:
-                increment = values.step
-        elif values is None and max_:
-            if min_ is None:
-                min_ = 0
-            if max_ is None:
-                max_ = 0
-            if increment is None:
-                increment = 1
+    @property
+    def cycle(self) -> bool:
+        return cget(self, bool, "-wrap")
+
+    @cycle.setter
+    def cycle(self, value: bool) -> None:
+        config(self, wrap=value)
+
+    @property
+    def step(self) -> float:
+        return cget(self, float, "-increment")
+
+    @step.setter
+    def step(self, value: float) -> None:
+        config(self, increment=value)
+
+    @property
+    def on_select(self) -> Callable[[str], None] | None:
+        return self._original_cmd
+
+    @on_select.setter
+    def on_select(self, func: Callable[[str], None] | None) -> None:
+        self._original_cmd = func
+        if func is not None:
+            value = lambda: func(self.get())
         else:
-            return self.config(values=values)
-
-        Tcl.call(
-            None,
-            self._name,
-            "configure",
-            *Tcl.to_tcl_args(from_=min_, to=max_ - increment, increment=increment),
-        )
+            value = ""
+        config(self, command=value)

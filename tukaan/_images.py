@@ -1,21 +1,31 @@
 from __future__ import annotations
 
+import contextlib
 from pathlib import Path
 
 from PIL import Image as PIL_Image  # type: ignore
 
+from ._base import WidgetBase
+from ._props import cget, config
 from ._tcl import Tcl
 from ._utils import _images, _pil_images, counts
-from .exceptions import TclError
-from .widgets._base import BaseWidget, ConfigMixin
+from .colors import Color
+
+try:
+    from PIL import Image as PillowImage
+    from PIL import _imagingtk as ImagingTk  # type: ignore
+except ImportError as e:
+    raise ImportError("Tukaan needs PIL and PIL._imagingtk in order to display images.") from e
+
+PHOTO_CMD = "image create photo {name}\nPyImagingPhoto {name} {blockid}"
 
 
-class PIL_TclConverter:
-    def __init__(self, image):
-        if image in tuple(_pil_images.values()):
-            # Tk gets full with photoimages (or idk why?), and makes them grayscale
-            # this is a solution when a PIL image is used multiple times
-            for key, value in tuple(_pil_images.items()):
+class Pillow2Tcl:
+    _cur_f = 0
+
+    def __init__(self, image: PillowImage.Image):
+        if image in _pil_images.values():
+            for key, value in _pil_images.items():
                 if value is image:
                     self._name = key
                     return
@@ -25,39 +35,26 @@ class PIL_TclConverter:
         except AttributeError:
             _animated = False
 
-        self._transparent = False
-        if "transparency" in image.info:
-            self._transparent = True
-
-        self.current_frame = 0
+        self._transparent = "transparency" in image.info
         self._image = image
         self._name = f"tukaan_image_{next(counts['images'])}"
 
         Tcl.call(None, "image", "create", "photo", self._name)
+        ImagingTk.tkinit(Tcl.interp_address, 1)
 
         _images[self._name] = self  # gc
         _pil_images[self._name] = image
 
-        try:
-            from PIL import _imagingtk
-
-            _imagingtk.tkinit(Tcl.interp_address, 1)
-        except (ImportError, AttributeError, TclError) as e:
-            raise e
-
         if _animated:
-            self.image_frames = []
-            self.show_frames_command = Tcl.create_cmd(self.show_frame)
-            self.start_animation()
+            self.frames = []
+            self.show_cmd = Tcl.create_cmd(self._show)
+            self._start()
         else:
-            if self._transparent:
-                self._image = self._image.convert("RGBA")
+            self._create(self._name, self._image)
 
-            self.create_tcl_image(self._name, self._image)
-
-    def create_tcl_image(self, name: str, image: PIL_Image.Image) -> tuple[str, int]:
+    def _create(self, name: str, image: PillowImage.Image) -> tuple[str, int]:
         if not hasattr(image, "mode") and not hasattr(image, "size"):
-            return
+            raise
 
         if self._transparent:
             image = image.convert("RGBA")
@@ -65,88 +62,77 @@ class PIL_TclConverter:
         mode = image.mode
         image.load()
 
-        try:
-            duration = image.info["duration"]
-        except KeyError:
-            duration = 50
-
         if mode == "P":
             try:
                 mode = image.palette.mode
                 if mode not in {"1", "L", "RGB", "RGBA"}:
-                    mode = PIL_Image.getmodebase(mode)
+                    mode = PillowImage.getmodebase(mode)
             except AttributeError:
                 mode = "RGB"
 
+        try:
+            duration = int(image.info["duration"])
+        except KeyError:
+            duration = 50
+
         size = image.size
-        image = image.im
+        im = image.im
 
-        if image.isblock():
-            block = image
+        if im.isblock():
+            block = im
         else:
-            block = image.new_block(mode, size)
-            image.convert2(block, image)
+            block = im.new_block(mode, size)
+            im.convert2(block, im)
 
-        Tcl.eval(None, f"image create photo {name}\nPyImagingPhoto {name} {block.id}")
+        Tcl.eval(None, PHOTO_CMD.format(name=name, blockid=block.id))
 
         return name, duration
 
-    def start_animation(self) -> None:
+    def _start(self) -> None:
         frame_count = 0
-        try:
+        with contextlib.suppress(EOFError):
             while True:
-                self._image.seek(frame_count)
                 name = f"{self._name}_frame_{frame_count}"
-                self.image_frames.append(self.create_tcl_image(name, self._image))
+                self._image.seek(frame_count)
+                self.frames.append(self._create(name, self._image))
                 frame_count += 1
-        except EOFError:
-            pass
 
-        self.show_frame()
+        self._len = frame_count - 1
+        self._show()
 
-    def show_frame(self) -> None:
-        frame_data = self.image_frames[self.current_frame]
+    def _show(self) -> None:
+        name, duration = self.frames[self._cur_f]
 
-        self.current_frame += 1
-        if self.current_frame == len(self.image_frames):
-            self.current_frame = 0
+        if self._cur_f != self._len:
+            self._cur_f += 1
+        else:
+            self._cur_f = 0
 
         Tcl.eval(
             None,
-            f"{self._name} copy {frame_data[0]} -compositingrule set"
-            "\n"
-            f"after {int(frame_data[1])} {self.show_frames_command}",
+            f"{self._name} copy {name} -compositingrule set\n"
+            + f"after {duration} {self.show_cmd}",
         )
 
     def __to_tcl__(self) -> str:
         return self._name
 
     @classmethod
-    def __from_tcl__(cls, value: str) -> PIL_Image.Image:
-        if isinstance(value, tuple):
-            value = value[0]  # Sometimes tk.call returns a tuple for some reason
-        return _pil_images.get(value, None)
+    def __from_tcl__(cls, value: str) -> PIL_Image.Image | None:
+        if isinstance(value, (tuple, list)):
+            [value] = value
+        return _pil_images[value]
 
 
 def pil_image_to_tcl(self):
-    return PIL_TclConverter(self).__to_tcl__()
+    return Pillow2Tcl(self).__to_tcl__()
 
 
-PIL_Image.Image.__to_tcl__ = pil_image_to_tcl
+setattr(PillowImage.Image, "__to_tcl__", pil_image_to_tcl)
 
 
-class Image(BaseWidget):
-    _keys = {"image": PIL_TclConverter}
-    _tcl_class = "ttk::label"
-
-    def __init__(self, parent=None, image=None):
-        BaseWidget.__init__(self, parent, image=image)
-
-
-class Icon(ConfigMixin):
-    _keys = {"data": str, "file": Path}
-
-    def __init__(self, file: str | Path | None = None, data: str | None = None) -> None:
+class Icon:
+    def __init__(self, file: str | Path | None = None) -> None:
         self._name = f"tukaan_icon_{next(counts['icons'])}"
         _images[self._name] = self
 
@@ -156,7 +142,15 @@ class Icon(ConfigMixin):
             "create",
             "photo",
             self._name,
-            *Tcl.to_tcl_args(file=file, data=data),
+            *Tcl.to_tcl_args(file=file),
+        )
+
+    def config(self, file: Path | None = None):
+        Tcl.call(
+            None,
+            self._name,
+            "configure",
+            *Tcl.to_tcl_args(file=file),
         )
 
     def __to_tcl__(self) -> str:
@@ -164,36 +158,59 @@ class Icon(ConfigMixin):
 
     @classmethod
     def __from_tcl__(cls, value: str) -> Icon:
-        return _images[value]
+        return _images[value]  # type: ignore
 
 
 class IconFactory:
-    def __init__(self, light_theme: str, dark_theme: str):
-        self._light_icons_dir = dark_theme
-        self._dark_icons_dir = light_theme
-        self._current_dir = dark_theme
+    def __init__(self, on_light: Path, on_dark: Path | None):
+        self._light_icons_dir = on_light
+        self._dark_icons_dir = on_dark
+        self._current_dir = on_light
         self.cache: dict[str, Icon] = {}
 
-        Tcl.call(None, "bind", ".app", "<<ThemeChanged>>", self.change_theme)
+        self._current_dir = on_light
 
-    def change_theme(self):
-        # fmt: off
-        dark_theme = sum(
-            HEX.from_hex(Tcl.call(str, "ttk::style", "lookup", "TLabel.label", "-foreground")
-        )) / 3 > 127
-        # fmt: on
+        if on_dark is not None:
+            Tcl.call(None, "bind", ".app", "<<ThemeChanged>>", self.change_icon_theme)
 
-        self._current_dir = self._light_icons_dir if dark_theme else self._dark_icons_dir
+    def change_icon_theme(self):
+        is_dark = Color(
+            Tcl.call(str, "ttk::style", "lookup", "TLabel.label", "-foreground")
+        ).is_dark
 
-        for icon_name, icon in tuple(self.cache.items()):
-            icon.config(file=Path(self._current_dir) / (icon_name + ".png"))
+        self._current_dir = self._light_icons_dir if is_dark else self._dark_icons_dir
+        assert self._current_dir is not None
 
-    def __getitem__(self, icon_name: str) -> Icon:
+        for name, icon in self.cache.items():
+            icon.config(file=Path(self._current_dir) / f"{name}.png")
+
+    def get(self, icon_name: str) -> Icon:
         if icon_name in self.cache:
             return self.cache[icon_name]
 
-        icon = Icon(file=Path(self._current_dir) / (icon_name + ".png"))
+        assert self._current_dir is not None
+        icon = Icon(file=Path(self._current_dir) / f"{icon_name}.png")
         self.cache[icon_name] = icon
         return icon
 
-    get = __getitem__
+    __getitem__ = get
+
+
+def get_image(self) -> PillowImage.Image | Icon:
+    return cget(self, Pillow2Tcl, "-image")
+
+
+def set_image(self, value: PillowImage.Image | Icon) -> None:
+    config(self, image=value)
+
+
+image = property(get_image, set_image)
+
+
+class Image(WidgetBase):
+    _tcl_class = "ttk::label"
+
+    image = image
+
+    def __init__(self, parent, image: PillowImage.Image | None = None):
+        WidgetBase.__init__(self, parent, image=image)

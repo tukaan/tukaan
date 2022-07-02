@@ -7,8 +7,8 @@ from typing import Any, Callable
 
 from PIL import Image, UnidentifiedImageError  # type: ignore
 
-from ._constants import _keysym_aliases
 from ._info import System
+from ._keysyms import _keysym_aliases
 from ._tcl import Tcl
 from ._utils import reversed_dict
 from .colors import Color
@@ -147,7 +147,7 @@ class KeyboardEvent(Event):
             search = re.search(cls._regex_str, sequence)
             assert search is not None  # mypy
 
-            keys = search.group(2).split("-")
+            keys = search[2].split("-")
             key = keys[-1]
             if key in cls._reversed_aliases:
                 key = cls._reversed_aliases[key]
@@ -167,7 +167,7 @@ class KeyboardEvent(Event):
 
             modifiers = "-".join(modifier_keys) + ("-" if modifier_keys else "")
 
-            return f"<{modifiers}Key{up_or_down[search.group(1)]}-{key}>"
+            return f"<{modifiers}Key{up_or_down[search[1]]}-{key}>"
 
         raise ValueError
 
@@ -248,11 +248,7 @@ class ScrollEvent(Event):
 
     @classmethod
     def _matches(cls, sequence) -> bool:
-        for i in ("MouseWheel", "Button-4", "Button-5"):
-            if i in sequence:
-                return True
-
-        return False
+        return any(i in sequence for i in ("MouseWheel", "Button-4", "Button-5"))
 
     @classmethod
     def _parse(cls, sequence: str) -> str:
@@ -261,10 +257,7 @@ class ScrollEvent(Event):
     def __init__(self, *args) -> None:
         if System.win_sys == "X11":
             num = Tcl.from_(int, args[self._order.index("button")])
-            if num == 4:
-                self.delta = -1
-            else:
-                self.delta = 1
+            self.delta = -1 if num == 4 else 1
         else:
             self.delta = Tcl.from_(int, args[self._order.index("delta")])
 
@@ -285,12 +278,7 @@ class VirtualEvent(Event):
     def __init__(self, *args) -> None:
         data_key = Tcl.from_(str, args[0])
 
-        if data_key:
-            self.data = _virtual_event_data_container.pop(
-                data_key
-            )  # pop item, so it stores only unhandled data
-        else:
-            self.data = None
+        self.data = _virtual_event_data_container.pop(data_key) if data_key else None
 
     def __repr__(self) -> str:
         return f"<VirtualEvent: {self.sequence.strip('<').strip('>')}; data={self.data!r}>"
@@ -389,11 +377,7 @@ class DnDEvent(Event):
         result = {}
 
         for (attr, (_, type_)), value in zip(self.binding_substitutions.items(), args):
-            if value != "??":
-                value = Tcl.from_(type_, value)
-            else:
-                value = None
-
+            value = Tcl.from_(type_, value) if value != "??" else None
             result[attr] = value
 
         try:
@@ -409,11 +393,7 @@ class DnDEvent(Event):
         if dropped_data_type == "file":
             data = Tcl.from_([str], result["_data"])
 
-            if len(data) > 1:
-                result["_data"] = [Path(x) for x in data]
-            else:
-                result["_data"] = Path(data[0])
-
+            result["_data"] = [Path(x) for x in data] if len(data) > 1 else Path(data[0])
         elif dropped_data_type == "html":
             # search for an image url in the dropped html, and return a PIL.Image.Image object
             if re.match(self._image_regex, result["_data"]):
@@ -466,7 +446,7 @@ class DnDEvent(Event):
             import requests
 
             try:
-                path = re.search(self._image_regex, self._data).group(3)  # type: ignore
+                path = re.search(self._image_regex, self._data)[3]  # type: ignore
                 _, name = tempfile.mkstemp()
 
                 with open(name, "wb") as file:
@@ -524,17 +504,17 @@ class EventMixin:
         _orig_seq = sequence
 
         def real_func(func, *args):
-            if send_event:
-                event_to_send = event(*args)
-                event_to_send.sequence = _orig_seq
-                result = func(event_to_send)
-
-                if result is not None:
-                    return result
-
-                return event_to_send._result
-            else:
+            if not send_event:
                 return func()
+
+            event_to_send = event(*args)
+            event_to_send.sequence = _orig_seq
+            result = func(event_to_send)
+
+            if result is not None:
+                return result
+
+            return event_to_send._result
 
         script_str = func  # for internal bindings, where i use strings for tcl scripts, or when unbinding where func is ""
 
@@ -583,10 +563,7 @@ class EventMixin:
 
     def generate_event(self, sequence: str, data: Any = None) -> None:
         global _virtual_event_data_container
-        key = None
-
-        if data is not None:
-            key = _virtual_event_data_container.add(data)
+        key = _virtual_event_data_container.add(data) if data is not None else None
 
         Tcl.call(None, "event", "generate", self, sequence, *Tcl.to_tcl_args(data=key))
 
@@ -611,8 +588,8 @@ def DragObject(
                 Tcl.eval(
                     None,
                     f"lappend tkdnd::generic::_platform2tkdnd {type_} DND_UserDefined"
-                    "\n"
-                    f"lappend tkdnd::generic::_tkdnd2platform [dict get $tkdnd::generic::_platform2tkdnd {type_}] {type_}",
+                    + "\n"
+                    + f"lappend tkdnd::generic::_tkdnd2platform [dict get $tkdnd::generic::_platform2tkdnd {type_}] {type_}",
                 )
 
     return (action, type_, Tcl.to(data))
@@ -676,19 +653,17 @@ class KeySeq:
 
     @property
     def shortcut_sequence(self) -> str:
-        result = []
         real_key = self._sequence[-1]
 
-        for (name, symbol) in modifier_order.items():
-            if name in self._sequence:
-                result.append(symbol)
+        result = [symbol for name, symbol in modifier_order.items() if name in self._sequence]
 
         result.append(real_key.upper())
 
         return shortcut_separator.join(result)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, KeySeq):
-            return NotImplemented
-
-        return set(self._sequence) == set(other._sequence)
+        return (
+            set(self._sequence) == set(other._sequence)
+            if isinstance(other, KeySeq)
+            else NotImplemented
+        )

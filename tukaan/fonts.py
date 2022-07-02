@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import warnings
 import struct
-import sys
 from collections import namedtuple
 from pathlib import Path
 from typing import BinaryIO, Iterator
@@ -111,7 +109,7 @@ class FontNameInfo:
                 return cls.read_name_table(file, start)
 
     @staticmethod
-    def read_name_table(file: BinaryIO, start: float) -> dict[str, str]:
+    def read_name_table(file: BinaryIO, start: int) -> dict[str, str]:
         """Parses the name table of the font file.
 
         Returns:
@@ -121,12 +119,7 @@ class FontNameInfo:
         file.seek(start)
         _, num_records, str_offset = struct.unpack(">HHH", file.read(6))
 
-        records = []
-        for _ in range(num_records):
-            records.append(
-                struct.unpack(">6H", file.read(12))  # Each record is made of 6 unsigned short
-            )
-
+        records = [struct.unpack(">6H", file.read(12)) for _ in range(num_records)]
         name_info = {}
         storage_start = start + str_offset
 
@@ -166,7 +159,7 @@ class Serif:
     loaded_fonts: dict[Path, list[str]] = {}
 
     @classmethod
-    def load(cls, file_path: Path) -> tuple[list[str], list[dict[str, str]]]:
+    def load(cls, file_path: Path) -> list[str]:
         """Loads a font file specified by `file_path`.
         The file may contain multiple font families.
         If the font file is already loaded, does nothing.
@@ -284,28 +277,20 @@ class Font:
             file = family
 
         if file:
-            if sys.platform != "linux":
-                warnings.warn("the file parameter is not yet available on Windows and macOS", UserWarning)
-            else:
-                if not isinstance(file, Path):
-                    self.path = Path(file)
+            self.path = file if isinstance(file, Path) else Path(file)
+            families, info = Serif.load(self.path)
+
+            if not family:
+                if len(families) == 1:
+                    family = families[0]
                 else:
-                    self.path = file
+                    raise FontError(
+                        f"must specify font family for font collections. Available subfamilies: {families}"
+                    )
+            elif family not in families:
+                raise FontError(f"the family {family} can't be found in this font file")
 
-                families, info = Serif.load(self.path)
-
-                if not family:
-                    if len(families) == 1:
-                        family = families[0]
-                    else:
-                        raise FontError(
-                            f"must specify font family for font collections. Available subfamilies: {families}"
-                        )
-                elif family not in families:
-                    raise FontError(f"the family {family} can't be found in this font file")
-
-                self.info = FontInfo(**info[families.index(family)])
-
+            self.info = FontInfo(**info[families.index(family)])
         elif not family:
             family = "TkDefaultFont"
 

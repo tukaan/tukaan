@@ -1,6 +1,42 @@
 from enum import Enum
 
 
+class Align(Enum):
+    Start = 0
+    End = 1
+    Stretch = 2
+
+
+class WindowState(Enum):
+    Normal = 0
+    Minimized = 1
+    Maximized = 2
+    Closed = 3
+    FullScreen = 4
+    Hidden = 5
+
+
+class Orientation(Enum):
+    Horizontal = "horizontal"
+    Vertical = "vertical"
+
+
+class ProgressMode(Enum):
+    Determinate = "determinate"
+    Indeterminate = "indeterminate"
+
+
+class Location(Enum):
+    ...
+
+
+class Direction(Enum):
+    ...
+
+
+# ?
+
+
 class ImagePosition(Enum):
     Bottom = "bottom"
     Default = "none"
@@ -18,12 +54,11 @@ class Justify(Enum):
     Right = "right"
 
 
-class Alignment(Enum):
+class Anchor(Enum):
     Bottom = "s"
     BottomLeft = "sw"
     BottomRight = "se"
     Center = "center"
-    Default = ""
     Left = "w"
     Right = "e"
     Top = "n"
