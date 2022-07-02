@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-from ._base import BaseWidget, OutputDisplayWidget, TkWidget
+from tukaan._base import OutputDisplay, TkWidget, WidgetBase
+from tukaan._props import orientation
+from tukaan.enums import Orientation
 
 
-class Separator(BaseWidget, OutputDisplayWidget):
+class Separator(WidgetBase, OutputDisplay):
     _tcl_class = "ttk::separator"
-    _keys = {"orientation": (str, "orient")}
+
+    orientation = orientation
 
     def __init__(
         self,
         parent: TkWidget,
-        orientation: str | None = None,
+        orientation: Orientation | None = None,
     ) -> None:
-        BaseWidget.__init__(self, parent, orient=orientation)
+        WidgetBase.__init__(self, parent, orient=orientation)
 
     def _repr_details(self):
         return f"orientation={self.orientation!r}"

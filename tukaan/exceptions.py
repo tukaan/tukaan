@@ -6,6 +6,10 @@ class AppError(Exception):
     ...
 
 
+class WidgetError(Exception):
+    ...
+
+
 class ColorError(Exception):
     ...
 

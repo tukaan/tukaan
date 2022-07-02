@@ -4,31 +4,49 @@ from ._tcl import Tcl
 
 
 class Timeout:
-    _id: Optional[str] = None
+    _after_id: str = ""
     _repeat: bool = False
     state: str = "not started"
 
     def __init__(self, seconds: float, target: Callable[[], Any], *, args=(), kwargs={}) -> None:
+        assert callable(target), "target must be callable"
+
         self.seconds = seconds
         self.target = target
 
     def __repr__(self) -> str:
-        return f"<{self.state.capitalize()} `{self.target.__name__}()` timeout>"
+        name = self.target.__name__
+        if name != "<lambda>":
+            name += "()"
 
-    def __call__(self) -> None:
+        return f"<{self.state.capitalize()} `{name}` timeout at {hex(id(self))}>"
+
+    def run_once(self):
         try:
             self.target()
+        except Exception as e:
+            print(e)
+            self.state = "failed"
+
+    def run_now(self):
+        self.cancel()
+        self.run_once()
+
+    def run(self):
+        try:
+            self.target()
+            if self._repeat:
+                return self.start()
         except Exception as e:
             print(e)
             self.state = "failed"
         else:
             self.state = "succesfully completed"
 
-        if self._repeat:
-            self.start()
+    __call__ = run
 
     def start(self) -> None:
-        self._id = Tcl.call(str, "after", int(self.seconds * 1000), self.__call__)
+        self._after_id = Tcl.call(str, "after", int(self.seconds * 1000), self.__call__)
         self.state = "pending"
 
     def repeat(self) -> None:
@@ -39,9 +57,9 @@ class Timeout:
         if self.state != "pending":
             raise RuntimeError(f"cannot cancel a {self.state} timeout")
 
-        after_id, _ = Tcl.call((str,), "after", "info", self._id)
-        Tcl.call(None, "after", "cancel", after_id)
-        Tcl.delete_cmd(after_id)
+        command, _ = Tcl.call((str,), "after", "info", self._after_id)
+        Tcl.call(None, "after", "cancel", command)
+        Tcl.delete_cmd(command)
 
         self._repeat = False
         self.state = "cancelled"
@@ -68,15 +86,16 @@ class Timer:
         set tukaan_waitvar 0
         after {int(seconds * 1000)} {{set tukaan_waitvar 1}}
         tkwait variable tukaan_waitvar"""
+
         Tcl.eval(None, script)
 
     @staticmethod
-    def delay(seconds: float) -> Callable:
-        def real_decorator(func: Callable) -> Callable:
+    def delayed(seconds: float) -> Callable:
+        def decorator(func: Callable) -> Callable:
             def wrapper(*args, **kwargs) -> Any:
                 Timer.wait(seconds)
                 return func(*args, **kwargs)
 
             return wrapper
 
-        return real_decorator
+        return decorator
