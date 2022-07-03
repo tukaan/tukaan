@@ -31,7 +31,6 @@ from .widgets.spinbox import SpinBox
 from .widgets.splitview import SplitView
 from .widgets.tabview import TabView
 from .widgets.textbox import TextBox
-from .widgets.tooltip import ToolTipProvider
 from .widgets.window import Window
 
 
