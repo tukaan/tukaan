@@ -93,7 +93,7 @@ class ToolTipProvider:
         tip_height = Tcl.call(int, "winfo", "reqheight", ".tooltip")
         tip_y = owner_y - tip_height - 5
 
-        if tip_y <= Tcl.call(int, "winfo", "rooty", ".app"):
+        if tip_y <= Tcl.eval(int, f"winfo rooty [winfo toplevel {widget}]"):
             tip_y = owner_y + Tcl.call(int, "winfo", "reqheight", widget) + 5
 
         Tcl.call(None, "wm", "geometry", ".tooltip", f"+{tip_x}+{tip_y}")
