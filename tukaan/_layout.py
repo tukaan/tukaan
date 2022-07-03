@@ -45,7 +45,7 @@ class Grid(LayoutManager):
         align: tuple[Align | None, Align | None] | None = None,
         cell: str | None = None,
         colspan: int | None = None,
-        margin: tuple[int, ...] | None = None,
+        margin: int | tuple[int, ...] | None = None,
         rowspan: int | None = None,
     ) -> None:
         sticky = self._parse_align(align)
@@ -122,22 +122,20 @@ class Grid(LayoutManager):
         return result
 
     def _parse_margin(
-        self, margin: tuple[int, ...] | None
+        self, margin: int | tuple[int, ...] | None
     ) -> tuple[tuple[int, int], tuple[int, int]] | tuple[None, None]:
+
         if isinstance(margin, int):
             return ((margin,) * 2,) * 2
-
         elif isinstance(margin, (tuple, list)):
             length = len(margin)
 
             if length == 2:
                 vert, hor = margin
                 return (hor,) * 2, (vert,) * 2
-
             elif length == 3:
                 top, hor, bottom = margin
                 return (hor,) * 2, (top, bottom)
-
             elif length == 4:
                 top, right, bottom, left = margin
                 return (left, right), (top, bottom)
