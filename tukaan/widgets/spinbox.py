@@ -26,6 +26,7 @@ class SpinBox(TextBox):
         on_select: Callable[[str], None] | None = None,
         step: int | None = None,
         text_align: str | None = None,
+        tooltip: str | None = None,
         user_edit: bool = True,
         value: str | float | None = None,
         width: int | None = None,
@@ -48,6 +49,7 @@ class SpinBox(TextBox):
             show=hide_chars_with,
             state=None if user_edit else "readonly",
             takefocus=focusable,
+            tooltip=tooltip,
             width=width,
             wrap=cycle,
         )

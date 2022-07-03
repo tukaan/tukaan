@@ -26,6 +26,7 @@ class Slider(WidgetBase, InputControl):
         min: float | None = None,
         on_move: Callable[[float], None] | None = None,
         orientation: Orientation | None = None,
+        tooltip: str | None = None,
         value: int | None = None,
     ) -> None:
 
@@ -51,13 +52,14 @@ class Slider(WidgetBase, InputControl):
         WidgetBase.__init__(
             self,
             parent,
+            command=on_move,
+            from_=min,
             orient=orientation,
             takefocus=focusable,
+            to=max,
+            tooltip=tooltip,
             value=value,
             variable=link,
-            to=max,
-            from_=min,
-            command=on_move,
         )
 
     def _repr_details(self):

@@ -30,6 +30,7 @@ class RadioButton(WidgetBase, InputControl):
         *,
         focusable: bool | None = None,
         on_click: Callable[..., None] | None = None,
+        tooltip: str | None = None,
         width: int | None = None,
     ) -> None:
         self._variable = link
@@ -39,10 +40,11 @@ class RadioButton(WidgetBase, InputControl):
             parent,
             command=on_click,
             takefocus=focusable,
+            text=text,
+            tooltip=tooltip,
             value=value,
             variable=link,
             width=width,
-            text=text,
         )
 
     def invoke(self):
