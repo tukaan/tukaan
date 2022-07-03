@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class ToolTipProvider:
-    _widgets: dict[str, str] = {}
+    _widgets: dict[str, str | None] = {}
     _schedule_cmd: str = ""
     _hide_cmd: str = ""
     _show_cmd: str = ""
@@ -39,7 +39,7 @@ class ToolTipProvider:
         cls._setup_done = True
 
     @classmethod
-    def add(cls, owner: WidgetBase, message: str) -> None:
+    def add(cls, owner: WidgetBase, message: str | None) -> None:
         if not cls._setup_done:
             cls.setup()
 
@@ -50,8 +50,8 @@ class ToolTipProvider:
         Tcl.call(None, "bind", owner._lm_path, "<ButtonPress>", f"+ {cls._hide_cmd}")
 
     @classmethod
-    def update(cls, owner: WidgetBase, message: str) -> None:
-        if owner._lm_path not in cls._widgets:
+    def update(cls, owner: WidgetBase, message: str | None) -> None:
+        if owner._lm_path not in cls._widgets and message:
             return cls.add(owner, message)
 
         cls._widgets[owner._lm_path] = message

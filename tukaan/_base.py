@@ -111,5 +111,5 @@ class WidgetBase(TkWidget, GeometryMixin):
         return ToolTipProvider.get(self)
 
     @tooltip.setter
-    def tooltip(self, value: str) -> None:
+    def tooltip(self, value: str | None) -> None:
         ToolTipProvider.update(self, value)
