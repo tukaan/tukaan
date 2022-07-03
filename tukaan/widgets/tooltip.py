@@ -16,6 +16,7 @@ class ToolTipProvider:
     _show_cmd: str = ""
     _setup_done = False
     _after_id: str = ""
+    _can_show = True
 
     @classmethod
     def setup(cls) -> None:
@@ -61,6 +62,8 @@ class ToolTipProvider:
 
     @classmethod
     def schedule(cls, widget: str) -> None:
+        cls._can_show = True
+
         message = cls._widgets.get(widget)
         if message is None:
             return
@@ -70,12 +73,17 @@ class ToolTipProvider:
 
     @classmethod
     def hide(cls) -> None:
+        cls._can_show = False  # after cancel sometime doesn't work, so this is a hack
+
         Tcl.call(None, "after", "cancel", cls._show_cmd)
         Tcl.call(None, "after", "cancel", cls._hide_cmd)
         Tcl.call(None, "wm", "withdraw", ".tooltip")
 
     @classmethod
     def show(cls, widget: str) -> None:
+        if not cls._can_show:
+            return
+
         owner_x = Tcl.call(int, "winfo", "rootx", widget)
         owner_width = Tcl.call(int, "winfo", "reqwidth", widget)
         tip_width = Tcl.call(int, "winfo", "reqwidth", ".tooltip")
