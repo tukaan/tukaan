@@ -105,3 +105,11 @@ class WidgetBase(TkWidget, GeometryMixin):
 
         del self.parent._children[self._name]
         del _widgets[self._name]
+
+    @property
+    def tooltip(self) -> str | None:
+        return ToolTipProvider.get(self)
+
+    @tooltip.setter
+    def tooltip(self, value: str) -> None:
+        ToolTipProvider.update(self, value)

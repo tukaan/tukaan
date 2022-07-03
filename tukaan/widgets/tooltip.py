@@ -49,6 +49,17 @@ class ToolTipProvider:
         Tcl.call(None, "bind", owner._lm_path, "<ButtonPress>", f"+ {cls._hide_cmd}")
 
     @classmethod
+    def update(cls, owner: WidgetBase, message: str) -> None:
+        if owner._lm_path not in cls._widgets:
+            return cls.add(owner, message)
+
+        cls._widgets[owner._lm_path] = message
+
+    @classmethod
+    def get(cls, owner: WidgetBase) -> str | None:
+        return cls._widgets.get(owner._lm_path)
+
+    @classmethod
     def schedule(cls, widget: str) -> None:
         message = cls._widgets.get(widget)
         if message is None:
