@@ -28,6 +28,7 @@ class ComboBox(TextBox):
         on_click: Callable | None = None,
         on_select: Callable | None = None,
         text_align: str | None = None,
+        tooltip: str | None = None,
         user_edit: bool | None = True,
         visible_rows: int | None = None,
         width: int | None = None,
@@ -47,6 +48,7 @@ class ComboBox(TextBox):
             show=hide_chars_with,
             state=None if user_edit else "readonly",
             takefocus=focusable,
+            tooltip=tooltip,
             values=values,
             width=width,
         )

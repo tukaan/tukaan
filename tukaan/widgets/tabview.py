@@ -17,6 +17,8 @@ from .frame import Frame
 
 
 class Tab(Frame):
+    _widget: TabView
+
     def __init__(
         self,
         title: str | None = None,
@@ -25,8 +27,9 @@ class Tab(Frame):
         image_pos: ImagePosition = ImagePosition.Left,
         margin: int | tuple[int, ...] | None = None,
         padding: int | tuple[int, ...] | None = None,
+        tooltip: str | None = None,
     ):
-        Frame.__init__(self, self._widget, padding=padding)
+        Frame.__init__(self, self._widget, padding=padding, tooltip=tooltip)
 
         self._stored_options = {
             "compound": image_pos,
@@ -143,8 +146,14 @@ class TabView(WidgetBase, Container):
 
     focusable = focusable
 
-    def __init__(self, parent: TkWidget, *, focusable: bool | None = None) -> None:
-        WidgetBase.__init__(self, parent, takefocus=focusable)
+    def __init__(
+        self,
+        parent: TkWidget,
+        *,
+        focusable: bool | None = None,
+        tooltip: str | None = None,
+    ) -> None:
+        WidgetBase.__init__(self, parent, takefocus=focusable, tooltip=tooltip)
 
         self.Tab = Tab
         setattr(self.Tab, "_widget", self)

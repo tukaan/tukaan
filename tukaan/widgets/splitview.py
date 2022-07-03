@@ -13,13 +13,16 @@ from .frame import Frame
 
 
 class Pane(Frame):
+    _widget: SplitView
+
     def __init__(
         self,
         *,
         padding: int | tuple[int, ...] | None = None,
+        tooltip: str | None = None,
         weight: int | None = None,
     ):
-        Frame.__init__(self, self._widget, padding=padding)
+        Frame.__init__(self, self._widget, padding=padding, tooltip=tooltip)
 
         self._stored_options = {"weight": weight}
         self.append()
@@ -74,8 +77,9 @@ class SplitView(WidgetBase, Container):
         orientation: Orientation | None = None,
         *,
         focusable: bool | None = None,
+        tooltip: str | None = None,
     ) -> None:
-        WidgetBase.__init__(self, parent, takefocus=focusable, orient=orientation)
+        WidgetBase.__init__(self, parent, takefocus=focusable, orient=orientation, tooltip=tooltip)
 
         self.Pane = Pane
         setattr(self.Pane, "_widget", self)
