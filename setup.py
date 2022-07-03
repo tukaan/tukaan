@@ -1,5 +1,5 @@
 from setuptools import setup
-from tukaan import __version__
+from tukaan import __author__, __version__
 
 
 def get_requirements():
@@ -8,6 +8,7 @@ def get_requirements():
             if line and not line.startswith("#"):
                 yield line
 
+
 with open("README.md", "r") as file:
     long_description = file.read()
 
@@ -15,7 +16,7 @@ with open("README.md", "r") as file:
 setup(
     name="tukaan",
     version=__version__,
-    author="rdbende",
+    author=__author__,
     author_email="rdbende@gmail.com",
     url="https://github.com/tukaan/tukaan",
     license="MIT license",

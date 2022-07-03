@@ -1,8 +1,8 @@
 __all__: list = []  # Making star imports impossible. Is it illegal?
-__author__ = "rdbende"
+__author__ = "The Tukaan team"
 __license__ = "MIT license"
 __package__ = "tukaan"
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 import sys
