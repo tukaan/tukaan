@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PIL import Image  # type: ignore
+
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
 from tukaan._images import Icon, image
 from tukaan._props import bg_color, cget, config, focusable, image_pos, text, text_align

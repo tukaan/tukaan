@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from PIL import Image  # type: ignore
+
 from tukaan._base import InputControl, TkWidget, WidgetBase
 from tukaan._images import Icon
 from tukaan._props import command, focusable, image_pos, text, width
