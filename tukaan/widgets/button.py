@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Callable
 
 from PIL import Image  # type: ignore
-
 from tukaan._base import InputControl, TkWidget, WidgetBase
 from tukaan._images import Icon
 from tukaan._props import command, focusable, image_pos, text, width
@@ -29,6 +28,7 @@ class Button(WidgetBase, InputControl):
         focusable: bool | None = None,
         image: Image.Image | Icon | None = None,
         image_pos: ImagePosition | None = None,
+        tooltip: str | None = None,
         width: int | None = None,
     ) -> None:
         WidgetBase.__init__(
@@ -39,6 +39,7 @@ class Button(WidgetBase, InputControl):
             image=image,
             takefocus=focusable,
             text=text,
+            tooltip=tooltip,
             width=width,
         )
 

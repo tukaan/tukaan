@@ -35,6 +35,8 @@ class ToolTipProvider:
         Tcl.eval(None, f"pack [ttk::label .tooltip.label -style {style}] -expand 1 -fill both")
         Tcl.call(None, "wm", "overrideredirect", ".tooltip", 1)
 
+        cls._setup_done = True
+
     @classmethod
     def add(cls, owner: WidgetBase, message: str) -> None:
         if not cls._setup_done:

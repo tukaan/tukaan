@@ -24,9 +24,10 @@ class CheckBox(WidgetBase, InputControl):
         text: str,
         *,
         focusable: bool | None = None,
-        on_click: Callable[[bool], None] | None = None,
-        value: bool = False,
         link: Boolean | None = None,
+        on_click: Callable[[bool], None] | None = None,
+        tooltip: str | None = None,
+        value: bool = False,
         width: int | None = None,
     ) -> None:
 
@@ -47,9 +48,10 @@ class CheckBox(WidgetBase, InputControl):
             offvalue=False,
             onvalue=True,
             takefocus=focusable,
+            text=text,
+            tooltip=tooltip,
             variable=link,
             width=width,
-            text=text,
         )
 
     def invoke(self) -> None:

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from PIL import Image  # type: ignore
-
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
 from tukaan._images import Icon, image
 from tukaan._props import bg_color, cget, config, focusable, image_pos, text, text_align
@@ -32,6 +31,7 @@ class Label(WidgetBase, OutputDisplay):
         image_pos: ImagePosition | None = None,
         max_line_length: int | None = None,
         text_align: Justify = Justify.Left,
+        tooltip: str | None = None,
     ) -> None:
 
         WidgetBase.__init__(
@@ -45,6 +45,7 @@ class Label(WidgetBase, OutputDisplay):
             justify=text_align,
             takefocus=focusable,
             text=text,
+            tooltip=tooltip,
             wraplength=max_line_length,
         )
 

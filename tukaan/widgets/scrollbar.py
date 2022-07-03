@@ -24,10 +24,11 @@ class ScrollBar(WidgetBase, InputControl):
         *,
         auto_hide: bool = True,
         focusable: bool | None = None,
+        tooltip: str | None = None,
     ) -> None:
         self._auto_hide = auto_hide
 
-        WidgetBase.__init__(self, parent, orient=orientation, takefocus=focusable)
+        WidgetBase.__init__(self, parent, orient=orientation, takefocus=focusable, tooltip=tooltip)
 
     def _set_command(self, value: Callable) -> None:
         config(self, command=value)

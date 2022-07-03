@@ -10,6 +10,7 @@ from ._props import cget, config
 from ._tcl import Tcl
 from ._utils import _commands, _widgets, count
 from ._wm import WindowManager
+from .widgets.tooltip import ToolTipProvider
 
 
 def generate_pathname(widget: TkWidget, parent: TkWidget) -> str:
@@ -78,7 +79,7 @@ class WindowBase(TkWidget, WindowManager, Container):
 
 
 class WidgetBase(TkWidget, GeometryMixin):
-    def __init__(self, parent: TkWidget, **kwargs):
+    def __init__(self, parent: TkWidget, tooltip: str | None = None, **kwargs):
         assert isinstance(parent, Container), "parent must be a container"
 
         self._name = self._lm_path = generate_pathname(self, parent)
@@ -93,6 +94,9 @@ class WidgetBase(TkWidget, GeometryMixin):
         self.position = Position(self)
 
         Tcl.call(None, self._tcl_class, self._name, *Tcl.to_tcl_args(**kwargs))
+
+        if tooltip:
+            ToolTipProvider.add(self, tooltip)
 
     def destroy(self):
         """Destroys this widget, and removes it from the screen"""
