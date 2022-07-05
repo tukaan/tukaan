@@ -69,7 +69,7 @@ class ToolTipProvider:
             return
 
         Tcl.call(None, ".tooltip.label", "configure", "-text", message)
-        cls._after_id = Tcl.call(str, "after", 1000, cls._show_cmd, widget)
+        cls._after_id = Tcl.call(str, "after", 650, cls._show_cmd, widget, len(message.split(" ")))
 
     @classmethod
     def hide(cls) -> None:
@@ -80,7 +80,7 @@ class ToolTipProvider:
         Tcl.call(None, "wm", "withdraw", ".tooltip")
 
     @classmethod
-    def show(cls, widget: str) -> None:
+    def show(cls, widget: str, length: str) -> None:
         if not cls._can_show:
             return
 
@@ -88,6 +88,9 @@ class ToolTipProvider:
         owner_width = Tcl.call(int, "winfo", "reqwidth", widget)
         tip_width = Tcl.call(int, "winfo", "reqwidth", ".tooltip")
         tip_x = owner_x + owner_width // 2 - tip_width // 2
+
+        if tip_x <= Tcl.eval(int, f"winfo rootx [winfo toplevel {widget}]"):
+            tip_x = owner_x
 
         owner_y = Tcl.call(int, "winfo", "rooty", widget)
         tip_height = Tcl.call(int, "winfo", "reqheight", ".tooltip")
@@ -99,4 +102,4 @@ class ToolTipProvider:
         Tcl.call(None, "wm", "geometry", ".tooltip", f"+{tip_x}+{tip_y}")
         Tcl.call(None, "wm", "deiconify", ".tooltip")
 
-        Tcl.call(str, "after", 10000, cls._hide_cmd)
+        Tcl.call(str, "after", (round(60 / 260 * int(length)) or 1) * 10000, cls._hide_cmd)
