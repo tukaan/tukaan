@@ -59,7 +59,8 @@ class ComboBox(TextBox):
         if on_select:
             self.bind("<<ComboboxSelected>>", on_select)
 
-        self.current = 0 if current is None else current
+        if values:
+            self.current = 0 if current is None else current
 
     def __len__(self) -> int:
         return len(Tcl.call([str], self, "cget", "-values"))
