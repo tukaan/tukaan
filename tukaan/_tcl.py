@@ -235,7 +235,7 @@ class Tcl:
     def quit_interp() -> None:
         global _tcl_interp
         _tcl_interp.quit()
-        _tcl_interp = None
+        sys.exit()
 
     @staticmethod
     def updated(func: Callable) -> Callable:

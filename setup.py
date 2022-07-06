@@ -1,5 +1,4 @@
 from setuptools import setup
-from tukaan import __author__, __version__
 
 
 def get_requirements():
@@ -15,8 +14,8 @@ with open("README.md", "r") as file:
 
 setup(
     name="tukaan",
-    version=__version__,
-    author=__author__,
+    version="0.1.1",
+    author="The Tukaan team",
     author_email="rdbende@gmail.com",
     url="https://github.com/tukaan/tukaan",
     license="MIT license",
