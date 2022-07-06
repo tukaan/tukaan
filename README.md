@@ -9,7 +9,8 @@
 <div align="center">
 
   [![tukaan.github.io](https://img.shields.io/badge/Website-tukaan.github.io-%23ec9f30)](https://tukaan.github.io)
-  [![PyPI version](https://badge.fury.io/py/tukaan.svg)](https://pypi.org/project/tukaan)
+  [![PyPI version](https://img.shields.io/pypi/v/tukaan)](https://pypi.org/project/tukaan)
+  [![Downloads](https://static.pepy.tech/badge/tukaan)](https://pypi.org/project/tukaan)
   [![License: MIT](https://img.shields.io/badge/License-MIT-%236667ab.svg)](https://opensource.org/licenses/MIT)
   [![Code style: black](https://img.shields.io/badge/Code%20style-black-%23333333.svg)](https://github.com/psf/black)
   [![#StandWithUkraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://www.standwithukraine.how/)
