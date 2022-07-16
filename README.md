@@ -20,29 +20,14 @@
 > With Tukaan you can make awesome modern GUI apps.
 > Tukaan is intuitive and powerful - the complete opposite of Tkinter, although it was initially meant as an alternative to it.
 
-</br>
+---
+
+> **Warning**
+> After 1 year of development, this project is still a work in alpha state. You can install it and try it out, but I do not recommend to use it in your project, as **anything** may change in the future. 
 
 ## Get started
 
-You can install Tukaan using `pip`
-
-```
-pip install tukaan
-```
-
-On Linux you may get an error that the `_tkinter` module is not found. In that case you need to install the `python3-tk` package with your package manager.
-
-Now that we have successfully installed Tukaan, let's look at a simple example
-
-```python
-import tukaan
-
-app = tukaan.App("My first Tukaan app")
-
-app.run()
-```
-
-You can learn more about Tukaan at its [documentation site](https://tukaan.github.io/docs/pages/basics.html)
+[Get started with Tukaan!](https://tukaan.github.io/docs)
 
 ## Contributing
 
@@ -57,3 +42,12 @@ If you like this project and want to contribute, you are very welcome to join th
   - [UnsignedArduino/TkZero](https://github.com/UnsignedArduino/TkZero)
   - [lawsie/guizero](https://github.com/lawsie/guizero)
   - Logo design inspired by [Tajulislam12's design on Dribbble](https://dribbble.com/shots/14487668-toucan-logo-design-Icon)
+
+
+## FAQ
+
+### Why did you named this project `Tukaan`?
+Tk's logo is a feather, so I wanted to name the project after a bird with `T` and `K` in its name. So I came up with `tukán` (toucan in english). However Github doesn't allow non-english characters in repository names, so I had to simplify it to `Tukaan`.
+
+### How do you pronounce `Tukaan`?
+`tukaːn`

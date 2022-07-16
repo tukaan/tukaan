@@ -1,5 +1,5 @@
 from setuptools import setup
-from tukaan import __author__, __version__
+from tukaan.__version__ import __author__, __license__, __package__, __version__
 
 
 def get_requirements():
@@ -14,12 +14,12 @@ with open("README.md", "r") as file:
 
 
 setup(
-    name="tukaan",
+    name=__package__,
     version=__version__,
+    license=__license__,
     author=__author__,
     author_email="rdbende@gmail.com",
     url="https://github.com/tukaan/tukaan",
-    license="MIT license",
     python_requires=">=3.7",
     install_requires=list(get_requirements()),
     description="A modern, cross platform Python toolkit for creating desktop GUI applications, based on Tcl/Tk.",
