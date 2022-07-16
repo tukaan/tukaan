@@ -46,7 +46,7 @@ If you like this project and want to contribute, you are very welcome to join th
 
 ## FAQ
 
-### Why did you named this project `Tukaan`?
+### Why did you name this project `Tukaan`?
 Tk's logo is a feather, so I wanted to name the project after a bird with `T` and `K` in its name. So I came up with `tukán` (toucan in english). However Github doesn't allow non-english characters in repository names, so I had to simplify it to `Tukaan`.
 
 ### How do you pronounce `Tukaan`?
