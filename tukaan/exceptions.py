@@ -26,19 +26,19 @@ class WidgetError(Exception):
 
 
 class ColorError(Exception):
-    def __init__(self, errormsg=="There was an error finding color"):
+    def __init__(self, errormsg="There was an error finding color"):
         self.errormsg = errormsg
         super().__init__(errormsg)
 
 
 class FontError(Exception):
-    def __init__(self, errormsg=="There was an error rendering the font"):
+    def __init__(self, errormsg="There was an error rendering the font"):
         self.errormsg = errormsg
         super().__init__(errormsg)
 
 
 class LayoutError(Exception):
-    def __init__(self, errormsg=="There was an error rendering getting the layout"):
+    def __init__(self, errormsg="There was an error rendering getting the layout"):
         self.errormsg = errormsg
         super().__init__(errormsg)
 
