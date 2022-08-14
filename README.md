@@ -23,7 +23,7 @@
 ---
 
 > **Warning**
-> After 1 year of development, this project is still a work in alpha state. You can install it and try it out, but I do not recommend to use it in your project, as **anything** may change in the future. 
+> After 1 year of development, this project is still in alpha state. You can install it and try it out, but I do not recommend to use it in your project, as **anything** may change in the future. 
 
 ## Get started
 
