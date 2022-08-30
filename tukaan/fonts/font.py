@@ -4,6 +4,8 @@ from collections import namedtuple
 from collections.abc import Iterator
 from pathlib import Path
 
+from libtukaan import Serif
+
 from tukaan._tcl import Tcl
 from tukaan._utils import _fonts, counts, seq_pairs
 from tukaan.exceptions import FontError, TclError
@@ -42,7 +44,7 @@ class Font:
     def __init__(
         self,
         family: FontFile | str | None = None,
-        size: int = 10,
+        size: int = None,
         bold: bool = False,
         italic: bool = False,
         underline: bool = False,
@@ -89,17 +91,19 @@ class Font:
     def config(
         self,
         family: str | None = None,
-        size: int = 10,
+        size: int = None,
         bold: bool = False,
         italic: bool = False,
         underline: bool = False,
         strikethrough: bool = False,
     ) -> None:
         """Configures the fonts parameters"""
+        if isinstance(size, float):
+            size = round(size)
 
         args = Tcl.to_tcl_args(
             family=family,
-            size=round(size),
+            size=size,
             weight="bold" if bold else "normal",
             slant="italic" if italic else "roman",
             underline=underline,
@@ -116,11 +120,10 @@ class Font:
         return self._name
 
     @classmethod
-    def __from_tcl__(cls, tcl_value: str) -> Font:
+    def __from_tcl__(cls, tcl_value: str) -> Font | dict[str, str | int | bool]:
         try:
             return _fonts[tcl_value]
         except KeyError:
-            flat_values = Tcl.get_iterable(tcl_value)
             types = {
                 "family": str,
                 "size": int,
@@ -131,6 +134,7 @@ class Font:
             }
 
             kwargs = {}
+            flat_values = Tcl.get_iterable(tcl_value)
             for key, value in seq_pairs(flat_values):
                 key = key.lstrip("-")
                 if key == "weight":
@@ -143,7 +147,7 @@ class Font:
                     key = "strikethrough"
                 kwargs[key] = Tcl.from_(types[key], value)
 
-            return cls(**kwargs)
+            return kwargs
 
     def _get(self, type_spec: type[int] | type[str] | type[bool], option: str) -> int | str | bool:
         return Tcl.call(type_spec, "font", "actual", self, f"-{option}")

@@ -8,6 +8,7 @@ from ._utils import _commands, seq_pairs
 from ._variables import ControlVariable
 from .colors import Color
 from .enums import ImagePosition, Justify, Orientation
+from tukaan.fonts.font import Font
 
 if TYPE_CHECKING:
     from ._base import TkWidget
@@ -132,6 +133,17 @@ def set_value(self, value: int) -> None:
 
 
 value = property(get_value, set_value)
+
+
+def get_font(self) -> Font | dict[str, str | int | bool]:
+    return cget(self, Font, "-font")
+
+
+def set_font(self, font: Font | dict[str, str | int | bool]) -> None:
+    return config(self, font=font)
+
+
+font = property(get_font, set_font)
 
 
 def get_link(self) -> ControlVariable:
