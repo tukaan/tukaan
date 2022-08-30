@@ -47,8 +47,6 @@ class Font:
         italic: bool = False,
         underline: bool = False,
         strikethrough: bool = False,
-        *,
-        file: Path | None = None,
     ) -> None:
         """
         __init__
@@ -66,8 +64,6 @@ class Font:
                 Underlined font ?
             strikethrough:
                 Throughstricken font ?
-            file:
-                A font file to load the family from.
         """
         if isinstance(family, FontFile):
             if isinstance(family, TrueTypeCollection):
