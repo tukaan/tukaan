@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable
 
+from tukaan.fonts.font import Font
+
 from ._structures import TabStop
 from ._tcl import Tcl
 from ._utils import _commands, seq_pairs
 from ._variables import ControlVariable
 from .colors import Color
 from .enums import ImagePosition, Justify, Orientation
-from tukaan.fonts.font import Font
 
 if TYPE_CHECKING:
     from ._base import TkWidget

@@ -4,7 +4,7 @@ from PIL import Image  # type: ignore
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
 from tukaan._images import Icon, image
-from tukaan._props import bg_color, cget, config, focusable, image_pos, text, text_align, font
+from tukaan._props import bg_color, cget, config, focusable, font, image_pos, text, text_align
 from tukaan.colors import Color
 from tukaan.enums import Anchor, ImagePosition, Justify
 from tukaan.fonts.font import Font
