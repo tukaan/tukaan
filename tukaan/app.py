@@ -1,7 +1,8 @@
 import sys
 from pathlib import Path
 
-from . import Serif
+from libtukaan import Serif
+
 from ._base import WindowBase
 from ._tcl import Tcl
 from .exceptions import AppError
@@ -38,7 +39,7 @@ class App(WindowBase):
         self._set_size((width, height))
 
         self._init_tkdnd()
-        Serif.load()
+        Serif.init()
 
     def __enter__(self):
         return self
@@ -57,7 +58,8 @@ class App(WindowBase):
         Tcl.call(None, "package", "require", "tkdnd")
 
     def destroy(self) -> None:
-        """Quit the entire Tcl interpreter"""
+        """Quit the entire Tcl interpreter."""
+        Serif.cleanup()
 
         Tcl.call(None, "destroy", self._name)
         Tcl.call(None, "destroy", self._wm_path)
@@ -65,6 +67,5 @@ class App(WindowBase):
         Tcl.quit_interp()
 
     def run(self) -> None:
-        """Starts the main event loop"""
-
+        """Start the main event loop."""
         Tcl.main_loop()

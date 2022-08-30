@@ -1,2 +1,5 @@
 pillow>=8.0.0
 screeninfo>=0.8
+libtukaan-win; sys_platform == "win32"
+libtukaan-mac; sys_platform == "darwin"
+libtukaan-unix; sys_platform == "linux"
