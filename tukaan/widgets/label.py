@@ -7,6 +7,7 @@ from tukaan._images import Icon, image
 from tukaan._props import bg_color, cget, config, focusable, image_pos, text, text_align
 from tukaan.colors import Color
 from tukaan.enums import Anchor, ImagePosition, Justify
+from tukaan.fonts.font import Font
 
 
 class Label(WidgetBase, OutputDisplay):
@@ -28,6 +29,7 @@ class Label(WidgetBase, OutputDisplay):
         content_align: Anchor = Anchor.Center,
         fg_color: Color | str | None = None,
         focusable: bool | None = None,
+        font: Font | None = None,
         image: Image.Image | Icon | None = None,
         image_pos: ImagePosition | None = None,
         max_line_length: int | None = None,
@@ -41,6 +43,7 @@ class Label(WidgetBase, OutputDisplay):
             anchor=content_align,
             background=bg_color,
             compound=image_pos,
+            font=font,
             foreground=fg_color,
             image=image,
             justify=text_align,

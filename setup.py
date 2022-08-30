@@ -1,5 +1,5 @@
 from setuptools import setup
-from tukaan.__version__ import __author__, __license__, __package__, __version__
+from tukaan.__version__ import __author__, __license__, __version__
 
 
 def get_requirements():
@@ -14,28 +14,32 @@ with open("README.md", "r") as file:
 
 
 setup(
-    name=__package__,
+    name="tukaan",
     version=__version__,
     license=__license__,
     author=__author__,
     author_email="rdbende@gmail.com",
-    url="https://github.com/tukaan/tukaan",
+    url="https://tukaan.github.io",
+    project_urls={
+        "Documentation": "https://tukaan.github.io/docs",
+        "Source": "https://github.com/tukaan/tukaan",
+        "Tracker": "https://github.com/tukaan/tukaan/issues",
+    },
     python_requires=">=3.7",
     install_requires=list(get_requirements()),
-    description="A modern, cross platform Python toolkit for creating desktop GUI applications, based on Tcl/Tk.",
+    description="A modern, cross platform Python toolkit for creating desktop GUI applications.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    keywords=["gui", "ui", "tukaan", "tkinter", "ttk", "tcl", "tk", "tcl/tk"],
+    keywords=["gui", "tcl", "tcl/tk", "tk", "tkinter", "ttk", "tukaan", "ui"],
     packages=[
         "tukaan",
-        "tukaan/Serif",
+        "tukaan/fonts",
         "tukaan/themes",
         "tukaan/tkdnd",
         "tukaan/widgets",
     ],
     package_data={
         "": [
-            "Serif/pkg/*.*",
             "tkdnd/*/*.*",
         ]
     },

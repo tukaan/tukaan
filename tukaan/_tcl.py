@@ -17,7 +17,8 @@ _tcl_interp: tk.tkapp | None = None
 
 
 class Tcl:
-    """A Python interface to the Tcl interpreter.
+    """
+    A Python interface to the Tcl interpreter.
 
     Attributes:
         interp_address: Stores the address of the Tcl interpreter.
@@ -45,6 +46,7 @@ class Tcl:
         cls.interp_address = _tcl_interp.interpaddr()  # PIL needs this
         cls.windowing_system = _tcl_interp.call("tk", "windowingsystem").lower()
         cls.version = _tcl_interp.call("info", "patchlevel")
+        cls.dll_ext = _tcl_interp.call("info", "sharedlibextension")
 
     @staticmethod
     def get_interp() -> tk.tkapp:
@@ -139,7 +141,7 @@ class Tcl:
             return Tcl.create_cmd(value)
 
         if isinstance(value, Path):
-            return str(value.resolve())
+            return str(value.resolve().absolute())
 
         try:
             return tuple(map(Tcl.to, value))
@@ -236,6 +238,10 @@ class Tcl:
         global _tcl_interp
         _tcl_interp.quit()
         _tcl_interp = None
+
+    @staticmethod
+    def load_dll(path: Path, pkg_name: str | None) -> None:
+        _tcl_interp.call("load", str(path.resolve().absolute()), pkg_name)
 
     @staticmethod
     def updated(func: Callable) -> Callable:
