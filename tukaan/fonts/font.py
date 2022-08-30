@@ -136,6 +136,7 @@ class Font:
             kwargs = {}
             flat_values = Tcl.get_iterable(tcl_value)
             for key, value in seq_pairs(flat_values):
+                # TODO: Return a FontFile object if the family is loaded from a file
                 key = key.lstrip("-")
                 if key == "weight":
                     value = value == "bold"
