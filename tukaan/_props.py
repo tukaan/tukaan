@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable
 
+from tukaan.fonts.font import Font
+
 from ._structures import TabStop
 from ._tcl import Tcl
 from ._utils import _commands, seq_pairs
@@ -132,6 +134,17 @@ def set_value(self, value: int) -> None:
 
 
 value = property(get_value, set_value)
+
+
+def get_font(self) -> Font | dict[str, str | int | bool]:
+    return cget(self, Font, "-font")
+
+
+def set_font(self, font: Font | dict[str, str | int | bool]) -> None:
+    return config(self, font=font)
+
+
+font = property(get_font, set_font)
 
 
 def get_link(self) -> ControlVariable:
