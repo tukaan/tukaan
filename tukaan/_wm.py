@@ -71,7 +71,7 @@ class WMProperties:
     @y.setter
     @Tcl.update_after
     def y(self, value: int) -> None:
-        Tcl.call(None, "wm", "geometry", self._wm_path, f"+{self.x)}+{value}")
+        Tcl.call(None, "wm", "geometry", self._wm_path, f"+{self.x}+{value}")
 
 
     @property
