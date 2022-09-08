@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._props import config, focusable, link, text, width
+from tukaan._props import config, TakeFocus, Link, Text, Width
 from tukaan._tcl import Tcl
 from tukaan._variables import Boolean
 
@@ -13,10 +13,10 @@ class CheckBox(WidgetBase, InputControl):
 
     _variable: Boolean
 
-    focusable = focusable
-    link = link
-    text = text
-    width = width
+    focusable = TakeFocus()
+    link = Link()
+    text = Text()
+    width = Width()
 
     def __init__(
         self,

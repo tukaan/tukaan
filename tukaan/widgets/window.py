@@ -31,8 +31,8 @@ class Window(WindowBase):
         Tcl.call(None, self._tcl_class, self._wm_path)
         Tcl.eval(None, f"pack [ttk::frame {self._name}] -expand 1 -fill both")
 
-        self._set_title(title)
-        self._set_size((width, height))
+        self.title = title
+        self.size = (width, height)
 
         Tcl.call(None, "bind", self, "<Map>", self._generate_state_event)
         Tcl.call(None, "bind", self, "<Unmap>", self._generate_state_event)

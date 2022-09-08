@@ -28,7 +28,7 @@ else:
 class DataContainer:
     _container_dict: dict[str, Any] = {}
 
-    def add(self, value: Any) -> str:
+    def add(self, value: object) -> str:
         key = str(id(value))
         self._container_dict[key] = value
         return key
@@ -561,7 +561,7 @@ class EventMixin:
     def unbind(self, sequence: str) -> None:
         self._bind(sequence, "", True, False)
 
-    def generate_event(self, sequence: str, data: Any = None) -> None:
+    def generate_event(self, sequence: str, data: object = None) -> None:
         global _virtual_event_data_container
         key = _virtual_event_data_container.add(data) if data is not None else None
 

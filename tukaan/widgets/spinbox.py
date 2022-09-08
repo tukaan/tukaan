@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable, Iterable
 
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._props import cget, config
+from tukaan._props import cget, config, BoolDesc, FloatDesc
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
 
@@ -105,21 +105,8 @@ class SpinBox(TextBox):
     def values(self, values: Iterable[str | float] | range | None) -> None:
         self._set_values(values, None)
 
-    @property
-    def cycle(self) -> bool:
-        return cget(self, bool, "-wrap")
-
-    @cycle.setter
-    def cycle(self, value: bool) -> None:
-        config(self, wrap=value)
-
-    @property
-    def step(self) -> float:
-        return cget(self, float, "-increment")
-
-    @step.setter
-    def step(self, value: float) -> None:
-        config(self, increment=value)
+    cycle = BoolDesc("wrap")
+    step = FloatDesc("increment")
 
     @property
     def on_select(self) -> Callable[[str], None] | None:

@@ -6,7 +6,7 @@ from pathlib import Path
 from PIL import Image as PIL_Image  # type: ignore
 
 from ._base import WidgetBase
-from ._props import cget, config
+from ._props import cget, config, WidgetDesc
 from ._tcl import Tcl
 from ._utils import _images, _pil_images, counts
 from .colors import Color
@@ -196,21 +196,15 @@ class IconFactory:
     __getitem__ = get
 
 
-def get_image(self) -> PillowImage.Image | Icon:
-    return cget(self, Pillow2Tcl, "-image")
-
-
-def set_image(self, value: PillowImage.Image | Icon) -> None:
-    config(self, image=value)
-
-
-image = property(get_image, set_image)
+class ImageProp(WidgetDesc[Pillow2Tcl, PillowImage.Image | Icon]):
+    OPTION = "image"
+    TYPE = Pillow2Tcl
 
 
 class Image(WidgetBase):
     _tcl_class = "ttk::label"
 
-    image = image
+    image = ImageProp()
 
     def __init__(self, parent, image: PillowImage.Image | None = None):
         WidgetBase.__init__(self, parent, image=image)

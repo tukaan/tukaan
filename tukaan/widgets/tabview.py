@@ -8,7 +8,7 @@ from PIL import Image
 
 from tukaan._base import Container, TkWidget, WidgetBase
 from tukaan._images import Icon, Pillow2Tcl
-from tukaan._props import _convert_padding, _convert_padding_back, focusable
+from tukaan._props import _convert_padding, _convert_padding_back, TakeFocus
 from tukaan._tcl import Tcl
 from tukaan.enums import ImagePosition
 from tukaan.exceptions import TclError
@@ -144,7 +144,7 @@ class Tab(Frame):
 class TabView(WidgetBase, Container):
     _tcl_class = "ttk::notebook"
 
-    focusable = focusable
+    focusable = TakeFocus()
 
     def __init__(
         self,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import functools
 import sys
 import traceback
 from enum import Enum, EnumMeta
@@ -112,7 +113,7 @@ class Tcl:
             return Path(value).resolve()
 
     @staticmethod
-    def to(value: Any) -> str | tuple | tk.Tcl_Obj:
+    def to(value: object) -> str | tuple | tk.Tcl_Obj:
         if isinstance(value, (str, tk.Tcl_Obj)):
             return value
 
@@ -151,7 +152,7 @@ class Tcl:
             ) from None
 
     @staticmethod
-    def call(return_type: Any, *args) -> Any:
+    def call(return_type: object, *args) -> Any:
         try:
             result = _tcl_interp.call(*map(Tcl.to, args))
             if return_type is None:
@@ -173,7 +174,7 @@ class Tcl:
             raise FileNotFoundError(f"No such file or directory: {path!r}") from None
 
     @staticmethod
-    def eval(return_type: Any, script: str) -> Any:
+    def eval(return_type: object, script: str) -> Any:
         try:
             result = _tcl_interp.eval(script)
         except tk.TclError as e:
@@ -245,6 +246,7 @@ class Tcl:
 
     @staticmethod
     def updated(func: Callable) -> Callable:
+        @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> Any:
             _tcl_interp.eval("update idletasks")
             result = func(self, *args, **kwargs)
@@ -255,6 +257,7 @@ class Tcl:
 
     @staticmethod
     def update_before(func: Callable) -> Callable:
+        @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> Any:
             _tcl_interp.eval("update idletasks")
             return func(self, *args, **kwargs)
@@ -263,6 +266,7 @@ class Tcl:
 
     @staticmethod
     def update_after(func: Callable) -> Callable:
+        @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> Any:
             result = func(self, *args, **kwargs)
             _tcl_interp.eval("update idletasks")

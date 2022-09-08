@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._props import command, focusable, link, text, value, width
+from tukaan._props import Command, TakeFocus, Link, Text, Value, Width
 from tukaan._tcl import Tcl
 from tukaan._variables import ControlVariable, String
 from tukaan.enums import Orientation
@@ -14,12 +14,12 @@ from .frame import Frame
 class RadioButton(WidgetBase, InputControl):
     _tcl_class = "ttk::radiobutton"
 
-    focusable = focusable
-    link = link
-    on_click = command
-    text = text
-    value = value
-    width = width
+    focusable = TakeFocus()
+    link = Link()
+    on_click = Command()
+    text = Text()
+    value = Value()
+    width = Width()
 
     def __init__(
         self,

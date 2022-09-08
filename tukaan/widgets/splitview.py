@@ -4,7 +4,7 @@ import contextlib
 from collections.abc import Iterator
 
 from tukaan._base import Container, TkWidget, WidgetBase
-from tukaan._props import focusable
+from tukaan._props import TakeFocus
 from tukaan._tcl import Tcl
 from tukaan.enums import Orientation
 from tukaan.exceptions import TclError
@@ -69,7 +69,7 @@ class Pane(Frame):
 class SplitView(WidgetBase, Container):
     _tcl_class = "ttk::panedwindow"
 
-    focusable = focusable
+    focusable = TakeFocus()
 
     def __init__(
         self,

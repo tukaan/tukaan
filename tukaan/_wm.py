@@ -45,56 +45,58 @@ class WindowCompositionAttributeData(ctypes.Structure):
 
 
 class WMProperties:
-    def _get_title(self) -> str:
+    @property
+    def title(self) -> str:
         return Tcl.call(str, "wm", "title", self._wm_path)
 
-    def _set_title(self, new_title: str) -> None:
-        Tcl.call(None, "wm", "title", self._wm_path, new_title)
+    @title.setter
+    def title(self, value: str):
+        Tcl.call(None, "wm", "title", self._wm_path, value)
 
-    title = property(_get_title, _set_title)
-
+    @property
     @Tcl.update_before
-    def _get_x(self) -> int:
+    def x(self) -> int:
         return Tcl.call(int, "winfo", "x", self._wm_path)
 
+    @x.setter
     @Tcl.update_after
-    def _set_x(self, new_x: int) -> None:
-        Tcl.call(None, "wm", "geometry", self._wm_path, f"+{new_x}+{self._get_y()}")
+    def x(self, value: int) -> None:
+        Tcl.call(None, "wm", "geometry", self._wm_path, f"+{value}+{self.y}")
 
-    x = property(_get_x, _set_x)
-
+    @property
     @Tcl.update_before
-    def _get_y(self) -> int:
+    def y(self) -> int:
         return Tcl.call(int, "winfo", "y", self._wm_path)
 
+    @y.setter
     @Tcl.update_after
-    def _set_y(self, new_y: int) -> None:
-        Tcl.call(None, "wm", "geometry", self._wm_path, f"+{self._get_x()}+{new_y}")
+    def y(self, value: int) -> None:
+        Tcl.call(None, "wm", "geometry", self._wm_path, f"+{self.x)}+{value}")
 
-    y = property(_get_y, _set_y)
 
+    @property
     @Tcl.update_before
-    def _get_width(self) -> int:
+    def width(self) -> int:
         return Tcl.call(int, "winfo", "width", self._wm_path)
 
+    @width.setter
     @Tcl.update_after
-    def _set_width(self, new_width: int) -> None:
-        Tcl.call(None, "wm", "geometry", self._wm_path, f"{new_width}x{self._get_height()}")
+    def width(self, value: int) -> None:
+        Tcl.call(None, "wm", "geometry", self._wm_path, f"{value}x{self.height}")
 
-    width = property(_get_width, _set_width)
-
+    @property
     @Tcl.update_before
-    def _get_height(self) -> int:
+    def height(self) -> int:
         return Tcl.call(int, "winfo", "height", self._wm_path)
 
+    @height.setter
     @Tcl.update_after
-    def _set_height(self, new_height: int) -> None:
-        Tcl.call(None, "wm", "geometry", self._wm_path, f"{self._get_width()}x{new_height}")
+    def height(self, value: int) -> None:
+        Tcl.call(None, "wm", "geometry", self._wm_path, f"{self.width}x{value}")
 
-    height = property(_get_height, _set_height)
-
+    @property
     @Tcl.update_before
-    def _get_size(self) -> Size:
+    def size(self) -> Size:
         return Size(
             *map(
                 int,
@@ -102,14 +104,14 @@ class WMProperties:
             )
         )
 
+    @size.setter
     @Tcl.update_after
-    def _set_size(self, new_size: Size | tuple[int, int] | int) -> None:
-        if isinstance(new_size, int):
-            new_size = (new_size,) * 2
+    def size(self, value: Size | tuple[int, int] | int) -> None:
+        if isinstance(value, int):
+            value = (value,) * 2
 
-        Tcl.call(None, "wm", "geometry", self._wm_path, "{}x{}".format(*new_size))
+        Tcl.call(None, "wm", "geometry", self._wm_path, "{}x{}".format(*value))
 
-    size = property(_get_size, _set_size)
 
 
 class WindowManagerBase(ABC, WMProperties):
@@ -373,24 +375,25 @@ class DWM(WindowManagerBase):
         self.restore()
         self._dwm_set_window_attribute(DWMWA_TRANSITIONS_FORCEDISABLED, 0)
 
-    def _get_WHND(self):
+    @property
+    def _hwnd(self):
         return int(Tcl.call(str, "wm", "frame", self._wm_path), 16)
 
     def _get_bgr_color(self, color: str) -> str:
         return color[5:7] + color[3:5] + color[1:3]
 
-    def _dwm_set_window_attribute(self, rendering_policy: int, value: Any) -> None:
+    def _dwm_set_window_attribute(self, rendering_policy: int, value: object) -> None:
         value = ctypes.c_int(value)
 
         ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            self._get_WHND(),
+            self._hwnd,
             rendering_policy,
             ctypes.byref(value),
             ctypes.sizeof(value),
         )
 
     def _set_window_composition_attribute(self, wcad: WindowCompositionAttributeData) -> None:
-        ctypes.windll.user32.SetWindowCompositionAttribute(self._get_WHND(), wcad)
+        ctypes.windll.user32.SetWindowCompositionAttribute(self._hwnd, wcad)
 
 
 class Quartz(WindowManagerBase):

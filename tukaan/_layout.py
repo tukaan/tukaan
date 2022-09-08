@@ -142,7 +142,10 @@ class Grid(LayoutManager):
 
         return None, None
 
-    def _get_pad(self):
+    # Properties #
+    
+    @property
+    def padding(self):
         result = Tcl.call(
             {
                 "-padx": (int,),
@@ -154,8 +157,6 @@ class Grid(LayoutManager):
         )
 
         return result["-padx"], result["-pady"]
-
-    # Properties #
 
     @property
     def location(self) -> tuple[int | None, int | None]:
@@ -211,7 +212,7 @@ class Grid(LayoutManager):
 
     @property
     def margin(self) -> tuple[int, ...]:
-        margin = [item if len(item) == 2 else item * 2 for item in self._get_pad()]
+        margin = [item if len(item) == 2 else item * 2 for item in self.padding]
         return margin[1][0], margin[0][1], margin[1][1], margin[0][0]
 
     @margin.setter
