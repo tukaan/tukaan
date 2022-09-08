@@ -164,7 +164,7 @@ def _convert_padding(padding: int | tuple[int, ...] | None) -> tuple[int, ...] |
     if padding is None:
         return ()
     elif isinstance(padding, int):
-        return (Value,) * 4
+        return (padding,) * 4
     else:
         length = len(padding)
         if length == 1:
