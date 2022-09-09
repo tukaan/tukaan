@@ -1,12 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+import sys
+from typing import TYPE_CHECKING, Optional, Union
 
-from tukaan.fonts.font import Font
+if sys.version_info >= (3, 9):
+    from collections.abc import Callable
+    from typing import Protocol
+else:
+    from typing import Callable
+    from typing_extensions import Protocol
 
 from ._structures import TabStop
 from ._tcl import Tcl
-from ._utils import _commands, seq_pairs
+from ._utils import T, T_co, T_contra, _commands, seq_pairs
 from ._variables import ControlVariable
 from .colors import Color
 from .enums import ImagePosition, Justify, Orientation
@@ -19,182 +25,140 @@ def config(widget: TkWidget, **kwargs) -> None:
     Tcl.call(None, widget, "configure", *Tcl.to_tcl_args(**kwargs))
 
 
-def cget(widget: TkWidget, return_type: Any, option: str) -> Any:
+def cget(widget: TkWidget, return_type: type[T], option: str) -> T:
     return Tcl.call(return_type, widget, "cget", option)
 
 
-def get_image_pos(self) -> ImagePosition:
-    return cget(self, ImagePosition, "-compound")
+class RWProperty(Protocol[T_co, T_contra]):
+    def __get__(self, instance: TkWidget, owner: object = None) -> T_co:
+        ...
 
+    def __set__(self, instance: TkWidget, value: T_contra) -> None:
+        ...
 
-def set_image_pos(self, value: ImagePosition) -> None:
-    config(self, compound=value)
 
+class OptionDesc(RWProperty[T, T_contra]):
+    def __init__(self, option: str, type_: type[T]):
+        self._option = option
+        self._type = type_
 
-image_pos = property(get_image_pos, set_image_pos)
+    def __get__(self, instance: TkWidget, owner: object = None) -> T:
+        if owner is None:
+            return NotImplemented
+        return cget(instance, self._type, f"-{self._option}")
 
+    def __set__(self, instance: TkWidget, value: T_contra):
+        config(instance, **{self._option: value})
 
-def get_text_align(self) -> Justify:
-    return cget(self, Justify, "-justify")
 
+class BoolDesc(OptionDesc[bool, bool]):
+    def __init__(self, option: str):
+        super().__init__(option, bool)
 
-def set_text_align(self, value: Justify) -> None:
-    config(self, justify=value)
 
+class IntDesc(OptionDesc[int, int]):
+    def __init__(self, option: str):
+        super().__init__(option, int)
 
-text_align = property(get_text_align, set_text_align)
 
+class FloatDesc(OptionDesc[float, float]):
+    def __init__(self, option: str):
+        super().__init__(option, float)
 
-def get_fg_color(self) -> Color:
-    return cget(self, Color, "-foreground")
 
+class ImagePositionProp(OptionDesc[ImagePosition, ImagePosition]):
+    def __init__(self):
+        super().__init__("compound", ImagePosition)
 
-def set_fg_color(self, value: Color | str) -> None:
-    config(self, foreground=value)
 
+class TextAlignProp(OptionDesc[Justify, Justify]):
+    def __init__(self):
+        super().__init__("justify", Justify)
 
-fg_color = property(get_fg_color, set_fg_color)
 
+class ForegroundProp(OptionDesc[Color, Union[Color, str]]):
+    def __init__(self):
+        super().__init__("foreground", Color)
 
-def get_bg_color(self) -> Color:
-    return cget(self, Color, "-foreground")
 
+class BackgroundProp(OptionDesc[Color, Union[Color, str]]):
+    def __init__(self):
+        super().__init__("background", Color)
 
-def set_bg_color(self, value: Color | str) -> None:
-    config(self, foreground=value)
 
+class TextProp(OptionDesc[str, str]):
+    def __init__(self):
+        super().__init__("text", str)
 
-bg_color = property(get_bg_color, set_bg_color)
 
+class WidthProp(OptionDesc[int, int]):
+    def __init__(self):
+        super().__init__("width", int)
 
-def get_text(self) -> str:
-    return cget(self, str, "-text")
 
+class HeightProp(OptionDesc[int, int]):
+    def __init__(self):
+        super().__init__("height", int)
 
-def set_text(self, value: str) -> None:
-    config(self, text=value)
 
+class CommandProp(OptionDesc[Optional[Callable], Optional[Callable]]):
+    def __init__(self):
+        super().__init__("command", str)
 
-text = property(get_text, set_text)
+    def __get__(self, instance: TkWidget, owner: object = None):
+        if owner is None:
+            return NotImplemented
+        return _commands.get(cget(instance, str, "-command"))
 
+    def __set__(self, instance: TkWidget, value: Callable | None = None):
+        super().__set__(instance, value or "")
 
-def get_width(self) -> int:
-    return cget(self, int, "-width")
 
+class OrientProp(OptionDesc[Orientation, Orientation]):
+    def __init__(self):
+        super().__init__("orient", Orientation)
 
-def set_width(self, value: int) -> None:
-    config(self, width=value)
 
+class LinkProp(RWProperty[ControlVariable, Optional[ControlVariable]]):
+    def __get__(self, instance: TkWidget, owner: object = None):
+        if owner is None:
+            return NotImplemented
+        return cget(instance, ControlVariable, "-variable")
 
-width = property(get_width, set_width)
+    def __set__(self, instance: TkWidget, value: ControlVariable | None):
+        instance._variable = value
+        return config(instance, variable=value or "")
 
 
-def get_height(self) -> int:
-    return cget(self, int, "-height")
+class FocusableProp(OptionDesc[bool, bool]):
+    def __init__(self):
+        super().__init__("takefocus", bool)
 
 
-def set_height(self, value: int) -> None:
-    config(self, height=value)
+class TabStopsProp(RWProperty[list[TabStop], Union[TabStop, list[TabStop]]]):
+    def __get__(self, instance: TkWidget, owner: object = None):
+        if owner is None:
+            return NotImplemented
+        return [TabStop(pos, align) for pos, align in seq_pairs(cget(instance, list, "-tabs"))]
 
+    def __set__(self, instance: TkWidget, value: TabStop | list[TabStop]):
+        if value is None:
+            return
 
-height = property(get_height, set_height)
+        if isinstance(value, TabStop):
+            value = [value]
 
+        config(instance, tabs=[y for x in value for y in x.__to_tcl__()])
 
-def get_command(self) -> Callable | None:
-    return _commands.get(cget(self, str, "-command"))
 
+PaddingType = tuple[int, int, int, int]
 
-def set_command(self, func: Callable | None) -> None:
-    value = func
-    if value is None:
-        value = ""
-    config(self, command=value)
 
-
-command = property(get_command, set_command)
-
-
-def get_orientation(self) -> Orientation:
-    return cget(self, Orientation, "-orient")
-
-
-def set_orientation(self, value: Orientation) -> None:
-    return config(self, orient=value)
-
-
-orientation = property(get_orientation, set_orientation)
-
-
-def get_value(self) -> int:
-    return cget(self, int, "-value")
-
-
-def set_value(self, value: int) -> None:
-    return config(self, value=value)
-
-
-value = property(get_value, set_value)
-
-
-def get_font(self) -> Font | dict[str, str | int | bool]:
-    return cget(self, Font, "-font")
-
-
-def set_font(self, font: Font | dict[str, str | int | bool]) -> None:
-    return config(self, font=font)
-
-
-font = property(get_font, set_font)
-
-
-def get_link(self) -> ControlVariable:
-    return cget(self, ControlVariable, "-variable")
-
-
-def set_link(self, value: ControlVariable | None) -> None:
-    self._variable = value
-
-    if value is None:
-        value = ""  # type: ignore
-    return config(self, variable=value)
-
-
-link = property(get_link, set_link)
-
-
-def get_focusable(self) -> bool:
-    return cget(self, bool, "-takefocus")
-
-
-def set_focusable(self, value: bool) -> None:
-    config(self, takefocus=value)
-
-
-focusable = property(get_focusable, set_focusable)
-
-
-def get_tab_stops(self) -> list[TabStop]:
-    return [TabStop(pos, align) for pos, align in seq_pairs(cget(self, [str], "-tabs"))]
-
-
-def set_tab_stops(self, tab_stops: TabStop | list[TabStop]) -> None:
-    if tab_stops is None:
-        return
-
-    if isinstance(tab_stops, TabStop):
-        tab_stops = [tab_stops]
-
-    config(self, tabs=[y for x in tab_stops for y in x.__to_tcl__()])
-
-
-tab_stops = property(get_tab_stops, set_tab_stops)
-
-
-def _convert_padding(padding: int | tuple[int, ...] | None) -> tuple | tuple[int, ...] | str:
+def _convert_padding(padding: int | tuple[int, ...] | None) -> tuple[int, ...] | str:
     if padding is None:
         return ()
     elif isinstance(padding, int):
-        return (value,) * 4
+        return (padding,) * 4
     else:
         length = len(padding)
         if length == 1:
@@ -205,11 +169,11 @@ def _convert_padding(padding: int | tuple[int, ...] | None) -> tuple | tuple[int
             return (padding[1], padding[0], padding[1], padding[2])
         elif length == 4:
             return (padding[3], padding[0], padding[1], padding[2])
-        else:
-            return ""
+
+        return ""
 
 
-def _convert_padding_back(padding) -> tuple[int, int, int, int]:
+def _convert_padding_back(padding: tuple[int, ...]) -> PaddingType:
     if len(padding) == 1:
         return (padding[0],) * 4
     elif len(padding) == 4:
@@ -218,12 +182,11 @@ def _convert_padding_back(padding) -> tuple[int, int, int, int]:
     return (0,) * 4
 
 
-def get_padding(self) -> tuple[int, int, int, int]:
-    return _convert_padding_back(cget(self, (int,), "-padding"))
+class PaddingProp(RWProperty[PaddingType, Union[int, tuple[int, ...], None]]):
+    def __get__(self, instance: TkWidget, owner: object = None):
+        if owner is None:
+            return NotImplemented
+        return _convert_padding_back(cget(instance, (int,), "-padding"))
 
-
-def set_padding(self, value: int | tuple[int, ...] | None) -> None:
-    config(self, padding=_convert_padding(value))
-
-
-padding = property(get_padding, set_padding)
+    def __set__(self, instance: TkWidget, value: int | tuple[int, ...] | None):
+        config(instance, padding=_convert_padding(value))

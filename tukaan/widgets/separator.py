@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
-from tukaan._props import orientation
+from tukaan._props import OrientProp
 from tukaan.enums import Orientation
 
 
 class Separator(WidgetBase, OutputDisplay):
     _tcl_class = "ttk::separator"
 
-    orientation = orientation
+    orientation = OrientProp()
 
     def __init__(
         self,

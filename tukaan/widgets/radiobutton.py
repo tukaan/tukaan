@@ -3,7 +3,16 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._props import command, focusable, link, text, value, width
+from tukaan._props import (
+    CommandProp,
+    FocusableProp,
+    IntDesc,
+    LinkProp,
+    TextProp,
+    WidthProp,
+    cget,
+    config,
+)
 from tukaan._tcl import Tcl
 from tukaan._variables import ControlVariable, String
 from tukaan.enums import Orientation
@@ -14,12 +23,11 @@ from .frame import Frame
 class RadioButton(WidgetBase, InputControl):
     _tcl_class = "ttk::radiobutton"
 
-    focusable = focusable
-    link = link
-    on_click = command
-    text = text
-    value = value
-    width = width
+    focusable = FocusableProp()
+    link = LinkProp()
+    on_click = CommandProp()
+    text = TextProp()
+    width = WidthProp()
 
     def __init__(
         self,
@@ -34,6 +42,7 @@ class RadioButton(WidgetBase, InputControl):
         width: int | None = None,
     ) -> None:
         self._variable = link
+        self._value_type = type(value)
 
         WidgetBase.__init__(
             self,
@@ -48,20 +57,28 @@ class RadioButton(WidgetBase, InputControl):
         )
 
     def invoke(self):
-        """Invokes the radiobutton, as if it were clicked"""
-
+        """Invoke the radiobutton, as if it were clicked."""
         Tcl.call(None, self, "invoke")
 
     def select(self):
-        """Selects the radiobutton"""
-
+        """Select the radiobutton."""
         self._variable.set(self.value)
 
     @property
     def selected(self) -> bool:
-        """Returns if the radiobutton is selected or not"""
-
+        """Return whether the radiobutton is selected or not."""
         return self._variable.get() == self.value
+
+    ### Properties ###
+
+    @property
+    def value(self) -> str | float | bool:
+        return cget(self, self._value_type, "-value")
+
+    @value.setter
+    def value(self, value: str | float | bool) -> None:
+        self._value_type = type(value)
+        config(self, value=value)
 
 
 class RadioGroup(Frame, InputControl):

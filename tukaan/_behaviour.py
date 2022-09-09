@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
-
 
 class instanceclassmethod:
     def __init__(self, method) -> None:
         self.method = method
 
-    def __get__(self, obj: Any | None, objtype: type):
+    def __get__(self, obj: object | None, objtype: type):
         def wrapper(*args, **kwargs):
             if obj is None:
                 return self.method(objtype, *args, **kwargs)
@@ -22,5 +20,5 @@ class classproperty:
             fget = classmethod(fget)
         self.fget = fget
 
-    def __get__(self, obj: Any | None, objtype: type):
+    def __get__(self, obj: object | None, objtype: type):
         return self.fget.__get__(obj, objtype)()
