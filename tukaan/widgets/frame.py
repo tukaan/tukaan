@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from tukaan._base import Container, TkWidget, WidgetBase
-from tukaan._props import Padding
+from tukaan._props import PaddingProp
 
 
 class Frame(WidgetBase, Container):
     _tcl_class = "ttk::frame"
 
-    padding = Padding()
+    padding = PaddingProp()
 
     def __init__(
         self,

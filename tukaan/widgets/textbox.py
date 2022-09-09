@@ -4,7 +4,7 @@ from typing import Iterable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase, XScrollable
 from tukaan._data import Bbox
-from tukaan._props import cget, config, Foreground, TakeFocus, TextAlign, Width
+from tukaan._props import cget, config, ForegroundProp, FocusableProp, TextAlignProp, WidthProp
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
 from tukaan.exceptions import TclError
@@ -13,10 +13,10 @@ from tukaan.exceptions import TclError
 class TextBox(WidgetBase, InputControl, XScrollable):
     _tcl_class = "ttk::entry"
 
-    fg_color = Foreground()
-    focusable = TakeFocus()
-    text_align = TextAlign()
-    width = Width()
+    fg_color = ForegroundProp()
+    focusable = FocusableProp()
+    text_align = TextAlignProp()
+    width = WidthProp()
 
     start = 0
     end = "end"

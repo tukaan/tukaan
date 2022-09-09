@@ -4,7 +4,7 @@ from PIL import Image  # type: ignore
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
 from tukaan._images import Icon, ImageProp
-from tukaan._props import Background, cget, config, TakeFocus, FontProp, Compound, Text, TextAlign
+from tukaan._props import BackgroundProp, cget, config, FocusableProp, FontProp, ImagePositionProp, TextProp, TextAlignProp
 from tukaan.colors import Color
 from tukaan.enums import Anchor, ImagePosition, Justify
 from tukaan.fonts.font import Font
@@ -13,13 +13,13 @@ from tukaan.fonts.font import Font
 class Label(WidgetBase, OutputDisplay):
     _tcl_class = "ttk::label"
 
-    bg_color = Background()
-    focusable = TakeFocus()
+    bg_color = BackgroundProp()
+    focusable = FocusableProp()
     font = FontProp()
     image = ImageProp()
-    image_pos = Compound()
-    text = Text()
-    text_align = TextAlign()
+    image_pos = ImagePositionProp()
+    text = TextProp()
+    text_align = TextAlignProp()
 
     def __init__(
         self,

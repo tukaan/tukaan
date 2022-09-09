@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._props import cget, config, TakeFocus, Link, Orient, Value
+from tukaan._props import cget, config, FocusableProp, LinkProp, OrientProp, Value
 from tukaan._variables import Float, Integer
 from tukaan.enums import Orientation
 
@@ -11,9 +11,9 @@ from tukaan.enums import Orientation
 class Slider(WidgetBase, InputControl):
     _tcl_class = "ttk::scale"
 
-    focusable = TakeFocus()
-    link = Link()
-    orientation = Orient()
+    focusable = FocusableProp()
+    link = LinkProp()
+    orientation = OrientProp()
     value = Value()
 
     def __init__(

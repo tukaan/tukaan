@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from collections.abc import Iterator
 from pathlib import Path
 
 from libtukaan import Serif
 
 from tukaan._base import TkWidget
-from tukaan._props import RWProperty, T_co, T_contra
+from tukaan._props import RWProperty, T_co
 from tukaan._tcl import Tcl
 from tukaan._utils import _fonts, counts, seq_pairs
 from tukaan.exceptions import FontError, TclError
 
-from .fontfile import FontFile, TrueTypeCollection
+from .fontfile import FontFile, FontInfo, TrueTypeCollection
 
 preset_fonts = {
     "TkCaptionFont",

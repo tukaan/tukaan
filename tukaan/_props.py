@@ -8,8 +8,6 @@ if sys.version_info >= (3, 9):
 else:
     from typing_extensions import Protocol
 
-from tukaan.fonts.font import Font
-
 from ._base import T_co, T_contra, T
 from ._structures import TabStop
 from ._tcl import Tcl
@@ -20,6 +18,7 @@ from .enums import ImagePosition, Justify, Orientation
 
 if TYPE_CHECKING:
     from ._base import TkWidget
+    from tukaan.fonts.font import Font
 
 
 def config(widget: TkWidget, **kwargs) -> None:
@@ -38,7 +37,7 @@ class RWProperty(Protocol[T_co, T_contra]):
         ...
 
 
-class WidgetDesc(RWProperty[T, T_contra]):
+class CommandDesc(RWProperty[T, T_contra]):
     def __init__(self, command: str, type: type[T]):
         self._command = command
         self._type = type
@@ -52,67 +51,70 @@ class WidgetDesc(RWProperty[T, T_contra]):
         config(instance, **{self._command: value})
 
 
-class BoolDesc(WidgetDesc[bool, bool]):
+class BoolDesc(CommandDesc[bool, bool]):
     def __init__(self, command: str):
         super().__init__(command, bool)
 
 
-class FloatDesc(WidgetDesc[float, float]):
+class FloatDesc(CommandDesc[float, float]):
     def __init__(self, command: str):
         super().__init__(command, float)
 
 
-class Compound(WidgetDesc[ImagePosition, ImagePosition]):
+class ImagePositionProp(CommandDesc[ImagePosition, ImagePosition]):
     def __init__(self):
         super().__init__("compound", ImagePosition)
 
 
-class TextAlign(WidgetDesc[Justify, Justify]):
+class TextAlignProp(CommandDesc[Justify, Justify]):
     def __init__(self):
         super().__init__("justify", Justify)
 
 
-class Foreground(WidgetDesc[Color, Color | str]):
+class ForegroundProp(CommandDesc[Color, Color | str]):
     def __init__(self):
         super().__init__("foreground", Color)
 
 
-class Background(WidgetDesc[Color, Color | str]):
+class BackgroundProp(CommandDesc[Color, Color | str]):
     def __init__(self):
         super().__init__("background", Color)
 
 
-class Text(WidgetDesc[str, str]):
+class TextProp(CommandDesc[str, str]):
     def __init__(self):
         super().__init__("text", str)
 
 
-class Width(WidgetDesc[int, int]):
+class WidthProp(CommandDesc[int, int]):
     def __init__(self):
         super().__init__("width", int)
 
 
-class Height(WidgetDesc[int, int]):
+class HeightProp(CommandDesc[int, int]):
     def __init__(self):
         super().__init__("height", int)
 
 
-class Command(RWProperty[Callable | None, Callable | None]):
+class CommandProp(CommandDesc[Callable | None, Callable | None]):
+    def __init__(self):
+        super().__init__("command", str)
+    
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
         return _commands.get(cget(instance, str, "-command"))
 
     def __set__(self, instance: TkWidget, value: Callable | None = None):
-        config(instance, command=value or "")
+        super().__set__(instance, value or "")
 
 
-class Orient(WidgetDesc[Orientation, Orientation]):
+class OrientProp(CommandDesc[Orientation, Orientation]):
     def __init__(self):
         super().__init__("orient", Orientation)
 
 
-class Value(WidgetDesc[int, int]):
+class Value(CommandDesc[int, int]):
     def __init__(self):
         super().__init__("value", int)
 
@@ -120,12 +122,12 @@ class Value(WidgetDesc[int, int]):
 FontType = Font | dict[str, str | int | bool]
 
 
-class FontProp(WidgetDesc[Font, FontType]):
+class FontProp(CommandDesc[Font, FontType]):
     def __init__(self):
         super().__init__("font", Font)
 
 
-class Link(RWProperty[ControlVariable, ControlVariable | None]):
+class LinkProp(RWProperty[ControlVariable, ControlVariable | None]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
@@ -136,12 +138,12 @@ class Link(RWProperty[ControlVariable, ControlVariable | None]):
         return config(instance, variable=value or "")
 
 
-class TakeFocus(WidgetDesc[bool, bool]):
+class FocusableProp(CommandDesc[bool, bool]):
     def __init__(self):
         super().__init__("takefocus", bool)
 
 
-class TabStops(RWProperty[list[TabStop], TabStop | list[TabStop]]):
+class TabStopsProp(RWProperty[list[TabStop], TabStop | list[TabStop]]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
@@ -164,7 +166,7 @@ def _convert_padding(padding: int | tuple[int, ...] | None) -> tuple[int, ...] |
     if padding is None:
         return ()
     elif isinstance(padding, int):
-        return (Value,) * 4
+        return (padding,) * 4
     else:
         length = len(padding)
         if length == 1:
@@ -188,7 +190,7 @@ def _convert_padding_back(padding: tuple[int, ...]) -> PaddingType:
     return (0,) * 4
 
 
-class Padding(RWProperty[PaddingType, int | tuple[int, ...] | None]):
+class PaddingProp(RWProperty[PaddingType, int | tuple[int, ...] | None]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented

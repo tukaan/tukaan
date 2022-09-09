@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Generator
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
-from tukaan._props import cget, config, TakeFocus, Link, Orient, Value
+from tukaan._props import cget, config, FocusableProp, LinkProp, OrientProp, Value
 from tukaan._tcl import Tcl
 from tukaan._variables import Float, Integer
 from tukaan.enums import Orientation, ProgressMode
@@ -13,10 +13,10 @@ from tukaan.timeouts import Timeout
 class ProgressBar(WidgetBase, OutputDisplay):
     _tcl_class = "ttk::progressbar"
 
-    focusable = TakeFocus()
-    orientation = Orient()
+    focusable = FocusableProp()
+    orientation = OrientProp()
     value = Value()
-    link = Link()
+    link = LinkProp()
 
     _timeout = None
 

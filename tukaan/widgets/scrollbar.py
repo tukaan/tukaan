@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._props import config, TakeFocus, Orient
+from tukaan._props import config, FocusableProp, OrientProp
 from tukaan._tcl import Tcl
 from tukaan.enums import Orientation
 from tukaan.exceptions import WidgetError
@@ -12,8 +12,8 @@ from tukaan.exceptions import WidgetError
 class ScrollBar(WidgetBase, InputControl):
     _tcl_class = "ttk::scrollbar"
 
-    focusable = TakeFocus()
-    orientation = Orient()
+    focusable = FocusableProp()
+    orientation = OrientProp()
 
     _hidden = False
 
