@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from pathlib import Path
     from tukaan._base import TkWidget
 
-from tukaan._props import CommandDesc, RWProperty, T_co
+from tukaan._props import OptionDesc, RWProperty, T_co
 from tukaan._tcl import Tcl
 from tukaan._utils import _fonts, counts, seq_pairs
 from tukaan.exceptions import FontError, TclError
@@ -283,6 +283,6 @@ def font(
 FontType = Union[Font, dict[str, Union[str, int, bool]]]
 
 
-class FontProp(CommandDesc[Font, FontType]):
+class FontProp(OptionDesc[Font, FontType]):
     def __init__(self):
         super().__init__("font", Font)

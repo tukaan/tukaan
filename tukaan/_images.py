@@ -7,7 +7,7 @@ from typing import Union
 from PIL import Image as PIL_Image  # type: ignore
 
 from ._base import WidgetBase
-from ._props import CommandDesc
+from ._props import OptionDesc
 from ._tcl import Tcl
 from ._utils import _images, _pil_images, counts
 from .colors import Color
@@ -197,7 +197,7 @@ class IconFactory:
     __getitem__ = get
 
 
-class ImageProp(CommandDesc[Pillow2Tcl, Union[PillowImage.Image, Icon]]):
+class ImageProp(OptionDesc[Pillow2Tcl, Union[PillowImage.Image, Icon]]):
     def __init__(self):
         super().__init__("image", Pillow2Tcl)
 

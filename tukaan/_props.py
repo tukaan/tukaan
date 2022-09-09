@@ -37,66 +37,71 @@ class RWProperty(Protocol[T_co, T_contra]):
         ...
 
 
-class CommandDesc(RWProperty[T, T_contra]):
-    def __init__(self, command: str, type: type[T]):
-        self._command = command
-        self._type = type
+class OptionDesc(RWProperty[T, T_contra]):
+    def __init__(self, option: str, type_: type[T]):
+        self._option = option
+        self._type = type_
 
     def __get__(self, instance: TkWidget, owner: object = None) -> T:
         if owner is None:
             return NotImplemented
-        return cget(instance, self._type, f"-{self._command}")
+        return cget(instance, self._type, f"-{self._option}")
 
     def __set__(self, instance: TkWidget, value: T_contra):
-        config(instance, **{self._command: value})
+        config(instance, **{self._option: value})
 
 
-class BoolDesc(CommandDesc[bool, bool]):
-    def __init__(self, command: str):
-        super().__init__(command, bool)
+class BoolDesc(OptionDesc[bool, bool]):
+    def __init__(self, option: str):
+        super().__init__(option, bool)
 
 
-class FloatDesc(CommandDesc[float, float]):
-    def __init__(self, command: str):
-        super().__init__(command, float)
+class IntDesc(OptionDesc[int, int]):
+    def __init__(self, option: str):
+        super().__init__(option, int)
 
 
-class ImagePositionProp(CommandDesc[ImagePosition, ImagePosition]):
+class FloatDesc(OptionDesc[float, float]):
+    def __init__(self, option: str):
+        super().__init__(option, float)
+
+
+class ImagePositionProp(OptionDesc[ImagePosition, ImagePosition]):
     def __init__(self):
         super().__init__("compound", ImagePosition)
 
 
-class TextAlignProp(CommandDesc[Justify, Justify]):
+class TextAlignProp(OptionDesc[Justify, Justify]):
     def __init__(self):
         super().__init__("justify", Justify)
 
 
-class ForegroundProp(CommandDesc[Color, Union[Color, str]]):
+class ForegroundProp(OptionDesc[Color, Union[Color, str]]):
     def __init__(self):
         super().__init__("foreground", Color)
 
 
-class BackgroundProp(CommandDesc[Color, Union[Color, str]]):
+class BackgroundProp(OptionDesc[Color, Union[Color, str]]):
     def __init__(self):
         super().__init__("background", Color)
 
 
-class TextProp(CommandDesc[str, str]):
+class TextProp(OptionDesc[str, str]):
     def __init__(self):
         super().__init__("text", str)
 
 
-class WidthProp(CommandDesc[int, int]):
+class WidthProp(OptionDesc[int, int]):
     def __init__(self):
         super().__init__("width", int)
 
 
-class HeightProp(CommandDesc[int, int]):
+class HeightProp(OptionDesc[int, int]):
     def __init__(self):
         super().__init__("height", int)
 
 
-class CommandProp(CommandDesc[Optional[Callable], Optional[Callable]]):
+class CommandProp(OptionDesc[Optional[Callable], Optional[Callable]]):
     def __init__(self):
         super().__init__("command", str)
 
@@ -109,14 +114,9 @@ class CommandProp(CommandDesc[Optional[Callable], Optional[Callable]]):
         super().__set__(instance, value or "")
 
 
-class OrientProp(CommandDesc[Orientation, Orientation]):
+class OrientProp(OptionDesc[Orientation, Orientation]):
     def __init__(self):
         super().__init__("orient", Orientation)
-
-
-class Value(CommandDesc[int, int]):
-    def __init__(self):
-        super().__init__("value", int)
 
 
 class LinkProp(RWProperty[ControlVariable, Optional[ControlVariable]]):
@@ -130,7 +130,7 @@ class LinkProp(RWProperty[ControlVariable, Optional[ControlVariable]]):
         return config(instance, variable=value or "")
 
 
-class FocusableProp(CommandDesc[bool, bool]):
+class FocusableProp(OptionDesc[bool, bool]):
     def __init__(self):
         super().__init__("takefocus", bool)
 
