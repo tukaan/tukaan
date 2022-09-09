@@ -3,7 +3,16 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._props import CommandProp, FocusableProp, LinkProp, TextProp, IntDesc, WidthProp, cget, config
+from tukaan._props import (
+    CommandProp,
+    FocusableProp,
+    IntDesc,
+    LinkProp,
+    TextProp,
+    WidthProp,
+    cget,
+    config,
+)
 from tukaan._tcl import Tcl
 from tukaan._variables import ControlVariable, String
 from tukaan.enums import Orientation
