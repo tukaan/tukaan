@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ._info import Screen
-from .exceptions import ColorError
 
 
 def mm(amount):
