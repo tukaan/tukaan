@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections
 import collections.abc
 import itertools
-from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
+from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator, TypeVar
 
 if TYPE_CHECKING:
     from PIL import Image  # type: ignore
@@ -15,8 +15,13 @@ if TYPE_CHECKING:
     from .timeouts import Timeout
 
 
+T = TypeVar("T")
+T_co = TypeVar("T_co", covariant=True)
+T_contra = TypeVar("T_contra", contravariant=True)
+
+
 class count:
-    """Simplified itertools.count"""
+    """Simplified itertools.count."""
 
     def __init__(self, start: int = 0) -> None:
         self._count = start

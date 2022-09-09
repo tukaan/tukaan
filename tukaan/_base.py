@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections
-from typing import Callable, TypeVar
+from typing import Callable
 
 from ._events import EventMixin
 from ._layout import ContainerGrid, Geometry, Grid, Position, ToplevelGrid
@@ -11,10 +11,6 @@ from ._tcl import Tcl
 from ._utils import _commands, _widgets, count
 from ._wm import WindowManager
 from .widgets.tooltip import ToolTipProvider
-
-T = TypeVar("T")
-T_co = TypeVar("T_co", covariant=True)
-T_contra = TypeVar("T_contra", contravariant=True)
 
 
 def generate_pathname(widget: TkWidget, parent: TkWidget) -> str:

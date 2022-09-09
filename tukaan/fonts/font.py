@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from pathlib import Path
+from typing import TYPE_CHECKING, Union
+from dataclasses import dataclass
 
-from libtukaan import Serif
+if TYPE_CHECKING:
+    from pathlib import Path
+    from tukaan._base import TkWidget
 
-from tukaan._base import TkWidget
-from tukaan._props import RWProperty, T_co
+from tukaan._props import RWProperty, T_co, CommandDesc
 from tukaan._tcl import Tcl
 from tukaan._utils import _fonts, counts, seq_pairs
 from tukaan.exceptions import FontError, TclError
@@ -26,16 +28,13 @@ preset_fonts = {
 }
 
 
-FontMetrics = namedtuple("FontMetrics", ["ascent", "descent", "line_spacing", "fixed"])
-
-
 class _FontProperty(RWProperty[T_co, T_co]):
     TYPE: type[str] | type[int] | type[bool]
 
     def __init__(self, option: str | None = None) -> None:
         self._option = option
 
-    def __set_name__(self, owner: object, name: str):
+    def __set_name__(self, owner: object, name: str) -> None:
         if self._option is None:
             self._option = name
 
@@ -44,7 +43,7 @@ class _FontProperty(RWProperty[T_co, T_co]):
             return NotImplemented
         return Tcl.call(self.TYPE, "font", "actual", instance, f"-{self._option}")
 
-    def __set__(self, instance: TkWidget, value: object):
+    def __set__(self, instance: TkWidget, value: object) -> None:
         Tcl.call(None, "font", "configure", instance._name, f"-{self._option}", value)
 
 
@@ -60,19 +59,22 @@ class _StrFontProperty(_FontProperty[str]):
     TYPE = str
 
 
+@dataclass
 class _FontStyleProperty(_FontProperty[bool]):
     TYPE = str
-    
-    def __init__(self, option: str, truthy: str, falsy: str) -> None:
-        self._option = option
-        self._truthy = truthy
-        self._falsy = falsy
 
-    def __get__(self, instance: TkWidget, owner: object = None):
+    _option: str
+    _truthy: str
+    _falsy: str
+
+    def __get__(self, instance: TkWidget, owner: object = None) -> bool:
         return super().__get__(instance, owner) == self._truthy
 
-    def __set__(self, instance: TkWidget, value: object):
-        return super().__set__(instance, self._truthy if value else self._falsy)
+    def __set__(self, instance: TkWidget, value: object) -> None:
+        super().__set__(instance, self._truthy if value else self._falsy)
+
+
+FontMetrics = namedtuple("FontMetrics", ["ascent", "descent", "line_spacing", "fixed"])
 
 
 class Font:
@@ -144,7 +146,7 @@ class Font:
         underline: bool = False,
         strikethrough: bool = False,
     ) -> None:
-        """Configures the fonts parameters"""
+        """Configure the font's parameters."""
         if isinstance(size, float):
             size = round(size)
 
@@ -209,7 +211,7 @@ class Font:
     italic = _FontStyleProperty("slant", "italic", "roman")
     """Get or set whether the font should be drawn as italic."""
 
-    underline = _BoolFontProperty()
+    underline = _BoolFontProperty("underline")
     """Get or set whether the font should have underlining."""
 
     strikethrough = _BoolFontProperty("overstrike")
@@ -265,8 +267,8 @@ def font(
     elif not family:
         family = "TkDefaultFont"
 
-    weight = {None: None, True: "bold", False: "normal"}[bold]
-    slant = {None: None, True: "italic", False: "roman"}[italic]
+    weight = {True: "bold", False: "normal"}.get(bold)
+    slant = {True: "italic", False: "roman"}.get(italic)
 
     return Tcl.to_tcl_args(
         family=family,
@@ -276,3 +278,11 @@ def font(
         underline=underline,
         overstrike=strikethrough,
     )
+
+
+FontType = Union[Font, dict[str, Union[str, int, bool]]]
+
+
+class FontProp(CommandDesc[Font, FontType]):
+    def __init__(self):
+        super().__init__("font", Font)

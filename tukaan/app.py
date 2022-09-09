@@ -35,8 +35,8 @@ class App(WindowBase):
         Tcl.call(None, "bind", self, "<Configure>", self._generate_state_event)
         Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
 
-        self._set_title(title)
-        self._set_size((width, height))
+        self.title = title
+        self.size = (width, height)
 
         self._init_tkdnd()
         Serif.init()

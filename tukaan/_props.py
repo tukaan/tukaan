@@ -1,24 +1,24 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Union, Optional
 
 if sys.version_info >= (3, 9):
+    from collections.abc import Callable
     from typing import Protocol
 else:
+    from typing import Callable
     from typing_extensions import Protocol
 
-from ._base import T_co, T_contra, T
 from ._structures import TabStop
 from ._tcl import Tcl
-from ._utils import _commands, seq_pairs
+from ._utils import _commands, seq_pairs, T_co, T_contra, T
 from ._variables import ControlVariable
 from .colors import Color
 from .enums import ImagePosition, Justify, Orientation
 
 if TYPE_CHECKING:
     from ._base import TkWidget
-    from tukaan.fonts.font import Font
 
 
 def config(widget: TkWidget, **kwargs) -> None:
@@ -71,12 +71,12 @@ class TextAlignProp(CommandDesc[Justify, Justify]):
         super().__init__("justify", Justify)
 
 
-class ForegroundProp(CommandDesc[Color, Color | str]):
+class ForegroundProp(CommandDesc[Color, Union[Color, str]]):
     def __init__(self):
         super().__init__("foreground", Color)
 
 
-class BackgroundProp(CommandDesc[Color, Color | str]):
+class BackgroundProp(CommandDesc[Color, Union[Color, str]]):
     def __init__(self):
         super().__init__("background", Color)
 
@@ -96,7 +96,7 @@ class HeightProp(CommandDesc[int, int]):
         super().__init__("height", int)
 
 
-class CommandProp(CommandDesc[Callable | None, Callable | None]):
+class CommandProp(CommandDesc[Optional[Callable], Optional[Callable]]):
     def __init__(self):
         super().__init__("command", str)
     
@@ -119,15 +119,7 @@ class Value(CommandDesc[int, int]):
         super().__init__("value", int)
 
 
-FontType = Font | dict[str, str | int | bool]
-
-
-class FontProp(CommandDesc[Font, FontType]):
-    def __init__(self):
-        super().__init__("font", Font)
-
-
-class LinkProp(RWProperty[ControlVariable, ControlVariable | None]):
+class LinkProp(RWProperty[ControlVariable, Optional[ControlVariable]]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
@@ -143,7 +135,7 @@ class FocusableProp(CommandDesc[bool, bool]):
         super().__init__("takefocus", bool)
 
 
-class TabStopsProp(RWProperty[list[TabStop], TabStop | list[TabStop]]):
+class TabStopsProp(RWProperty[list[TabStop], Union[TabStop, list[TabStop]]]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
@@ -177,8 +169,8 @@ def _convert_padding(padding: int | tuple[int, ...] | None) -> tuple[int, ...] |
             return (padding[1], padding[0], padding[1], padding[2])
         elif length == 4:
             return (padding[3], padding[0], padding[1], padding[2])
-        else:
-            return ""
+
+        return ""
 
 
 def _convert_padding_back(padding: tuple[int, ...]) -> PaddingType:
@@ -190,11 +182,11 @@ def _convert_padding_back(padding: tuple[int, ...]) -> PaddingType:
     return (0,) * 4
 
 
-class PaddingProp(RWProperty[PaddingType, int | tuple[int, ...] | None]):
+class PaddingProp(RWProperty[PaddingType, Union[int, tuple[int, ...], None]]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
-        return _convert_padding_back(cget(instance, tuple[int, ...], "-padding"))
+        return _convert_padding_back(cget(instance, (int,), "-padding"))
 
     def __set__(self, instance: TkWidget, value: int | tuple[int, ...] | None):
         config(instance, padding=_convert_padding(value))
