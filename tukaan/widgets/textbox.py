@@ -4,7 +4,7 @@ from typing import Iterable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase, XScrollable
 from tukaan._data import Bbox
-from tukaan._props import cget, config, ForegroundProp, FocusableProp, TextAlignProp, WidthProp
+from tukaan._props import FocusableProp, ForegroundProp, TextAlignProp, WidthProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
 from tukaan.exceptions import TclError

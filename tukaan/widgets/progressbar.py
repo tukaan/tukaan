@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Generator
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
-from tukaan._props import cget, config, FocusableProp, LinkProp, OrientProp, Value
+from tukaan._props import FocusableProp, LinkProp, OrientProp, Value, cget, config
 from tukaan._tcl import Tcl
 from tukaan._variables import Float, Integer
 from tukaan.enums import Orientation, ProgressMode

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Union
 from pathlib import Path
+from typing import Union
 
 from PIL import Image as PIL_Image  # type: ignore
 

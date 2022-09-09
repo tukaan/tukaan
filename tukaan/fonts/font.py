@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import TYPE_CHECKING, Union
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from pathlib import Path
     from tukaan._base import TkWidget
 
-from tukaan._props import RWProperty, T_co, CommandDesc
+from tukaan._props import CommandDesc, RWProperty, T_co
 from tukaan._tcl import Tcl
 from tukaan._utils import _fonts, counts, seq_pairs
 from tukaan.exceptions import FontError, TclError

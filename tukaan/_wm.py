@@ -73,7 +73,6 @@ class WMProperties:
     def y(self, value: int) -> None:
         Tcl.call(None, "wm", "geometry", self._wm_path, f"+{self.x}+{value}")
 
-
     @property
     @Tcl.update_before
     def width(self) -> int:
@@ -111,7 +110,6 @@ class WMProperties:
             value = (value,) * 2
 
         Tcl.call(None, "wm", "geometry", self._wm_path, "{}x{}".format(*value))
-
 
 
 class WindowManagerBase(ABC, WMProperties):

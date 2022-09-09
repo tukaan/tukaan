@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Union, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 if sys.version_info >= (3, 9):
     from collections.abc import Callable
@@ -12,7 +12,7 @@ else:
 
 from ._structures import TabStop
 from ._tcl import Tcl
-from ._utils import _commands, seq_pairs, T_co, T_contra, T
+from ._utils import T, T_co, T_contra, _commands, seq_pairs
 from ._variables import ControlVariable
 from .colors import Color
 from .enums import ImagePosition, Justify, Orientation
@@ -99,7 +99,7 @@ class HeightProp(CommandDesc[int, int]):
 class CommandProp(CommandDesc[Optional[Callable], Optional[Callable]]):
     def __init__(self):
         super().__init__("command", str)
-    
+
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented

@@ -8,7 +8,7 @@ from PIL import Image
 
 from tukaan._base import Container, TkWidget, WidgetBase
 from tukaan._images import Icon, Pillow2Tcl
-from tukaan._props import _convert_padding, _convert_padding_back, FocusableProp
+from tukaan._props import FocusableProp, _convert_padding, _convert_padding_back
 from tukaan._tcl import Tcl
 from tukaan.enums import ImagePosition
 from tukaan.exceptions import TclError
