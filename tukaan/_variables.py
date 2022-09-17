@@ -10,7 +10,7 @@ class ControlVariable:
 
     def __init__(self, value=None, name=None) -> None:
         if name is None:
-            name = f"tukaan_{self._type_spec.__name__}_var_{next(counts['variable'])}"
+            name = f"tukaan_{self._type_spec.__name__}_var_{next(counter['variable'])}"
 
         if value is None:
             value = self._default
