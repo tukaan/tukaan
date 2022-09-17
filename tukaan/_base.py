@@ -6,9 +6,9 @@ from typing import Callable
 from ._events import EventMixin
 from ._layout import ContainerGrid, Geometry, Grid, Position, ToplevelGrid
 from ._mixins import DnDMixin, GeometryMixin, VisibilityMixin, WidgetMixin
+from ._nogc import _commands, _widgets, count
 from ._props import cget, config
 from ._tcl import Tcl
-from ._nogc import _commands, _widgets, count
 from ._wm import WindowManager
 from .widgets.tooltip import ToolTipProvider
 

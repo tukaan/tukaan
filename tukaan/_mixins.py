@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from ._data import Bbox
 from ._layout import Grid
-from ._tcl import Tcl
 from ._nogc import _widgets
+from ._tcl import Tcl
 
 if TYPE_CHECKING:
     from ._base import TkWidget

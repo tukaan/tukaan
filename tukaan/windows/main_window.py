@@ -5,8 +5,8 @@ from typing import Callable
 from tukaan._base import ToplevelBase
 from tukaan._tcl import Tcl
 from tukaan.app import App
-from tukaan.exceptions import AppError
 from tukaan.enums import WindowType
+from tukaan.exceptions import AppError
 
 from .wm import WindowManager
 

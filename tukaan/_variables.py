@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ._tcl import Tcl
 from ._nogc import _variables, counter
+from ._tcl import Tcl
 
 
 class ControlVariable:

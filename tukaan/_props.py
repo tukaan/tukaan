@@ -11,9 +11,9 @@ else:
     from typing_extensions import Protocol
 
 from ._data import TabStop
+from ._nogc import _commands
 from ._tcl import Tcl
 from ._utils import T, T_co, T_contra, seq_pairs
-from ._nogc import _commands
 from ._variables import ControlVariable
 from .colors import Color
 from .enums import ImagePosition, Justify, Orientation

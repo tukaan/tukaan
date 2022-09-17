@@ -7,7 +7,7 @@ import itertools
 import numbers
 import sys
 import traceback
-from enum import EnumMeta, Enum
+from enum import Enum, EnumMeta
 from pathlib import Path
 from typing import Any, Callable
 

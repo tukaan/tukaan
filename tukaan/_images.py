@@ -7,9 +7,9 @@ from typing import Union
 from PIL import Image as PIL_Image  # type: ignore
 
 from ._base import WidgetBase
+from ._nogc import _images, _pil_images, counter
 from ._props import OptionDesc
 from ._tcl import Tcl
-from ._nogc import _images, _pil_images, counter
 from .colors import Color
 
 try:

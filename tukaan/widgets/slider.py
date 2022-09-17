@@ -4,9 +4,9 @@ from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
 from tukaan._props import FocusableProp, IntDesc, LinkProp, OrientProp, cget, config
+from tukaan._tcl import TclCallback
 from tukaan._variables import Float, Integer
 from tukaan.enums import Orientation
-from tukaan._tcl import TclCallback
 
 
 class Slider(WidgetBase, InputControl):

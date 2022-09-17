@@ -76,9 +76,7 @@ class Timeout:
 class Timer:
     @staticmethod
     def schedule(seconds: float, target: Callable[[Any], Any], *, args=(), kwargs={}) -> None:
-        Tcl.call(
-            str, "after", int(seconds * 1000), TclCallback(target, args=args, kwargs=kwargs)
-        )
+        Tcl.call(str, "after", int(seconds * 1000), TclCallback(target, args=args, kwargs=kwargs))
 
     @staticmethod
     def wait(seconds: float) -> None:

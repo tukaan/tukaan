@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from tukaan._base import ToplevelBase, generate_pathname
-from tukaan._tcl import Tcl
 from tukaan._nogc import _widgets
+from tukaan._tcl import Tcl
 from tukaan.app import App
 from tukaan.enums import WindowType
 
@@ -39,9 +39,9 @@ class Window(ToplevelBase):
         if x_type is not None and Tcl.windowing_system == "x11":
             Tcl.call(None, "wm", "attributes", ".", "-type", x_type)
 
-#        Tcl.call(None, "bind", self, "<Map>", self._generate_state_event)
-#        Tcl.call(None, "bind", self, "<Unmap>", self._generate_state_event)
-#        Tcl.call(None, "bind", self, "<Configure>", self._generate_state_event)
+    #        Tcl.call(None, "bind", self, "<Map>", self._generate_state_event)
+    #        Tcl.call(None, "bind", self, "<Unmap>", self._generate_state_event)
+    #        Tcl.call(None, "bind", self, "<Configure>", self._generate_state_event)
 
     def wait_till_closed(self) -> None:
         Tcl.call(None, "tkwait", "window", self._wm_path)
