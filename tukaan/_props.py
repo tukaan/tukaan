@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 if sys.version_info >= (3, 9):
     from collections.abc import Callable
@@ -10,7 +10,7 @@ else:
     from typing import Callable
     from typing_extensions import Protocol
 
-from ._structures import TabStop
+from ._data import TabStop
 from ._tcl import Tcl
 from ._utils import T, T_co, T_contra, _commands, seq_pairs
 from ._variables import ControlVariable
@@ -135,7 +135,7 @@ class FocusableProp(OptionDesc[bool, bool]):
         super().__init__("takefocus", bool)
 
 
-class TabStopsProp(RWProperty[list[TabStop], Union[TabStop, list[TabStop]]]):
+class TabStopsProp(RWProperty[List[TabStop], Union[TabStop, List[TabStop]]]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
@@ -151,7 +151,7 @@ class TabStopsProp(RWProperty[list[TabStop], Union[TabStop, list[TabStop]]]):
         config(instance, tabs=[y for x in value for y in x.__to_tcl__()])
 
 
-PaddingType = tuple[int, int, int, int]
+PaddingType = Tuple[int, int, int, int]
 
 
 def _convert_padding(padding: int | tuple[int, ...] | None) -> tuple[int, ...] | str:
@@ -182,7 +182,7 @@ def _convert_padding_back(padding: tuple[int, ...]) -> PaddingType:
     return (0,) * 4
 
 
-class PaddingProp(RWProperty[PaddingType, Union[int, tuple[int, ...], None]]):
+class PaddingProp(RWProperty[PaddingType, Union[int, Tuple[int, ...], None]]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented

@@ -99,8 +99,7 @@ class WidgetBase(TkWidget, GeometryMixin):
             ToolTipProvider.add(self, tooltip)
 
     def destroy(self):
-        """Destroys this widget, and removes it from the screen"""
-
+        """Destroy this widget, and remove it from the screen."""
         Tcl.call(None, "destroy", self._name)
 
         del self.parent._children[self._name]
