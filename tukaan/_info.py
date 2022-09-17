@@ -7,8 +7,8 @@ from fractions import Fraction
 import _tkinter as tk
 from screeninfo import get_monitors  # type: ignore
 
-from ._behaviour import classproperty
 from ._data import Position, Size, Version
+from ._utils import classproperty
 from .exceptions import TclError
 
 
