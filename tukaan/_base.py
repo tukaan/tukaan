@@ -17,7 +17,7 @@ def generate_pathname(widget: TkWidget, parent: TkWidget) -> str:
     klass = widget.__class__
     count = next(parent._child_type_count[klass])
 
-    return ".".join([parent._name, f"{klass.__name__.lower()}_{count}"])
+    return ".".join((parent._name, f"{klass.__name__.lower()}_{count}"))
 
 
 class Container:
@@ -64,7 +64,7 @@ class TkWidget(WidgetMixin, EventMixin, VisibilityMixin, DnDMixin):
     _name: str
     _tcl_class: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._children = {}
         self._child_type_count = collections.defaultdict(lambda: count())
 
@@ -72,13 +72,14 @@ class TkWidget(WidgetMixin, EventMixin, VisibilityMixin, DnDMixin):
 
 
 class ToplevelBase(TkWidget, WindowManager, Container):
+    def __init__(self) -> None:
         self.grid = ToplevelGrid(self)
 
         TkWidget.__init__(self)
 
 
 class WidgetBase(TkWidget, GeometryMixin):
-    def __init__(self, parent: TkWidget, tooltip: str | None = None, **kwargs):
+    def __init__(self, parent: TkWidget, tooltip: str | None = None, **kwargs) -> None:
         assert isinstance(parent, Container), "parent must be a container"
 
         self._name = self._lm_path = generate_pathname(self, parent)
@@ -97,7 +98,7 @@ class WidgetBase(TkWidget, GeometryMixin):
         if tooltip:
             ToolTipProvider.add(self, tooltip)
 
-    def destroy(self):
+    def destroy(self) -> None:
         """Destroy this widget, and remove it from the screen."""
         Tcl.call(None, "destroy", self._name)
 

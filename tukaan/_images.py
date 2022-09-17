@@ -198,7 +198,7 @@ class IconFactory:
 
 
 class ImageProp(OptionDesc[Pillow2Tcl, Union[PillowImage.Image, Icon]]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("image", Pillow2Tcl)
 
 

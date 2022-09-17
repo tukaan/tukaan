@@ -57,7 +57,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         if value:
             self.set(value)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.get())
 
     def __iter__(self) -> Iterable[str]:
