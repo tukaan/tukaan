@@ -1,71 +1,80 @@
+from __future__ import annotations
+
 import sys
 from pathlib import Path
+from typing import NoReturn
 
 from libtukaan import Serif
 
-from ._base import WindowBase
 from ._tcl import Tcl
-from .exceptions import AppError
 
 
-class App(WindowBase):
+class App:
     _exists = False
-    _name = _lm_path = ".app"
-    _wm_path = "."
 
     def __init__(
         self,
-        title: str = "Tukaan",
+        name: str = "Tukaan",
+        author: str = "unknown",
+        version: int | str = "1.0",
         *,
-        width: int = 300,
-        height: int = 200,
+        x_screen: str | None = None,
     ) -> None:
-        if not App._exists:
-            App._exists = True
+        if App._exists:
+            raise Exception
         else:
-            raise AppError("can't create multiple App instances. Use tukaan.Window instead.")
+            App._exists = True
 
-        super().__init__()
+        Tcl.init(name, x_screen)
 
-        Tcl.init()
-        Tcl.eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
-
-        Tcl.call(None, "bind", self, "<Map>", self._generate_state_event)
-        Tcl.call(None, "bind", self, "<Unmap>", self._generate_state_event)
-        Tcl.call(None, "bind", self, "<Configure>", self._generate_state_event)
-        Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", self.destroy)
-
-        self.title = title
-        self.size = (width, height)
-
-        self._init_tkdnd()
         Serif.init()
+        self._init_tkdnd()
 
-    def __enter__(self):
+        self._name = name
+        self._author = author
+        self._version = str(version)
+
+    def __enter__(self) -> App:
         return self
 
-    def __exit__(self, exc_type, exc_value, _):
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, _
+    ) -> NoReturn | None:
         if exc_type is None:
             return self.run()
 
         raise exc_type(exc_value) from None
 
-    def _init_tkdnd(self):
+    def _init_tkdnd(self) -> None:
         os = {"linux": "linux", "darwin": "mac", "win32": "win"}[sys.platform]
         os += "-x64" if sys.maxsize > 2**32 else "-x32"
 
         Tcl.call(None, "lappend", "auto_path", Path(__file__).parent / "tkdnd" / os)
         Tcl.call(None, "package", "require", "tkdnd")
 
-    def destroy(self) -> None:
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def author(self) -> str:
+        return self._author
+
+    @property
+    def version(self) -> str:
+        return self._version
+
+    @property
+    def x_screen(self) -> str:
+        return Tcl.call(str, "winfo", "screen", ".")
+
+    @classmethod
+    def quit(cls) -> None:
         """Quit the entire Tcl interpreter."""
         Serif.cleanup()
+        Tcl.quit()
 
-        Tcl.call(None, "destroy", self._name)
-        Tcl.call(None, "destroy", self._wm_path)
-
-        Tcl.quit_interp()
-
-    def run(self) -> None:
+    @classmethod
+    def run(cls) -> None:
         """Start the main event loop."""
         Tcl.main_loop()

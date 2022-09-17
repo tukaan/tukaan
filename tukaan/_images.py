@@ -9,7 +9,7 @@ from PIL import Image as PIL_Image  # type: ignore
 from ._base import WidgetBase
 from ._props import OptionDesc
 from ._tcl import Tcl
-from ._utils import _images, _pil_images, counts
+from ._nogc import _images, _pil_images, counter
 from .colors import Color
 
 try:
@@ -38,7 +38,7 @@ class Pillow2Tcl:
 
         self._transparent = "transparency" in image.info
         self._image = image
-        self._name = f"tukaan_image_{next(counts['images'])}"
+        self._name = f"tukaan_image_{next(counter['images'])}"
 
         Tcl.call(None, "image", "create", "photo", self._name)
         ImagingTk.tkinit(Tcl.interp_address, 1)
@@ -129,12 +129,12 @@ def pil_image_to_tcl(self):
     return Pillow2Tcl(self).__to_tcl__()
 
 
-setattr(PillowImage.Image, "__to_tcl__", pil_image_to_tcl)
+PillowImage.Image.__to_tcl__ = pil_image_to_tcl
 
 
 class Icon:
     def __init__(self, file: str | Path | None = None) -> None:
-        self._name = f"tukaan_icon_{next(counts['icons'])}"
+        self._name = f"tukaan_icon_{next(counter['icons'])}"
         _images[self._name] = self
 
         Tcl.call(

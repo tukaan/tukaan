@@ -1,6 +1,6 @@
 from typing import Any, Callable
 
-from ._tcl import Tcl
+from ._tcl import Tcl, TclCallback
 
 
 class Timeout:
@@ -77,7 +77,7 @@ class Timer:
     @staticmethod
     def schedule(seconds: float, target: Callable[[Any], Any], *, args=(), kwargs={}) -> None:
         Tcl.call(
-            str, "after", int(seconds * 1000), Tcl.create_cmd(target, args=args, kwargs=kwargs)
+            str, "after", int(seconds * 1000), TclCallback(target, args=args, kwargs=kwargs)
         )
 
     @staticmethod

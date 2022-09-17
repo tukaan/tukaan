@@ -10,7 +10,7 @@ from ._data import Size
 from ._tcl import Tcl
 from .colors import Color
 from .enums import BackdropEffect, WindowState
-from .exceptions import TclError
+from .exceptions import TukaanTclError
 
 DWMWA_TRANSITIONS_FORCEDISABLED: Final[int] = 3
 DWMWA_NONCLIENT_RTL_LAYOUT: Final[int] = 6
@@ -201,7 +201,7 @@ class WindowManagerBase(ABC, WMProperties):
     def state(self):
         try:
             state = Tcl.call(str, "wm", "state", self._wm_path)
-        except TclError as e:
+        except TukaanTclError as e:
             if not Tcl.call(bool, "winfo", "exists", self._wm_path):
                 return WindowState.Closed
             raise e

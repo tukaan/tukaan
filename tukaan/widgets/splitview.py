@@ -7,7 +7,7 @@ from tukaan._base import Container, TkWidget, WidgetBase
 from tukaan._props import FocusableProp
 from tukaan._tcl import Tcl
 from tukaan.enums import Orientation
-from tukaan.exceptions import TclError
+from tukaan.exceptions import TukaanTclError
 
 from .frame import Frame
 
@@ -48,7 +48,7 @@ class Pane(Frame):
         Tcl.call(None, self._widget, "insert", new_index, self)
 
     def remove(self) -> None:
-        with contextlib.suppress(TclError):
+        with contextlib.suppress(TukaanTclError):
             Tcl.call(None, self._widget, "forget", self)
         self._widget.panes.remove(self)
 

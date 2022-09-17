@@ -8,12 +8,29 @@ class Align(Enum):
 
 
 class WindowState(Enum):
-    Normal = 0
-    Minimized = 1
-    Maximized = 2
-    Closed = 3
-    FullScreen = 4
-    Hidden = 5
+    Closed = "closed"
+    FullScreen = "fullscreen"
+    Hidden = "withdrawn"
+    Maximized = "maximized"
+    Minimized = "minimized"
+    Normal = "normal"
+
+
+class WindowType(Enum):
+    Combo = "combo"
+    Desktop = "desktop"
+    Dialog = "dialog"
+    DnD = "dnd"
+    Dock = "dock"
+    DropDown = "dropdown_menu"
+    Menu = "menu"
+    Normal = "normal"
+    Notification = "notification"
+    PopupMenu = "popup_menu"
+    Splash = "splash"
+    ToolBar = "toolbar"
+    Tooltip = "tooltip"
+    Utility = "utility"
 
 
 class Orientation(Enum):

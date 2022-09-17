@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tukaan._tcl import Tcl
-from tukaan.exceptions import TclError
+from tukaan.exceptions import TukaanTclError
 
 if TYPE_CHECKING:
     from tukaan._base import WidgetBase
@@ -26,7 +26,7 @@ class ToolTipProvider:
 
         try:
             Tcl.eval(None, "ttk::style layout ToolTip")
-        except TclError:
+        except TukaanTclError:
             style = "TButton"
         else:
             style = "ToolTip"

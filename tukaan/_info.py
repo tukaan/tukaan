@@ -9,7 +9,7 @@ from screeninfo import get_monitors  # type: ignore
 
 from ._data import Position, Size, Version
 from ._utils import classproperty
-from .exceptions import TclError
+from .exceptions import TukaanTclError
 
 
 class System:
@@ -55,7 +55,7 @@ class Clipboard:
 
         try:
             return Tcl.call(str, "clipboard", "get")
-        except TclError:
+        except TukaanTclError:
             return None
 
     def copy(self, content: str) -> None:
