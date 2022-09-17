@@ -59,7 +59,7 @@ class YScrollable:
 
 
 class TkWidget(WidgetMixin, EventMixin, VisibilityMixin, DnDMixin):
-    """Base class for every Tk widget"""
+    """Base class for every Tk widget."""
 
     _name: str
     _tcl_class: str

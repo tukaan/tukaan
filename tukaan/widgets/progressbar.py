@@ -68,7 +68,7 @@ class ProgressBar(WidgetBase, OutputDisplay):
             Tcl.call(None, self._name, "step")
             yield i
 
-    ### Properties ###
+    # Properties #
 
     @property
     def length(self) -> int:
