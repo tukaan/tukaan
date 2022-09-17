@@ -49,6 +49,7 @@ from ._events import DragObject, KeySeq
 from ._images import Icon, IconFactory, Image
 from ._info import Clipboard, Pointer, Screen, System
 from ._variables import Boolean, Float, Integer, String
+from .a11y.a11y import Accessibility
 from .app import App
 from .colors import Color, cmyk, hsl, hsv, rgb
 from .fonts.font import Font, font
