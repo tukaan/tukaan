@@ -6,8 +6,10 @@ from tukaan._tcl import Tcl
 from tukaan.app import App
 from tukaan.enums import WindowType
 
+from .wm import WindowManager
 
-class Window(ToplevelBase):
+
+class Window(ToplevelBase, WindowManager):
     _tcl_class = "toplevel"
     _keys = {}
     parent: App | Window

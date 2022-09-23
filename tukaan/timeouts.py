@@ -1,3 +1,4 @@
+import functools
 from typing import Any, Callable
 
 from ._tcl import Tcl, TclCallback
@@ -90,6 +91,7 @@ class Timer:
     @staticmethod
     def delayed(seconds: float) -> Callable:
         def decorator(func: Callable) -> Callable:
+            @functools.wraps(func)
             def wrapper(*args, **kwargs) -> Any:
                 Timer.wait(seconds)
                 return func(*args, **kwargs)

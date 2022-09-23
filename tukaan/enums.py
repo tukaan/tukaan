@@ -101,10 +101,10 @@ class InactiveCaretStyle(Enum):
 
 
 class Resizable(Enum):
-    Not = (False, False)
-    Horizontal = (True, False)
-    Vertical = (False, True)
-    Both = (True, True)
+    Not = ("0", "0")
+    Horizontal = ("1", "0")
+    Vertical = ("0", "1")
+    Both = ("1", "1")
 
 
 class BackdropEffect(Enum):

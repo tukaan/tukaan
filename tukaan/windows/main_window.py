@@ -22,7 +22,7 @@ class MainWindow(ToplevelBase, WindowManager):
         *,
         width: int = 300,
         height: int = 200,
-        x_type: WindowType | None = None,
+        type: WindowType | None = None,
         on_load: Callable = None,
     ) -> None:
         if MainWindow._exists:
@@ -41,14 +41,16 @@ class MainWindow(ToplevelBase, WindowManager):
         Tcl.call(None, "wm", "geometry", ".", f"{width}x{height}")
         Tcl.call(None, "wm", "protocol", ".", "WM_DELETE_WINDOW", self.destroy)
 
-        if x_type is not None and Tcl.windowing_system == "x11":
-            Tcl.call(None, "wm", "attributes", ".", "-type", x_type)
+        if type is not None:
+            self.type = type
 
         if hasattr(self, "setup"):
             self.setup()
 
         Tcl.call(None, "wm", "deiconify", ".")
-        on_load()
+
+        if callable(on_load):
+            on_load()
 
     def destroy(self) -> None:
         """Destroy all widgets and quit the interpreter."""

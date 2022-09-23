@@ -9,7 +9,6 @@ from ._mixins import DnDMixin, GeometryMixin, VisibilityMixin, WidgetMixin
 from ._nogc import _commands, _widgets, count
 from ._props import cget, config
 from ._tcl import Tcl
-from ._wm import WindowManager
 from .widgets.tooltip import ToolTipProvider
 
 
@@ -71,7 +70,7 @@ class TkWidget(WidgetMixin, EventMixin, VisibilityMixin, DnDMixin):
         _widgets[self._name] = self
 
 
-class ToplevelBase(TkWidget, WindowManager, Container):
+class ToplevelBase(TkWidget, Container):
     def __init__(self) -> None:
         self.grid = ToplevelGrid(self)
 

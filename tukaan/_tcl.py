@@ -71,6 +71,7 @@ class Tcl:
         cls.windowing_system = cls._interp.call("tk", "windowingsystem").lower()
         cls.version = cls._interp.call("info", "patchlevel")
         cls.dll_ext = cls._interp.call("info", "sharedlibextension")
+        cls.basename = app_name
 
     @classmethod
     def main_loop(cls) -> None:
@@ -149,7 +150,7 @@ class Tcl:
         if return_type is bool:
             return Tcl.get_bool(value)
 
-        if return_type in {int, float}:
+        if return_type in (int, float):
             return Tcl.get_number(return_type, value)  # type: ignore
 
         try:

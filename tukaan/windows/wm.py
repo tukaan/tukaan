@@ -284,21 +284,30 @@ class WindowManager:
 
     @property
     def resizable(self) -> Resizable:
-        return Resizable(Tcl.call((bool, bool), "wm", "resizable", self._wm_path))
+        return Resizable(Tcl.call((str, str), "wm", "resizable", self._wm_path))
 
     @resizable.setter
     def resizable(self, value: Resizable) -> None:
         Tcl.call(None, "wm", "resizable", self._wm_path, *value.value)
 
     @property
-    def x_type(self) -> WindowType:
-        if Tcl.windowing_system == "x11":
+    def type(self) -> WindowType:
+        if Tcl.windowing_system == "win32":
+            if Tcl.call(bool, "wm", "attributes", self._wm_path, "-toolwindow"):
+                return WindowType.Utility
+            return WindowType.Normal
+        elif Tcl.windowing_system == "x11":
             return Tcl.call(WindowType, "wm", "attributes", self._wm_path, "-type")
         return WindowType.Normal
 
-    @x_type.setter
-    def x_type(self, value: WindowType) -> None:
-        if Tcl.windowing_system == "x11":
+    @type.setter
+    def type(self, value: WindowType) -> None:
+        if Tcl.windowing_system == "win32":
+            if value is WindowType.ToolWindow:
+                Tcl.call(None, "wm", "attributes", self._wm_path, "-toolwindow", True)
+            elif value is WindowType.Normal:
+                Tcl.call(None, "wm", "attributes", self._wm_path, "-toolwindow", False)
+        elif Tcl.windowing_system == "x11":
             Tcl.call(None, "wm", "attributes", self._wm_path, value)
 
     @property
