@@ -107,8 +107,8 @@ class Resizable(Enum):
     Both = ("1", "1")
 
 
-class BackdropEffect(Enum):
-    No = 0
+class WindowBackdropEffect(Enum):
+    Normal = 0
     OpaqueColor = 1
     TransparentColor = 2
     Blur = 3
