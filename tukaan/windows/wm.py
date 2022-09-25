@@ -64,7 +64,6 @@ class DesktopWindowManager:
             if isinstance(name_or_hwnd, int)
             else int(Tcl.call(str, "wm", "frame", name_or_hwnd), 16)
         )
-        print(hwnd)
 
         c_value = ctypes.c_int(value)
 
@@ -78,7 +77,6 @@ class DesktopWindowManager:
     @classmethod
     def apply_backdrop_effect(cls, window_name: str, backdrop_type: int) -> None:
         hwnd = int(Tcl.call(str, "wm", "frame", window_name), 16)
-        print(hwnd)
 
         acp = AccentPolicy()
         acp.AccentFlags = 2  # ACCENT_ENABLE_BLURBEHIND
@@ -93,7 +91,6 @@ class DesktopWindowManager:
         ctypes.windll.user32.SetWindowCompositionAttribute(hwnd, wcad)
 
         if windows_build >= 22621:
-            print(backdrop_type)
             cls.set_window_attr(hwnd, DWMWA.SYSTEMBACKDROP_TYPE, backdrop_type)
         elif windows_build >= 22000:
             cls.set_window_attr(hwnd, DWMWA.MICA_EFFECT, 1 if backdrop_type else 0)
@@ -474,7 +471,7 @@ class WindowManager:
             return None
 
         DesktopWindowManager.set_window_attr(
-            self._wm_path, DWMWA.BORDER_COLOR, print(_get_bgr_color(value)) or 5
+            self._wm_path, DWMWA.BORDER_COLOR, _get_bgr_color(value)
         )
 
     @property
@@ -560,60 +557,3 @@ class WindowManager:
             self.use_dark_mode_decorations = True  # just for performance
 
         self._force_redraw_titlebar()
-
-    @windows_only
-    def __set_backdrop_effect_(
-        self,
-        backdrop_type: WindowBackdropType | None = WindowBackdropType.Mica,
-    ) -> None:
-        #        if backdrop_type is None or backdrop_type is WindowBackdropType.Normal:
-        #            Tcl.eval(None, f"wm attributes {self._wm_path} -transparentcolor {{}}")
-        #            self.unbind("<<__unmax_private__>>")
-        #            DWM.remove_backdrop_effect(self._wm_path)
-        #        else:
-        #            bg_color = Tcl.eval(str, "ttk::style lookup . -background")
-        #
-        #            # Make the window background, and each pixel with the same color
-        #            # as the window background fully transparent.
-        #            # These are the areas that will be blurred.
-        #            Tcl.eval(None, f"wm attributes {self._wm_path} -transparentcolor {bg_color}")
-        #
-        #            # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing.
-        #            # Therefore we bind it to the <<__unmax_private__>> event, so every time it changes state,
-        #            # it calls the _windows_redraw_titlebar method.
-        #            # See _windows_redraw_titlebar.__doc__ for more.
-        #            self.bind("<<__unmax_private__>>", self._windows_redraw_titlebar)
-        #
-        #            DWM.apply_backdrop_effect(self._wm_path, backdrop_type.value)
-        #
-        #        self._windows_redraw_titlebar()
-
-        build = sys.getwindowsversion().build
-        has_mica = build >= 22000
-        has_backdrop_type = build >= 22523
-
-        # Make an ABGR color from `tint` and `tint_opacity`
-        # If `tint` is None, use the window background color
-
-        acp = AccentPolicy()
-        acp.AccentFlags = 2  # ACCENT_ENABLE_BLURBEHIND  <- try this with '4' bruhh :D
-        acp.AccentState = 5
-        acp.GradientColor = 0
-        # acp.GradientColor = gradient_color
-
-        wcad = WindowCompositionAttributeData()
-        wcad.Attribute = 19  # WCA_ACCENT_POLICY
-        wcad.SizeOfData = ctypes.sizeof(acp)
-        wcad.Data = ctypes.cast(ctypes.pointer(acp), ctypes.POINTER(ctypes.c_int))
-
-        DWM._set_wca(self.hwnd, wcad)
-
-        if has_backdrop_type:
-            # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/PInvoke/DWM_SYSTEMBACKDROP_TYPE.cs
-            # Mica effect is 2
-            DWM._set_window_attr(self.hwnd, 20, 0)
-            DWM._set_window_attr(self.hwnd, 38, backdrop_type.value)
-        elif has_mica:
-            self._dwm_set_window_attribute(1029, 1)
-
-        self._windows_redraw_titlebar()
