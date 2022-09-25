@@ -4,6 +4,7 @@ import ctypes
 import functools
 import re
 import sys
+from enum import Enum
 from fractions import Fraction
 from typing import Callable, Sequence
 
@@ -11,9 +12,12 @@ from tukaan._data import Position, Size
 from tukaan._images import Icon
 from tukaan._tcl import Tcl
 from tukaan._utils import windows_only
-from tukaan.colors import Color, rgb
-from tukaan.enums import Resizable, WindowBackdropEffect, WindowState, WindowType
+from tukaan.colors import Color
+from tukaan.enums import Resizable, WindowBackdropType, WindowState, WindowType
 from tukaan.exceptions import TukaanTclError
+
+if sys.platform == "win32":
+    windows_build = sys.getwindowsversion().build
 
 
 class AccentPolicy(ctypes.Structure):
@@ -33,93 +37,76 @@ class WindowCompositionAttributeData(ctypes.Structure):
     ]
 
 
-class DWM:
-    DWMWA_TRANSITIONS_FORCEDISABLED = 3
-    DWMWA_NONCLIENT_RTL_LAYOUT = 6
-    DWMWA_FORCE_ICONIC_REPRESENTATION = 7
-    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-    DWMWA_BORDER_COLOR = 34
-    DWMWA_CAPTION_COLOR = 35
-    DWMWA_TEXT_COLOR = 36
+class Margins(ctypes.Structure):
+    _fields_ = [
+        ("cxLeftWidth", ctypes.c_int),
+        ("cxRightWidth", ctypes.c_int),
+        ("cyTopHeight", ctypes.c_int),
+        ("cyBottomHeight", ctypes.c_int),
+    ]
 
-    # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/DesktopWindowManager.cs#L15
-    DWMWA_SYSTEMBACKDROP_TYPE = 38
 
-    # https://github.com/Brouilles/win32-mica/blob/main/main.cpp#L119
-    DWMWA_MICA_EFFECT = 1029
+class DWMWA(Enum):
+    TRANSITIONS_FORCEDISABLED = 3
+    USE_IMMERSIVE_DARK_MODE = 20
+    BORDER_COLOR = 34
+    CAPTION_COLOR = 35
+    TEXT_COLOR = 36
+    SYSTEMBACKDROP_TYPE = 38  # Windows 11 build >= 22621
+    MICA_EFFECT = 1029  # Undocumented
 
+
+class DesktopWindowManager:
     @staticmethod
-    def _create_abgr(rgb_hex: str, opacity: float) -> int:
-        alpha = hex(int(opacity * 255))
-        abgr_hex = alpha[2:] + rgb_hex[5:7] + rgb_hex[3:5] + rgb_hex[1:3]
+    def set_window_attr(name_or_hwnd: str | int, attr: DWMWA, value: int) -> None:
+        hwnd = (
+            name_or_hwnd
+            if isinstance(name_or_hwnd, int)
+            else int(Tcl.call(str, "wm", "frame", name_or_hwnd), 16)
+        )
+        print(hwnd)
 
-        return int(abgr_hex, 16)
-
-    @staticmethod
-    def _get_accent_policy_wcad(backdrop_type: int, tint: int) -> WindowCompositionAttributeData:
-        accent_policy = AccentPolicy()
-        accent_policy.AccentFlags = 2  # ACCENT_ENABLE_BLURBEHIND <- try this with 4 bruhh :D
-        accent_policy.AccentState = backdrop_type
-        accent_policy.GradientColor = tint
-
-        wcad = WindowCompositionAttributeData()
-        wcad.Attribute = 19  # WCA_ACCENT_POLICY
-        wcad.Data = ctypes.cast(ctypes.pointer(accent_policy), ctypes.POINTER(ctypes.c_int))
-        wcad.SizeOfData = ctypes.sizeof(accent_policy)
-
-        return wcad
-
-    @classmethod
-    def _set_window_attr(cls, hwnd: int, rendering_policy: int, value: int) -> None:
         c_value = ctypes.c_int(value)
 
         ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            hwnd, rendering_policy, ctypes.byref(c_value), ctypes.sizeof(c_value)
+            hwnd,
+            attr.value,
+            ctypes.byref(c_value),
+            ctypes.sizeof(ctypes.c_int),
         )
 
     @classmethod
-    def _set_wca(cls, hwnd: int, wcad: WindowCompositionAttributeData) -> None:
+    def apply_backdrop_effect(cls, window_name: str, backdrop_type: int) -> None:
+        hwnd = int(Tcl.call(str, "wm", "frame", window_name), 16)
+        print(hwnd)
+
+        acp = AccentPolicy()
+        acp.AccentFlags = 2  # ACCENT_ENABLE_BLURBEHIND
+        acp.AccentState = 5
+        acp.GradientColor = 0
+
+        wcad = WindowCompositionAttributeData()
+        wcad.Attribute = 19  # WCA_ACCENT_POLICY
+        wcad.SizeOfData = ctypes.sizeof(acp)
+        wcad.Data = ctypes.cast(ctypes.pointer(acp), ctypes.POINTER(ctypes.c_int))
+
         ctypes.windll.user32.SetWindowCompositionAttribute(hwnd, wcad)
 
-    @classmethod
-    def apply_backdrop_effect(
-        cls,
-        hwnd: int,
-        backdrop_type: int,
-        tint: str,
-        tint_opacity: float,
-    ) -> None:
-        windows_build = sys.getwindowsversion().build  # type: ignore
-
-        if windows_build < 22000 and backdrop_type == 5:
-            # Mica is available only on Windows 11 build 22000+, fall back to acrylic
-            backdrop_type = 4
-
-        cls._set_wca(
-            hwnd, cls._get_accent_policy_wcad(backdrop_type, cls._create_abgr(tint, tint_opacity))
-        )
-
-        if backdrop_type == 5:
-            if windows_build >= 22523:
-                cls._set_window_attr(hwnd, cls.DWMWA_SYSTEMBACKDROP_TYPE, 2)
-            else:
-                # Use the undocumented DWMWA_MICA_EFFECT option
-                cls._set_window_attr(hwnd, cls.DWMWA_MICA_EFFECT, 1)
-
-    @classmethod
-    def remove_backdrop_effect(cls, hwnd: int) -> None:
-        windows_build = sys.getwindowsversion().build  # type: ignore
-
-        cls._set_wca(hwnd, cls._get_accent_policy_wcad(0, 0))
-
-        if windows_build >= 22523:
-            cls._set_window_attr(hwnd, cls.DWMWA_SYSTEMBACKDROP_TYPE, 1)
+        if windows_build >= 22621:
+            print(backdrop_type)
+            cls.set_window_attr(hwnd, DWMWA.SYSTEMBACKDROP_TYPE, backdrop_type)
         elif windows_build >= 22000:
-            cls._set_window_attr(hwnd, cls.DWMWA_MICA_EFFECT, 0)
+            cls.set_window_attr(hwnd, DWMWA.MICA_EFFECT, 1 if backdrop_type else 0)
+
+
+def _get_bgr_color(rgb_hex: str) -> int:
+    return int(rgb_hex[5:7] + rgb_hex[3:5] + rgb_hex[1:3], 16)
 
 
 class WindowManager:
+    _current_state = "normal"
     _wm_path: str
+
     bind: Callable
     unbind: Callable
 
@@ -149,7 +136,41 @@ class WindowManager:
 
         return "normal"
 
-    def _windows_redraw_titlebar(self) -> None:
+    def _gen_state_event(self):
+        prev_state = self._current_state
+        new_state = self._get_state()
+
+        if new_state == prev_state or prev_state == "nostate":
+            return
+
+        events = ["<<StateChanged>>"]
+
+        if new_state == "normal":
+            events.append("<<Restore>>")
+        elif new_state == "maximized":
+            events.append("<<Maximize>>")
+        elif new_state == "minimized":
+            events.append("<<Minimize>>")
+        elif new_state == "hidden":
+            events.append("<<Hide>>")
+        elif new_state == "fullscreen":
+            events.append("<<Fullscreen>>")
+
+        if prev_state == "maximized":
+            events.extend(["<<Unmaximize>>", "<<__unmax_private__>>"])
+        elif prev_state == "minimized":
+            events.append("<<Unminimize>>")
+        elif prev_state == "hidden":
+            events.append("<<Unhide>>")
+        elif prev_state == "fullscreen":
+            events.append("<<Unfullscreen>>")
+
+        for event in events:
+            Tcl.call(None, "event", "generate", self, event)
+
+        self._current_state = new_state
+
+    def _force_redraw_titlebar(self) -> None:
         """
         Internal method, Windoze only
 
@@ -158,11 +179,14 @@ class WindowManager:
         To avoid visual effects, disable transitions on the window for that time.
         """
         hwnd = self.hwnd
+        self._current_state = "nostate"
 
-        DWM._set_window_attr(hwnd, DWM.DWMWA_TRANSITIONS_FORCEDISABLED, 1)
+        DesktopWindowManager.set_window_attr(hwnd, DWMWA.TRANSITIONS_FORCEDISABLED, 1)
         Tcl.call(None, "wm", "iconify", self._wm_path)
         Tcl.call(None, "wm", "deiconify", self._wm_path)
-        DWM._set_window_attr(hwnd, DWM.DWMWA_TRANSITIONS_FORCEDISABLED, 0)
+        DesktopWindowManager.set_window_attr(hwnd, DWMWA.TRANSITIONS_FORCEDISABLED, 0)
+
+        self._current_state = self._get_state()
 
     def minimize(self) -> None:
         Tcl.call(None, "wm", "iconify", self._wm_path)
@@ -438,37 +462,158 @@ class WindowManager:
     def icon(self, image: Icon) -> None:
         Tcl.call(None, "wm", "iconphoto", self._wm_path, image)
 
-    #@windows_only
+    @property
+    @windows_only
+    def border_color(self) -> None:
+        ...
+
+    @border_color.setter
+    @windows_only
+    def border_color(self, value: Color | str) -> None:
+        if windows_build < 22000:
+            return None
+
+        DesktopWindowManager.set_window_attr(
+            self._wm_path, DWMWA.BORDER_COLOR, print(_get_bgr_color(value)) or 5
+        )
+
+    @property
+    @windows_only
+    def titlebar_color(self) -> None:
+        ...
+
+    @titlebar_color.setter
+    @windows_only
+    def titlebar_color(self, value: Color | str) -> None:
+        if windows_build < 22000:
+            return None
+
+        DesktopWindowManager.set_window_attr(
+            self._wm_path, DWMWA.CAPTION_COLOR, _get_bgr_color(value)
+        )
+
+    @property
+    @windows_only
+    def titlebar_text_color(self) -> None:
+        ...
+
+    @titlebar_text_color.setter
+    @windows_only
+    def titlebar_text_color(self, value: Color | str) -> None:
+        if windows_build < 22000:
+            return None
+
+        DesktopWindowManager.set_window_attr(self._wm_path, DWMWA.TEXT_COLOR, _get_bgr_color(value))
+
+    @property
+    @windows_only
+    def use_dark_mode_decorations(self) -> None:
+        ...
+
+    @use_dark_mode_decorations.setter
+    @windows_only
+    def use_dark_mode_decorations(self, value: bool) -> None:
+        if windows_build < 22000:
+            return None
+
+        DesktopWindowManager.set_window_attr(
+            self._wm_path, DWMWA.USE_IMMERSIVE_DARK_MODE, int(value)
+        )
+
+    @windows_only
     def set_backdrop_effect(
         self,
-        backdrop_type: WindowBackdropEffect | None = WindowBackdropEffect.Mica,
-        tint: Color | str | None = None,
-        tint_opacity: float = 0.2,
+        backdrop_type: WindowBackdropType | None = WindowBackdropType.Mica,
+        dark: bool = False,
     ) -> None:
-        if backdrop_type is None or backdrop_type is WindowBackdropEffect.Normal:
-            Tcl.eval(None, f"wm attributes {self._wm_path} -transparentcolor {{}}")
-            self.unbind("<<__unmax_private__>>")
-            DWM.remove_backdrop_effect(self.hwnd)
+        if windows_build < 22000:
+            return
+
+        if backdrop_type is None:
+            backdrop_type = WindowBackdropType.Normal
+
+        if backdrop_type is WindowBackdropType.Normal:
+            Tcl.call(None, "wm", "attributes", self._wm_path, "-transparentcolor", "")
+            Tcl.call(None, "bind", self._wm_path, "<<__unmax_private__>>", "")
         else:
-            bg_color = Tcl.eval(str, "ttk::style lookup . -background")
-
-            if isinstance(tint, Color):
-                color = tint.hex
-            elif tint is None:
-                tint_16_bit = Tcl.eval((int,), f"winfo rgb . {bg_color}")
-                color = rgb(*(value >> 8 for value in tint_16_bit))
-
             # Make the window background, and each pixel with the same color
             # as the window background fully transparent.
             # These are the areas that will be blurred.
-            Tcl.eval(None, f"wm attributes {self._wm_path} -transparentcolor {bg_color}")
+            bg_color = Tcl.eval(str, "ttk::style lookup . -background")
+            Tcl.call(None, "wm", "attributes", self._wm_path, "-transparentcolor", bg_color)
 
             # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing.
-            # Therefore we bind it to the <<__unmax_private__>> event, so every time it changes state,
-            # it calls the _windows_redraw_titlebar method.
-            # See _windows_redraw_titlebar.__doc__ for more.
-            self.bind("<<__unmax_private__>>", self._windows_redraw_titlebar)
+            # Therefore we bind it to the <<Unmaximize>> event (see it below: WindowManager._generate_state_event),
+            # so every time it changes state, it calls the _fullredraw method.
+            # See DWM._fullredraw.__doc__ for more.
+            Tcl.call(
+                None,
+                "bind",
+                self._wm_path,
+                "<<__unmax_private__>>",
+                self._force_redraw_titlebar,
+            )
 
-            DWM.apply_backdrop_effect(self.hwnd, backdrop_type.value, color, tint_opacity)
+        DesktopWindowManager.apply_backdrop_effect(self._wm_path, backdrop_type.value)
+
+        if dark:
+            self.use_dark_mode_decorations = True  # just for performance
+
+        self._force_redraw_titlebar()
+
+    @windows_only
+    def __set_backdrop_effect_(
+        self,
+        backdrop_type: WindowBackdropType | None = WindowBackdropType.Mica,
+    ) -> None:
+        #        if backdrop_type is None or backdrop_type is WindowBackdropType.Normal:
+        #            Tcl.eval(None, f"wm attributes {self._wm_path} -transparentcolor {{}}")
+        #            self.unbind("<<__unmax_private__>>")
+        #            DWM.remove_backdrop_effect(self._wm_path)
+        #        else:
+        #            bg_color = Tcl.eval(str, "ttk::style lookup . -background")
+        #
+        #            # Make the window background, and each pixel with the same color
+        #            # as the window background fully transparent.
+        #            # These are the areas that will be blurred.
+        #            Tcl.eval(None, f"wm attributes {self._wm_path} -transparentcolor {bg_color}")
+        #
+        #            # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing.
+        #            # Therefore we bind it to the <<__unmax_private__>> event, so every time it changes state,
+        #            # it calls the _windows_redraw_titlebar method.
+        #            # See _windows_redraw_titlebar.__doc__ for more.
+        #            self.bind("<<__unmax_private__>>", self._windows_redraw_titlebar)
+        #
+        #            DWM.apply_backdrop_effect(self._wm_path, backdrop_type.value)
+        #
+        #        self._windows_redraw_titlebar()
+
+        build = sys.getwindowsversion().build
+        has_mica = build >= 22000
+        has_backdrop_type = build >= 22523
+
+        # Make an ABGR color from `tint` and `tint_opacity`
+        # If `tint` is None, use the window background color
+
+        acp = AccentPolicy()
+        acp.AccentFlags = 2  # ACCENT_ENABLE_BLURBEHIND  <- try this with '4' bruhh :D
+        acp.AccentState = 5
+        acp.GradientColor = 0
+        # acp.GradientColor = gradient_color
+
+        wcad = WindowCompositionAttributeData()
+        wcad.Attribute = 19  # WCA_ACCENT_POLICY
+        wcad.SizeOfData = ctypes.sizeof(acp)
+        wcad.Data = ctypes.cast(ctypes.pointer(acp), ctypes.POINTER(ctypes.c_int))
+
+        DWM._set_wca(self.hwnd, wcad)
+
+        if has_backdrop_type:
+            # https://github.com/minusium/MicaForEveryone/blob/master/MicaForEveryone.Win32/PInvoke/DWM_SYSTEMBACKDROP_TYPE.cs
+            # Mica effect is 2
+            DWM._set_window_attr(self.hwnd, 20, 0)
+            DWM._set_window_attr(self.hwnd, 38, backdrop_type.value)
+        elif has_mica:
+            self._dwm_set_window_attribute(1029, 1)
 
         self._windows_redraw_titlebar()

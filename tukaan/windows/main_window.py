@@ -32,14 +32,14 @@ class MainWindow(ToplevelBase, WindowManager):
 
         ToplevelBase.__init__(self)
 
-        #        Tcl.call(None, "bind", self, "<Map>", self._generate_state_event)
-        #        Tcl.call(None, "bind", self, "<Unmap>", self._generate_state_event)
-        #        Tcl.call(None, "bind", self, "<Configure>", self._generate_state_event)
-
         Tcl.eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
         Tcl.call(None, "wm", "title", ".", title)
         Tcl.call(None, "wm", "geometry", ".", f"{width}x{height}")
         Tcl.call(None, "wm", "protocol", ".", "WM_DELETE_WINDOW", self.destroy)
+
+        Tcl.call(None, "bind", ".app", "<Map>", self._gen_state_event)
+        Tcl.call(None, "bind", ".app", "<Unmap>", self._gen_state_event)
+        Tcl.call(None, "bind", ".app", "<Configure>", self._gen_state_event)
 
         if type is not None:
             self.type = type

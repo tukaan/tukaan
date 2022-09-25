@@ -107,10 +107,8 @@ class Resizable(Enum):
     Both = ("1", "1")
 
 
-class WindowBackdropEffect(Enum):
-    Normal = 0
-    OpaqueColor = 1
-    TransparentColor = 2
-    Blur = 3
-    Acrylic = 4
-    Mica = 5
+class WindowBackdropType(Enum):
+    Normal = 1
+    Mica = 2
+    Acrylic = 3
+    MicaAlt = 4

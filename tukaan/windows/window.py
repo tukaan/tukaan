@@ -41,9 +41,9 @@ class Window(ToplevelBase, WindowManager):
         if x_type is not None and Tcl.windowing_system == "x11":
             Tcl.call(None, "wm", "attributes", ".", "-type", x_type)
 
-    #        Tcl.call(None, "bind", self, "<Map>", self._generate_state_event)
-    #        Tcl.call(None, "bind", self, "<Unmap>", self._generate_state_event)
-    #        Tcl.call(None, "bind", self, "<Configure>", self._generate_state_event)
+        Tcl.call(None, "bind", self._name, "<Map>", self._gen_state_event)
+        Tcl.call(None, "bind", self._name, "<Unmap>", self._gen_state_event)
+        Tcl.call(None, "bind", self._name, "<Configure>", self._gen_state_event)
 
     def wait_till_closed(self) -> None:
         Tcl.call(None, "tkwait", "window", self._wm_path)

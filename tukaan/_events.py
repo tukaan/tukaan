@@ -9,7 +9,7 @@ from PIL import Image, UnidentifiedImageError  # type: ignore
 
 from ._info import System
 from ._keysyms import _keysym_aliases
-from ._tcl import Tcl
+from ._tcl import Tcl, TclCallback
 from ._utils import reversed_dict
 from .colors import Color
 
@@ -519,7 +519,7 @@ class EventMixin:
         script_str = func  # for internal bindings, where i use strings for tcl scripts, or when unbinding where func is ""
 
         if callable(func):
-            cmd = Tcl.create_cmd(partial(real_func, func))
+            cmd = TclCallback(partial(real_func, func))._name
 
             sequence = event._parse(sequence)
 
