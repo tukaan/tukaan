@@ -37,7 +37,7 @@ class Platform:
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> Any:
             if sys.platform == "win32":
-                return func(*args, **kwargs)
+                return func(self, *args, **kwargs)
 
         return wrapper
 
@@ -46,7 +46,7 @@ class Platform:
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> Any:
             if sys.platform == "darwin":
-                return func(*args, **kwargs)
+                return func(self, *args, **kwargs)
 
         return wrapper
 
@@ -55,6 +55,6 @@ class Platform:
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> Any:
             if sys.platform == "linux":
-                return func(*args, **kwargs)
+                return func(self, *args, **kwargs)
 
         return wrapper
