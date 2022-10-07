@@ -73,21 +73,21 @@ class GeometryMixin:
         return Tcl.call(int, "winfo", "reqheight", self)
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def bbox(self) -> tuple:
         return Bbox(self._abs_x(), self._abs_y(), self._width(), self._height())
 
-    rel_x = property(Tcl.update_before(_rel_x))
-    rel_y = property(Tcl.update_before(_rel_y))
-    abs_x = property(Tcl.update_before(_abs_x))
-    abs_y = property(Tcl.update_before(_abs_y))
-    width = property(Tcl.update_before(_width))
-    height = property(Tcl.update_before(_height))
+    rel_x = property(Tcl.redraw_before(_rel_x))
+    rel_y = property(Tcl.redraw_before(_rel_y))
+    abs_x = property(Tcl.redraw_before(_abs_x))
+    abs_y = property(Tcl.redraw_before(_abs_y))
+    width = property(Tcl.redraw_before(_width))
+    height = property(Tcl.redraw_before(_height))
 
 
 class VisibilityMixin:
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def visible(self) -> bool:
         return Tcl.call(bool, "winfo", "ismapped", self)
 

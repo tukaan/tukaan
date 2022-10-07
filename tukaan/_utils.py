@@ -21,33 +21,6 @@ def seq_pairs(sequence: Sequence[object]) -> Iterator[object]:
     return zip(sequence[::2], sequence[1::2])
 
 
-def windows_only(func) -> Any:
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        if sys.platform == "win32":
-            return func(*args, **kwargs)
-
-    return wrapper
-
-
-def mac_only(func) -> Any:
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        if sys.platform == "aqua":
-            return func(*args, **kwargs)
-
-    return wrapper
-
-
-def linux_only(func) -> Any:
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        if sys.platform == "linux":
-            return func(*args, **kwargs)
-
-    return wrapper
-
-
 class instanceclassmethod:
     def __init__(self, method) -> None:
         self.method = method

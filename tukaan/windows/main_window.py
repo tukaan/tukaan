@@ -45,12 +45,15 @@ class MainWindow(ToplevelBase, WindowManager):
             self.type = type
 
         if hasattr(self, "setup"):
+            Tcl.call(None, "update", "idletasks")
             self.setup()
 
         Tcl.call(None, "wm", "deiconify", ".")
 
         if callable(on_load):
             on_load()
+
+        Tcl.call(None, "update", "idletasks")
 
     def destroy(self) -> None:
         """Destroy all widgets and quit the interpreter."""

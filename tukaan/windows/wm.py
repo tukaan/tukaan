@@ -10,8 +10,8 @@ from typing import Callable, Sequence
 
 from tukaan._data import Position, Size
 from tukaan._images import Icon
+from tukaan._system import Platform
 from tukaan._tcl import Tcl
-from tukaan._utils import windows_only
 from tukaan.colors import Color
 from tukaan.enums import Resizable, WindowBackdropType, WindowState, WindowType
 from tukaan.exceptions import TukaanTclError
@@ -53,7 +53,7 @@ class DWMWA(Enum):
     CAPTION_COLOR = 35
     TEXT_COLOR = 36
     SYSTEMBACKDROP_TYPE = 38  # Windows 11 build >= 22621
-    MICA_EFFECT = 1029  # Undocumented
+    MICA_EFFECT = 1029  # Undocumented, kinda buggy
 
 
 class DesktopWindowManager:
@@ -173,7 +173,7 @@ class WindowManager:
 
         Neither user32.RedrawWindow nor user32.UpdateWindow redraws the titlebar,
         so we need to explicitly iconify and then deiconify the window.
-        To avoid visual effects, disable transitions on the window for that time.
+        To avoid visual effects, we disable the transitions on the window for that time.
         """
         hwnd = self.hwnd
         self._current_state = "nostate"
@@ -236,7 +236,7 @@ class WindowManager:
         return Tcl.call(str, "focus", "-displayof", self._wm_path)
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def visible(self) -> bool:
         return Tcl.call(bool, "winfo", "ismapped", self._wm_path)
 
@@ -253,58 +253,58 @@ class WindowManager:
         WindowState(self._get_state())
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def x(self) -> int:
         return Tcl.call(int, "winfo", "x", self._wm_path)
 
     @x.setter
-    @Tcl.updated
+    @Tcl.with_redraw
     def x(self, value: int) -> None:
         y = Tcl.call(int, "winfo", "y", self._wm_path)
         Tcl.call(None, "wm", "geometry", self._wm_path, f"+{value}+{y}")
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def y(self) -> int:
         return Tcl.call(int, "winfo", "y", self._wm_path)
 
     @y.setter
-    @Tcl.updated
+    @Tcl.with_redraw
     def y(self, value: int) -> None:
         x = Tcl.call(int, "winfo", "x", self._wm_path)
         Tcl.call(None, "wm", "geometry", self._wm_path, f"+{x}+{value}")
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def width(self) -> int:
         return Tcl.call(int, "winfo", "width", self._wm_path)
 
     @width.setter
-    @Tcl.updated
+    @Tcl.with_redraw
     def width(self, value: int) -> None:
         height = Tcl.call(int, "winfo", "height", self._wm_path)
         Tcl.call(None, "wm", "geometry", self._wm_path, f"{value}x{height}")
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def height(self) -> int:
         return Tcl.call(int, "winfo", "width", self._wm_path)
 
     @height.setter
-    @Tcl.updated
+    @Tcl.with_redraw
     def height(self, value: int) -> None:
         width = Tcl.call(int, "winfo", "width", self._wm_path)
         Tcl.call(None, "wm", "geometry", self._wm_path, f"{width}x{value}")
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def position(self) -> Position:
         return Position(
             *map(int, re.split(r"x|\+", Tcl.call(str, "wm", "geometry", self._wm_path))[2:])
         )
 
     @position.setter
-    @Tcl.update_after
+    @Tcl.redraw_after
     def position(self, value: Position | Sequence[int] | int) -> None:
         if isinstance(value, int):
             value = (value,) * 2
@@ -312,14 +312,14 @@ class WindowManager:
         Tcl.call(None, "wm", "geometry", self._wm_path, "+{}+{}".format(*value))
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def size(self) -> Size:
         return Size(
             *map(int, re.split(r"x|\+", Tcl.call(str, "wm", "geometry", self._wm_path))[:2])
         )
 
     @size.setter
-    @Tcl.update_after
+    @Tcl.redraw_after
     def size(self, value: Size | Sequence[int] | int) -> None:
         if isinstance(value, int):
             value = (value,) * 2
@@ -327,12 +327,12 @@ class WindowManager:
         Tcl.call(None, "wm", "geometry", self._wm_path, "{}x{}".format(*value))
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def min_size(self) -> Size:
         return Size(*Tcl.call([int], "wm", "minsize", self._wm_path))
 
     @min_size.setter
-    @Tcl.update_after
+    @Tcl.redraw_after
     def min_size(self, value: Size | Sequence[int] | int) -> None:
         if isinstance(value, int):
             value = (value,) * 2
@@ -340,12 +340,12 @@ class WindowManager:
         Tcl.call(None, "wm", "minsize", self._wm_path, *value)
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def max_size(self) -> Size:
         return Size(*Tcl.call([int], "wm", "maxsize", self._wm_path))
 
     @max_size.setter
-    @Tcl.update_after
+    @Tcl.redraw_after
     def max_size(self, value: Size | Sequence[int] | int) -> None:
         if isinstance(value, int):
             value = (value,) * 2
@@ -391,7 +391,7 @@ class WindowManager:
         Tcl.call(None, "wm", "grid", self._wm_path, 1, 1, *value)
 
     @property
-    @Tcl.update_before
+    @Tcl.redraw_before
     def aspect_ratio(self) -> None | tuple[Fraction, Fraction]:
         result = Tcl.call((int,), "wm", "aspect", self._wm_path)
         if not result:
@@ -399,7 +399,7 @@ class WindowManager:
         return Fraction(*result[:2]), Fraction(*result[2:])
 
     @aspect_ratio.setter
-    @Tcl.update_after
+    @Tcl.redraw_after
     def aspect_ratio(
         self,
         value: tuple[float, float] | tuple[Fraction, Fraction] | float | None,
@@ -460,12 +460,12 @@ class WindowManager:
         Tcl.call(None, "wm", "iconphoto", self._wm_path, image)
 
     @property
-    @windows_only
+    @Platform.windows_only
     def border_color(self) -> None:
         ...
 
     @border_color.setter
-    @windows_only
+    @Platform.windows_only
     def border_color(self, value: Color | str) -> None:
         if windows_build < 22000:
             return None
@@ -475,12 +475,12 @@ class WindowManager:
         )
 
     @property
-    @windows_only
+    @Platform.windows_only
     def titlebar_color(self) -> None:
         ...
 
     @titlebar_color.setter
-    @windows_only
+    @Platform.windows_only
     def titlebar_color(self, value: Color | str) -> None:
         if windows_build < 22000:
             return None
@@ -490,12 +490,12 @@ class WindowManager:
         )
 
     @property
-    @windows_only
+    @Platform.windows_only
     def titlebar_text_color(self) -> None:
         ...
 
     @titlebar_text_color.setter
-    @windows_only
+    @Platform.windows_only
     def titlebar_text_color(self, value: Color | str) -> None:
         if windows_build < 22000:
             return None
@@ -503,12 +503,12 @@ class WindowManager:
         DesktopWindowManager.set_window_attr(self._wm_path, DWMWA.TEXT_COLOR, _get_bgr_color(value))
 
     @property
-    @windows_only
+    @Platform.windows_only
     def use_dark_mode_decorations(self) -> None:
         ...
 
     @use_dark_mode_decorations.setter
-    @windows_only
+    @Platform.windows_only
     def use_dark_mode_decorations(self, value: bool) -> None:
         if windows_build < 22000:
             return None
@@ -517,7 +517,8 @@ class WindowManager:
             self._wm_path, DWMWA.USE_IMMERSIVE_DARK_MODE, int(value)
         )
 
-    @windows_only
+    @Platform.windows_only
+    @Tcl.with_redraw
     def set_backdrop_effect(
         self,
         backdrop_type: WindowBackdropType | None = WindowBackdropType.Mica,
@@ -533,16 +534,17 @@ class WindowManager:
             Tcl.call(None, "wm", "attributes", self._wm_path, "-transparentcolor", "")
             Tcl.call(None, "bind", self._wm_path, "<<__unmax_private__>>", "")
         else:
-            # Make the window background, and each pixel with the same color
-            # as the window background fully transparent.
-            # These are the areas that will be blurred.
+            # Make the window background, and each pixel with the
+            # same color as the window background fully transparent.
+            # These are the areas where the backdrop effect will be applied.
             bg_color = Tcl.eval(str, "ttk::style lookup . -background")
             Tcl.call(None, "wm", "attributes", self._wm_path, "-transparentcolor", bg_color)
 
-            # When the window has `transparentcolor`, the whole window becomes unusable after unmaximizing.
-            # Therefore we bind it to the <<Unmaximize>> event (see it below: WindowManager._generate_state_event),
-            # so every time it changes state, it calls the _fullredraw method.
-            # See DWM._fullredraw.__doc__ for more.
+            # When the window has `transparentcolor`, the whole window
+            # becomes unusable after unmaximizing. Therefore we bind it to the
+            # <<__unmax_private__>> event (<<Unmaximize>>, but it's private, so the user can't unbind it)
+            # so every time it changes state, it calls the _force_redraw_titlebar method.
+            # See self._force_redraw_titlebar.__doc__ for more.
             Tcl.call(
                 None,
                 "bind",
@@ -553,7 +555,5 @@ class WindowManager:
 
         DesktopWindowManager.apply_backdrop_effect(self._wm_path, backdrop_type.value)
 
-        if dark:
-            self.use_dark_mode_decorations = True  # just for performance
-
+        self.use_dark_mode_decorations = dark
         self._force_redraw_titlebar()

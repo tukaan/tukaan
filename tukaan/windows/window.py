@@ -35,15 +35,16 @@ class Window(ToplevelBase, WindowManager):
         Tcl.call(None, self._tcl_class, self._wm_path)
         Tcl.eval(None, f"pack [ttk::frame {self._name}] -expand 1 -fill both")
 
-        Tcl.call(None, "wm", "title", ".", title)
-        Tcl.call(None, "wm", "geometry", ".", f"{width}x{height}")
+        Tcl.call(None, "wm", "title", self._wm_path, title)
+        Tcl.call(None, "wm", "geometry", self._wm_path, f"{width}x{height}")
 
         if x_type is not None and Tcl.windowing_system == "x11":
-            Tcl.call(None, "wm", "attributes", ".", "-type", x_type)
+            Tcl.call(None, "wm", "attributes", self._wm_path, "-type", x_type)
 
         Tcl.call(None, "bind", self._name, "<Map>", self._gen_state_event)
         Tcl.call(None, "bind", self._name, "<Unmap>", self._gen_state_event)
         Tcl.call(None, "bind", self._name, "<Configure>", self._gen_state_event)
+        Tcl.call(None, "update", "idletasks")
 
     def wait_till_closed(self) -> None:
         Tcl.call(None, "tkwait", "window", self._wm_path)

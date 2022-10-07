@@ -244,7 +244,7 @@ class Tcl:
         return cls._interp.splitlist(value)
 
     @classmethod
-    def updated(cls, func: Callable) -> Callable:
+    def with_redraw(cls, func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> Any:
             cls._interp.eval("update idletasks")
@@ -255,7 +255,7 @@ class Tcl:
         return wrapper
 
     @classmethod
-    def update_before(cls, func: Callable) -> Callable:
+    def redraw_before(cls, func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> Any:
             cls._interp.eval("update idletasks")
@@ -264,7 +264,7 @@ class Tcl:
         return wrapper
 
     @classmethod
-    def update_after(cls, func: Callable) -> Callable:
+    def redraw_after(cls, func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs) -> Any:
             result = func(self, *args, **kwargs)
