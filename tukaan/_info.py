@@ -8,7 +8,6 @@ from ._data import Position, Size
 from ._utils import classproperty
 from .exceptions import TukaanTclError
 
-
 # TODO: Move this classes to appropriate modules, and delete this file
 
 

@@ -1,7 +1,7 @@
 import functools
 import platform
 import sys
-from typing import Callable, Any
+from typing import Any, Callable
 
 import _tkinter as tk
 
