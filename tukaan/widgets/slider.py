@@ -4,6 +4,7 @@ from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
 from tukaan._props import FocusableProp, IntDesc, LinkProp, OrientProp, cget, config
+from tukaan._tcl import TclCallback
 from tukaan._variables import Float, Integer
 from tukaan.enums import Orientation
 
@@ -42,17 +43,12 @@ class Slider(WidgetBase, InputControl):
         elif len(args) == 2:
             min, max, *_ = args
 
-        self._original_cmd = on_move
-        if on_move is not None:
-            func = on_move
-            on_move = lambda x: func(float(x))
-
         self._variable = link
 
         WidgetBase.__init__(
             self,
             parent,
-            command=on_move,
+            command=TclCallback(on_move, (float,)),
             from_=min,
             orient=orientation,
             takefocus=focusable,

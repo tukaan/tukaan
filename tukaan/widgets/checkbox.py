@@ -55,23 +55,19 @@ class CheckBox(WidgetBase, InputControl):
         )
 
     def invoke(self) -> None:
-        """Invokes the checkbox, as if it were clicked"""
-
+        """Invoke the checkbox, as if it were clicked."""
         Tcl.call(None, self, "invoke")
 
     def select(self) -> bool:
-        """Selects the checkbox"""
-
+        """Select the checkbox."""
         return self._variable.set(True)
 
     def deselect(self) -> bool:
-        """Deselects the checkbox"""
-
+        """Deselect the checkbox."""
         return self._variable.set(False)
 
     def toggle(self) -> bool:
-        """Toggles the state of the checkbox"""
-
+        """Toggle the state of the checkbox."""
         return ~self._variable.set()
 
     @property

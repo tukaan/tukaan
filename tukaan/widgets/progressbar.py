@@ -46,7 +46,7 @@ class ProgressBar(WidgetBase, OutputDisplay):
             variable=link,
         )
 
-    def _repr_details(self):
+    def _repr_details(self) -> str:
         return f"mode={self.mode!r}, length={self._max!r}, value={self.value!r}"
 
     def step(self, amount: int = 1) -> None:
@@ -68,7 +68,7 @@ class ProgressBar(WidgetBase, OutputDisplay):
             Tcl.call(None, self._name, "step")
             yield i
 
-    ### Properties ###
+    # Properties #
 
     @property
     def length(self) -> int:

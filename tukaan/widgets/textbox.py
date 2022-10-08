@@ -7,7 +7,7 @@ from tukaan._data import Bbox
 from tukaan._props import FocusableProp, ForegroundProp, TextAlignProp, WidthProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
-from tukaan.exceptions import TclError
+from tukaan.exceptions import TukaanTclError
 
 
 class TextBox(WidgetBase, InputControl, XScrollable):
@@ -57,7 +57,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         if value:
             self.set(value)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.get())
 
     def __iter__(self) -> Iterable[str]:
@@ -144,7 +144,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         try:
             first = Tcl.call(int, self, "index", "sel.first")
             last = Tcl.call(int, self, "index", "sel.last")
-        except TclError:
+        except TukaanTclError:
             return None
         else:
             return first, last

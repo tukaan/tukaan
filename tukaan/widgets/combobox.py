@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Callable, Iterable
 
 from tukaan._base import TkWidget, WidgetBase
+from tukaan._nogc import _commands
 from tukaan._props import cget, config
 from tukaan._tcl import Tcl
-from tukaan._utils import _commands
 from tukaan.colors import Color
-from tukaan.exceptions import TclError
+from tukaan.exceptions import TukaanTclError
 
 from .textbox import TextBox
 
@@ -86,7 +86,7 @@ class ComboBox(TextBox):
     def current(self, index: int) -> None:
         try:
             Tcl.call(None, self, "current", index)
-        except TclError:
+        except TukaanTclError:
             raise IndexError("ComboBox index out of range") from None
 
     @property

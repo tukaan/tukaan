@@ -1,4 +1,4 @@
-class TclError(Exception):
+class TukaanTclError(Exception):
     ...
 
 

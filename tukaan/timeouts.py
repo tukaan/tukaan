@@ -1,6 +1,7 @@
+import functools
 from typing import Any, Callable
 
-from ._tcl import Tcl
+from ._tcl import Tcl, TclCallback
 
 
 class Timeout:
@@ -76,9 +77,7 @@ class Timeout:
 class Timer:
     @staticmethod
     def schedule(seconds: float, target: Callable[[Any], Any], *, args=(), kwargs={}) -> None:
-        Tcl.call(
-            str, "after", int(seconds * 1000), Tcl.create_cmd(target, args=args, kwargs=kwargs)
-        )
+        Tcl.call(str, "after", int(seconds * 1000), TclCallback(target, args=args, kwargs=kwargs))
 
     @staticmethod
     def wait(seconds: float) -> None:
@@ -92,6 +91,7 @@ class Timer:
     @staticmethod
     def delayed(seconds: float) -> Callable:
         def decorator(func: Callable) -> Callable:
+            @functools.wraps(func)
             def wrapper(*args, **kwargs) -> Any:
                 Timer.wait(seconds)
                 return func(*args, **kwargs)

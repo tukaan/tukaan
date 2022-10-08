@@ -8,10 +8,11 @@ if TYPE_CHECKING:
     from pathlib import Path
     from tukaan._base import TkWidget
 
+from tukaan._nogc import _fonts, counter
 from tukaan._props import OptionDesc, RWProperty, T_co
 from tukaan._tcl import Tcl
-from tukaan._utils import _fonts, counts, seq_pairs
-from tukaan.exceptions import FontError, TclError
+from tukaan._utils import seq_pairs
+from tukaan.exceptions import FontError, TukaanTclError
 
 from .fontfile import FontFile, FontInfo, TrueTypeCollection
 
@@ -129,7 +130,7 @@ class Font:
         if family in preset_fonts:
             self._name = family
         else:
-            self._name = f"tukaan_font_{next(counts['fonts'])}"
+            self._name = f"tukaan_font_{next(counter['fonts'])}"
 
         self.config(family, size, bold, italic, underline, strikethrough)
         _fonts[self._name] = self
@@ -161,7 +162,7 @@ class Font:
 
         try:
             Tcl.call(None, "font", "create", self._name, *args)
-        except TclError:
+        except TukaanTclError:
             # Font already exists in Tcl
             Tcl.call(None, "font", "configure", self._name, *args)
 

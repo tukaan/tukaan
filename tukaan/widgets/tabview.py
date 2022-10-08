@@ -11,7 +11,7 @@ from tukaan._images import Icon, Pillow2Tcl
 from tukaan._props import FocusableProp, _convert_padding, _convert_padding_back
 from tukaan._tcl import Tcl
 from tukaan.enums import ImagePosition
-from tukaan.exceptions import TclError
+from tukaan.exceptions import TukaanTclError
 
 from .frame import Frame
 
@@ -72,7 +72,7 @@ class Tab(Frame):
         Tcl.call(None, self._widget, "add", self)
 
     def remove(self) -> None:
-        with contextlib.suppress(TclError):
+        with contextlib.suppress(TukaanTclError):
             Tcl.call(None, self._widget, "forget", self)
         self._widget.tabs.remove(self)
 
@@ -182,7 +182,7 @@ class TabView(WidgetBase, Container):
     def selected(self) -> Tab | None:
         try:
             selected = Tcl.eval(int, f"{self._name} index [{self._name} select]")
-        except TclError:
+        except TukaanTclError:
             return None
         else:
             return self.tabs[selected]

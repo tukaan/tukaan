@@ -4,17 +4,15 @@ import contextlib
 from pathlib import Path
 from typing import Union
 
-from PIL import Image as PIL_Image  # type: ignore
-
 from ._base import WidgetBase
+from ._nogc import _images, _pil_images, counter
 from ._props import OptionDesc
-from ._tcl import Tcl
-from ._utils import _images, _pil_images, counts
+from ._tcl import Tcl, TclCallback
 from .colors import Color
 
 try:
     from PIL import Image as PillowImage
-    from PIL import _imagingtk as ImagingTk  # type: ignore
+    from PIL import _imagingtk as ImagingTk  # type: ignore  # noqa: N812
 except ImportError as e:
     raise ImportError("Tukaan needs PIL and PIL._imagingtk in order to display images.") from e
 
@@ -22,6 +20,8 @@ PHOTO_CMD = "image create photo {name}\nPyImagingPhoto {name} {blockid}"
 
 
 class Pillow2Tcl:
+    # TODO: gc, lol
+
     _cur_f = 0
 
     def __init__(self, image: PillowImage.Image):
@@ -38,24 +38,24 @@ class Pillow2Tcl:
 
         self._transparent = "transparency" in image.info
         self._image = image
-        self._name = f"tukaan_image_{next(counts['images'])}"
+        self._name = f"tukaan_image_{next(counter['images'])}"
 
         Tcl.call(None, "image", "create", "photo", self._name)
         ImagingTk.tkinit(Tcl.interp_address, 1)
 
-        _images[self._name] = self  # gc
+        _images[self._name] = self
         _pil_images[self._name] = image
 
         if _animated:
             self.frames = []
-            self.show_cmd = Tcl.create_cmd(self._show)
+            self.show_cmd = TclCallback(self._show)._name
             self._start()
         else:
             self._create(self._name, self._image)
 
     def _create(self, name: str, image: PillowImage.Image) -> tuple[str, int]:
-        if not hasattr(image, "mode") and not hasattr(image, "size"):
-            raise
+        assert hasattr(image, "mode")
+        assert hasattr(image, "size")
 
         if self._transparent:
             image = image.convert("RGBA")
@@ -115,26 +115,40 @@ class Pillow2Tcl:
             + f"after {duration} {self.show_cmd}",
         )
 
+    @staticmethod
+    def dispose(img_name: str) -> None:
+        img = _images.get(img_name)
+
+        if img is None:
+            return
+
+        del _images[img_name]
+        del _pil_images[img_name]
+
+        Tcl.eval(None, f"after cancel {img.show_cmd}")
+        Tcl.eval(None, f"image delete {img._name}")
+        Tcl.call(None, "image", "delete", *tuple(name for name, _ in img.frames))
+
     def __to_tcl__(self) -> str:
         return self._name
 
     @classmethod
-    def __from_tcl__(cls, value: str) -> PIL_Image.Image | None:
+    def __from_tcl__(cls, value: str) -> PillowImage.Image | None:
         if isinstance(value, (tuple, list)):
             [value] = value
         return _pil_images.get(value)
 
 
-def pil_image_to_tcl(self):
+def pil_image_to_tcl(self) -> str:
     return Pillow2Tcl(self).__to_tcl__()
 
 
-setattr(PillowImage.Image, "__to_tcl__", pil_image_to_tcl)
+PillowImage.Image.__to_tcl__ = pil_image_to_tcl
 
 
 class Icon:
     def __init__(self, file: str | Path | None = None) -> None:
-        self._name = f"tukaan_icon_{next(counts['icons'])}"
+        self._name = f"tukaan_icon_{next(counter['icons'])}"
         _images[self._name] = self
 
         Tcl.call(
@@ -198,7 +212,7 @@ class IconFactory:
 
 
 class ImageProp(OptionDesc[Pillow2Tcl, Union[PillowImage.Image, Icon]]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("image", Pillow2Tcl)
 
 
