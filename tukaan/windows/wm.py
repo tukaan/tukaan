@@ -414,10 +414,10 @@ class WindowManager:
             min_, max_ = value
 
         if not isinstance(min_, Fraction):
-            min_ = Fraction.from_float(min_)
+            min_ = Fraction.from_float(min_).limit_denominator()
 
         if not isinstance(max_, Fraction):
-            max_ = Fraction.from_float(max_)
+            max_ = Fraction.from_float(max_).limit_denominator()
 
         Tcl.call(
             None, "wm", "aspect", self._wm_path, *min_.as_integer_ratio(), *max_.as_integer_ratio()

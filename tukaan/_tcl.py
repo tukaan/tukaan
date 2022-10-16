@@ -158,7 +158,7 @@ class Tcl:
         except AttributeError:
             pass
         else:
-            return from_tcl()
+            return from_tcl(value)
 
         if isinstance(return_type, (list, tuple, dict)):
             sequence = Tcl.get_iterable(value)
