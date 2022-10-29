@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._props import config, focusable, link, text, width
+from tukaan._props import FocusableProp, LinkProp, TextProp, WidthProp, config
 from tukaan._tcl import Tcl
 from tukaan._variables import Boolean
 
@@ -13,10 +13,10 @@ class CheckBox(WidgetBase, InputControl):
 
     _variable: Boolean
 
-    focusable = focusable
-    link = link
-    text = text
-    width = width
+    focusable = FocusableProp()
+    link = LinkProp()
+    text = TextProp()
+    width = WidthProp()
 
     def __init__(
         self,
@@ -55,23 +55,19 @@ class CheckBox(WidgetBase, InputControl):
         )
 
     def invoke(self) -> None:
-        """Invokes the checkbox, as if it were clicked"""
-
+        """Invoke the checkbox, as if it were clicked."""
         Tcl.call(None, self, "invoke")
 
     def select(self) -> bool:
-        """Selects the checkbox"""
-
+        """Select the checkbox."""
         return self._variable.set(True)
 
     def deselect(self) -> bool:
-        """Deselects the checkbox"""
-
+        """Deselect the checkbox."""
         return self._variable.set(False)
 
     def toggle(self) -> bool:
-        """Toggles the state of the checkbox"""
-
+        """Toggle the state of the checkbox."""
         return ~self._variable.set()
 
     @property

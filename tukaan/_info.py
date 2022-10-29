@@ -1,39 +1,14 @@
 from __future__ import annotations
 
-import platform
-import sys
 from fractions import Fraction
 
-import _tkinter as tk
 from screeninfo import get_monitors  # type: ignore
 
-from ._behaviour import classproperty
-from ._data import Position, Size, Version
-from .exceptions import TclError
+from ._data import Position, Size
+from ._utils import classproperty
+from .exceptions import TukaanTclError
 
-
-class System:
-    try:
-        os = {"linux": "Linux", "win32": "Windows", "darwin": "macOS"}[sys.platform]
-    except KeyError:
-        os = sys.platform
-
-    py_version = Version(*map(int, platform.python_version_tuple()))
-    tk_version = Version(*map(int, tk.TK_VERSION.split(".")[:2]), None)  # type: ignore
-
-    @classproperty
-    def tcl_version(self) -> Version:
-        from ._tcl import Tcl
-
-        assert Tcl.version is not None
-        return Version(*map(int, Tcl.version.split(".")))
-
-    # @classproperty
-    # def win_sys(self) -> str:
-    #     from ._tcl import Tcl
-    #     assert Tcl.windowing_system is not None
-    #
-    #     return {"win32": "Win32", "x11": "X11", "aqua": "Quartz"}[Tcl.windowing_system]
+# TODO: Move this classes to appropriate modules, and delete this file
 
 
 class Clipboard:
@@ -55,7 +30,7 @@ class Clipboard:
 
         try:
             return Tcl.call(str, "clipboard", "get")
-        except TclError:
+        except TukaanTclError:
             return None
 
     def copy(self, content: str) -> None:

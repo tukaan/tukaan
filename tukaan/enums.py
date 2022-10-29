@@ -8,12 +8,29 @@ class Align(Enum):
 
 
 class WindowState(Enum):
-    Normal = 0
-    Minimized = 1
-    Maximized = 2
-    Closed = 3
-    FullScreen = 4
-    Hidden = 5
+    Closed = "closed"
+    FullScreen = "fullscreen"
+    Hidden = "withdrawn"
+    Maximized = "maximized"
+    Minimized = "minimized"
+    Normal = "normal"
+
+
+class WindowType(Enum):
+    Combo = "combo"
+    Desktop = "desktop"
+    Dialog = "dialog"
+    DnD = "dnd"
+    Dock = "dock"
+    DropDown = "dropdown_menu"
+    Menu = "menu"
+    Normal = "normal"
+    Notification = "notification"
+    PopupMenu = "popup_menu"
+    Splash = "splash"
+    ToolBar = "toolbar"
+    Tooltip = "tooltip"
+    Utility = "utility"
 
 
 class Orientation(Enum):
@@ -84,16 +101,14 @@ class InactiveCaretStyle(Enum):
 
 
 class Resizable(Enum):
-    Not = (False, False)
-    Horizontal = (True, False)
-    Vertical = (False, True)
-    Both = (True, True)
+    Not = ("0", "0")
+    Horizontal = ("1", "0")
+    Vertical = ("0", "1")
+    Both = ("1", "1")
 
 
-class BackdropEffect(Enum):
-    No = 0
-    OpaqueColor = 1
-    TransparentColor = 2
-    Blur = 3
-    Acrylic = 4
-    Mica = 5
+class WindowBackdropType(Enum):
+    Normal = 1
+    Mica = 2
+    Acrylic = 3
+    MicaAlt = 4

@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+from ._nogc import _variables, counter
 from ._tcl import Tcl
-from ._utils import _variables, counts
 
 
 class ControlVariable:
     _type_spec: type
     _default: float | str | bool
 
-    def __init__(self, value=None, name=None):
+    def __init__(self, value=None, name=None) -> None:
         if name is None:
-            name = f"tukaan_{self._type_spec.__name__}_var_{next(counts['variable'])}"
+            name = f"tukaan_{self._type_spec.__name__}_var_{next(counter['variable'])}"
 
         if value is None:
             value = self._default
@@ -19,7 +19,7 @@ class ControlVariable:
         self._name = name
         self.set(value)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"tukaan.{type(self).__name__} control variable: tcl_name={self._name}, value={self.get()!r}"
 
     __str__ = __repr__

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Generator
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
-from tukaan._props import cget, config, focusable, link, orientation, value
+from tukaan._props import FocusableProp, IntDesc, LinkProp, OrientProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan._variables import Float, Integer
 from tukaan.enums import Orientation, ProgressMode
@@ -13,10 +13,10 @@ from tukaan.timeouts import Timeout
 class ProgressBar(WidgetBase, OutputDisplay):
     _tcl_class = "ttk::progressbar"
 
-    focusable = focusable
-    orientation = orientation
-    value = value
-    link = link
+    focusable = FocusableProp()
+    orientation = OrientProp()
+    value = IntDesc("value")
+    link = LinkProp()
 
     _timeout = None
 
@@ -46,8 +46,8 @@ class ProgressBar(WidgetBase, OutputDisplay):
             variable=link,
         )
 
-    def _repr_details(self):
-        return f"mode={self.mode!r}, length={self.max!r}, value={self.value!r}"
+    def _repr_details(self) -> str:
+        return f"mode={self.mode!r}, length={self._max!r}, value={self.value!r}"
 
     def step(self, amount: int = 1) -> None:
         Tcl.call(None, self, "step", amount)
@@ -68,7 +68,7 @@ class ProgressBar(WidgetBase, OutputDisplay):
             Tcl.call(None, self._name, "step")
             yield i
 
-    ### Properties ###
+    # Properties #
 
     @property
     def length(self) -> int:

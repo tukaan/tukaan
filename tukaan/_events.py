@@ -7,13 +7,13 @@ from typing import Any, Callable
 
 from PIL import Image, UnidentifiedImageError  # type: ignore
 
-from ._info import System
 from ._keysyms import _keysym_aliases
-from ._tcl import Tcl
+from ._system import Platform
+from ._tcl import Tcl, TclCallback
 from ._utils import reversed_dict
 from .colors import Color
 
-if System.os == "macOS":
+if Platform.os == "macOS":
     button_numbers = {1: "left", 2: "right", 3: "middle", None: None}
     modifier_order = {"Alt_Opt": "⌥", "Shift": "⇧", "Ctrl_Ctrl": "⌃", "Ctrl_Cmd": "⌘"}
     platform_sortcuts = {"Preferences": ("Ctrl_Cmd", ","), "Help": ("Ctrl_Cmd", "?")}
@@ -28,7 +28,7 @@ else:
 class DataContainer:
     _container_dict: dict[str, Any] = {}
 
-    def add(self, value: Any) -> str:
+    def add(self, value: object) -> str:
         key = str(id(value))
         self._container_dict[key] = value
         return key
@@ -161,7 +161,7 @@ class KeyboardEvent(Event):
             if "Shift" in modifier_keys:
                 if len(key) == 1:
                     key = key.upper()
-                elif key == "Tab" and System.win_sys == "X11":
+                elif key == "Tab" and Tcl.windowing_system == "x11":
                     modifier_keys.remove("Shift")
                     key = "ISO_Left_Tab"
 
@@ -255,7 +255,7 @@ class ScrollEvent(Event):
         return sequence
 
     def __init__(self, *args) -> None:
-        if System.win_sys == "X11":
+        if Tcl.windowing_system == "x11":
             num = Tcl.from_(int, args[self._order.index("button")])
             self.delta = -1 if num == 4 else 1
         else:
@@ -519,7 +519,7 @@ class EventMixin:
         script_str = func  # for internal bindings, where i use strings for tcl scripts, or when unbinding where func is ""
 
         if callable(func):
-            cmd = Tcl.create_cmd(partial(real_func, func))
+            cmd = TclCallback(partial(real_func, func))._name
 
             sequence = event._parse(sequence)
 
@@ -546,14 +546,14 @@ class EventMixin:
             sequence = sequence.event_sequence
 
         if "MouseScroll" in sequence:
-            if System.win_sys == "X11":
+            if Tcl.windowing_system == "x11":
                 self._bind(sequence.replace("MouseScroll", "Button-4"), func, overwrite, send_event)
                 self._bind(sequence.replace("MouseScroll", "Button-5"), func, overwrite, send_event)
                 return
             else:
                 sequence = sequence.replace("MouseScroll", "MouseWheel")
 
-        if "Menu" in sequence and System.os == "Windows":
+        if "Menu" in sequence and Platform.os == "Windows":
             sequence = sequence.replace("Menu", "App")
 
         self._bind(sequence, func, overwrite, send_event)
@@ -561,7 +561,7 @@ class EventMixin:
     def unbind(self, sequence: str) -> None:
         self._bind(sequence, "", True, False)
 
-    def generate_event(self, sequence: str, data: Any = None) -> None:
+    def generate_event(self, sequence: str, data: object = None) -> None:
         global _virtual_event_data_container
         key = _virtual_event_data_container.add(data) if data is not None else None
 

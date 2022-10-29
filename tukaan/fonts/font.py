@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from collections.abc import Iterator
-from pathlib import Path
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Union
 
-from libtukaan import Serif
+if TYPE_CHECKING:
+    from pathlib import Path
+    from tukaan._base import TkWidget
 
+from tukaan._nogc import _fonts, counter
+from tukaan._props import OptionDesc, RWProperty, T_co
 from tukaan._tcl import Tcl
-from tukaan._utils import _fonts, counts, seq_pairs
-from tukaan.exceptions import FontError, TclError
+from tukaan._utils import seq_pairs
+from tukaan.exceptions import FontError, TukaanTclError
 
-from .fontfile import FontFile, TrueTypeCollection
+from .fontfile import FontFile, FontInfo, TrueTypeCollection
 
 preset_fonts = {
     "TkCaptionFont",
@@ -23,6 +27,52 @@ preset_fonts = {
     "TkTextFont",
     "TkTooltipFont",
 }
+
+
+class _FontProperty(RWProperty[T_co, T_co]):
+    TYPE: type[str] | type[int] | type[bool]
+
+    def __init__(self, option: str | None = None) -> None:
+        self._option = option
+
+    def __set_name__(self, owner: object, name: str) -> None:
+        if self._option is None:
+            self._option = name
+
+    def __get__(self, instance: TkWidget, owner: object = None) -> T_co:
+        if owner is None:
+            return NotImplemented
+        return Tcl.call(self.TYPE, "font", "actual", instance, f"-{self._option}")
+
+    def __set__(self, instance: TkWidget, value: object) -> None:
+        Tcl.call(None, "font", "configure", instance._name, f"-{self._option}", value)
+
+
+class _BoolFontProperty(_FontProperty[bool]):
+    TYPE = bool
+
+
+class _IntFontProperty(_FontProperty[int]):
+    TYPE = int
+
+
+class _StrFontProperty(_FontProperty[str]):
+    TYPE = str
+
+
+@dataclass
+class _FontStyleProperty(_FontProperty[bool]):
+    TYPE = str
+
+    _option: str
+    _truthy: str
+    _falsy: str
+
+    def __get__(self, instance: TkWidget, owner: object = None) -> bool:
+        return super().__get__(instance, owner) == self._truthy
+
+    def __set__(self, instance: TkWidget, value: object) -> None:
+        super().__set__(instance, self._truthy if value else self._falsy)
 
 
 FontMetrics = namedtuple("FontMetrics", ["ascent", "descent", "line_spacing", "fixed"])
@@ -44,7 +94,7 @@ class Font:
     def __init__(
         self,
         family: FontFile | str | None = None,
-        size: int = None,
+        size: int | None = None,
         bold: bool = False,
         italic: bool = False,
         underline: bool = False,
@@ -80,7 +130,7 @@ class Font:
         if family in preset_fonts:
             self._name = family
         else:
-            self._name = f"tukaan_font_{next(counts['fonts'])}"
+            self._name = f"tukaan_font_{next(counter['fonts'])}"
 
         self.config(family, size, bold, italic, underline, strikethrough)
         _fonts[self._name] = self
@@ -91,13 +141,13 @@ class Font:
     def config(
         self,
         family: str | None = None,
-        size: int = None,
+        size: int | None = None,
         bold: bool = False,
         italic: bool = False,
         underline: bool = False,
         strikethrough: bool = False,
     ) -> None:
-        """Configures the fonts parameters"""
+        """Configure the font's parameters."""
         if isinstance(size, float):
             size = round(size)
 
@@ -112,7 +162,7 @@ class Font:
 
         try:
             Tcl.call(None, "font", "create", self._name, *args)
-        except TclError:
+        except TukaanTclError:
             # Font already exists in Tcl
             Tcl.call(None, "font", "configure", self._name, *args)
 
@@ -150,65 +200,23 @@ class Font:
 
             return kwargs
 
-    def _get(self, type_spec: type[int] | type[str] | type[bool], option: str) -> int | str | bool:
-        return Tcl.call(type_spec, "font", "actual", self, f"-{option}")
+    family = _StrFontProperty()
+    """Get or set the current font family."""
 
-    def _set(self, option: str, value: int | str | bool) -> None:
-        Tcl.call(None, "font", "configure", self._name, f"-{option}", value)
+    size = _IntFontProperty()
+    """Get or set the current font size."""
 
-    @property
-    def family(self) -> str:
-        """Get or set the current font family."""
-        return self._get(str, "family")
+    bold = _FontStyleProperty("weight", "bold", "normal")
+    """Get or set whether the font should be drawn as bold."""
 
-    @family.setter
-    def family(self, value: str) -> None:
-        self._set("family", value)
+    italic = _FontStyleProperty("slant", "italic", "roman")
+    """Get or set whether the font should be drawn as italic."""
 
-    @property
-    def size(self) -> int:
-        """Get or set the current font size."""
-        return self._get(int, "size")
+    underline = _BoolFontProperty("underline")
+    """Get or set whether the font should have underlining."""
 
-    @size.setter
-    def size(self, value: int):
-        self._set("size", value)
-
-    @property
-    def bold(self) -> bool:
-        """Get or set whether the font should be drawn as bold."""
-        return self._get(str, "weight") == "bold"
-
-    @bold.setter
-    def bold(self, value: bool) -> None:
-        self._set("weight", "bold" if value else "normal")
-
-    @property
-    def italic(self) -> bool:
-        """Get or set whether the font should be drawn as italic."""
-        return self._get(str, "slant") == "italic"
-
-    @italic.setter
-    def italic(self, value: bool) -> None:
-        self._set("slant", "italic" if value else "roman")
-
-    @property
-    def underline(self) -> bool:
-        """Get or set whether the font should have underlining."""
-        return self._get(bool, "underline")
-
-    @underline.setter
-    def underline(self, value: bool) -> None:
-        self._set("underline", value)
-
-    @property
-    def strikethrough(self) -> bool:
-        """Get or set whether the font should be striked through."""
-        return self._get(bool, "overstrike")
-
-    @strikethrough.setter
-    def strikethrough(self, value: bool) -> None:
-        self._set("overstrike", value)
+    strikethrough = _BoolFontProperty("overstrike")
+    """Get or set whether the font should be striked through."""
 
     def dispose(self) -> None:
         """
@@ -260,8 +268,8 @@ def font(
     elif not family:
         family = "TkDefaultFont"
 
-    weight = {None: None, True: "bold", False: "normal"}[bold]
-    slant = {None: None, True: "italic", False: "roman"}[italic]
+    weight = {True: "bold", False: "normal"}.get(bold)
+    slant = {True: "italic", False: "roman"}.get(italic)
 
     return Tcl.to_tcl_args(
         family=family,
@@ -271,3 +279,11 @@ def font(
         underline=underline,
         overstrike=strikethrough,
     )
+
+
+FontType = Union[Font, dict[str, Union[str, int, bool]]]
+
+
+class FontProp(OptionDesc[Font, FontType]):
+    def __init__(self):
+        super().__init__("font", Font)
