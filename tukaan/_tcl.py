@@ -71,7 +71,6 @@ class Tcl:
         cls.windowing_system = cls._interp.call("tk", "windowingsystem").lower()
         cls.version = cls._interp.call("info", "patchlevel")
         cls.dll_ext = cls._interp.call("info", "sharedlibextension")
-        cls.basename = app_name
 
         cls.alive = True
 

@@ -11,6 +11,7 @@ from ._tcl import Tcl
 
 class App:
     _exists = False
+    shared_instance: App
 
     def __init__(
         self,
@@ -33,6 +34,8 @@ class App:
         self._name = name
         self._author = author
         self._version = str(version)
+
+        App.shared_instance = self
 
     def __enter__(self) -> App:
         return self

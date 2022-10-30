@@ -8,6 +8,7 @@ import sys
 from tukaan._base import ToplevelBase
 from tukaan._tcl import Tcl
 from tukaan.exceptions import TukaanTclError
+from tukaan.app import App
 
 
 class Dialog:
@@ -41,12 +42,8 @@ def run_in_subprocess(args: list[str]) -> str:
 
 
 def run_zenity(type_: str, title: str | None, parent: ToplevelBase | None, *options):
-    args = [
-        "zenity",
-        type_,
-        "--name=Tukaan",
-        "--class=Tukaan",
-    ]
+    appname = App.shared_instance.name
+    args = ["zenity", type_, f"--name={appname}", f"--class={appname}"]
 
     if title is not None:
         args.extend(["--title", title])
