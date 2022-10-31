@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import NoReturn
+from tukaan.theming import Theme, NativeTheme
 
 from libtukaan import Serif
 
@@ -33,6 +34,8 @@ class App:
         self._name = name
         self._author = author
         self._version = str(version)
+
+        NativeTheme.use()
 
     def __enter__(self) -> App:
         return self
@@ -68,6 +71,14 @@ class App:
     @property
     def x_screen(self) -> str:
         return Tcl.call(str, "winfo", "screen", ".")
+
+    @property
+    def theme(self) -> None:
+        ...
+
+    @theme.setter
+    def theme(self, theme: Theme) -> None:
+        theme.use()
 
     @classmethod
     def quit(cls) -> None:

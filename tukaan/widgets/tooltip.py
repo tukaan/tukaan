@@ -25,16 +25,19 @@ class ToolTipProvider:
         cls._show_cmd = Tcl.to(cls.show)
 
         try:
-            Tcl.eval(None, "ttk::style layout ToolTip")
+            Tcl.eval(None, "ttk::style layout Tooltip")
         except TukaanTclError:
-            style = "TButton"
+            style = "TButton"  # Looks good with Win32 theme
         else:
-            style = "ToolTip"
+            style = "Tooltip"
 
         Tcl.call(None, "toplevel", ".tooltip")
         Tcl.call(None, "wm", "withdraw", ".tooltip")
         Tcl.eval(None, f"pack [ttk::label .tooltip.label -style {style}] -expand 1 -fill both")
         Tcl.call(None, "wm", "overrideredirect", ".tooltip", 1)
+
+        if Tcl.call(str, "tk", "windowingsystem") == "x11":
+            Tcl.call(None, "wm", "attributes", ".tooltip", "-type", "tooltip")
 
         cls._setup_done = True
 
