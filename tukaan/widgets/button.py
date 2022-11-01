@@ -16,7 +16,7 @@ class Button(WidgetBase, InputControl):
 
     focusable = FocusableProp()
     image_pos = ImagePositionProp()
-    on_click = CommandProp()
+    action = CommandProp()
     text = TextProp()
     width = WidthProp()
 
@@ -24,7 +24,7 @@ class Button(WidgetBase, InputControl):
         self,
         parent: TkWidget,
         text: str | None = None,
-        on_click: Callable | None = None,
+        action: Callable | None = None,
         *,
         focusable: bool | None = None,
         image: Image.Image | Icon | None = None,
@@ -35,7 +35,7 @@ class Button(WidgetBase, InputControl):
         WidgetBase.__init__(
             self,
             parent,
-            command=on_click,
+            command=action,
             compound=image_pos,
             image=image,
             takefocus=focusable,
@@ -45,6 +45,5 @@ class Button(WidgetBase, InputControl):
         )
 
     def invoke(self) -> None:
-        """Invokes the button, as if it were clicked"""
-
+        """Invoke the button, as if it were clicked."""
         Tcl.call(None, self, "invoke")

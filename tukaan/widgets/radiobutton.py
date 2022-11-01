@@ -25,7 +25,7 @@ class RadioButton(WidgetBase, InputControl):
 
     focusable = FocusableProp()
     link = LinkProp()
-    on_click = CommandProp()
+    action = CommandProp()
     text = TextProp()
     width = WidthProp()
 
@@ -37,7 +37,7 @@ class RadioButton(WidgetBase, InputControl):
         link: ControlVariable,
         *,
         focusable: bool | None = None,
-        on_click: Callable[..., None] | None = None,
+        action: Callable[..., None] | None = None,
         tooltip: str | None = None,
         width: int | None = None,
     ) -> None:
@@ -47,7 +47,7 @@ class RadioButton(WidgetBase, InputControl):
         WidgetBase.__init__(
             self,
             parent,
-            command=on_click,
+            command=action,
             takefocus=focusable,
             text=text,
             tooltip=tooltip,

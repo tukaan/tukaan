@@ -25,7 +25,7 @@ class CheckBox(WidgetBase, InputControl):
         *,
         focusable: bool | None = None,
         link: Boolean | None = None,
-        on_click: Callable[[bool], None] | None = None,
+        action: Callable[[bool], None] | None = None,  # FIXME: this can't be modified?
         tooltip: str | None = None,
         value: bool = False,
         width: int | None = None,
@@ -36,15 +36,15 @@ class CheckBox(WidgetBase, InputControl):
         else:
             self._variable = link
 
-        self._original_cmd = on_click
-        if on_click is not None:
-            func = on_click
-            on_click = lambda: func(self._variable.get())  # type: ignore
+        self._original_cmd = action
+        if action is not None:
+            func = action
+            action = lambda: func(self._variable.get())  # type: ignore
 
         WidgetBase.__init__(
             self,
             parent,
-            command=on_click,
+            command=action,
             offvalue=False,
             onvalue=True,
             takefocus=focusable,
@@ -68,7 +68,7 @@ class CheckBox(WidgetBase, InputControl):
 
     def toggle(self) -> bool:
         """Toggle the state of the checkbox."""
-        return ~self._variable.set()
+        return ~self._variable.set()  # FIXME: wut?? This doesn't seem right
 
     @property
     def value(self) -> bool:
@@ -81,11 +81,11 @@ class CheckBox(WidgetBase, InputControl):
     selected = value
 
     @property
-    def on_click(self) -> Callable[[bool], None] | None:
+    def action(self) -> Callable[[bool], None] | None:
         return self._original_cmd
 
-    @on_click.setter
-    def on_click(self, func: Callable[[bool], None] | None) -> None:
+    @action.setter
+    def action(self, func: Callable[[bool], None] | None) -> None:
         self._original_cmd = func
         if func is not None:
             value = lambda: func(self._variable.get())

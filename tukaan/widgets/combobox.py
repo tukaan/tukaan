@@ -57,6 +57,7 @@ class ComboBox(TextBox):
         self.bind("<FocusOut>", f"+{self._name} selection clear")
 
         if on_select:
+            # FIXME: this can't be modified?
             self.bind("<<ComboboxSelected>>", on_select)
 
         if values:
