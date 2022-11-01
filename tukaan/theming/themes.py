@@ -32,7 +32,9 @@ class Win32Theme(Theme):
     @classmethod
     @Platform.windows_only
     def use(cls) -> None:
+        Tcl.eval(None, (Path(__file__).parent / "win32.tcl").read_text())
         Tcl.call(None, "ttk::style", "theme", "use", "vista")
+        Tcl.call(None, "::ttk::theme::vista::configure_colors")
 
 
 class AquaTheme(Theme):
