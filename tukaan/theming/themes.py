@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
@@ -40,4 +41,6 @@ class AquaTheme(Theme):
     @classmethod
     @Platform.mac_only
     def use(cls) -> None:
+        Tcl.eval(None, (Path(__file__).parent / "aqua.tcl").read_text())
         Tcl.call(None, "ttk::style", "theme", "use", "aqua")
+        Tcl.call(None, "::ttk::theme::aqua::configure_colors")
