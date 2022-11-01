@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Dict, Union
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -281,7 +281,7 @@ def font(
     )
 
 
-FontType = Union[Font, dict[str, Union[str, int, bool]]]
+FontType = Union[Font, Dict[str, Union[str, int, bool]]]
 
 
 class FontProp(OptionDesc[Font, FontType]):
