@@ -24,7 +24,7 @@ namespace eval ttk::theme::clam {{
   }}
   
   ttk::style theme settings clam {{
-    # Fames
+    # Frames
     ttk::style configure TFrame -background {view_bg}
     ttk::style configure TLabelframe \
       -background {view_bg} \
@@ -34,9 +34,9 @@ namespace eval ttk::theme::clam {{
 
     # Button
     ttk::style layout TButton {{
-      Button.border -sticky nswe -children {{
-        Button.padding -sticky nswe -children {{
-          Button.label -sticky nswe
+      Button.border -sticky nsew -children {{
+        Button.padding -sticky nsew -children {{
+          Button.label -sticky nsew
         }}
       }}
     }}
@@ -57,9 +57,9 @@ namespace eval ttk::theme::clam {{
       -darkcolor [list pressed {button_hover_bg} focus {select_bg}] \
       -lightcolor [list pressed {button_hover_bg} focus {select_bg}]
 
-    # Menubutton
+    # MenuButton
     ttk::style configure TMenubutton {{
-      Menubutton.border -sticky nswe -children {{
+      Menubutton.border -sticky nsew -children {{
         Menubutton.indicator -side right -sticky {{}}
         Menubutton.padding -sticky we -children {{
           Menubutton.label -side left -sticky {{}}
@@ -203,9 +203,9 @@ namespace eval ttk::theme::clam {{
 
     # Tooltip
     ttk::style layout Tooltip {{
-      Label.border -sticky nswe -border 1 -children {{
-        Label.padding -sticky nswe -border 1 -children {{
-          Label.label -sticky nswe
+      Label.border -sticky nsew -border 1 -children {{
+        Label.padding -sticky nsew -border 1 -children {{
+          Label.label -sticky nsew
         }}
       }}
     }}
