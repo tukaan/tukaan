@@ -3,9 +3,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import NoReturn
-from tukaan.theming import Theme, NativeTheme
 
 from libtukaan import Serif
+
+from tukaan.theming import LookAndFeel, NativeTheme, Theme
 
 from ._tcl import Tcl
 
@@ -79,6 +80,7 @@ class App:
     @theme.setter
     def theme(self, theme: Theme) -> None:
         theme.use()
+        LookAndFeel._is_current_theme_native = theme.is_native
 
     @classmethod
     def quit(cls) -> None:

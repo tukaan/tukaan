@@ -25,6 +25,8 @@ plasma_colors_map = {
 
 
 class KolorScheme(Theme):
+    is_native = True
+
     @classmethod
     def use(cls) -> None:
         if not LookAndFeel._kreadconfig_available:
@@ -35,8 +37,6 @@ class KolorScheme(Theme):
 
         Tcl.call(None, "ttk::style", "theme", "use", "clam")
         Tcl.call(None, "::ttk::theme::clam::configure_colors")
-
-        LookAndFeel._is_current_theme_native = True
 
     @staticmethod
     def _get_colors() -> dict:

@@ -9,6 +9,8 @@ from .lookandfeel import LookAndFeel
 
 
 class Theme(ABC):
+    is_native: bool
+
     @classmethod
     @abstractmethod
     def use(cls) -> None:
@@ -16,23 +18,26 @@ class Theme(ABC):
 
 
 class ClamTheme(Theme):
+    is_native = False
+
     @classmethod
     def use(cls) -> None:
         Tcl.call(None, "ttk::style", "theme", "use", "clam")
-        LookAndFeel._is_current_theme_native = False
 
 
 class Win32Theme(Theme):
+    is_native = True
+
     @classmethod
     @Platform.windows_only
     def use(cls) -> None:
         Tcl.call(None, "ttk::style", "theme", "use", "vista")
-        LookAndFeel._is_current_theme_native = True
 
 
 class AquaTheme(Theme):
+    is_native = True
+
     @classmethod
     @Platform.mac_only
     def use(cls) -> None:
         Tcl.call(None, "ttk::style", "theme", "use", "aqua")
-        LookAndFeel._is_current_theme_native = True
