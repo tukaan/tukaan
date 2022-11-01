@@ -28,7 +28,7 @@ class LookAndFeel:
             from subprocess import PIPE, Popen
 
             p = Popen(["defaults", "read", "-g", "AppleInterfaceStyle"], stdout=PIPE, stderr=PIPE)
-            return "dark" if "dark" in p.communicate()[0].lower() else "light"
+            return "dark" if "dark" in p.stdout.read().decode().lower() else "light"
 
         # Linux. Can't be easily determined
         return None
