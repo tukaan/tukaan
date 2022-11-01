@@ -16,8 +16,8 @@ class Dialog:
         _type = "native"
     elif shutil.which("kdialog"):
         _type = "kdialog"
-    if shutil.which("zenity"):
-        _type = "kdialog"
+    elif shutil.which("zenity"):
+        _type = "zenity"
     else:
         _type = "tukaan"
 
