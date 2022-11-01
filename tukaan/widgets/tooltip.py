@@ -98,4 +98,6 @@ class ToolTipProvider:
         Tcl.call(None, "wm", "geometry", ".tooltip", f"+{tip_x}+{tip_y}")
         Tcl.call(None, "wm", "deiconify", ".tooltip")
 
-        Tcl.call(str, "after", (round(60 / 260 * int(length)) or 1) * 10000, cls._hide_cmd)
+        hide_after = (round(60 / 260 * int(length)) or 1) * 10000  # Very intelligent
+
+        Tcl.call(str, "after", hide_after, cls._hide_cmd)
