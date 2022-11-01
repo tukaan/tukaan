@@ -6,6 +6,8 @@ from typing import NoReturn
 
 from libtukaan import Serif
 
+from tukaan.theming import LookAndFeel, NativeTheme, Theme
+
 from ._tcl import Tcl
 
 
@@ -33,6 +35,8 @@ class App:
         self._name = name
         self._author = author
         self._version = str(version)
+
+        NativeTheme.use()
 
     def __enter__(self) -> App:
         return self
@@ -68,6 +72,15 @@ class App:
     @property
     def x_screen(self) -> str:
         return Tcl.call(str, "winfo", "screen", ".")
+
+    @property
+    def theme(self) -> None:
+        ...
+
+    @theme.setter
+    def theme(self, theme: Theme) -> None:
+        theme.use()
+        LookAndFeel._is_current_theme_native = theme.is_native
 
     @classmethod
     def quit(cls) -> None:

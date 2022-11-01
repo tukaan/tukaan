@@ -24,17 +24,13 @@ class ToolTipProvider:
         cls._hide_cmd = Tcl.to(cls.hide)
         cls._show_cmd = Tcl.to(cls.show)
 
-        try:
-            Tcl.eval(None, "ttk::style layout ToolTip")
-        except TukaanTclError:
-            style = "TButton"
-        else:
-            style = "ToolTip"
-
         Tcl.call(None, "toplevel", ".tooltip")
         Tcl.call(None, "wm", "withdraw", ".tooltip")
-        Tcl.eval(None, f"pack [ttk::label .tooltip.label -style {style}] -expand 1 -fill both")
+        Tcl.eval(None, "pack [ttk::label .tooltip.label -style Tooltip] -expand 1 -fill both")
         Tcl.call(None, "wm", "overrideredirect", ".tooltip", 1)
+
+        if Tcl.call(str, "tk", "windowingsystem") == "x11":
+            Tcl.call(None, "wm", "attributes", ".tooltip", "-type", "tooltip")
 
         cls._setup_done = True
 
@@ -102,4 +98,6 @@ class ToolTipProvider:
         Tcl.call(None, "wm", "geometry", ".tooltip", f"+{tip_x}+{tip_y}")
         Tcl.call(None, "wm", "deiconify", ".tooltip")
 
-        Tcl.call(str, "after", (round(60 / 260 * int(length)) or 1) * 10000, cls._hide_cmd)
+        hide_after = (round(60 / 260 * int(length)) or 1) * 10000  # Very intelligent
+
+        Tcl.call(str, "after", hide_after, cls._hide_cmd)

@@ -57,6 +57,7 @@ from .colors import Color, cmyk, hsl, hsv, rgb
 from .fonts.font import Font, font
 from .fonts.fontfile import FontFile, OpenTypeFont, TrueTypeCollection, TrueTypeFont
 from .screen_distance import ScreenDistance, cm, inch, mm
+from .theming import AquaTheme, ClamTheme, KolorScheme, LookAndFeel, NativeTheme, Theme, Win32Theme
 from .time import Time
 from .timeouts import Timeout, Timer
 from .widgets.button import Button
