@@ -111,7 +111,7 @@ class Tcl:
         return tuple(result)
 
     @staticmethod
-    def to(obj: object) -> str | tk.Tcl_Obj | tuple[str | tk.Tcl_Obj, ...]:
+    def to(obj: object) -> str | tk.Tcl_Obj | tuple[str | tk.Tcl_Obj, ...]:  # noqa: CCR001
         if isinstance(obj, (str, tk.Tcl_Obj)):
             return obj
 
@@ -121,8 +121,10 @@ class Tcl:
         if isinstance(obj, numbers.Real):
             return str(obj)
 
-        with contextlib.suppress(AttributeError):
+        try:
             return obj._name  # EAFP
+        except AttributeError:
+            pass
 
         try:
             to_tcl = obj.__to_tcl__
@@ -151,7 +153,7 @@ class Tcl:
             ) from None
 
     @staticmethod
-    def from_(return_type: type[object], value: str | tk.Tcl_Obj) -> Any:
+    def from_(return_type: type[object], value: str | tk.Tcl_Obj) -> Any:  # noqa: CCR001
         if return_type is str:
             return Tcl.get_string(value)
 
