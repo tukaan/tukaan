@@ -22,7 +22,7 @@ class LookAndFeel:
                 # Windows doesn't support dark theme
                 return "light"
             else:
-                return "dark" if value else "light"
+                return "light" if value else "dark"
         elif Platform.os == "macOS":
             # TODO: maybe move this to Idared?
             from subprocess import PIPE, Popen
