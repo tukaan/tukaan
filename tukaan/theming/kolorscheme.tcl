@@ -92,9 +92,11 @@ namespace eval ttk::theme::clam {{
       -background {tooltip_bg} \
       -foreground {tooltip_fg} \
       -bordercolor {tooltip_border} \
+      -lightcolor {tooltip_bg} \
+      -darkcolor {tooltip_bg} \
       -fieldbackground {view_bg} \
       -borderwidth 1 \
-      -relief solid \
+      -relief ridge \
       -padding {{4 2}}
 
     ttk::style configure TEntry \
