@@ -1,6 +1,5 @@
 namespace eval ttk::theme::clam {
   proc configure_colors {} {
-
     ttk::style configure . \
 	    -background $::ttk::theme::clam::colors(-frame) \
 	    -foreground black \
@@ -36,8 +35,8 @@ namespace eval ttk::theme::clam {
     ttk::style configure Tooltip \
       -background $colors(-lighter) \
       -bordercolor $colors(-darkest) \
-      -lightcolor $colors(-lighter) \
       -darkcolor $colors(-lighter) \
+      -lightcolor $colors(-lighter) \
       -font TkTooltipFont \
       -borderwidth 1 \
       -relief ridge \

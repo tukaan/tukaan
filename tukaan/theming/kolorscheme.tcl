@@ -43,6 +43,7 @@ namespace eval ttk::theme::clam {{
 
     ttk::style configure TButton \
       -background {button_bg} \
+      -foreground {button_fg} \
       -bordercolor {button_hover_bg} \
       -darkcolor {button_bg} \
       -lightcolor {button_bg} \
@@ -69,6 +70,7 @@ namespace eval ttk::theme::clam {{
 
     ttk::style configure TMenubutton \
       -background {button_bg} \
+      -foreground {button_fg} \
       -focuscolor {button_bg} \
       -bordercolor {button_hover_bg} \
       -darkcolor {button_bg} \
@@ -87,6 +89,7 @@ namespace eval ttk::theme::clam {{
 
     # CheckBox
     ttk::style configure TCheckbutton \
+      -foreground {button_fg} \
       -indicatorbackground {button_bg} \
       -indicatorsize 14 \
       -indicatormargin 8
@@ -98,6 +101,7 @@ namespace eval ttk::theme::clam {{
 
     # RadioButton
     ttk::style configure TRadiobutton \
+      -foreground {button_fg} \
       -indicatorbackground {button_bg} \
       -indicatorsize 14 \
       -indicatormargin 8
@@ -110,6 +114,7 @@ namespace eval ttk::theme::clam {{
     # TextBox
     ttk::style configure TEntry \
       -background {button_bg} \
+      -foreground {button_fg} \
       -highlightcolor {button_bg} \
       -bordercolor {button_hover_bg} \
       -lightcolor {view_bg} \
@@ -146,6 +151,7 @@ namespace eval ttk::theme::clam {{
     # ComboBox
     ttk::style configure TCombobox \
       -background {button_bg} \
+      -foreground {button_fg} \
       -highlightcolor {button_bg} \
       -bordercolor {button_hover_bg} \
       -lightcolor {view_bg} \

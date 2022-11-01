@@ -19,19 +19,6 @@ class Theme(ABC):
         pass
 
 
-class ClamTheme(Theme):
-    is_native = False
-
-    @classmethod
-    def use(cls) -> None:
-        if not cls._inited:
-            Tcl.call(None, "source", Path(__file__).parent / "clam.tcl")
-            cls._inited = True
-
-        Tcl.call(None, "ttk::style", "theme", "use", "clam")
-        Tcl.call(None, "::ttk::theme::clam::configure_colors")
-
-
 class Win32Theme(Theme):
     is_native = True
 

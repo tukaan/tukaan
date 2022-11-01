@@ -33,8 +33,6 @@ class KolorScheme(Theme):
             Tcl.call(None, "ttk::style", "theme", "use", "clam")
             return
 
-        cls.__create_theme()
-
         if not cls._inited:
             theme_script = (Path(__file__).parent / "kolorscheme.tcl").read_text()
             Tcl.eval(None, theme_script.format(**cls._get_colors()))
