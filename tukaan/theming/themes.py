@@ -11,6 +11,7 @@ from .lookandfeel import LookAndFeel
 
 class Theme(ABC):
     is_native: bool
+    _inited: bool = False
 
     @classmethod
     @abstractmethod
@@ -23,7 +24,10 @@ class ClamTheme(Theme):
 
     @classmethod
     def use(cls) -> None:
-        Tcl.call(None, "source", Path(__file__).parent / "clam.tcl")
+        if not cls._inited:
+            Tcl.call(None, "source", Path(__file__).parent / "clam.tcl")
+            cls._inited = True
+
         Tcl.call(None, "ttk::style", "theme", "use", "clam")
         Tcl.call(None, "::ttk::theme::clam::configure_colors")
 
@@ -34,7 +38,10 @@ class Win32Theme(Theme):
     @classmethod
     @Platform.windows_only
     def use(cls) -> None:
-        Tcl.call(None, "source", Path(__file__).parent / "win32.tcl")
+        if not cls._inited:
+            Tcl.call(None, "source", Path(__file__).parent / "win32.tcl")
+            cls._inited = True
+
         Tcl.call(None, "ttk::style", "theme", "use", "vista")
         Tcl.call(None, "::ttk::theme::vista::configure_colors")
 
@@ -45,6 +52,9 @@ class AquaTheme(Theme):
     @classmethod
     @Platform.mac_only
     def use(cls) -> None:
-        Tcl.call(None, "source", Path(__file__).parent / "aqua.tcl")
+        if not cls._inited:
+            Tcl.call(None, "source", Path(__file__).parent / "aqua.tcl")
+            cls._inited = True
+
         Tcl.call(None, "ttk::style", "theme", "use", "aqua")
         Tcl.call(None, "::ttk::theme::aqua::configure_colors")

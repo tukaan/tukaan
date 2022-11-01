@@ -35,6 +35,12 @@ class KolorScheme(Theme):
 
         cls.__create_theme()
 
+        if not cls._inited:
+            theme_script = (Path(__file__).parent / "kolorscheme.tcl").read_text()
+            Tcl.eval(None, theme_script.format(**cls._get_colors()))
+
+            cls._inited = True
+
         Tcl.call(None, "ttk::style", "theme", "use", "clam")
         Tcl.call(None, "::ttk::theme::clam::configure_colors")
 
@@ -65,10 +71,3 @@ class KolorScheme(Theme):
         )
 
         return rgb_colors
-
-    @classmethod
-    def __create_theme(cls) -> None:
-        theme_script = (
-            (Path(__file__).parent / "kolorscheme.tcl").read_text().format(**cls._get_colors())
-        )
-        Tcl.eval(None, theme_script)
