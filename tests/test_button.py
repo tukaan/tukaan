@@ -34,10 +34,9 @@ def test_button_text_and_action(app, window):
     assert stuff == ["foo", "foo"]
 
 
-@pytest.mark.skip(reason="`button.image` isn't implemented for some reason")
 @with_app_context
 def test_button_image(app, window):
-    icon = tukaan.Icon(file=Path(__file__).resolve().parent / "foo.png")
+    icon = tukaan.Icon(Path(__file__).resolve().parent / "foo.png")
 
     button = tukaan.Button(window, image=icon)
 

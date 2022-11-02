@@ -22,12 +22,18 @@ if TYPE_CHECKING:
     from ._base import TkWidget
 
 
-def config(widget: TkWidget, **kwargs) -> None:
-    Tcl.call(None, widget, "configure", *Tcl.to_tcl_args(**kwargs))
-
-
 def cget(widget: TkWidget, return_type: type[T], option: str) -> T:
     return Tcl.call(return_type, widget, "cget", option)
+
+
+def config(widget: TkWidget, **kwargs) -> None:
+    assert len(kwargs) == 1
+
+    ((key, value),) = kwargs.items()
+    if value is None:
+        value = ""
+
+    Tcl.call(None, widget, "configure", f"-{key}", value)
 
 
 class RWProperty(Protocol[T_co, T_contra]):
@@ -39,7 +45,7 @@ class RWProperty(Protocol[T_co, T_contra]):
 
 
 class OptionDesc(RWProperty[T, T_contra]):
-    def __init__(self, option: str, type_: type[T]):
+    def __init__(self, option: str, type_: type[T]) -> None:
         self._option = option
         self._type = type_
 
@@ -48,62 +54,52 @@ class OptionDesc(RWProperty[T, T_contra]):
             return NotImplemented
         return cget(instance, self._type, f"-{self._option}")
 
-    def __set__(self, instance: TkWidget, value: T_contra):
+    def __set__(self, instance: TkWidget, value: T_contra) -> None:
         config(instance, **{self._option: value})
 
 
 class BoolDesc(OptionDesc[bool, bool]):
-    def __init__(self, option: str):
+    def __init__(self, option: str) -> None:
         super().__init__(option, bool)
 
 
 class IntDesc(OptionDesc[int, int]):
-    def __init__(self, option: str):
+    def __init__(self, option: str) -> None:
         super().__init__(option, int)
 
 
 class FloatDesc(OptionDesc[float, float]):
-    def __init__(self, option: str):
+    def __init__(self, option: str) -> None:
         super().__init__(option, float)
 
 
-class ImagePositionProp(OptionDesc[ImagePosition, ImagePosition]):
-    def __init__(self):
-        super().__init__("compound", ImagePosition)
-
-
-class TextAlignProp(OptionDesc[Justify, Justify]):
-    def __init__(self):
-        super().__init__("justify", Justify)
-
-
-class ForegroundProp(OptionDesc[Color, Union[Color, str]]):
-    def __init__(self):
-        super().__init__("foreground", Color)
-
-
 class BackgroundProp(OptionDesc[Color, Union[Color, str]]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("background", Color)
 
 
+class ForegroundProp(OptionDesc[Color, Union[Color, str]]):
+    def __init__(self) -> None:
+        super().__init__("foreground", Color)
+
+
 class TextProp(OptionDesc[str, str]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("text", str)
 
 
 class WidthProp(OptionDesc[int, int]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("width", int)
 
 
 class HeightProp(OptionDesc[int, int]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("height", int)
 
 
 class CommandProp(OptionDesc[Optional[Callable], Optional[Callable]]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("command", str)
 
     def __get__(self, instance: TkWidget, owner: object = None):
@@ -111,12 +107,22 @@ class CommandProp(OptionDesc[Optional[Callable], Optional[Callable]]):
             return NotImplemented
         return _commands.get(cget(instance, str, "-command"))
 
-    def __set__(self, instance: TkWidget, value: Callable | None = None):
+    def __set__(self, instance: TkWidget, value: Callable | None = None) -> None:
         super().__set__(instance, value or "")
 
 
+class ImagePositionProp(OptionDesc[ImagePosition, ImagePosition]):
+    def __init__(self) -> None:
+        super().__init__("compound", ImagePosition)
+
+
+class TextAlignProp(OptionDesc[Justify, Justify]):
+    def __init__(self) -> None:
+        super().__init__("justify", Justify)
+
+
 class OrientProp(OptionDesc[Orientation, Orientation]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("orient", Orientation)
 
 
@@ -126,13 +132,13 @@ class LinkProp(RWProperty[ControlVariable, Optional[ControlVariable]]):
             return NotImplemented
         return cget(instance, ControlVariable, "-variable")
 
-    def __set__(self, instance: TkWidget, value: ControlVariable | None):
+    def __set__(self, instance: TkWidget, value: ControlVariable | None) -> None:
         instance._variable = value
         return config(instance, variable=value or "")
 
 
 class FocusableProp(OptionDesc[bool, bool]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("takefocus", bool)
 
 
@@ -142,7 +148,7 @@ class TabStopsProp(RWProperty[List[TabStop], Union[TabStop, List[TabStop]]]):
             return NotImplemented
         return [TabStop(pos, align) for pos, align in seq_pairs(cget(instance, list, "-tabs"))]
 
-    def __set__(self, instance: TkWidget, value: TabStop | list[TabStop]):
+    def __set__(self, instance: TkWidget, value: TabStop | list[TabStop]) -> None:
         if value is None:
             return
 
@@ -189,5 +195,5 @@ class PaddingProp(RWProperty[PaddingType, Union[int, Tuple[int, ...], None]]):
             return NotImplemented
         return _convert_padding_back(cget(instance, (int,), "-padding"))
 
-    def __set__(self, instance: TkWidget, value: int | tuple[int, ...] | None):
+    def __set__(self, instance: TkWidget, value: int | tuple[int, ...] | None) -> None:
         config(instance, padding=_convert_padding(value))

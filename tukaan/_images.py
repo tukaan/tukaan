@@ -119,16 +119,18 @@ class Pillow2Tcl:
             Tcl.eval(None, f"after cancel {image.show_cmd}")
             Tcl.call(None, "image", "delete", *tuple(name for name, _ in image._frames))
 
-    def __to_tcl__(self) -> str:
-        return self._name
-
     @classmethod
-    def __from_tcl__(cls, value: str) -> PillowImage.Image | None:
-        return _pil_images.get(value, None)
+    def __from_tcl__(cls, value: str) -> PillowImage.Image | Icon | None:
+        result = _pil_images.get(value, None)
+        if result is None:
+            # It's an Icon
+            result = _images.get(value, None)
+
+        return result
 
 
 def pil_image_to_tcl(self) -> str:
-    return Pillow2Tcl(self).__to_tcl__()
+    return Pillow2Tcl(self)._name
 
 
 PillowImage.Image.__to_tcl__ = pil_image_to_tcl
@@ -149,12 +151,9 @@ class Icon:
     def source(self, source: Path) -> None:
         Tcl.call(None, self._name, "configure", "-file", source)
 
-    def __to_tcl__(self) -> str:
-        return self._name
-
     @classmethod
-    def __from_tcl__(cls, value: str) -> Icon:
-        return _images[value]  # type: ignore
+    def __from_tcl__(cls, value: str) -> Icon | PillowImage.Image | None:
+        return Pillow2Tcl.__from_tcl__(value)
 
 
 class IconFactory:
