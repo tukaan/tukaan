@@ -10,6 +10,23 @@ T_co = TypeVar("T_co", covariant=True)
 T_contra = TypeVar("T_contra", contravariant=True)
 
 
+class count:
+    """Simplified itertools.count, that can be int()-ed."""
+
+    def __init__(self, start: int = 0) -> None:
+        self._count = start
+
+    def __next__(self) -> int:
+        self._count += 1
+        return self._count
+
+    def __iter__(self) -> Iterator[int]:
+        yield self._count
+
+    def __int__(self) -> int:
+        return self._count
+
+
 flatten = itertools.chain.from_iterable
 
 

@@ -4,11 +4,16 @@ import sys
 from pathlib import Path
 from typing import NoReturn
 
+try:
+    from PIL import Image as PillowImage
+    from PIL import _imagingtk as ImagingTk  # type: ignore  # noqa: N812
+except ImportError as e:
+    raise ImportError("Tukaan needs PIL and PIL._imagingtk to work with images.") from e
+
 from libtukaan import Serif
 
+from tukaan._tcl import Tcl
 from tukaan.theming import LookAndFeel, NativeTheme, Theme
-
-from ._tcl import Tcl
 
 
 class App:
@@ -30,6 +35,7 @@ class App:
         Tcl.init(name, x_screen)
 
         Serif.init()
+        ImagingTk.tkinit(Tcl.interp_address, 1)
         self._init_tkdnd()
 
         self._name = name
