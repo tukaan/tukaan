@@ -25,14 +25,14 @@ class App:
         author: str = "unknown",
         version: int | str = "1.0",
         *,
-        x_screen: str | None = None,
+        screen: str | None = None,
     ) -> None:
         if App._exists:
             raise Exception
         else:
             App._exists = True
 
-        Tcl.init(name, x_screen)
+        Tcl.init(name, screen)
 
         Serif.init()
         ImagingTk.tkinit(Tcl.interp_address, 1)
@@ -78,7 +78,7 @@ class App:
         return self._version
 
     @property
-    def x_screen(self) -> str:
+    def screen(self) -> str:
         return Tcl.call(str, "winfo", "screen", ".")
 
     @property
