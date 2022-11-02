@@ -14,7 +14,7 @@ from tukaan._props import (
     config,
 )
 from tukaan._tcl import Tcl
-from tukaan._variables import ControlVariable, String
+from tukaan._variables import ControlVariable, StringVar
 from tukaan.enums import Orientation
 
 from .frame import Frame
@@ -97,7 +97,7 @@ class RadioGroup(Frame, InputControl):
 
         Frame.__init__(self, parent, padding=padding)
 
-        self.link = String(selected or tuple(items.keys())[0])
+        self.link = StringVar(selected or tuple(items.keys())[0])
         self._orient = orientation
         self._set_items(items)
 

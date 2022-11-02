@@ -19,8 +19,6 @@ from .exceptions import TukaanTclError
 
 class TclCallback:
     def __init__(self, callback: Callable[..., Any], converters=(), args=(), kwargs={}):
-        # using () and {} as default is not a problem here ^^^
-
         self._callback = callback
         self._converters = converters
         self._args = args

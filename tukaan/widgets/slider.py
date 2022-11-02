@@ -5,7 +5,7 @@ from typing import Callable
 from tukaan._base import InputControl, TkWidget, WidgetBase
 from tukaan._props import FocusableProp, IntDesc, LinkProp, OrientProp, cget, config
 from tukaan._tcl import TclCallback
-from tukaan._variables import Float, Integer
+from tukaan._variables import FloatVar, IntVar
 from tukaan.enums import Orientation
 
 
@@ -22,7 +22,7 @@ class Slider(WidgetBase, InputControl):
         parent: TkWidget,
         *args,
         focusable: bool | None = None,
-        link: Integer | Float | None = None,
+        link: IntVar | FloatVar | None = None,
         max: float | None = None,
         min: float | None = None,
         on_move: Callable[[float], None] | None = None,

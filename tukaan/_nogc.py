@@ -4,11 +4,7 @@ import collections
 from typing import TYPE_CHECKING, Any, Callable, DefaultDict, Iterator
 
 if TYPE_CHECKING:
-    from PIL import Image  # type: ignore
-
     from ._base import TkWidget
-    from ._images import Icon, Pillow2Tcl
-    from ._variables import ControlVariable
     from .fonts import Font
     from .timeouts import Timeout
 
@@ -34,9 +30,6 @@ counter: DefaultDict[Any, Iterator[int]] = collections.defaultdict(count)
 
 _commands: dict[str, Callable[..., Any]] = {}
 _fonts: dict[str, Font] = {}
-_images: dict[str, Icon | Pillow2Tcl] = {}
-_pil_images: dict[str, Image.Image] = {}
 _text_tags: dict[str, Any] = {}
 _timeouts: dict[str, Timeout] = {}
-_variables: dict[str, ControlVariable] = {}
 _widgets: dict[str, TkWidget] = {}
