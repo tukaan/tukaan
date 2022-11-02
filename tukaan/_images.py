@@ -121,10 +121,10 @@ class Pillow2Tcl:
 
     @classmethod
     def __from_tcl__(cls, value: str) -> PillowImage.Image | Icon | None:
-        result = _pil_images.get(value, None)
+        result = _pil_images.get(value)
         if result is None:
             # It's an Icon
-            result = _images.get(value, None)
+            result = _images.get(value)
 
         return result
 

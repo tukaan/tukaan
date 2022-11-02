@@ -19,7 +19,7 @@ class WidgetMixin:
         details = self._repr_details()
         details = f", {details}" if details else ""
 
-        return f"<{klass} widget at {hex(id(self))}: tcl_name={self._name!r} {details}>"
+        return f"<{klass} widget at {hex(id(self))}: tcl_name={self._name!r}{details}>"
 
     def _repr_details(self) -> str:
         # overridden in subclasses
