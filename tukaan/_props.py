@@ -10,16 +10,16 @@ else:
     from typing import Callable
     from typing_extensions import Protocol
 
-from ._data import TabStop
-from ._nogc import _commands
-from ._tcl import Tcl
-from ._utils import T, T_co, T_contra, seq_pairs
-from ._variables import ControlVariable
-from .colors import Color
-from .enums import ImagePosition, Justify, Orientation
+from tukaan._collect import _commands
+from tukaan._data import TabStop
+from tukaan._tcl import Tcl
+from tukaan._utils import T, T_co, T_contra, seq_pairs
+from tukaan._variables import ControlVariable
+from tukaan.colors import Color
+from tukaan.enums import ImagePosition, Justify, Orientation
 
 if TYPE_CHECKING:
-    from ._base import TkWidget
+    from tukaan._base import TkWidget
 
 
 def cget(widget: TkWidget, return_type: type[T], option: str) -> T:

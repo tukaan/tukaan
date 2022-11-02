@@ -3,13 +3,14 @@ from __future__ import annotations
 import collections
 from typing import Callable
 
-from ._events import EventMixin
-from ._layout import ContainerGrid, Geometry, Grid, Position, ToplevelGrid
-from ._mixins import DnDMixin, GeometryMixin, VisibilityMixin, WidgetMixin
-from ._nogc import _commands, _widgets, count
-from ._props import cget, config
-from ._tcl import Tcl
-from .widgets.tooltip import ToolTipProvider
+from tukaan._collect import _commands, _widgets
+from tukaan._events import EventMixin
+from tukaan._layout import ContainerGrid, Geometry, Grid, Position, ToplevelGrid
+from tukaan._mixins import DnDMixin, GeometryMixin, VisibilityMixin, WidgetMixin
+from tukaan._props import cget, config
+from tukaan._tcl import Tcl
+from tukaan._utils import count
+from tukaan.widgets.tooltip import ToolTipProvider
 
 
 def generate_pathname(widget: TkWidget, parent: TkWidget) -> str:

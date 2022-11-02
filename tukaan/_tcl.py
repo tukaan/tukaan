@@ -13,8 +13,8 @@ from typing import Any, Callable
 
 import _tkinter as tk
 
-from ._nogc import _commands, counter
-from .exceptions import TukaanTclError
+from tukaan._collect import _commands, counter
+from tukaan.exceptions import TukaanTclError
 
 
 class TclCallback:

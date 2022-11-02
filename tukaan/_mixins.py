@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ._data import Bbox
-from ._layout import Grid
-from ._nogc import _widgets
-from ._tcl import Tcl
+from tukaan._collect import _widgets
+from tukaan._data import Bbox
+from tukaan._layout import Grid
+from tukaan._tcl import Tcl
 
 if TYPE_CHECKING:
-    from ._base import TkWidget
+    from tukaan._base import TkWidget
 
 
 class WidgetMixin:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable, Iterable
 
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._nogc import _commands
+from tukaan._collect import _commands
 from tukaan._props import cget, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color

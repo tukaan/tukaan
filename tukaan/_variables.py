@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ._collect import _variables, counter
-from ._tcl import Tcl
+from tukaan._collect import _variables, counter
+from tukaan._tcl import Tcl
 
 
 class ControlVariable:

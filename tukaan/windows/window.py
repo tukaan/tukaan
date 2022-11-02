@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tukaan._base import ToplevelBase, generate_pathname
-from tukaan._nogc import _widgets
+from tukaan._collect import _widgets
 from tukaan._tcl import Tcl
 from tukaan.app import App
 from tukaan.enums import WindowType
