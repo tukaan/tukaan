@@ -79,6 +79,7 @@ class App:
 
     @property
     def screen(self) -> str:
+        # TODO: implement screen handling for window classes, not for App
         return Tcl.call(str, "winfo", "screen", ".")
 
     @property
