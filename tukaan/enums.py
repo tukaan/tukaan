@@ -56,7 +56,7 @@ class Direction(Enum):
 
 class ImagePosition(Enum):
     Bottom = "bottom"
-    Default = "none"
+    Default = ""
     ImageOnly = "image"
     Left = "left"
     Overlap = "center"

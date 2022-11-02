@@ -21,7 +21,7 @@ class CheckBox(WidgetBase, InputControl):
     def __init__(
         self,
         parent: TkWidget,
-        text: str,
+        text: str = None,
         *,
         focusable: bool | None = None,
         link: Boolean | None = None,

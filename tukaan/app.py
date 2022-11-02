@@ -38,6 +38,8 @@ class App:
 
         NativeTheme.use()
 
+        App.shared_instance = self
+
     def __enter__(self) -> App:
         return self
 
