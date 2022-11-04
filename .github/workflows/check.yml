@@ -1,4 +1,4 @@
-name: CI
+name: PR
 
 on:
   push:
@@ -25,3 +25,12 @@ jobs:
         python-version: "3.9"
     - run: pip install isort
     - run: python3 -m isort --check tukaan/*.py tukaan/*/*.py
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: "3.9"
+    - run: pip install pytest
+    - run: python3 -m pytest
