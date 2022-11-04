@@ -35,7 +35,11 @@ class App:
         Tcl.init(name, screen)
 
         Serif.init()
-        ImagingTk.tkinit(Tcl.interp_address, 1)
+
+        try:
+            ImagingTk.tkinit(Tcl.interp_address, 1)
+        except TypeError:
+            ImagingTk.tkinit(Tcl.interp_address)
 
         self._name = name
         self._author = author
