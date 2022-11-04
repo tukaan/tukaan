@@ -7,7 +7,7 @@ from typing import Union
 from PIL import Image as PillowImage
 from PIL import _imagingtk as ImagingTk  # type: ignore
 
-from tukaan._base import WidgetBase, TkWidget
+from tukaan._base import TkWidget, WidgetBase
 from tukaan._collect import _images, _pil_images, counter
 from tukaan._props import OptionDesc
 from tukaan._tcl import Tcl
