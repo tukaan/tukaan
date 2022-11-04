@@ -36,7 +36,6 @@ class App:
 
         Serif.init()
         ImagingTk.tkinit(Tcl.interp_address, 1)
-        self._init_tkdnd()
 
         self._name = name
         self._author = author
@@ -57,13 +56,6 @@ class App:
             return self.run()
 
         raise exc_type(exc_value) from None
-
-    def _init_tkdnd(self) -> None:
-        os = {"linux": "linux", "darwin": "mac", "win32": "win"}[sys.platform]
-        os += "-x64" if sys.maxsize > 2**32 else "-x32"
-
-        Tcl.call(None, "lappend", "auto_path", Path(__file__).parent / "tkdnd" / os)
-        Tcl.call(None, "package", "require", "tkdnd")
 
     @property
     def name(self) -> str:

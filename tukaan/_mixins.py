@@ -37,22 +37,6 @@ class WidgetMixin:
         return _widgets[tcl_value]
 
 
-class DnDMixin:
-    _lm_path: str
-
-    def set_drag_target(self) -> None:
-        Tcl.call(None, "tkdnd::drop_target", "register", self._lm_path, "*")
-
-    def unset_drag_target(self) -> None:
-        Tcl.call(None, "tkdnd::drop_target", "unregister", self._lm_path)
-
-    def set_drag_source(self) -> None:
-        Tcl.call(None, "tkdnd::drag_source", "register", self._lm_path, "*")
-
-    def unset_drag_source(self) -> None:
-        Tcl.call(None, "tkdnd::drag_source", "unregister", self._lm_path)
-
-
 class GeometryMixin:
     def _abs_x(self) -> int:
         return Tcl.call(int, "winfo", "rootx", self)
