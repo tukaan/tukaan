@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable
 
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._collect import _commands
 from tukaan._props import cget, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
-from tukaan.exceptions import TukaanTclError
-
-from .textbox import TextBox
+from tukaan.widgets.textbox import TextBox
 
 
 class ComboBox(TextBox):
@@ -18,14 +15,13 @@ class ComboBox(TextBox):
     def __init__(
         self,
         parent: TkWidget,
-        values: list[str | float] | None = None,
+        values: dict[str, Any] | None = None,
         *,
-        current: int | None = None,
+        action: Callable | None = None,
         fg_color: str | Color | None = None,
         focusable: bool | None = None,
         hide_chars: bool | None = False,
         hide_chars_with: str | None = "•",
-        action: Callable | None = None,
         text_align: str | None = None,
         tooltip: str | None = None,
         user_edit: bool | None = True,
@@ -37,6 +33,8 @@ class ComboBox(TextBox):
         if not hide_chars:
             hide_chars_with = None
 
+        labels = self._setup_values(values)
+
         WidgetBase.__init__(
             self,
             parent,
@@ -47,7 +45,7 @@ class ComboBox(TextBox):
             state=None if user_edit else "readonly",
             takefocus=focusable,
             tooltip=tooltip,
-            values=values,
+            values=labels,
             width=width,
         )
 
@@ -56,8 +54,7 @@ class ComboBox(TextBox):
         self.bind("<FocusOut>", f"+{self._name} selection clear")
         self.bind("<<ComboboxSelected>>", self._call_action)
 
-        if values:
-            self.current = 0 if current is None else current
+        Tcl.call(None, self, "current", 0)
 
     def __len__(self) -> int:
         return len(Tcl.call([str], self, "cget", "-values"))
@@ -68,6 +65,25 @@ class ComboBox(TextBox):
     def __contains__(self, item: str) -> bool:
         return item in Tcl.call([str], self, "cget", "-values")
 
+    def _setup_values(self, values: dict[str, Any] | None) -> list[str] | None:
+        if not values:
+            self._values = None
+            return None
+
+        if isinstance(values, dict):
+            self._values = values
+
+            if not all(isinstance(x, str) for x in values.keys()):
+                raise TypeError("ComboBox option labels must be strings")
+
+            seen = []
+            if any(x in seen or seen.append(x) for x in values.values()):
+                raise ValueError("ComboBox option values must be unique")
+
+            return list(values.keys())
+        else:
+            raise TypeError("must be a dict or None")  # TODO: very informative lol
+
     def _call_action(self) -> None:
         Tcl.call(None, self, "selection", "clear")
         if self._action is not None:
@@ -76,41 +92,56 @@ class ComboBox(TextBox):
     def set(self, value: str) -> None:
         Tcl.call(None, self, "set", value)
 
-    value = property(TextBox.get, set)
+    text = property(TextBox.get, set)
 
     @property
-    def current(self) -> int:
-        try:
-            result = self.values.index(self.get())
-        except ValueError:
-            result = None
-        finally:
-            return result
+    def value(self) -> Any:
+        result = Tcl.call(int, self, "current")
+        if result < 0:
+            return None
 
-    @current.setter
-    def current(self, index: int) -> None:
-        try:
-            Tcl.call(None, self, "current", index)
-        except TukaanTclError:
-            raise IndexError("ComboBox index out of range") from None
+        return list(self._values.values())[result]
 
-    @property
-    def visible_rows(self) -> int:
-        return cget(self, int, "-height")
+    @value.setter
+    def value(self, value: Any) -> None:
+        if value not in self._values.values():
+            raise KeyError
 
-    @visible_rows.setter
-    def visible_rows(self, value: int) -> None:
-        config(self, height=value)
+        Tcl.call(None, self, "current", list(self._values.values()).index(value))
 
     @property
-    def values(self) -> list[str]:
-        return cget(self, [str], "-values")
+    def selected(self) -> int:
+        result = Tcl.call(int, self, "current")
+        if result < 0:
+            return None
+
+        return list(self._values.keys())[result]
+
+    @selected.setter
+    def selected(self, label: str) -> None:
+        if label not in self._values:
+            raise KeyError
+
+        Tcl.call(None, self, "current", list(self._values.keys()).index(label))
+
+    @property
+    def values(self) -> dict[str, Any]:
+        return self._values
 
     @values.setter
-    def values(self, value: list[str | float] | None) -> None:
-        if value is None:
-            value = []
-        config(self, values=value)
+    def values(self, values: dict[str, Any] | None) -> None:
+        labels = self._setup_values(values)
+        if not labels:
+            labels = ""
+        config(self, values=labels)
+
+    @property
+    def popdown_height(self) -> int:
+        return cget(self, int, "-height")
+
+    @popdown_height.setter
+    def popdown_height(self, value: int) -> None:
+        config(self, height=value)
 
     @property
     def action(self) -> Callable[[str], None] | None:

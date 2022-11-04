@@ -89,6 +89,7 @@ class Event:
     }
     _order: tuple[str, ...] = tuple(_substitutions.keys())
     # FIXME: _order must be updated when subclass overwrites _substitutions, this makes the code fragile
+    # Tukaan requires python 3.7+, so we don't need an OrderedDict
 
     def __init__(self, *args) -> None:
         for item in self._relevant_attrs:

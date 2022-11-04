@@ -96,12 +96,10 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         Tcl.call(None, self, "delete", 0, "end")
         Tcl.call(None, self, "insert", 0, value)
 
-    value = property(get, set)
+    text = property(get, set)
 
     def char_bbox(self, index: int | str) -> Bbox:
         return Bbox(*Tcl.call((int,), self, "bbox", index))
-
-    ### Properties ###
 
     @property
     def hide_chars_with(self) -> str:

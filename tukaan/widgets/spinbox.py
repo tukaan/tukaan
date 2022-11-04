@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable, Iterable
 
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._props import BoolDesc, FloatDesc, cget, config
+from tukaan._props import BoolDesc, FloatDesc, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
 
@@ -85,7 +85,7 @@ class SpinBox(TextBox):
     def set(self, value: str | float | None) -> None:
         Tcl.call(None, self, "set", value)
 
-    value = property(TextBox.get, set)
+    text = property(TextBox.get, set)
 
     @property
     def values(self) -> list[str] | range:
