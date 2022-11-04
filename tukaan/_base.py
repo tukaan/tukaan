@@ -4,7 +4,7 @@ import collections
 from typing import Callable
 
 from tukaan._collect import _commands, _widgets
-from tukaan._events import EventMixin
+from tukaan._events import BindingsMixin
 from tukaan._layout import ContainerGrid, Geometry, Grid, Position, ToplevelGrid
 from tukaan._mixins import DnDMixin, GeometryMixin, VisibilityMixin, WidgetMixin
 from tukaan._props import cget, config
@@ -58,7 +58,7 @@ class YScrollable:
         config(self, yscrollcommand=value)
 
 
-class TkWidget(WidgetMixin, EventMixin, VisibilityMixin, DnDMixin):
+class TkWidget(WidgetMixin, BindingsMixin, VisibilityMixin, DnDMixin):
     """Base class for every Tk widget."""
 
     _name: str

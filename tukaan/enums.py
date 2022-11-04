@@ -7,53 +7,6 @@ class Align(Enum):
     Stretch = 2
 
 
-class WindowState(Enum):
-    Closed = "closed"
-    FullScreen = "fullscreen"
-    Hidden = "withdrawn"
-    Maximized = "maximized"
-    Minimized = "minimized"
-    Normal = "normal"
-
-
-class WindowType(Enum):
-    Combo = "combo"
-    Desktop = "desktop"
-    Dialog = "dialog"
-    DnD = "dnd"
-    Dock = "dock"
-    DropDown = "dropdown_menu"
-    Menu = "menu"
-    Normal = "normal"
-    Notification = "notification"
-    PopupMenu = "popup_menu"
-    Splash = "splash"
-    ToolBar = "toolbar"
-    Tooltip = "tooltip"
-    Utility = "utility"
-
-
-class Orientation(Enum):
-    Horizontal = "horizontal"
-    Vertical = "vertical"
-
-
-class ProgressMode(Enum):
-    Determinate = "determinate"
-    Indeterminate = "indeterminate"
-
-
-class Location(Enum):
-    ...
-
-
-class Direction(Enum):
-    ...
-
-
-# ?
-
-
 class ImagePosition(Enum):
     Bottom = "bottom"
     Default = ""
@@ -83,21 +36,46 @@ class Anchor(Enum):
     TopRight = "ne"
 
 
-class Wrap(Enum):
-    Letter = "char"
-    NoWrap = "none"
-    Word = "word"
+class ProgressMode(Enum):
+    Determinate = "determinate"
+    Indeterminate = "indeterminate"
 
 
-class CaretStyle(Enum):
-    Beam = "0"
-    Block = "1"
+class Orientation(Enum):
+    Horizontal = "horizontal"
+    Vertical = "vertical"
 
 
-class InactiveCaretStyle(Enum):
-    Hidden = "none"
-    Hollow = "hollow"
-    Solid = "solid"
+class EventQueue(Enum):
+    First = "head"
+    Last = "tail"
+    Immediate = "now"
+    AfterPrevious = "mark"
+
+
+# class Location(Enum):
+#    ...
+#
+#
+# class Direction(Enum):
+#    ...
+#
+#
+# class Wrap(Enum):
+#    Letter = "char"
+#    NoWrap = "none"
+#    Word = "word"
+#
+#
+# class CaretStyle(Enum):
+#    Beam = "0"
+#    Block = "1"
+#
+#
+# class InactiveCaretStyle(Enum):
+#    Hidden = "none"
+#    Hollow = "hollow"
+#    Solid = "solid"
 
 
 class Resizable(Enum):
@@ -105,6 +83,32 @@ class Resizable(Enum):
     Horizontal = ("1", "0")
     Vertical = ("0", "1")
     Both = ("1", "1")
+
+
+class WindowState(Enum):
+    Closed = "closed"
+    FullScreen = "fullscreen"
+    Hidden = "withdrawn"
+    Maximized = "maximized"
+    Minimized = "minimized"
+    Normal = "normal"
+
+
+class WindowType(Enum):
+    Combo = "combo"
+    Desktop = "desktop"
+    Dialog = "dialog"
+    DnD = "dnd"
+    Dock = "dock"
+    DropDown = "dropdown_menu"
+    Menu = "menu"
+    Normal = "normal"
+    Notification = "notification"
+    PopupMenu = "popup_menu"
+    Splash = "splash"
+    ToolBar = "toolbar"
+    Tooltip = "tooltip"
+    Utility = "utility"
 
 
 class WindowBackdropType(Enum):

@@ -46,7 +46,7 @@ troubleshooting()
 import sys
 
 from .__version__ import __author__, __license__, __version__
-from ._events import DragObject, KeySeq
+from ._events import KeySeq
 from ._images import Icon, IconFactory, Image
 from ._info import Clipboard, Pointer, Screen
 from ._system import Platform
