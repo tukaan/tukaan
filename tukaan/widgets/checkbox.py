@@ -31,7 +31,7 @@ class CheckBox(WidgetBase, InputControl):
     ) -> None:
 
         self._variable = BoolVar(selected) if target is None else target
-        self._orig_action = action
+        self._action = action
 
         WidgetBase.__init__(
             self,
@@ -47,8 +47,8 @@ class CheckBox(WidgetBase, InputControl):
         )
 
     def _call_action(self) -> None:
-        if self._orig_action is not None:
-            self._orig_action(self._variable.get())
+        if self._action is not None:
+            self._action(self._variable.get())
 
     def invoke(self) -> None:
         """Invoke the checkbox, as if it were clicked."""
@@ -76,8 +76,8 @@ class CheckBox(WidgetBase, InputControl):
 
     @property
     def action(self) -> Callable[[bool], None] | None:
-        return self._orig_action
+        return self._action
 
     @action.setter
     def action(self, func: Callable[[bool], None] | None) -> None:
-        self._orig_action = func
+        self._action = func

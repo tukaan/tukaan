@@ -25,8 +25,7 @@ class ComboBox(TextBox):
         focusable: bool | None = None,
         hide_chars: bool | None = False,
         hide_chars_with: str | None = "•",
-        on_click: Callable | None = None,
-        on_select: Callable | None = None,
+        action: Callable | None = None,
         text_align: str | None = None,
         tooltip: str | None = None,
         user_edit: bool | None = True,
@@ -44,7 +43,6 @@ class ComboBox(TextBox):
             foreground=fg_color,
             height=visible_rows,
             justify=text_align,
-            postcommand=on_click,
             show=hide_chars_with,
             state=None if user_edit else "readonly",
             takefocus=focusable,
@@ -53,12 +51,10 @@ class ComboBox(TextBox):
             width=width,
         )
 
-        self.bind("<<ComboboxSelected>>", f"+{self._name} selection clear")
-        self.bind("<FocusOut>", f"+{self._name} selection clear")
+        self._action = action
 
-        if on_select:
-            # FIXME: this can't be modified?
-            self.bind("<<ComboboxSelected>>", on_select)
+        self.bind("<FocusOut>", f"+{self._name} selection clear")
+        self.bind("<<ComboboxSelected>>", self._call_action)
 
         if values:
             self.current = 0 if current is None else current
@@ -72,16 +68,24 @@ class ComboBox(TextBox):
     def __contains__(self, item: str) -> bool:
         return item in Tcl.call([str], self, "cget", "-values")
 
+    def _call_action(self) -> None:
+        Tcl.call(None, self, "selection", "clear")
+        if self._action is not None:
+            self._action(self.get())
+
     def set(self, value: str) -> None:
         Tcl.call(None, self, "set", value)
 
     value = property(TextBox.get, set)
 
-    # Properties #
-
     @property
     def current(self) -> int:
-        return self.values.index(self.get())
+        try:
+            result = self.values.index(self.get())
+        except ValueError:
+            result = None
+        finally:
+            return result
 
     @current.setter
     def current(self, index: int) -> None:
@@ -109,12 +113,9 @@ class ComboBox(TextBox):
         config(self, values=value)
 
     @property
-    def on_click(self) -> Callable[..., None] | None:
-        return _commands.get(cget(self, str, "-postcommand"))
+    def action(self) -> Callable[[str], None] | None:
+        return self._action
 
-    @on_click.setter
-    def on_click(self, func: Callable[..., None] | None) -> None:
-        value = func
-        if value is None:
-            value = ""
-        config(self, postcommand=value)
+    @action.setter
+    def action(self, func: Callable[[str], None] | None) -> None:
+        self._action = func
