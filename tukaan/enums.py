@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 
 
@@ -9,13 +11,18 @@ class Align(Enum):
 
 class ImagePosition(Enum):
     Bottom = "bottom"
-    Default = ""
+    Default = "none"
     ImageOnly = "image"
     Left = "left"
     Overlap = "center"
     Right = "right"
     TextOnly = "text"
     Top = "top"
+
+    @classmethod
+    def _missing_(cls, value) -> ImagePosition:
+        if value == "":
+            return cls.Default
 
 
 class Justify(Enum):
