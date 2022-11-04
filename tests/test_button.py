@@ -54,22 +54,6 @@ def test_button_image(app, window):
 
 
 @with_app_context
-def test_button_focus(app, window):
-    button = tukaan.Button(window, focusable=True)
-    button.grid()
-
-    tukaan._tcl.Tcl.call(None, "focus", button)
-    update()
-
-    assert tukaan._tcl.Tcl.call(str, "focus") == button._name
-    button.focusable = False
-
-    tukaan._tcl.Tcl.call(None, "focus", ".")
-
-    assert tukaan._tcl.Tcl.call(str, "focus") == "."
-
-
-@with_app_context
 def test_button_width(app, window):
     button = tukaan.Button(window, text="Text", width=1)
 

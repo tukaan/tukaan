@@ -50,19 +50,3 @@ def test_checkbox_select(app, window):
     assert check.selected
     check.toggle()
     assert not check.selected
-
-
-@with_app_context
-def test_checkbox_focus(app, window):
-    check = tukaan.CheckBox(window, focusable=True)
-    check.grid()
-
-    tukaan._tcl.Tcl.call(None, "focus", check)
-    update()
-
-    assert tukaan._tcl.Tcl.call(str, "focus") == check._name
-    check.focusable = False
-
-    tukaan._tcl.Tcl.call(None, "focus", ".")
-
-    assert tukaan._tcl.Tcl.call(str, "focus") == "."
