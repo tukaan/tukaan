@@ -37,8 +37,11 @@ class App:
         Serif.init()
 
         try:
+            # TODO: remove this try block, when Pillow 9.3.0 becomes 4-5 months old,
+            # and require Pillow>=9.3.0
             ImagingTk.tkinit(Tcl.interp_address, 1)
         except TypeError:
+            # Pillow 9.3.0
             ImagingTk.tkinit(Tcl.interp_address)
 
         self._name = name
