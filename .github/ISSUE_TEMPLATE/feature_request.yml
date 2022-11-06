@@ -4,20 +4,21 @@ labels: ["enhancement"]
 
 body:
   - type: textarea
-  id: description
-  attributes:
-    label: "What's feature request"
-    description: |
-      Describe what new feature you would like to see in Tukaan.
-  validations:
-    required: false
-    
+    id: description
+    attributes:
+      label: What's your feature request?
+      description: |
+        Describe what new feature you would like to see in Tukaan.
+        You can also use a code snippet to show what the API would look like.
+    validations:
+      required: true
+
   - type: textarea
-  id: alternatives
-  attributes:
-    label: "Alternatives you've considered"
-    description: |
-      A clear and concise description of any alternative solutions or features you have considered.
-      "There should be one - and preferably only one - obvious way to do it, although that way may not be obvious at first."
-  validations:
-    required: true
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: |
+        Description of any alternative solutions or features you have considered.
+        "There should be one - and preferably only one - obvious way to do it, although that way may not be obvious at first"
+    validations:
+      required: false

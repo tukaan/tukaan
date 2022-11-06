@@ -29,20 +29,20 @@ body:
         What operating system(s) are you experiencing the problem on?
       multiple: true
       options:
-        - macOS 10.12 (Sierra)
-        - macOS 10.13 (High Sierra)
-        - macOS 10.14 (Mojave)
-        - macOS 10.15 (Catalina)
-        - macOS 11 (Big Sur)
-        - macOS 12 (Monterey)
-        - macOS 13 (Ventura)
-        - Windows 7
-        - Windows 8
-        - Windows 8.1
-        - Windows 10
-        - Windows 11
         - GNU/Linux (describe below)
-        - Other (describe below)
+        - macOS 13 (Ventura)
+        - macOS 12 (Monterey)
+        - macOS 11 (Big Sur)
+        - macOS 10.15 (Catalina)
+        - macOS 10.14 (Mojave)
+        - macOS 10.13 (High Sierra)
+        - macOS 10.12 (Sierra)
+        - Windows 11
+        - Windows 10
+        - Windows 7
+        - Windows 8.1
+        - Windows 8
+        - Isn't in the list (describe below)
     validations:
         required: true
 
@@ -54,4 +54,3 @@ body:
         If you're on a *nix system, please describe your distro and desktop environment
     validations:
       required: false
-
