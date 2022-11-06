@@ -3,15 +3,21 @@ description: Suggest an new feature for Tukaan
 labels: ["enhancement"]
 
 body:
-  - type: markdown
-  attributes:
-    value: |
-      Describe what new feature you would like to see in Tukaan. You can also use a code snippet to show what the API would look like.
-
   - type: textarea
+  id: description
   attributes:
-    label: "Additional context"
+    label: "What's feature request"
     description: |
-      This field is only here to make this issue template valid. You don't need to fill it.
+      Describe what new feature you would like to see in Tukaan.
   validations:
     required: false
+    
+  - type: textarea
+  id: alternatives
+  attributes:
+    label: "Alternatives you've considered"
+    description: |
+      A clear and concise description of any alternative solutions or features you have considered.
+      "There should be one - and preferably only one - obvious way to do it, although that way may not be obvious at first."
+  validations:
+    required: true
