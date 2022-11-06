@@ -4,9 +4,9 @@ labels: ["enhancement"]
 
 body:
   - type: markdown
-    attributes:
-      value: |
-        Describe what new feature you would like to see in Tukaan. You can also use a code snippet to show what the API would look like.
+  attributes:
+    value: |
+      Describe what new feature you would like to see in Tukaan. You can also use a code snippet to show what the API would look like.
 
   - type: textarea
   attributes:
