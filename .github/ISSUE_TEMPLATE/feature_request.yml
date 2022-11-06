@@ -7,8 +7,8 @@ body:
     attributes:
       value: |
         Describe what new feature you would like to see in Tukaan. You can also use a code snippet to show what the API would look like.
+
   - type: textarea
-  id: add
   attributes:
     label: "Additional context"
     description: |
