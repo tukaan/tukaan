@@ -30,16 +30,15 @@ body:
       multiple: true
       options:
         - GNU/Linux (describe below)
-        - macOS 13 (Ventura)
+        - Windows 11
+        - Windows 10
+        - Windows 7
         - macOS 12 (Monterey)
         - macOS 11 (Big Sur)
         - macOS 10.15 (Catalina)
         - macOS 10.14 (Mojave)
         - macOS 10.13 (High Sierra)
-        - macOS 10.12 (Sierra)
-        - Windows 11
-        - Windows 10
-        - Windows 7
+        - macOS 13 (Ventura)
         - Windows 8.1
         - Windows 8
         - Isn't in the list (describe below)
