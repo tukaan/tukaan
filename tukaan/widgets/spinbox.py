@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable
+from typing import Callable
 
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._props import BoolDesc, FloatDesc, config
+from tukaan._props import BoolDesc, FloatDesc
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
 
@@ -13,110 +13,81 @@ from .textbox import TextBox
 class SpinBox(TextBox):
     _tcl_class = "ttk::spinbox"
 
+    cycle = BoolDesc("wrap")
+    max = FloatDesc("to")
+    min = FloatDesc("from")
+    step = FloatDesc("increment")
+
     def __init__(
         self,
         parent: TkWidget,
-        values: Iterable[str | float] | range | None = None,
+        min: float | None = None,
+        max: float | None = None,
+        step: float | None = None,
         *,
         cycle: bool | None = None,
         fg_color: str | Color | None = None,
         focusable: bool | None = None,
         hide_chars: bool | None = False,
         hide_chars_with: str | None = "•",
-        on_select: Callable[[str], None] | None = None,
-        step: int | None = None,
+        action: Callable[[str], None] | None = None,
         text_align: str | None = None,
         tooltip: str | None = None,
         user_edit: bool = True,
-        value: str | float | None = None,
+        value: float | None = None,
         width: int | None = None,
     ) -> None:
         self._prev_show_char = hide_chars_with
         if not hide_chars:
             hide_chars_with = None
 
-        self._original_cmd = on_select
-        if on_select is not None:
-            func = on_select
-            on_select = lambda: func(self.get())  # type: ignore
+        self._action = action
 
         WidgetBase.__init__(
             self,
             parent,
-            command=on_select,
+            command=self._call_action,
             foreground=fg_color,
+            from_=min,
+            increment=step,
             justify=text_align,
             show=hide_chars_with,
             state=None if user_edit else "readonly",
             takefocus=focusable,
+            to=max,
             tooltip=tooltip,
             width=width,
             wrap=cycle,
         )
 
-        self._set_values(values, step)
-
         if value is not None:
             self.set(value)
-        elif values:
-            self.set(values[0])
         else:
-            self.set("0")
+            self.set(float(min or 0) if isinstance(step, float) else (min or 0))
 
-        self.bind("<<Increment>>", f"+{self._name} selection clear")
-        self.bind("<<Decrement>>", f"+{self._name} selection clear")
-        self.bind("<FocusOut>", f"+{self._name} selection clear")
+        Tcl.call(None, "bind", self, "<<Increment>>", f"+{self._name} selection clear")
+        Tcl.call(None, "bind", self, "<<Decrement>>", f"+{self._name} selection clear")
+        Tcl.call(None, "bind", self, "<FocusOut>", f"+{self._name} selection clear")
 
-    def _set_values(self, values, arg_step) -> None:
-        if isinstance(values, range):
-            start, stop, step = values.start, values.stop, values.step
-            if arg_step:
-                step = arg_step
+    def _repr_details(self) -> str:
+        return f"min={self.min!r}, max={self.max!r}, step={self.step!r}, value={self.value!r}"
 
-            return Tcl.call(
-                None,
-                self,
-                "configure",
-                *Tcl.to_tcl_args(from_=start, to=stop - step, increment=step),
-            )
-
-        Tcl.call(None, self, "configure", *Tcl.to_tcl_args(values=values))
-
-    def set(self, value: str | float | None) -> None:
-        Tcl.call(None, self, "set", value)
-
-    text = property(TextBox.get, set)
+    def _call_action(self) -> None:
+        if self._action is not None:
+            self._action(Tcl.call(float, self, "get"))
 
     @property
-    def values(self) -> list[str] | range:
-        result = Tcl.call([str], self, "cget", "-values")
+    def value(self) -> float:
+        return Tcl.call(float, self, "get")
 
-        if not result:
-            start = Tcl.call(float, self, "cget", "-from") or 0
-            stop = Tcl.call(float, self, "cget", "-to") or 0
-            step = Tcl.call(float, self, "cget", "-increment")
-            if isinstance(step, float):
-                step = 1
-            return range(start, stop, step)
-
-        return result
-
-    @values.setter
-    def values(self, values: Iterable[str | float] | range | None) -> None:
-        self._set_values(values, None)
-
-    cycle = BoolDesc("wrap")
-    step = FloatDesc("increment")
+    @value.setter
+    def value(self, value: float | None) -> None:
+        Tcl.call(float, self, "set", value)
 
     @property
-    def on_select(self) -> Callable[[str], None] | None:
-        return self._original_cmd
+    def action(self) -> Callable[[str], None] | None:
+        return self._action
 
-    @on_select.setter
-    def on_select(self, func: Callable[[str], None] | None) -> None:
-        self._original_cmd = func
-        if func is not None:
-            value = lambda: func(self.get())
-        else:
-            value = ""
-        config(self, command=value)
+    @action.setter
+    def action(self, func: Callable[[str], None] | None) -> None:
+        self._action = func

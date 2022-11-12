@@ -65,6 +65,17 @@ class ComboBox(TextBox):
     def __contains__(self, item: str) -> bool:
         return item in Tcl.call([str], self, "cget", "-values")
 
+    def _repr_details(self) -> str:
+        selected = self.selected
+        if selected:
+            plus_str = f"selected='{selected if len(selected) <= 25 else selected[:22] + '...'}'"
+        else:
+            text = self.text
+            plus_str = f"text='{text if len(text) <= 25 else text[:22] + '...'}'"
+
+        selected = self.selected or self.text
+        return f"value={self.value!r}, " + plus_str
+
     def _setup_values(self, values: dict[str, Any] | None) -> list[str] | None:
         if not values:
             self._values = None

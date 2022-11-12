@@ -284,5 +284,5 @@ FontType = Union[Font, Dict[str, Union[str, int, bool]]]
 
 
 class FontProp(OptionDesc[Font, FontType]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("font", Font)

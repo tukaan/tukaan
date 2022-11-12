@@ -19,32 +19,19 @@ class Slider(WidgetBase, InputControl):
     def __init__(
         self,
         parent: TkWidget,
-        *args,
+        min: float | None = None,
+        max: float | None = None,
+        *,
         action: Callable[[float], None] | None = None,
         focusable: bool | None = None,
-        max: float | None = None,
-        min: float | None = None,
         orientation: Orientation | None = None,
         target: IntVar | FloatVar | None = None,
         tooltip: str | None = None,
         value: float | None = None,
     ) -> None:
-
         self._variable = target
         self._action = action
         self._prev_value = value or 0
-
-        if (max is not None and args) or (min is not None and len(args) == 2):
-            raise TypeError(
-                f"Slider() got multiple values for argument {('max' if max is not None else 'min')!r}"
-            )
-
-        if not args and max is None:
-            max = 100
-        elif len(args) == 1:
-            [max] = args
-        elif len(args) == 2:
-            min, max, *_ = args
 
         WidgetBase.__init__(
             self,
@@ -53,9 +40,9 @@ class Slider(WidgetBase, InputControl):
             from_=min,
             orient=orientation,
             takefocus=focusable,
-            to=max,
+            to=100 if max is None else max,
             tooltip=tooltip,
-            value=value,
+            value=min if value is None else value,
             variable=target,
         )
 
