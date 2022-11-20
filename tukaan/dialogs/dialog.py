@@ -48,12 +48,12 @@ def run_zenity(type_: str, title: str | None, parent: ToplevelBase | None, *opti
     if title is not None:
         args.extend(["--title", title])
 
-    args.extend(
-        [
-            "--modal",
-            f"--attach={str(parent.id) if parent is not None else str(Tcl.call(int, 'winfo', 'id', '.'))}",
-        ]
-    )
+    if parent is None:
+        parent_id = str(Tcl.call(int, "winfo", "id", "."))
+    else:
+        parent_id = str(parent.id)
+
+    args.extend(["--modal", f"--attach={parent_id}"])
     args.extend(options)
 
     return run_in_subprocess(args).splitlines()

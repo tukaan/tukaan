@@ -63,7 +63,7 @@ class TkFileDialog(FileDialogBase):
         if result:
             if not isinstance(result, list):
                 return Path(result)
-            if len(result) == 1:
+            elif len(result) == 1:
                 return Path(result[0])
             else:
                 return [Path(x) for x in result if x != "\n"]  # type: ignore
