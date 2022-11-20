@@ -7,8 +7,8 @@ import sys
 
 from tukaan._base import ToplevelBase
 from tukaan._tcl import Tcl
-from tukaan.exceptions import TukaanTclError
 from tukaan.app import App
+from tukaan.exceptions import TukaanTclError
 
 
 class Dialog:

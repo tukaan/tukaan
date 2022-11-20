@@ -32,7 +32,7 @@ class App:
 
         Serif.init()
         self._init_tkdnd()
-        
+
         NativeTheme.use()
 
         self._name = name
