@@ -1,64 +1,100 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from fractions import Fraction
 
 from screeninfo import get_monitors  # type: ignore
 
-from ._misc import Position, Size
-from ._utils import classproperty
-from .exceptions import TukaanTclError
-
-# TODO: Move these classes to appropriate modules, and delete this file
+from tukaan._misc import Size
+from tukaan._tcl import Tcl
+from tukaan._utils import classproperty
 
 
-class Clipboard:
-    def __repr__(self) -> str:
-        return f"<tukaan.Clipboard; content: {self.paste()}>"
-
-    def clear(self) -> None:
-        from ._tcl import Tcl
-
-        Tcl.call(None, "clipboard", "clear")
-
-    def append(self, content: str) -> None:
-        from ._tcl import Tcl
-
-        Tcl.call(None, "clipboard", "append", content)
-
-    def paste(self) -> str | None:
-        from ._tcl import Tcl
-
-        try:
-            return Tcl.call(str, "clipboard", "get")
-        except TukaanTclError:
-            return None
-
-    def copy(self, content: str) -> None:
-        from ._tcl import Tcl
-
-        Tcl.call(None, "clipboard", "clear")
-        Tcl.call(None, "clipboard", "append", content)
+def mm(amount: float) -> float:
+    return round(amount / (Screen.ppi / 25.4), 2)
 
 
-class Pointer:
-    def __repr__(self) -> str:
-        return f"<tukaan.Pointer; position: {tuple(self.position)}>"
+def cm(amount: float) -> float:
+    return round(amount / (Screen.ppi / 2.54), 2)
 
-    @classproperty
-    def x(self) -> int:
-        from ._tcl import Tcl
 
-        return Tcl.call(int, "winfo", "pointerx", ".")
+def inch(amount: float) -> float:
+    return round(amount / Screen.ppi, 2)
 
-    @classproperty
-    def y(self) -> int:
-        from ._tcl import Tcl
 
-        return Tcl.call(int, "winfo", "pointery", ".")
+@dataclass
+class ScreenDistance:
+    pixels: float
 
-    @classproperty
-    def position(self) -> tuple[int, int]:
-        return Position(self.x, self.y)
+    def __init__(
+        self,
+        px: float | None = None,
+        mm: float | None = None,
+        cm: float | None = None,
+        inch: float | None = None,
+    ) -> None:
+        self._ppi = ppi = Screen.ppi
+
+        self.pixels = 0
+        if px is not None:
+            self.pixels += px
+        if mm is not None:
+            self.pixels += mm * (ppi * 25.4)
+        if cm is not None:
+            self.pixels += cm * (ppi * 2.54)
+        if inch is not None:
+            self.pixels += inch * ppi
+
+    def __to_tcl__(self) -> str:
+        return str(self.pixels)
+
+    @classmethod
+    def __from_tcl__(cls, tcl_value: str) -> ScreenDistance:
+        unit = tcl_value[-1]
+        value = int(tcl_value[:-1])
+
+        if unit == "c":
+            return cls(cm=value)
+        if unit == "m":
+            return cls(mm=value)
+        if unit == "i":
+            return cls(inch=value)
+
+        return cls(px=value)
+
+    def __eq__(self, other: ScreenDistance) -> bool:
+        if not isinstance(other, ScreenDistance):
+            raise TypeError
+
+        return self.pixels == other.pixels
+
+    def __gt__(self, other: ScreenDistance) -> bool:
+        if not isinstance(other, ScreenDistance):
+            raise TypeError
+
+        return self.pixels > other.pixels
+
+    def __lt__(self, other: ScreenDistance) -> bool:
+        if not isinstance(other, ScreenDistance):
+            raise TypeError
+
+        return self.pixels < other.pixels
+
+    @property
+    def px(self) -> float:
+        return round(self.pixels, 2)
+
+    @property
+    def mm(self) -> float:
+        return mm(self.pixels)
+
+    @property
+    def cm(self) -> float:
+        return cm(self.pixels)
+
+    @property
+    def inch(self) -> float:
+        return inch(self.pixels)
 
 
 common_resolution_standards: dict[tuple[int, int], str] = {
@@ -124,8 +160,6 @@ class Screen:
 
     @classproperty
     def dpi(self) -> float:
-        from ._tcl import Tcl
-
         return Tcl.call(float, "winfo", "fpixels", ".", "1i")
 
     @classproperty
@@ -136,15 +170,11 @@ class Screen:
         return screen_diagonal_px / screen_diagonal_inch
 
     @classproperty
-    def width(self):
-        from .screen_distance import ScreenDistance
-
+    def width(self) -> ScreenDistance:
         return ScreenDistance(px=self._width)
 
     @classproperty
-    def height(self):
-        from .screen_distance import ScreenDistance
-
+    def height(self) -> ScreenDistance:
         return ScreenDistance(px=self._height)
 
     @classproperty
@@ -156,15 +186,11 @@ class Screen:
         return self._width * self._height
 
     @classproperty
-    def diagonal(self):
-        from .screen_distance import ScreenDistance
-
+    def diagonal(self) -> ScreenDistance:
         return ScreenDistance(px=(self._width**2 + self._height**2) ** 0.5)
 
     @classproperty
     def color_depth(self) -> int:
-        from ._tcl import Tcl
-
         return Tcl.call(int, "winfo", "screendepth", ".")
 
     @classproperty

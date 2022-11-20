@@ -48,15 +48,15 @@ import sys
 from .__version__ import __author__, __license__, __version__
 from ._events import KeySeq
 from ._images import Icon, IconFactory, Image
-from ._info import Clipboard, Pointer, Screen
 from ._system import Platform
 from ._variables import BoolVar, FloatVar, IntVar, StringVar
 from .a11y.a11y import Accessibility
 from .app import App
+from .clipboard import Clipboard
 from .colors import Color, cmyk, hsl, hsv, rgb
 from .fonts.font import Font, font
 from .fonts.fontfile import FontFile, OpenTypeFont, TrueTypeCollection, TrueTypeFont
-from .screen_distance import ScreenDistance, cm, inch, mm
+from .screen import Screen, ScreenDistance, cm, inch, mm
 from .theming import AquaTheme, ClamTheme, KolorScheme, LookAndFeel, NativeTheme, Theme, Win32Theme
 from .time import Time
 from .timeouts import Timeout, Timer
