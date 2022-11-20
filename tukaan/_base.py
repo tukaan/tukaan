@@ -88,7 +88,6 @@ class WidgetBase(TkWidget, GeometryMixin):
 
         TkWidget.__init__(self)
 
-        self.layout_manager = None
         self.grid = ContainerGrid(self) if isinstance(self, Container) else Grid(self)
         self.geometry = Geometry(self)
         self.position = Position(self)

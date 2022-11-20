@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tukaan._collect import _widgets
-from tukaan._data import Bbox
 from tukaan._layout import Grid
+from tukaan._misc import Bbox
 from tukaan._tcl import Tcl
 
 if TYPE_CHECKING:

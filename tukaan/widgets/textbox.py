@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase, XScrollable
-from tukaan._data import Bbox
+from tukaan._misc import Bbox
 from tukaan._props import FocusableProp, ForegroundProp, TextAlignProp, WidthProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color

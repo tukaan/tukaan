@@ -4,11 +4,11 @@ from fractions import Fraction
 
 from screeninfo import get_monitors  # type: ignore
 
-from ._data import Position, Size
+from ._misc import Position, Size
 from ._utils import classproperty
 from .exceptions import TukaanTclError
 
-# TODO: Move this classes to appropriate modules, and delete this file
+# TODO: Move these classes to appropriate modules, and delete this file
 
 
 class Clipboard:

@@ -11,7 +11,6 @@ else:
     from typing_extensions import Protocol
 
 from tukaan._collect import _commands
-from tukaan._data import TabStop
 from tukaan._tcl import Tcl
 from tukaan._utils import T, T_co, T_contra, seq_pairs
 from tukaan._variables import ControlVariable
@@ -140,22 +139,6 @@ class LinkProp(RWProperty[ControlVariable, Optional[ControlVariable]]):
 class FocusableProp(OptionDesc[bool, bool]):
     def __init__(self) -> None:
         super().__init__("takefocus", bool)
-
-
-class TabStopsProp(RWProperty[List[TabStop], Union[TabStop, List[TabStop]]]):
-    def __get__(self, instance: TkWidget, owner: object = None):
-        if owner is None:
-            return NotImplemented
-        return [TabStop(pos, align) for pos, align in seq_pairs(cget(instance, list, "-tabs"))]
-
-    def __set__(self, instance: TkWidget, value: TabStop | list[TabStop]) -> None:
-        if value is None:
-            return
-
-        if isinstance(value, TabStop):
-            value = [value]
-
-        config(instance, tabs=[y for x in value for y in x.__to_tcl__()])
 
 
 PaddingType = Tuple[int, int, int, int]
