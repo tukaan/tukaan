@@ -43,12 +43,17 @@ class Pillow2Tcl:
             self._start()
 
     def _getmode(self, image: PillowImage.Image) -> str:
+        """Get the mode of palette mapped data."""
+
+        image.apply_transparency()
         try:
             mode = image.palette.mode
             if mode not in {"1", "L", "RGB", "RGBA"}:
                 mode = PillowImage.getmodebase(mode)
         except AttributeError:
             mode = "RGB"
+
+        return mode
 
     def _create(self, name: str, image: PillowImage.Image) -> tuple[str, int]:
         assert hasattr(image, "mode")
@@ -59,11 +64,7 @@ class Pillow2Tcl:
 
         image.load()
 
-        try:
-            duration = int(image.info["duration"])
-        except KeyError:
-            duration = 50
-
+        duration = int(image.info.get("duration", 50))
         size = image.size
         im = image.im
 
