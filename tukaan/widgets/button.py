@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import Any, Callable
 
 from PIL import Image  # type: ignore
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
 from tukaan._images import Icon
 from tukaan._props import CommandProp, FocusableProp, ImagePositionProp, TextProp, WidthProp
-from tukaan._tcl import Tcl
+from tukaan._tcl import Tcl, TclCallback
 from tukaan.enums import ImagePosition
 
 
@@ -26,12 +26,17 @@ class Button(WidgetBase, InputControl):
         text: str | None = None,
         action: Callable | None = None,
         *,
+        action_args: tuple[Any] = (),
+        action_kwargs: dict[str, Any] = {},
         focusable: bool | None = None,
         image: Image.Image | Icon | None = None,
         image_pos: ImagePosition | None = None,
         tooltip: str | None = None,
         width: int | None = None,
     ) -> None:
+        if action_args or action_kwargs:
+            action = TclCallback(action, action_args, action_kwargs)
+
         WidgetBase.__init__(
             self,
             parent,

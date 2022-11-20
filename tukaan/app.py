@@ -38,18 +38,6 @@ class App:
 
         NativeTheme.use()
 
-    def __enter__(self) -> App:
-        return self
-
-    def __exit__(
-        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, _
-    ) -> NoReturn | None:
-
-        if exc_type is None:
-            return self.run()
-
-        raise exc_type(exc_value) from None
-
     def _init_tkdnd(self) -> None:
         os = {"linux": "linux", "darwin": "mac", "win32": "win"}[sys.platform]
         os += "-x64" if sys.maxsize > 2**32 else "-x32"
@@ -82,13 +70,11 @@ class App:
         theme.use()
         LookAndFeel._is_current_theme_native = theme.is_native
 
-    @classmethod
-    def quit(cls) -> None:
+    run = Tcl.main_loop
+    async_event_loop = Tcl.async_main_loop
+
+    @staticmethod
+    def quit() -> None:
         """Quit the entire Tcl interpreter."""
         Serif.cleanup()
         Tcl.quit()
-
-    @classmethod
-    def run(cls) -> None:
-        """Start the main event loop."""
-        Tcl.main_loop()

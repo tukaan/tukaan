@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import collections
-import contextlib
 import functools
+import inspect
 import itertools
 import numbers
 import sys
@@ -16,13 +17,12 @@ import _tkinter as tk
 from ._nogc import _commands, counter
 from .exceptions import TukaanTclError
 
+assert tk.DONT_WAIT == 2  # this is a hack, but I want to avoid attribute access in async_main_loop
+
 
 class TclCallback:
-    def __init__(self, callback: Callable[..., Any], converters=(), args=(), kwargs={}):
-        # using () and {} as default is not a problem here ^^^
-
+    def __init__(self, callback: Callable[..., Any], args=(), kwargs={}) -> None:
         self._callback = callback
-        self._converters = converters
         self._args = args
         self._kwargs = kwargs
 
@@ -32,17 +32,13 @@ class TclCallback:
         Tcl._interp.createcommand(name, self.__call__)
 
     def __call__(self, *tcl_args) -> Any:
-        if self._converters and tcl_args:
-            result = []
-            for index, value in enumerate(tcl_args):
-                with contextlib.suppress(KeyError):
-                    value = Tcl.from_(self._converters[index], value)
-                result.append(value)
-
-            tcl_args = tuple(result)
-
         try:
-            return self._callback(*tcl_args, *self._args, **self._kwargs)
+            if inspect.iscoroutinefunction(self._callback):
+                return asyncio.get_event_loop().create_task(
+                    self._callback(*tcl_args, *self._args, **self._kwargs)
+                )
+            else:
+                return self._callback(*tcl_args, *self._args, **self._kwargs)
         except Exception:
             # remove unnecessary lines:
             # File "/home/.../_tcl.py", line 46, in __call__
@@ -71,17 +67,31 @@ class Tcl:
         cls.windowing_system = cls._interp.call("tk", "windowingsystem").lower()
         cls.version = cls._interp.call("info", "patchlevel")
         cls.dll_ext = cls._interp.call("info", "sharedlibextension")
-        cls.basename = app_name
+        cls.is_alive = True
+
+    @classmethod
+    async def async_main_loop(cls, *args) -> None:
+        while cls.is_alive:
+            while cls._interp.dooneevent(2):
+                pass
+            await asyncio.sleep(0)
 
     @classmethod
     def main_loop(cls) -> None:
-        """Start the main event loop."""
+        """Start the event loop."""
         cls._interp.mainloop(0)
+
+    @classmethod
+    def do_one_event(cls) -> None:
+        cls._interp.dooneevent(2)
+        if not cls._interp.is_alive:
+            raise TukaanTclError
 
     @classmethod
     def quit(cls) -> None:
         """Quit the interpreter."""
         cls._interp.quit()
+        cls.is_alive = False
 
     @classmethod
     def load_dll(cls, path: Path, pkg_name: str | None) -> None:
@@ -128,14 +138,14 @@ class Tcl:
         if isinstance(obj, collections.abc.Mapping):
             return tuple(map(Tcl.to, itertools.chain.from_iterable(obj.items())))  # type: ignore
 
-        if callable(obj):
-            return TclCallback(obj)._name
-
         if isinstance(obj, Path):
             return str(obj.resolve())
 
         if isinstance(obj, Enum):
             return str(obj.value)
+
+        if callable(obj) or inspect.iscoroutinefunction(obj):
+            return TclCallback(obj)._name
 
         try:
             return tuple(map(Tcl.to, obj))  # type: ignore

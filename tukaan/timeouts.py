@@ -22,18 +22,18 @@ class Timeout:
 
         return f"<{self.state.capitalize()} `{name}` timeout at {hex(id(self))}>"
 
-    def run_once(self):
+    def run_once(self) -> None:
         try:
             self.target()
         except Exception as e:
             print(e)
             self.state = "failed"
 
-    def run_now(self):
+    def run_now(self) -> None:
         self.cancel()
         self.run_once()
 
-    def run(self):
+    def run(self) -> None:
         try:
             self.target()
             if self._repeat:
@@ -77,14 +77,15 @@ class Timeout:
 class Timer:
     @staticmethod
     def schedule(seconds: float, target: Callable[[Any], Any], *, args=(), kwargs={}) -> None:
-        Tcl.call(str, "after", int(seconds * 1000), TclCallback(target, args=args, kwargs=kwargs))
+        Tcl.call(str, "after", int(seconds * 1000), TclCallback(target, args, kwargs))
 
     @staticmethod
     def wait(seconds: float) -> None:
-        script = f"""
-        set tukaan_waitvar 0
-        after {int(seconds * 1000)} {{set tukaan_waitvar 1}}
-        tkwait variable tukaan_waitvar"""
+        script = (
+            "set tukaan_waitvar 0"
+            + f"after {int(seconds * 1000)} {{set tukaan_waitvar 1}}"
+            + "tkwait variable tukaan_waitvar"
+        )
 
         Tcl.eval(None, script)
 
