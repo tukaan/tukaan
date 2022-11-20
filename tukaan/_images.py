@@ -39,7 +39,10 @@ class Pillow2Tcl:
             self._frames = []
             self._current_frame = 0
             self._show_cmd = Tcl.to(self._show)
-            self._schedule_next_cmd = f"{self._name} copy {{name}} -compositingrule set\nafter {{duration}} {self._show_cmd}"
+            self._schedule_next_cmd = (
+                f"{self._name} copy {{name}} -compositingrule set\n"
+                + f"after {{duration}} {self._show_cmd} {{frame}}"
+            )
             self._start()
 
     def _getmode(self, image: PillowImage.Image) -> str:
@@ -92,17 +95,21 @@ class Pillow2Tcl:
 
         self._len = frame_count - 1
 
-        Tcl.eval(None, f"after idle {self._show_cmd}")
+        Tcl.eval(None, f"after idle {self._show_cmd} 0")
 
-    def _show(self) -> None:
-        name, duration = self._frames[self._current_frame]
+    def _show(self, current_frame: str) -> None:
+        current_frame = int(current_frame)
+        name, duration = self._frames[current_frame]
 
-        if self._current_frame == self._len:
-            self._current_frame = 0
+        if current_frame == self._len:
+            current_frame = 0
         else:
-            self._current_frame += 1
+            current_frame += 1
 
-        Tcl.eval(None, self._schedule_next_cmd.format(name=name, duration=duration))
+        Tcl.eval(
+            None,
+            self._schedule_next_cmd.format(name=name, duration=duration, frame=current_frame),
+        )
 
     @staticmethod
     def dispose(image_name: str) -> None:
