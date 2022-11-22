@@ -8,8 +8,8 @@ from enum import Enum
 from fractions import Fraction
 from typing import Callable, Sequence
 
-from tukaan._data import Position, Size
 from tukaan._images import Icon
+from tukaan._misc import Position, Size
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
 from tukaan.colors import Color

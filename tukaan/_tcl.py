@@ -13,14 +13,12 @@ from typing import Any, Callable
 
 import _tkinter as tk
 
-from ._nogc import _commands, counter
-from .exceptions import TukaanTclError
+from tukaan._collect import _commands, counter
+from tukaan.exceptions import TukaanTclError
 
 
 class TclCallback:
     def __init__(self, callback: Callable[..., Any], converters=(), args=(), kwargs={}):
-        # using () and {} as default is not a problem here ^^^
-
         self._callback = callback
         self._converters = converters
         self._args = args

@@ -1,4 +1,4 @@
-_keysym_aliases = {
+keysym_aliases = {
     # general
     "Alt_L": "Alt:Left",
     "Alt_R": "Alt:Right",
@@ -67,7 +67,7 @@ _keysym_aliases = {
     "KP_Subtract": "NumPad:Substract",
     "KP_Tab": "NumPad:Tab",
     "KP_Up": "NumPad:Up",
-    # XF86 stuff
+    # XFree86 keysyms
     "XF86AddFavorite": "XF86AddFavorite",
     "XF86ApplicationLeft": "XF86ApplicationLeft",
     "XF86ApplicationRight": "XF86ApplicationRight",
@@ -251,3 +251,5 @@ _keysym_aliases = {
     "XF86ZoomOut": "Action:ZoomOut",
     "XF86iTouch": "iTouch",
 }
+
+reversed_keysym_aliases = {value: key for key, value in keysym_aliases.items()}

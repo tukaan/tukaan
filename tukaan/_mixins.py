@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ._data import Bbox
-from ._layout import Grid
-from ._nogc import _widgets
-from ._tcl import Tcl
+from tukaan._collect import _widgets
+from tukaan._layout import Grid
+from tukaan._misc import Bbox
+from tukaan._tcl import Tcl
 
 if TYPE_CHECKING:
-    from ._base import TkWidget
+    from tukaan._base import TkWidget
 
 
 class WidgetMixin:
@@ -19,7 +19,7 @@ class WidgetMixin:
         details = self._repr_details()
         details = f", {details}" if details else ""
 
-        return f"<{klass} widget at {hex(id(self))}: tcl_name={self._name!r} {details}>"
+        return f"<{klass} widget at {hex(id(self))}: tcl_name={self._name!r}{details}>"
 
     def _repr_details(self) -> str:
         # overridden in subclasses
@@ -35,22 +35,6 @@ class WidgetMixin:
     @classmethod
     def __from_tcl__(cls, tcl_value: str) -> TkWidget:
         return _widgets[tcl_value]
-
-
-class DnDMixin:
-    _lm_path: str
-
-    def set_drag_target(self) -> None:
-        Tcl.call(None, "tkdnd::drop_target", "register", self._lm_path, "*")
-
-    def unset_drag_target(self) -> None:
-        Tcl.call(None, "tkdnd::drop_target", "unregister", self._lm_path)
-
-    def set_drag_source(self) -> None:
-        Tcl.call(None, "tkdnd::drag_source", "register", self._lm_path, "*")
-
-    def unset_drag_source(self) -> None:
-        Tcl.call(None, "tkdnd::drag_source", "unregister", self._lm_path)
 
 
 class GeometryMixin:

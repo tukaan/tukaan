@@ -1,12 +1,14 @@
 import functools
 import platform
 import sys
+from collections import namedtuple
 from typing import Any, Callable
 
 import _tkinter as tk
 
-from ._data import Version
 from ._utils import classproperty
+
+Version = namedtuple("Version", ["major", "minor", "patchlevel"])
 
 
 class Platform:

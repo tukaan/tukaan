@@ -35,14 +35,8 @@ setup(
         "tukaan",
         "tukaan/fonts",
         "tukaan/themes",
-        "tukaan/tkdnd",
         "tukaan/widgets",
     ],
-    package_data={
-        "": [
-            "tkdnd/*/*.*",
-        ]
-    },
     include_package_data=True,
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
