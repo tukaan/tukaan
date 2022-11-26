@@ -14,8 +14,8 @@ from typing import Any, Callable
 
 import _tkinter as tk
 
-from ._nogc import _commands, counter
-from .exceptions import TukaanTclError
+from tukaan._collect import _commands, counter
+from tukaan.exceptions import TukaanTclError
 
 assert tk.DONT_WAIT == 2  # this is a hack, but I want to avoid attribute access in async_main_loop
 
@@ -84,7 +84,7 @@ class Tcl:
     @classmethod
     def do_one_event(cls) -> None:
         cls._interp.dooneevent(2)
-        if not cls._interp.is_alive:
+        if not cls.is_alive:
             raise TukaanTclError
 
     @classmethod

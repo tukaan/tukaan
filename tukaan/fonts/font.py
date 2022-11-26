@@ -8,13 +8,12 @@ if TYPE_CHECKING:
     from pathlib import Path
     from tukaan._base import TkWidget
 
-from tukaan._nogc import _fonts, counter
+from tukaan._collect import _fonts, counter
 from tukaan._props import OptionDesc, RWProperty, T_co
 from tukaan._tcl import Tcl
 from tukaan._utils import seq_pairs
 from tukaan.exceptions import FontError, TukaanTclError
-
-from .fontfile import FontFile, FontInfo, TrueTypeCollection
+from tukaan.fonts.fontfile import FontFile, FontInfo, TrueTypeCollection
 
 preset_fonts = {
     "TkCaptionFont",
@@ -285,5 +284,5 @@ FontType = Union[Font, Dict[str, Union[str, int, bool]]]
 
 
 class FontProp(OptionDesc[Font, FontType]):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("font", Font)

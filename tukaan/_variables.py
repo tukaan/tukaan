@@ -1,41 +1,36 @@
 from __future__ import annotations
 
-from ._nogc import _variables, counter
-from ._tcl import Tcl
+from tukaan._collect import _variables, counter
+from tukaan._tcl import Tcl
 
 
 class ControlVariable:
-    _type_spec: type
+    # FIXME: typing in this file
+
+    _type_spec: type[float | str | bool]
     _default: float | str | bool
 
-    def __init__(self, value=None, name=None) -> None:
-        if name is None:
-            name = f"tukaan_{self._type_spec.__name__}_var_{next(counter['variable'])}"
+    def __init__(self, value: float | str | bool | None = None) -> None:
+        self._name = f"tukaan_{self._type_spec.__name__}var_{next(counter['variable'])}"
+        _variables[self._name] = self
 
         if value is None:
             value = self._default
 
-        _variables[name] = self
-        self._name = name
         self.set(value)
 
     def __repr__(self) -> str:
-        return f"tukaan.{type(self).__name__} control variable: tcl_name={self._name}, value={self.get()!r}"
+        return f"<tukaan.{type(self).__name__} control variable: tcl_name={self._name}, value={self.get()!r}>"
 
-    __str__ = __repr__
-
-    def __hash__(self):
+    def __hash__(self) -> None:
         return hash((self._type_spec, self._name))
 
-    def __to_tcl__(self):
-        return self._name
-
     @classmethod
-    def __from_tcl__(cls, value):
+    def __from_tcl__(cls, value: str) -> ControlVariable:
         return _variables[value]
 
-    def set(self, new_value):
-        return Tcl.call(self._type_spec, "set", self._name, new_value)
+    def set(self, value: float | str | bool) -> None:
+        Tcl.call(None, "set", self._name, value)
 
     def get(self):
         return Tcl.call(self._type_spec, "set", self._name)
@@ -45,30 +40,25 @@ class ControlVariable:
         return self.get()
 
     @value.setter
-    def value(self, value: float | str | bool):
+    def value(self, value: float | str | bool) -> None:
         self.set(value)
 
 
-class String(ControlVariable):
+class StringVar(ControlVariable):
     _type_spec = str
     _default = ""
 
 
-class Integer(ControlVariable):
+class IntVar(ControlVariable):
     _type_spec = int
     _default = 0
 
 
-class Float(ControlVariable):
+class FloatVar(ControlVariable):
     _type_spec = float
     _default = 0.0
 
 
-class Boolean(ControlVariable):
+class BoolVar(ControlVariable):
     _type_spec = bool
     _default = False
-
-    def __invert__(self) -> bool:
-        inverted = not Tcl.call(bool, "set", self._name)
-        Tcl.call(None, "set", self._name, inverted)
-        return inverted

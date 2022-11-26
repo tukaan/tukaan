@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase, XScrollable
-from tukaan._data import Bbox
+from tukaan._misc import Bbox
 from tukaan._props import FocusableProp, ForegroundProp, TextAlignProp, WidthProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
@@ -96,12 +96,10 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         Tcl.call(None, self, "delete", 0, "end")
         Tcl.call(None, self, "insert", 0, value)
 
-    value = property(get, set)
+    text = property(get, set)
 
     def char_bbox(self, index: int | str) -> Bbox:
         return Bbox(*Tcl.call((int,), self, "bbox", index))
-
-    ### Properties ###
 
     @property
     def hide_chars_with(self) -> str:

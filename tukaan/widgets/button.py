@@ -5,7 +5,7 @@ from typing import Any, Callable
 from PIL import Image  # type: ignore
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._images import Icon
+from tukaan._images import Icon, ImageProp
 from tukaan._props import CommandProp, FocusableProp, ImagePositionProp, TextProp, WidthProp
 from tukaan._tcl import Tcl, TclCallback
 from tukaan.enums import ImagePosition
@@ -14,9 +14,10 @@ from tukaan.enums import ImagePosition
 class Button(WidgetBase, InputControl):
     _tcl_class = "ttk::button"
 
-    focusable = FocusableProp()
-    image_pos = ImagePositionProp()
     action = CommandProp()
+    focusable = FocusableProp()
+    image = ImageProp()
+    image_pos = ImagePositionProp()
     text = TextProp()
     width = WidthProp()
 
