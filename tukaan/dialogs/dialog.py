@@ -19,7 +19,7 @@ class Dialog:
     elif shutil.which("zenity"):
         _type = "zenity"
     else:
-        _type = "tukaan"
+        _type = "native"  # _type = "tukaan"
 
 
 def run_in_subprocess(args: list[str]) -> str:
