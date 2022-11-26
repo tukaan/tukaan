@@ -69,7 +69,8 @@ class Tcl:
         cls.windowing_system = cls._interp.call("tk", "windowingsystem").lower()
         cls.version = cls._interp.call("info", "patchlevel")
         cls.dll_ext = cls._interp.call("info", "sharedlibextension")
-        cls.basename = app_name
+
+        cls.alive = True
 
     @classmethod
     def main_loop(cls) -> None:
@@ -77,9 +78,16 @@ class Tcl:
         cls._interp.mainloop(0)
 
     @classmethod
+    def do_one_event(cls) -> None:
+        cls._interp.dooneevent(tk.DONT_WAIT)
+        if not cls.alive:
+            raise TukaanTclError
+
+    @classmethod
     def quit(cls) -> None:
         """Quit the interpreter."""
         cls._interp.quit()
+        cls.alive = False
 
     @classmethod
     def load_dll(cls, path: Path, pkg_name: str | None) -> None:

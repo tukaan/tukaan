@@ -18,6 +18,7 @@ from tukaan.theming import LookAndFeel, NativeTheme, Theme
 
 class App:
     _exists = False
+    shared_instance: App
 
     def __init__(
         self,
@@ -44,11 +45,13 @@ class App:
             # Pillow 9.3.0
             ImagingTk.tkinit(Tcl.interp_address)
 
+        NativeTheme.use()
+
         self._name = name
         self._author = author
         self._version = str(version)
 
-        NativeTheme.use()
+        App.shared_instance = self
 
         App.shared_instance = self
 

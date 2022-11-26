@@ -1,4 +1,5 @@
 from setuptools import setup
+
 from tukaan.__version__ import __author__, __license__, __version__
 
 
