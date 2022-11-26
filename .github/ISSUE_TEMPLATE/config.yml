@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions
+    url: https://github.com/tukaan/tukaan/discussions/new?category=question
+    about: "Ask a question in the discussion forum"
+  - name: Documentation
+    url: https://tukaan.github.io/docs
+    about: "Visit Tukaan's documentation"

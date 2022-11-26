@@ -3,13 +3,14 @@ from __future__ import annotations
 import collections
 from typing import Callable
 
-from ._events import EventMixin
-from ._layout import ContainerGrid, Geometry, Grid, Position, ToplevelGrid
-from ._mixins import DnDMixin, GeometryMixin, VisibilityMixin, WidgetMixin
-from ._nogc import _commands, _widgets, count
-from ._props import cget, config
-from ._tcl import Tcl
-from .widgets.tooltip import ToolTipProvider
+from tukaan._collect import _commands, _widgets
+from tukaan._events import BindingsMixin
+from tukaan._layout import ContainerGrid, Geometry, Grid, Position, ToplevelGrid
+from tukaan._mixins import GeometryMixin, VisibilityMixin, WidgetMixin
+from tukaan._props import cget, config
+from tukaan._tcl import Tcl
+from tukaan._utils import count
+from tukaan.widgets.tooltip import ToolTipProvider
 
 
 def generate_pathname(widget: TkWidget, parent: TkWidget) -> str:
@@ -57,7 +58,7 @@ class YScrollable:
         config(self, yscrollcommand=value)
 
 
-class TkWidget(WidgetMixin, EventMixin, VisibilityMixin, DnDMixin):
+class TkWidget(WidgetMixin, BindingsMixin, VisibilityMixin):
     """Base class for every Tk widget."""
 
     _name: str
@@ -87,7 +88,6 @@ class WidgetBase(TkWidget, GeometryMixin):
 
         TkWidget.__init__(self)
 
-        self.layout_manager = None
         self.grid = ContainerGrid(self) if isinstance(self, Container) else Grid(self)
         self.geometry = Geometry(self)
         self.position = Position(self)

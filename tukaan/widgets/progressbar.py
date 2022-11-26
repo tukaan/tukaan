@@ -5,7 +5,7 @@ from typing import Generator
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
 from tukaan._props import FocusableProp, IntDesc, LinkProp, OrientProp, cget, config
 from tukaan._tcl import Tcl
-from tukaan._variables import Float, Integer
+from tukaan._variables import FloatVar, IntVar
 from tukaan.enums import Orientation, ProgressMode
 from tukaan.timeouts import Timeout
 
@@ -26,7 +26,7 @@ class ProgressBar(WidgetBase, OutputDisplay):
         length: int = 100,
         *,
         focusable: bool | None = None,
-        link: Integer | Float | None = None,
+        link: IntVar | FloatVar | None = None,
         mode: ProgressMode | None = None,
         orientation: Orientation | None = None,
         tooltip: str | None = None,

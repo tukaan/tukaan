@@ -5,7 +5,7 @@ from typing import Callable
 from PIL import Image  # type: ignore
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._images import Icon
+from tukaan._images import Icon, ImageProp
 from tukaan._props import CommandProp, FocusableProp, ImagePositionProp, TextProp, WidthProp
 from tukaan._tcl import Tcl
 from tukaan.enums import ImagePosition
@@ -14,9 +14,10 @@ from tukaan.enums import ImagePosition
 class Button(WidgetBase, InputControl):
     _tcl_class = "ttk::button"
 
+    action = CommandProp()
     focusable = FocusableProp()
+    image = ImageProp()
     image_pos = ImagePositionProp()
-    on_click = CommandProp()
     text = TextProp()
     width = WidthProp()
 
@@ -24,7 +25,7 @@ class Button(WidgetBase, InputControl):
         self,
         parent: TkWidget,
         text: str | None = None,
-        on_click: Callable | None = None,
+        action: Callable | None = None,
         *,
         focusable: bool | None = None,
         image: Image.Image | Icon | None = None,
@@ -35,7 +36,7 @@ class Button(WidgetBase, InputControl):
         WidgetBase.__init__(
             self,
             parent,
-            command=on_click,
+            command=action,
             compound=image_pos,
             image=image,
             takefocus=focusable,
@@ -45,6 +46,5 @@ class Button(WidgetBase, InputControl):
         )
 
     def invoke(self) -> None:
-        """Invokes the button, as if it were clicked"""
-
+        """Invoke the button, as if it were clicked."""
         Tcl.call(None, self, "invoke")
