@@ -130,7 +130,7 @@ class TukaanFileDialog(FileDialogBase):
 class ZenityFileDialog(FileDialogBase):
     @staticmethod
     def pick_path_to_open(
-        title: str | None = "Open file",
+        title: str | None = None,
         *,
         directory: Path | None = None,
         filename: str | None = None,
@@ -204,7 +204,7 @@ class ZenityFileDialog(FileDialogBase):
 
     @staticmethod
     def pick_directory(
-        title: str | None = "Select directory",
+        title: str | None = None,
         *,
         default: Path | None = None,
         parent: ToplevelBase | None = None,
