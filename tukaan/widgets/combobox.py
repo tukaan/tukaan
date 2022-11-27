@@ -98,7 +98,7 @@ class ComboBox(TextBox):
     def _call_action(self) -> None:
         Tcl.call(None, self, "selection", "clear")
         if self._action is not None:
-            self._action(self.get())
+            self._action(self.value)
 
     def set(self, value: str) -> None:
         Tcl.call(None, self, "set", value)

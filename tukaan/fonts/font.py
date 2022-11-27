@@ -44,7 +44,7 @@ class _FontProperty(RWProperty[T_co, T_co]):
         return Tcl.call(self.TYPE, "font", "actual", instance, f"-{self._option}")
 
     def __set__(self, instance: TkWidget, value: object) -> None:
-        Tcl.call(None, "font", "configure", instance._name, f"-{self._option}", value)
+        Tcl.call(None, "font", "configure", instance, f"-{self._option}", value)
 
 
 class _BoolFontProperty(_FontProperty[bool]):
@@ -106,7 +106,7 @@ class Font:
             family:
                 The font family to be used
             size:
-                The font size to be used
+                The font size to be used (positive value means points, negative means pixels)
             bold:
                 Bold font ?
             italic:
@@ -147,8 +147,11 @@ class Font:
         strikethrough: bool = False,
     ) -> None:
         """Configure the font's parameters."""
-        if isinstance(size, float):
-            size = round(size)
+
+        if size:
+            if isinstance(size, float):
+                size = round(size)
+            size = -size  # Negative value means points in Tk, but pixels in Tukaan. Invert it
 
         args = Tcl.to_tcl_args(
             family=family,
@@ -187,7 +190,9 @@ class Font:
             for key, value in seq_pairs(flat_values):
                 # TODO: Return a FontFile object if the family is loaded from a file
                 key = key.lstrip("-")
-                if key == "weight":
+                if key == "size":
+                    value = -value
+                elif key == "weight":
                     value = value == "bold"
                     key = "bold"
                 elif key == "slant":
@@ -202,8 +207,17 @@ class Font:
     family = _StrFontProperty()
     """Get or set the current font family."""
 
-    size = _IntFontProperty()
-    """Get or set the current font size."""
+    @property
+    def size(self) -> int:
+        """Get or set the current font size."""
+        return -Tcl.call(int, "font", "actual", self, "-size")
+
+    @size.setter
+    def size(self, value: int) -> None:
+        if isinstance(value, float):
+            value = round(value)
+
+        Tcl.call(None, "font", "configure", self, "-size", -value)
 
     bold = _FontStyleProperty("weight", "bold", "normal")
     """Get or set whether the font should be drawn as bold."""
@@ -269,6 +283,9 @@ def font(
 
     weight = {True: "bold", False: "normal"}.get(bold)
     slant = {True: "italic", False: "roman"}.get(italic)
+
+    if size:
+        size = -size  # Negative value means points in Tk, but pixels in Tukaan. Invert it
 
     return Tcl.to_tcl_args(
         family=family,
