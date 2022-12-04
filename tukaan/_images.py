@@ -1,49 +1,44 @@
 from __future__ import annotations
 
-import contextlib
+import itertools
 from pathlib import Path
 from typing import Union
 
 from PIL import Image as PillowImage
+from PIL import ImageSequence
 from PIL import _imagingtk as ImagingTk  # type: ignore
-
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._collect import _images, _pil_images, counter
+from tukaan._collect import _images, counter
 from tukaan._props import OptionDesc
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
-
-CREATE_PHOTO_CMD = "image create photo {name}\nPyImagingPhoto {name} {blockid}"
 
 
 class Pillow2Tcl:
     def __init__(self, image: PillowImage.Image) -> None:
         self._name = f"tukaan_image_{next(counter['images'])}"
-        self._orig_image = image
+        self._pil_image = image
 
         _images[self._name] = self
-        _pil_images[self._name] = image
-
-        Tcl.call(None, "image", "create", "photo", self._name)
-
-        self._transparent = "transparency" in image.info
 
         try:
             self._animated = image.is_animated
         except AttributeError:
             self._animated = False
 
+        self._transparent = "transparency" in image.info
+
         if not self._animated:
-            self._create(self._name, image)
+            self._create(image, name=self._name)
         else:
-            self._frames = []
-            self._current_frame = 0
-            self._show_cmd = Tcl.to(self._show)
-            self._schedule_next_cmd = (
-                f"{self._name} copy {{name}} -compositingrule set\n"
-                + f"after {{duration}} {self._show_cmd} {{frame}}"
-            )
-            self._start()
+            # Image into which individual frames will be copied
+            Tcl.call(None, "image", "create", "photo", self._name)
+
+            # Set up animation frames
+            self._setup_animation(image)
+            self._show_cmd = Tcl.to(self._show_next_frame)
+            self._schedule_next_cmd = f"after {{}} {self._show_cmd}\n{self._name} copy {{}} -compositingrule set"
+            Tcl.eval(None, f"after idle {self._show_cmd}")
 
     def _getmode(self, image: PillowImage.Image) -> str:
         """Get the mode of palette mapped data."""
@@ -58,7 +53,9 @@ class Pillow2Tcl:
 
         return mode
 
-    def _create(self, name: str, image: PillowImage.Image) -> tuple[str, int]:
+    def _create(
+        self, image: PillowImage.Image, name: str | None = None
+    ) -> tuple[int, str]:
         assert hasattr(image, "mode")
         assert hasattr(image, "size")
 
@@ -78,38 +75,21 @@ class Pillow2Tcl:
             block = im.new_block(mode, size)
             im.convert2(block, im)
 
-        Tcl.eval(None, CREATE_PHOTO_CMD.format(name=name, blockid=block.id))
+        name = Tcl.eval(str, f"image create photo {name or ''}")
+        Tcl.eval(None, f"PyImagingPhoto {name} {block.id}")
 
-        return name, duration
+        return duration, name
 
-    def _start(self) -> None:
-        source_name = self._name
-        frame_count = 0
+    def _setup_animation(self, image: PillowImage.Image) -> None:
+        frames = []
 
-        with contextlib.suppress(EOFError):
-            while True:
-                self._orig_image.seek(frame_count)
-                name = f"{source_name}_frame_{frame_count}"
-                self._frames.append(self._create(name, self._orig_image))
-                frame_count += 1
+        for frame in ImageSequence.Iterator(image):
+            frames.append(self._create(frame))
 
-        self._len = frame_count - 1
+        self._frames = itertools.cycle(frames)
 
-        Tcl.eval(None, f"after idle {self._show_cmd} 0")
-
-    def _show(self, current_frame: str) -> None:
-        current_frame = int(current_frame)
-        name, duration = self._frames[current_frame]
-
-        if current_frame == self._len:
-            current_frame = 0
-        else:
-            current_frame += 1
-
-        Tcl.eval(
-            None,
-            self._schedule_next_cmd.format(name=name, duration=duration, frame=current_frame),
-        )
+    def _show_next_frame(self) -> None:
+        Tcl.eval(None, self._schedule_next_cmd.format(*next(self._frames)))
 
     @staticmethod
     def dispose(image_name: str) -> None:
@@ -119,7 +99,6 @@ class Pillow2Tcl:
             return
 
         del _images[image_name]
-        del _pil_images[image_name]
 
         Tcl.eval(None, f"image delete {image._name}")
 
@@ -129,10 +108,10 @@ class Pillow2Tcl:
 
     @classmethod
     def __from_tcl__(cls, value: str) -> PillowImage.Image | Icon | None:
-        result = _pil_images.get(value)
-        if result is None:
-            # It's an Icon
-            result = _images.get(value)
+        result = _images.get(value)
+
+        if hasattr(result, "_pil_image"):
+            return result._pil_image
 
         return result
 
