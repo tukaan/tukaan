@@ -103,8 +103,15 @@ class Pillow2Tcl:
         Tcl.eval(None, f"image delete {image._name}")
 
         if image._animated:
-            Tcl.eval(None, f"after cancel {image.show_cmd}")
-            Tcl.call(None, "image", "delete", *tuple(name for name, _ in image._frames))
+            Tcl.eval(None, f"after cancel {image._show_cmd}")
+
+            frames = []
+            for _, name in image._frames:
+                if name in frames:
+                    break
+                frames.append(name)
+
+            Tcl.call(None, "image", "delete", *frames)
 
     @classmethod
     def __from_tcl__(cls, value: str) -> PillowImage.Image | Icon | None:
