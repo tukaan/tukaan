@@ -45,7 +45,7 @@ def prompt_install_linux(packages: [str]) -> None:
             break
 
     stuff = package_data[system_package_manager]
-    package_names = [stuff.get(name) for name in packages if stuff.get(name)]
+    package_names = [stuff[name] for name in packages if stuff.get(name)]
 
     print(
         "The following packages must be installed in order to use Tukaan:",
