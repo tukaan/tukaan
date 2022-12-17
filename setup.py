@@ -51,7 +51,7 @@ def prompt_install_linux(packages: [str]) -> None:
         "The following packages must be installed in order to use Tukaan:",
         f"  {' '.join(package_names)}\n",
         f"Please install {'it' if len(package_names) == 1 else 'them'} "
-        "with the following command (root privileges may be required):",
+        + "with the following command (root privileges may be required):",
         "  " + " ".join(stuff["cmd"] + package_names),
         sep="\n",
     )
