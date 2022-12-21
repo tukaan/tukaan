@@ -259,6 +259,7 @@ class Font:
 def font(
     family: FontFile | str | None = None,
     size: int | None = None,
+    *,
     bold: bool | None = None,
     italic: bool | None = None,
     underline: bool | None = None,

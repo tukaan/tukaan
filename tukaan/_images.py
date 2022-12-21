@@ -7,6 +7,7 @@ from typing import Union
 from PIL import Image as PillowImage
 from PIL import ImageSequence
 from PIL import _imagingtk as ImagingTk  # type: ignore
+
 from tukaan._base import TkWidget, WidgetBase
 from tukaan._collect import _images, counter
 from tukaan._props import OptionDesc
@@ -37,7 +38,9 @@ class Pillow2Tcl:
             # Set up animation frames
             self._setup_animation(image)
             self._show_cmd = Tcl.to(self._show_next_frame)
-            self._schedule_next_cmd = f"after {{}} {self._show_cmd}\n{self._name} copy {{}} -compositingrule set"
+            self._schedule_next_cmd = (
+                f"after {{}} {self._show_cmd}\n{self._name} copy {{}} -compositingrule set"
+            )
             Tcl.eval(None, f"after idle {self._show_cmd}")
 
     def _getmode(self, image: PillowImage.Image) -> str:
@@ -53,9 +56,7 @@ class Pillow2Tcl:
 
         return mode
 
-    def _create(
-        self, image: PillowImage.Image, name: str | None = None
-    ) -> tuple[int, str]:
+    def _create(self, image: PillowImage.Image, name: str | None = None) -> tuple[int, str]:
         assert hasattr(image, "mode")
         assert hasattr(image, "size")
 

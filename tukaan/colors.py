@@ -6,8 +6,10 @@ from fractions import Fraction
 
 from .exceptions import ColorError
 
+# TODO: refactor this mess
 
-class ColorSpace(ABC):
+
+class ColorModel(ABC):
     @staticmethod
     @abstractmethod
     def convert_from():
@@ -19,7 +21,7 @@ class ColorSpace(ABC):
         pass
 
 
-class Hex(ColorSpace):
+class Hex(ColorModel):
     @staticmethod
     def convert_from(string):
         int_value = int(string.lstrip("#"), 16)
@@ -30,7 +32,7 @@ class Hex(ColorSpace):
         return f"#{r:02x}{g:02x}{b:02x}"
 
 
-class Rgb(ColorSpace):
+class Rgb(ColorModel):
     @staticmethod
     def convert_from(r, g, b):
         return r, g, b
@@ -40,7 +42,7 @@ class Rgb(ColorSpace):
         return r, g, b
 
 
-class Hsv(ColorSpace):
+class Hsv(ColorModel):
     @staticmethod
     def convert_from(h, s, v):
         h, s, v = h / 360, s / 100, v / 100
@@ -88,7 +90,7 @@ class Hsv(ColorSpace):
         return tuple(round(x) for x in (h, s, v))
 
 
-class Hsl(ColorSpace):
+class Hsl(ColorModel):
     @staticmethod
     def convert_from(h, s, l):
         h, s, l = h / 360, s / 100, l / 100
@@ -145,7 +147,7 @@ class Hsl(ColorSpace):
         return tuple(round(x) for x in (h * 60, s * 100, l * 100))
 
 
-class Cmyk(ColorSpace):
+class Cmyk(ColorModel):
     @staticmethod
     def convert_from(c, m, y, k) -> tuple[int, ...]:
         c = c / 100.0
@@ -204,8 +206,8 @@ class Color:
             else:
                 raise ColorError("multiple colors specified")
         else:
-            space = tuple(kwargs.keys())[0]
-            value = kwargs[space]
+            model = tuple(kwargs.keys())[0]
+            value = kwargs[model]
             try:
                 factory = {
                     "cmyk": Cmyk,
@@ -213,9 +215,9 @@ class Color:
                     "hsl": Hsl,
                     "hsv": Hsv,
                     "rgb": Rgb,
-                }[space]
+                }[model]
             except KeyError:
-                raise ColorError(f"invalid color space: {space}") from None
+                raise ColorError(f"invalid color model name: {model}") from None
 
         if factory is Hex:
             value = (value,)
