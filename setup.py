@@ -129,9 +129,12 @@ setup(
     keywords=["gui", "tcl", "tcl/tk", "tk", "tkinter", "ttk", "tukaan", "ui"],
     packages=[
         "tukaan",
+        "tukaan/a11y",
+        "tukaan/dialogs",
         "tukaan/fonts",
-        "tukaan/themes",
+        "tukaan/theming",
         "tukaan/widgets",
+        "tukaan/windows",
     ],
     include_package_data=True,
     classifiers=[
