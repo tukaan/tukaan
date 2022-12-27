@@ -17,6 +17,16 @@ from tukaan._collect import _commands, counter
 from tukaan.exceptions import TukaanTclError
 
 
+def print_traceback():
+    # remove unnecessary lines:
+    # File "/home/.../_tcl.py", line 46, in __call__
+    # return func(*args)
+    tb = traceback.format_exc().split("\n")[3:]
+    print("Exception in Tukaan callback")
+    print("Traceback (most recent call last):")
+    print("\n".join(tb))
+
+
 class TclCallback:
     def __init__(self, callback: Callable[..., Any], converters=(), args=(), kwargs={}):
         self._callback = callback
@@ -42,11 +52,7 @@ class TclCallback:
         try:
             return self._callback(*tcl_args, *self._args, **self._kwargs)
         except Exception:
-            # remove unnecessary lines:
-            # File "/home/.../_tcl.py", line 46, in __call__
-            # return func(*args)
-            tb = traceback.format_exc().split("\n")[3:]
-            print("Traceback (most recent call last):\n", "\n".join(tb))
+            print_traceback()
 
     def dispose(self) -> None:
         Tcl._interp.deletecommand(self._name)

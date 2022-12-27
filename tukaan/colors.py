@@ -229,6 +229,8 @@ class Color:
 
     @classmethod
     def __from_tcl__(cls, tcl_value: str) -> Color:
+        if not tcl_value:
+            return None
         return Color(rgb=Hex.convert_from(tcl_value))
 
     @property
