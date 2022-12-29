@@ -16,7 +16,7 @@
 </br>
 
 ## We are looking for contributors 😍
-Tukaan is already one and a half years old, but it is still in alpha state. Developing such a toolkit takes a lot of work, but the more we are, the better it will be, and the sooner we can release a stable version.
+Tukaan is already one and a half years old, but it is still in alpha state. Developing such a toolkit takes a lot of work, and the more of us there are, the better it will be, and the sooner we can release a stable version.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for more.
 
