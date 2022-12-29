@@ -1,5 +1,8 @@
 # TODO
 
+* Write more documentation
+* Write more tests
+
 # Simple tasks
 - Add window icon
 
@@ -13,6 +16,7 @@
 - Add cursors
 
   Implement specifying a cursor for widgets. There should be enums containing the default, **native** cursors (we don't need all that "gumby", "coffe_mug" and others that Tk has). Some clever solution is needed for the platform specific cursors. Also support loading cursors from a file (Windows only) with a `Cursor` object
+- Make the sidebar of the docs on the website sticky. It shouldn't disappear as you scroll.
 
 # New widgets
 
