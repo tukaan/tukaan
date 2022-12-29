@@ -15,6 +15,13 @@
 </div>
 </br>
 
+## We are looking for contributors 😍
+Tukaan is already one and a half years old, but it is still in alpha state. Developing such a toolkit takes a lot of work, but the more we are, the better it will be, and the sooner we can release a stable version.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for more.
+
+---
+
 ## What is Tukaan?
 
 Tukaan is a GUI toolkit based on Tcl/Tk. Yeah, that’s the same thing that powers Tkinter, but don’t worry, Tukaan is far not as bad as Tkinter.
