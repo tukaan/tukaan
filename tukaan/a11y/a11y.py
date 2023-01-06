@@ -24,7 +24,7 @@ class Accessibility:
         Tcl.call(None, "tk_focusFollowsMouse")
 
     @classproperty
-    def prefers_reduced_motion(cls) -> None:
+    def prefers_reduced_motion(cls) -> bool:
         if Platform.os == "Windows":
             from winreg import HKEY_CURRENT_USER, OpenKey, QueryValueEx
 
@@ -43,3 +43,4 @@ class Accessibility:
                 return result.decode().split()[0] == "0"
             except IndexError:
                 return False
+        return False
