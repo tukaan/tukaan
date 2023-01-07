@@ -111,7 +111,7 @@ if to_be_installed:
 
 setup(
     name="tukaan",
-    version="0.2.0",
+    version="0.2.1",
     license="MIT license",
     author="rdbende",
     author_email="rdbende@gmail.com",
@@ -136,6 +136,11 @@ setup(
         "tukaan/widgets",
         "tukaan/windows",
     ],
+    package_data={
+        "": [
+            "theming/*.*",
+        ]
+    },
     include_package_data=True,
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
@@ -147,6 +152,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Tcl",
         "Programming Language :: C",
         "Programming Language :: C++",
