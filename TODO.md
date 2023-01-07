@@ -2,6 +2,7 @@
 
 * Write more documentation
 * Write more tests
+* Add more TODO items and indicate their priority (task mostly for [@rdbende](https://github.com/rdbende))
 
 # Simple tasks
 - Add window icon
