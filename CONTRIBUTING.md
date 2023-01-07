@@ -39,4 +39,4 @@ Now you can open Tukaan in your favorite IDE, and start developing!
 ## Tools we use
 We use `black` and `isort` to format our code, and you should run them on the files you edit, although you don't have to do this every time you change something. Github actions tell us before I merge the pull request, so it doesn't really matter if you forget to run them.
 
-If you installed the modules listed in `requirements-dev.txt` then you already have `black` and `isort`. If not, you can install them with `pip`. Your IDE might also have a plugin for these tools.
+If you installed the modules listed in `requirements-dev.txt` then you already have `black` and `isort`. If not, you can install them with `pip`. Your IDE might also have a plugin for these tools, which makes formatting easier.
