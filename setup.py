@@ -19,6 +19,58 @@ def get_long_description():
         return file.read()
 
 
+setup(
+    name="tukaan",
+    version="0.2.1",
+    license="MIT license",
+    author="rdbende",
+    author_email="rdbende@gmail.com",
+    url="https://tukaan.github.io",
+    project_urls={
+        "Documentation": "https://tukaan.github.io/docs",
+        "Source": "https://github.com/tukaan/tukaan",
+        "Tracker": "https://github.com/tukaan/tukaan/issues",
+    },
+    python_requires=">=3.7",
+    install_requires=list(get_requirements()),
+    description="A modern, cross platform Python toolkit for creating desktop GUI applications.",
+    long_description=get_long_description(),
+    long_description_content_type="text/markdown",
+    keywords=["gui", "tcl", "tcl/tk", "tk", "tkinter", "ttk", "tukaan", "ui"],
+    packages=[
+        "tukaan",
+        "tukaan/a11y",
+        "tukaan/dialogs",
+        "tukaan/fonts",
+        "tukaan/theming",
+        "tukaan/widgets",
+        "tukaan/windows",
+    ],
+    package_data={
+        "": [
+            "theming/*.*",
+        ]
+    },
+    include_package_data=True,
+    classifiers=[
+        "Development Status :: 2 - Pre-Alpha",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Tcl",
+        "Programming Language :: C",
+        "Programming Language :: C++",
+        "Typing :: Typed",
+    ],
+)
+
+
 package_data = {
     "apt": {
         "cmd": ["apt", "install"],
@@ -107,55 +159,3 @@ if to_be_installed:
         "linux": prompt_install_linux,
         "darwin": prompt_install_mac,
     }.get(sys.platform, lambda *_: ...)(to_be_installed)
-
-
-setup(
-    name="tukaan",
-    version="0.2.1",
-    license="MIT license",
-    author="rdbende",
-    author_email="rdbende@gmail.com",
-    url="https://tukaan.github.io",
-    project_urls={
-        "Documentation": "https://tukaan.github.io/docs",
-        "Source": "https://github.com/tukaan/tukaan",
-        "Tracker": "https://github.com/tukaan/tukaan/issues",
-    },
-    python_requires=">=3.7",
-    install_requires=list(get_requirements()),
-    description="A modern, cross platform Python toolkit for creating desktop GUI applications.",
-    long_description=get_long_description(),
-    long_description_content_type="text/markdown",
-    keywords=["gui", "tcl", "tcl/tk", "tk", "tkinter", "ttk", "tukaan", "ui"],
-    packages=[
-        "tukaan",
-        "tukaan/a11y",
-        "tukaan/dialogs",
-        "tukaan/fonts",
-        "tukaan/theming",
-        "tukaan/widgets",
-        "tukaan/windows",
-    ],
-    package_data={
-        "": [
-            "theming/*.*",
-        ]
-    },
-    include_package_data=True,
-    classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Tcl",
-        "Programming Language :: C",
-        "Programming Language :: C++",
-        "Typing :: Typed",
-    ],
-)
