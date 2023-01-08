@@ -2,7 +2,7 @@ import sys
 
 __author__ = "rdbende"
 __license__ = "MIT"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 from ._events import KeySeq
 from ._images import Icon, IconFactory, Image
