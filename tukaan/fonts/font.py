@@ -151,7 +151,6 @@ class Font:
         if size:
             if isinstance(size, float):
                 size = round(size)
-            size = -size  # Negative value means points in Tk, but pixels in Tukaan. Invert it
 
         args = Tcl.to_tcl_args(
             family=family,
@@ -164,9 +163,15 @@ class Font:
 
         try:
             Tcl.call(None, "font", "create", self._name, *args)
-        except TukaanTclError:
+        except TukaanTclError as e:
             # Font already exists in Tcl
-            Tcl.call(None, "font", "configure", self._name, *args)
+            try:
+                Tcl.call(None, "font", "configure", self._name, *args)
+            except TukaanTclError as f:
+                if "doesn't exist" in str(f):
+                    raise e from None
+                else:
+                    raise f from None
 
     def __to_tcl__(self) -> str:
         return self._name
@@ -204,20 +209,35 @@ class Font:
 
             return kwargs
 
+    def _get_props(self):
+        return Tcl.call(
+            {
+                "-family": str,
+                "-size": int,
+                "-weight": str,
+                "-slant": str,
+                "-underline": bool,
+                "-overstrike": bool,
+            },
+            "font",
+            "actual",
+            self,
+        )
+
     family = _StrFontProperty()
     """Get or set the current font family."""
 
     @property
     def size(self) -> int:
         """Get or set the current font size."""
-        return -Tcl.call(int, "font", "actual", self, "-size")
+        return Tcl.call(int, "font", "actual", self, "-size")
 
     @size.setter
     def size(self, value: int) -> None:
         if isinstance(value, float):
             value = round(value)
 
-        Tcl.call(None, "font", "configure", self, "-size", -value)
+        Tcl.call(None, "font", "configure", self, "-size", value)
 
     bold = _FontStyleProperty("weight", "bold", "normal")
     """Get or set whether the font should be drawn as bold."""
@@ -284,9 +304,6 @@ def font(
 
     weight = {True: "bold", False: "normal"}.get(bold)
     slant = {True: "italic", False: "roman"}.get(italic)
-
-    if size:
-        size = -size  # Negative value means points in Tk, but pixels in Tukaan. Invert it
 
     return Tcl.to_tcl_args(
         family=family,

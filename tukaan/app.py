@@ -10,7 +10,7 @@ try:
 except ImportError as e:
     raise ImportError("Tukaan needs PIL and PIL._imagingtk to work with images.") from e
 
-from libtukaan import Serif
+from libtukaan import Serif, Sulfur
 
 from tukaan._tcl import Tcl
 from tukaan.theming import LookAndFeel, NativeTheme, Theme
@@ -36,6 +36,7 @@ class App:
         Tcl.init(name, screen)
 
         Serif.init()
+        Sulfur.init()
 
         try:
             # TODO: remove this try block, when Pillow 9.3.0 becomes 4-5 months old,
