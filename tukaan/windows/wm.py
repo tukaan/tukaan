@@ -7,6 +7,7 @@ import sys
 from enum import Enum
 from fractions import Fraction
 from typing import Callable, Sequence
+from pathlib import Path
 
 from tukaan._images import Icon
 from tukaan._misc import Position, Size
@@ -103,6 +104,7 @@ def _get_bgr_color(rgb_hex: str) -> int:
 class WindowManager:
     _current_state = "normal"
     _wm_path: str
+    _win_icon: Icon | None = None
 
     bind: Callable
     unbind: Callable
@@ -557,3 +559,17 @@ class WindowManager:
 
         self.use_dark_mode_decorations = dark
         self._force_redraw_titlebar()
+
+    @property
+    def window_icon(self) -> Icon | None:
+        return self._win_icon
+
+    @window_icon.setter
+    def window_icon(self, icon: Path | Icon) -> None:
+        if isinstance(icon, Path):
+            icon = Icon(icon)
+        # The -default flag makes the provided icon the icon for all TopLevels
+        # Might want to make this toggleable somehow.
+        # Also not totally obvious how to remove an icon,
+        # Set to be a hard coded transparent image?
+        Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", icon._name)
