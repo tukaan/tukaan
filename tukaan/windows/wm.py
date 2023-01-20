@@ -6,8 +6,11 @@ import re
 import sys
 from enum import Enum
 from fractions import Fraction
-from typing import Callable, Sequence
 from pathlib import Path
+from tempfile import NamedTemporaryFile
+from typing import Callable, Sequence
+
+from PIL import Image as PillowImage
 
 from tukaan._images import Icon
 from tukaan._misc import Position, Size
@@ -104,7 +107,7 @@ def _get_bgr_color(rgb_hex: str) -> int:
 class WindowManager:
     _current_state = "normal"
     _wm_path: str
-    _win_icon: Icon | None = None
+    _window_icon_src: Path | None = None
 
     bind: Callable
     unbind: Callable
@@ -562,14 +565,43 @@ class WindowManager:
 
     @property
     def window_icon(self) -> Icon | None:
-        return self._win_icon
+        return self._window_icon_src
 
     @window_icon.setter
     def window_icon(self, icon: Path | Icon) -> None:
-        if isinstance(icon, Path):
-            icon = Icon(icon)
-        # The -default flag makes the provided icon the icon for all TopLevels
-        # Might want to make this toggleable somehow.
-        # Also not totally obvious how to remove an icon,
-        # Set to be a hard coded transparent image?
-        Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", icon._name)
+        if isinstance(icon, Icon):
+            # If the icon was created, then by here Tcl/Tk has to have created a valid photo image for it
+            Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", icon._name)
+            self._window_icon_src = icon.source
+
+        else:
+            icon_path = Path(icon)
+            if icon_path.suffix == ".png":
+                self._window_icon_src = icon_path
+                win_icon = Icon(icon_path)
+                Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
+            elif icon_path.suffix in (".ico", ".icns"):
+                # Tcl/Tk does not support making photo images or bitmap images directly from .ico or .icns files
+                # But it can make sure that .png files are properly coerced under the hood
+                # So we "cast" the image format before giving it to Tcl/Tk
+                # This casting means it's actually very easy to support a wide array of image file types for icons
+                # in the future; Pillow just needs to be able to read and write to the image type
+                temp_file = None
+                try:
+                    # Delete is False here because Windows runs into issues with opening and close multiple times
+                    # Just keep it open through everything and delete at the end
+                    temp_file = NamedTemporaryFile(delete=False)
+                    PillowImage.open(icon_path.resolve()).save(temp_file.name, format="PNG")
+                    win_icon = Icon(Path(temp_file.name))
+                    Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
+                except Exception as e:
+                    raise e
+                finally:
+                    # Whatever errors might occur here, be sure to always close and delete the temp file
+                    if temp_file is not None:
+                        temp_file.close()
+                        Path.unlink(Path(temp_file.name), missing_ok=True)
+            else:
+                raise ValueError(
+                    f"Invalid image format: {icon_path.suffix}. Must be one of: .png, .ico, .icns."
+                )
