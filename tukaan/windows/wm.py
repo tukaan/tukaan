@@ -107,7 +107,7 @@ def _get_bgr_color(rgb_hex: str) -> int:
 class WindowManager:
     _current_state = "normal"
     _wm_path: str
-    _window_icon_src: Path | None = None
+    _window_icon: Icon | None = None
 
     bind: Callable
     unbind: Callable
@@ -565,20 +565,20 @@ class WindowManager:
 
     @property
     def window_icon(self) -> Icon | None:
-        return self._window_icon_src
+        return self._window_icon
 
     @window_icon.setter
     def window_icon(self, icon: Path | Icon) -> None:
         if isinstance(icon, Icon):
             # If the icon was created, then by here Tcl/Tk has to have created a valid photo image for it
             Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", icon._name)
-            self._window_icon_src = icon.source
+            self._window_icon = icon
 
         else:
             icon_path = Path(icon)
             if icon_path.suffix == ".png":
-                self._window_icon_src = icon_path
                 win_icon = Icon(icon_path)
+                self._window_icon = win_icon
                 Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
             elif icon_path.suffix in (".ico", ".icns"):
                 # Tcl/Tk does not support making photo images or bitmap images directly from .ico or .icns files
@@ -593,6 +593,7 @@ class WindowManager:
                     temp_file = NamedTemporaryFile(delete=False)
                     PillowImage.open(icon_path.resolve()).save(temp_file.name, format="PNG")
                     win_icon = Icon(Path(temp_file.name))
+                    self._window_icon = win_icon
                     Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
                 except Exception as e:
                     raise e
