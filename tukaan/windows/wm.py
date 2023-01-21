@@ -573,22 +573,33 @@ class WindowManager:
                 self._icon = win_icon
                 Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
             elif icon_path.suffix in (".ico", ".icns"):
-                # Tcl/Tk does not support making photo images or bitmap images directly from .ico or .icns files
-                # But it can make sure that .png files are properly coerced under the hood
-                # So we "cast" the image format before giving it to Tcl/Tk
-                # This casting means it's actually very easy to support a wide array of image file types for icons
-                # in the future; Pillow just needs to be able to read and write to the image type
+                args = [None, "wm", "iconbitmap", self._wm_path, icon_path.resolve()]
+                if Platform.os == "Windows":
+                    # -default for iconbitmap available on Windows only
+                    args.insert(-1, "-default")
+                try:
+                    Tcl.call(*args)
+                except TukaanTclError as e:
+                    raise TukaanTclError(
+                        f'Cannot set bitmap of type "{icon_path.suffix}" on operating system "{Platform.os}"'
+                    ) from e
+                else:
+                    self._icon = icon_path
+            elif icon_path.suffix in ():
+                # Future tuple of other supported filetypes, if desired
+                # Also feel free to remove this if unneeded
                 temp_file = None
                 try:
-                    # Delete is False here because Windows runs into issues with opening and close multiple times
+                    # Delete is False here because Windows runs into issues with opening and closing multiple times
                     # Just keep it open through everything and delete at the end
                     temp_file = NamedTemporaryFile(delete=False)
                     PillowImage.open(icon_path.resolve()).save(temp_file.name, format="PNG")
                     win_icon = Icon(Path(temp_file.name))
-                    self._icon = icon_path
                     Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
                 except Exception as e:
                     raise e
+                else:
+                    self._icon = icon_path
                 finally:
                     # Whatever errors might occur here, be sure to always close and delete the temp file
                     if temp_file is not None:
