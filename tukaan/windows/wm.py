@@ -107,7 +107,7 @@ def _get_bgr_color(rgb_hex: str) -> int:
 class WindowManager:
     _current_state = "normal"
     _wm_path: str
-    _icon: Icon | None = None
+    _icon: Icon | Path | None = None
 
     bind: Callable
     unbind: Callable
@@ -556,7 +556,7 @@ class WindowManager:
         self._force_redraw_titlebar()
 
     @property
-    def icon(self) -> Icon | None:
+    def icon(self) -> Icon | Path | None:
         return self._icon
 
     @icon.setter
@@ -585,7 +585,7 @@ class WindowManager:
                     temp_file = NamedTemporaryFile(delete=False)
                     PillowImage.open(icon_path.resolve()).save(temp_file.name, format="PNG")
                     win_icon = Icon(Path(temp_file.name))
-                    self._icon = win_icon
+                    self._icon = icon_path
                     Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
                 except Exception as e:
                     raise e
