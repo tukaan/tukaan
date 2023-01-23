@@ -3,8 +3,17 @@ from __future__ import annotations
 from typing import Iterable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase, XScrollable
+from tukaan._cursors import Cursors
 from tukaan._misc import Bbox
-from tukaan._props import FocusableProp, ForegroundProp, TextAlignProp, WidthProp, cget, config
+from tukaan._props import (
+    CursorProp,
+    FocusableProp,
+    ForegroundProp,
+    TextAlignProp,
+    WidthProp,
+    cget,
+    config,
+)
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
 from tukaan.exceptions import TukaanTclError
@@ -13,6 +22,7 @@ from tukaan.exceptions import TukaanTclError
 class TextBox(WidgetBase, InputControl, XScrollable):
     _tcl_class = "ttk::entry"
 
+    cursor = CursorProp()
     fg_color = ForegroundProp()
     focusable = FocusableProp()
     text_align = TextAlignProp()
@@ -25,6 +35,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         self,
         parent: TkWidget,
         *,
+        cursor: Cursors = Cursors.DEFAULT,
         fg_color: str | Color | None = None,
         focusable: bool | None = None,
         hide_chars: bool = False,
@@ -43,6 +54,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         WidgetBase.__init__(
             self,
             parent,
+            cursor=cursor,
             foreground=fg_color,
             justify=text_align,
             show=hide_chars_with,

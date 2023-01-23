@@ -5,8 +5,16 @@ from typing import Callable
 from PIL import Image  # type: ignore
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
+from tukaan._cursors import Cursors
 from tukaan._images import Icon, ImageProp
-from tukaan._props import CommandProp, FocusableProp, ImagePositionProp, TextProp, WidthProp
+from tukaan._props import (
+    CommandProp,
+    CursorProp,
+    FocusableProp,
+    ImagePositionProp,
+    TextProp,
+    WidthProp,
+)
 from tukaan._tcl import Tcl
 from tukaan.enums import ImagePosition
 
@@ -15,6 +23,7 @@ class Button(WidgetBase, InputControl):
     _tcl_class = "ttk::button"
 
     action = CommandProp()
+    cursor = CursorProp()
     focusable = FocusableProp()
     image = ImageProp()
     image_pos = ImagePositionProp()
@@ -27,6 +36,7 @@ class Button(WidgetBase, InputControl):
         text: str | None = None,
         action: Callable | None = None,
         *,
+        cursor: Cursors = Cursors.DEFAULT,
         focusable: bool | None = None,
         image: Image.Image | Icon | None = None,
         image_pos: ImagePosition | None = None,
@@ -38,6 +48,7 @@ class Button(WidgetBase, InputControl):
             parent,
             command=action,
             compound=image_pos,
+            cursor=cursor,
             image=image,
             takefocus=focusable,
             text=text,

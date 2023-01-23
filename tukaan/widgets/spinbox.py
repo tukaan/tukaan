@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._props import BoolDesc, FloatDesc
+from tukaan._cursors import Cursors
+from tukaan._props import BoolDesc, CursorProp, FloatDesc
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
 
@@ -13,6 +14,7 @@ from .textbox import TextBox
 class SpinBox(TextBox):
     _tcl_class = "ttk::spinbox"
 
+    cursor = CursorProp()
     cycle = BoolDesc("wrap")
     max = FloatDesc("to")
     min = FloatDesc("from")
@@ -25,12 +27,13 @@ class SpinBox(TextBox):
         max: float | None = None,
         step: float | None = None,
         *,
+        action: Callable[[str], None] | None = None,
+        cursor: Cursors = Cursors.DEFAULT,
         cycle: bool | None = None,
         fg_color: str | Color | None = None,
         focusable: bool | None = None,
         hide_chars: bool | None = False,
         hide_chars_with: str | None = "•",
-        action: Callable[[str], None] | None = None,
         text_align: str | None = None,
         tooltip: str | None = None,
         user_edit: bool = True,
@@ -47,6 +50,7 @@ class SpinBox(TextBox):
             self,
             parent,
             command=self._call_action,
+            cursor=cursor,
             foreground=fg_color,
             from_=min,
             increment=step,

@@ -3,7 +3,17 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._props import CommandProp, FocusableProp, LinkProp, TextProp, WidthProp, cget, config
+from tukaan._cursors import Cursors
+from tukaan._props import (
+    CommandProp,
+    CursorProp,
+    FocusableProp,
+    LinkProp,
+    TextProp,
+    WidthProp,
+    cget,
+    config,
+)
 from tukaan._tcl import Tcl
 from tukaan._variables import ControlVariable, StringVar
 from tukaan.enums import Orientation
@@ -14,6 +24,7 @@ class RadioButton(WidgetBase, InputControl):
     _tcl_class = "ttk::radiobutton"
 
     action = CommandProp()
+    cursor = CursorProp()
     focusable = FocusableProp()
     target = LinkProp()
     text = TextProp()
@@ -26,8 +37,9 @@ class RadioButton(WidgetBase, InputControl):
         value: float | str | bool,
         target: ControlVariable,
         *,
-        focusable: bool | None = None,
         action: Callable[..., None] | None = None,
+        cursor: Cursors = Cursors.DEFAULT,
+        focusable: bool | None = None,
         tooltip: str | None = None,
         width: int | None = None,
     ) -> None:
@@ -39,6 +51,7 @@ class RadioButton(WidgetBase, InputControl):
             self,
             parent,
             command=action,
+            cursor=cursor,
             takefocus=focusable,
             text=text,
             tooltip=tooltip,

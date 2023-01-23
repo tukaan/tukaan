@@ -3,9 +3,11 @@ from __future__ import annotations
 from PIL import Image  # type: ignore
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
+from tukaan._cursors import Cursors
 from tukaan._images import Icon, ImageProp
 from tukaan._props import (
     BackgroundProp,
+    CursorProp,
     FocusableProp,
     ImagePositionProp,
     TextAlignProp,
@@ -22,6 +24,7 @@ class Label(WidgetBase, OutputDisplay):
     _tcl_class = "ttk::label"
 
     bg_color = BackgroundProp()
+    cursor = CursorProp()
     focusable = FocusableProp()
     font = FontProp()
     image = ImageProp()
@@ -36,6 +39,7 @@ class Label(WidgetBase, OutputDisplay):
         *,
         bg_color: Color | str | None = None,
         content_align: Anchor = Anchor.Center,
+        cursor: Cursors = Cursors.DEFAULT,
         fg_color: Color | str | None = None,
         focusable: bool | None = None,
         font: Font | None = None,
@@ -52,6 +56,7 @@ class Label(WidgetBase, OutputDisplay):
             anchor=content_align,
             background=bg_color,
             compound=image_pos,
+            cursor=cursor,
             font=font,
             foreground=fg_color,
             image=image,
