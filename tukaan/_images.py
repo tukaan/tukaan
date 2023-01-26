@@ -9,7 +9,7 @@ from PIL import ImageSequence
 from PIL import _imagingtk as ImagingTk  # type: ignore
 
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._collect import images, counter
+from tukaan._collect import counter, images
 from tukaan._props import OptionDesc
 from tukaan._tcl import Tcl
 from tukaan.colors import Color

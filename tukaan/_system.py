@@ -5,8 +5,8 @@ from typing import Any, NamedTuple
 
 import _tkinter as tk
 
+from tukaan._typing import P, T, WrappedFunction
 from tukaan._utils import classproperty
-from tukaan._typing import WrappedFunction, P, T
 
 
 class Version(NamedTuple):

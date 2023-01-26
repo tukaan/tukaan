@@ -10,13 +10,12 @@ import sys
 import traceback
 from enum import Enum, EnumMeta
 from pathlib import Path
-from typing import Any, Callable, Sequence, Union, cast, overload, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Sequence, Union, cast, overload
 
 if TYPE_CHECKING:
     from tukaan._mixins import WidgetMixin
 
 import _tkinter as tk
-
 from typing_extensions import TypeAlias
 
 from tukaan._collect import commands, counter

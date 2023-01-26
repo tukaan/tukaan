@@ -1,4 +1,5 @@
 from typing import Any, Callable, TypeVar
+
 from typing_extensions import Concatenate, ParamSpec, TypeAlias
 
 P = ParamSpec("P")

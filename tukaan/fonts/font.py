@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Union, TypeVar, NamedTuple
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, TypeVar, Union
 
 if TYPE_CHECKING:
     from pathlib import Path
     from tukaan._base import TkWidget
 
-from tukaan._collect import fonts, counter
+from tukaan._collect import counter, fonts
 from tukaan._props import OptionDesc, RWProperty
 from tukaan._tcl import Tcl
 from tukaan._utils import seq_pairs

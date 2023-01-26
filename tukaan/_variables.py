@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Generic
 
-from tukaan._collect import variables, counter
+from tukaan._collect import counter, variables
 from tukaan._tcl import Tcl
 from tukaan._typing import T
 

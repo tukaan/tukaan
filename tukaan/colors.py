@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from fractions import Fraction
-from typing import Generic, TypeVar, Tuple
+from typing import Generic, Tuple, TypeVar
 
 from tukaan.exceptions import ColorError
 

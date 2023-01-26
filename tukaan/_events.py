@@ -6,12 +6,11 @@ from typing import Any, Callable, Union
 from uuid import uuid4
 
 from tukaan._collect import widgets
+from tukaan._keysyms import keysym_aliases, reversed_keysym_aliases
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
 from tukaan._utils import reversed_dict
 from tukaan.enums import EventQueue
-
-from tukaan._keysyms import keysym_aliases, reversed_keysym_aliases
 
 if Platform.os == "macOS":
     BUTTON_NUMS = {"left": 1, "middle": 3, "right": 2}
