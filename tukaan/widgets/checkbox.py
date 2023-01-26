@@ -13,14 +13,14 @@ class CheckBox(WidgetBase, InputControl):
     _variable: BoolVar
 
     focusable = FocusableProp()
-    target = LinkProp()
+    target = LinkProp[bool]()
     text = TextProp()
     width = WidthProp()
 
     def __init__(
         self,
         parent: TkWidget,
-        text: str = None,
+        text: str | None = None,
         *,
         action: Callable[[bool], None] | None = None,
         focusable: bool | None = None,

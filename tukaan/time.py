@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from typing import Any
+
 
 class Time:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         if args and not kwargs:
             if len(args) == 3:
                 h, m, s = args

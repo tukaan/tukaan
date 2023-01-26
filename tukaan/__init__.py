@@ -35,14 +35,17 @@ from .widgets.textbox import TextBox
 from .windows.main_window import MainWindow
 from .windows.window import Window
 
-__all__: list = []  # Making star imports impossible. Is it illegal?
+__all__ = []  # Making star imports impossible. Is it illegal?
 
 
 class _RequiredVersion:
-    def __splitver(self, version_str):
-        return tuple(map(int, version_str.split(".")))
+    def __splitver(self, version_str: str):
+        return tuple(int(elem) for elem in version_str.split("."))
 
-    def __eq__(self, version):
+    def __eq__(self, version: object):
+        if not isinstance(version, str):
+            return NotImplemented
+
         if version != __version__:
             sys.tracebacklimit = 0
             raise RuntimeError(
@@ -50,7 +53,7 @@ class _RequiredVersion:
                 + f"Use 'pip install tukaan=={version}' to install the required version of Tukaan."
             )
 
-    def __le__(self, version):
+    def __le__(self, version: str):
         if self.__splitver(__version__) > self.__splitver(version):
             sys.tracebacklimit = 0
             raise RuntimeError(
@@ -58,7 +61,7 @@ class _RequiredVersion:
                 + f"Use 'pip install tukaan=={version}' to install an older version of Tukaan."
             )
 
-    def __ge__(self, version):
+    def __ge__(self, version: str):
         if self.__splitver(__version__) < self.__splitver(version):
             sys.tracebacklimit = 0
             raise RuntimeError(

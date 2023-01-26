@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections
+import collections.abc
 import contextlib
 import functools
 import itertools
@@ -9,29 +10,43 @@ import sys
 import traceback
 from enum import Enum, EnumMeta
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Sequence, Union, cast, overload, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tukaan._mixins import WidgetMixin
 
 import _tkinter as tk
 
-from tukaan._collect import _commands, counter
+from typing_extensions import TypeAlias
+
+from tukaan._collect import commands, counter
+from tukaan._typing import P, T, WrappedFunction
 from tukaan.exceptions import TukaanTclError
+
+TclValue: TypeAlias = Union[str, tk.Tcl_Obj]
 
 
 class TclCallback:
-    def __init__(self, callback: Callable[..., Any], converters=(), args=(), kwargs={}):
+    def __init__(
+        self,
+        callback: Callable[..., Any],
+        converters: Sequence[Any] = (),
+        args: Sequence[Any] = (),
+        **kwargs: collections.abc.Mapping[Any, Any],
+    ):
         self._callback = callback
         self._converters = converters
         self._args = args
         self._kwargs = kwargs
 
         self._name = name = f"tukaan_command_{next(counter['commands'])}"
-        _commands[name] = callback
+        commands[name] = callback
 
-        Tcl._interp.createcommand(name, self.__call__)
+        Tcl._interp.createcommand(name, self.__call__)  # type: ignore
 
-    def __call__(self, *tcl_args) -> Any:
+    def __call__(self, *tcl_args: Any) -> Any:
         if self._converters and tcl_args:
-            result = []
+            result: list[Any] = []
             for index, value in enumerate(tcl_args):
                 with contextlib.suppress(KeyError):
                     value = Tcl.from_(self._converters[index], value)
@@ -49,8 +64,8 @@ class TclCallback:
             print("Traceback (most recent call last):\n", "\n".join(tb))
 
     def dispose(self) -> None:
-        Tcl._interp.deletecommand(self._name)
-        del _commands[self._name]
+        Tcl._interp.deletecommand(self._name)  # type: ignore
+        del commands[self._name]
 
 
 class Tcl:
@@ -61,32 +76,35 @@ class Tcl:
     @classmethod
     def init(cls, app_name: str, screen_name: str | None) -> None:
         """Initialize the interpreter."""
-        cls._interp = tk.create(screen_name, app_name, app_name, False, False, True, False, None)
+        cls._interp = cast(
+            tk.TkappType,
+            tk.create(screen_name, app_name, app_name, False, False, True, False, None),  # type: ignore
+        )
         cls._interp.loadtk()
         cls._interp.call("wm", "withdraw", ".")
 
-        cls.interp_address = cls._interp.interpaddr()  # PIL needs this
-        cls.windowing_system = cls._interp.call("tk", "windowingsystem").lower()
-        cls.version = cls._interp.call("info", "patchlevel")
-        cls.dll_ext = cls._interp.call("info", "sharedlibextension")
+        cls.interp_address: int = cls._interp.interpaddr()  # PIL needs this # type: ignore
+        cls.windowing_system = cast(str, cls._interp.call("tk", "windowingsystem")).lower()
+        cls.version: str = cls._interp.call("info", "patchlevel")
+        cls.dll_ext: str = cls._interp.call("info", "sharedlibextension")
 
         cls.alive = True
 
     @classmethod
     def main_loop(cls) -> None:
         """Start the main event loop."""
-        cls._interp.mainloop(0)
+        cls._interp.mainloop(0)  # type: ignore
 
     @classmethod
     def do_one_event(cls) -> None:
-        cls._interp.dooneevent(tk.DONT_WAIT)
+        cls._interp.dooneevent(tk.DONT_WAIT)  # type: ignore
         if not cls.alive:
             raise TukaanTclError
 
     @classmethod
     def quit(cls) -> None:
         """Quit the interpreter."""
-        cls._interp.quit()
+        cls._interp.quit()  # type: ignore
         cls.alive = False
 
     @classmethod
@@ -94,8 +112,8 @@ class Tcl:
         cls._interp.call("load", str(path.resolve().absolute()), pkg_name)
 
     @staticmethod
-    def to_tcl_args(**kwargs) -> tuple:
-        result = []
+    def to_tcl_args(**kwargs: Any) -> tuple[Any]:
+        result: list[str] = []
 
         for key, value in kwargs.items():
             if value is None:
@@ -108,8 +126,30 @@ class Tcl:
 
         return tuple(result)
 
+    @overload
     @staticmethod
-    def to(obj: object) -> str | tk.Tcl_Obj | tuple[str | tk.Tcl_Obj, ...]:  # noqa: CCR001
+    def to(obj: collections.abc.Iterator[Any]) -> tuple[TclValue, ...]:
+        ...
+
+    @overload
+    @staticmethod
+    def to(obj: TclValue) -> TclValue:
+        ...
+
+    @overload
+    @staticmethod
+    def to(
+        obj: bool
+        | numbers.Real
+        | Callable[..., Any]
+        | Enum
+        | Path
+        | collections.abc.Mapping[Any, Any]
+    ) -> str:
+        ...
+
+    @staticmethod
+    def to(obj: Any) -> TclValue | tuple[TclValue, ...]:  # noqa: CCR001
         if isinstance(obj, (str, tk.Tcl_Obj)):
             return obj
 
@@ -143,15 +183,13 @@ class Tcl:
         if isinstance(obj, Enum):
             return str(obj.value)
 
-        try:
-            return tuple(map(Tcl.to, obj))  # type: ignore
-        except TypeError:
-            raise TypeError(
-                "cannot convert Python object to Tcl. Please provide a __to_tcl__ method."
-            ) from None
+        if isinstance(obj, collections.abc.Iterator):
+            return tuple(Tcl.to(o) for o in obj)
+
+        raise TypeError("cannot convert Python object to Tcl. Please provide a __to_tcl__ method.")
 
     @staticmethod
-    def from_(return_type: type[object], value: str | tk.Tcl_Obj) -> Any:  # noqa: CCR001
+    def from_(return_type: type[T], value: TclValue) -> T:  # noqa: CCR001
         if return_type is str:
             return Tcl.get_string(value)
 
@@ -159,14 +197,10 @@ class Tcl:
             return Tcl.get_bool(value)
 
         if return_type in (int, float):
-            return Tcl.get_number(return_type, value)  # type: ignore
+            return Tcl.get_number(return_type, value)
 
-        try:
-            from_tcl = return_type.__from_tcl__  # type: ignore
-        except AttributeError:
-            pass
-        else:
-            return from_tcl(value)
+        if issubclass(return_type, WidgetMixin) and isinstance(value, str):
+            return return_type.__from_tcl__(value)
 
         if isinstance(return_type, (list, tuple, dict)):
             sequence = Tcl.get_iterable(value)
@@ -178,28 +212,36 @@ class Tcl:
                 items_len = len(sequence)
                 if len(return_type) != items_len:
                     return_type *= items_len
-                return tuple(map(Tcl.from_, return_type, sequence))
+                return tuple(Tcl.from_(return_type, elem) for elem in sequence)
 
             if isinstance(return_type, dict):
-                result = {}
-                for key, value in zip(sequence[::2], sequence[1::2]):
-                    result[str(key)] = Tcl.from_(return_type.get(key, str), value)
+                return {
+                    str(k): Tcl.from_(return_type.get(k, str), v)
+                    for k, v in zip(sequence[::2], sequence[1::2])
+                }
 
-                return result
-
-        if isinstance(return_type, EnumMeta):
+        if issubclass(return_type, EnumMeta):
             return return_type(value)
 
         if return_type is Path:
             return Path(Tcl.get_string(value)).resolve()
 
-        if return_type is None:
-            return None
+        assert False  # type-guard, sorta
+
+    @overload
+    @classmethod
+    def call(cls, return_type: None, *args: Any) -> None:
+        ...
+
+    @overload
+    @classmethod
+    def call(cls, return_type: type[T], *args: Any) -> T:
+        ...
 
     @classmethod
-    def call(cls, return_type: type[object] | None, *args) -> Any:
+    def call(cls, return_type: type[T] | None, *args: Any) -> T | None:
         try:
-            result = cls._interp.call(*map(cls.to, args))
+            result = cls._interp.call(*[cls.to(arg) for arg in args])
         except tk.TclError as e:
             msg = str(e)
 
@@ -218,8 +260,18 @@ class Tcl:
                 return
             return cls.from_(return_type, result)
 
+    @overload
     @classmethod
-    def eval(cls, return_type: type[object], script: str) -> Any:
+    def eval(cls, return_type: None, script: str) -> None:
+        ...
+
+    @overload
+    @classmethod
+    def eval(cls, return_type: type[T], script: str) -> T:
+        ...
+
+    @classmethod
+    def eval(cls, return_type: Any, script: str) -> Any:
         try:
             result = cls._interp.eval(script)
         except tk.TclError as e:
@@ -228,7 +280,7 @@ class Tcl:
             return cls.from_(return_type, result)
 
     @classmethod
-    def get_string(cls, value: str | tk.Tcl_Obj) -> str:
+    def get_string(cls, value: TclValue | Any) -> str:
         if isinstance(value, str):
             return value
 
@@ -238,23 +290,23 @@ class Tcl:
         return cls._interp.call("format", value)
 
     @classmethod
-    def get_number(
-        cls, type_spec: type[int] | type[float], value: str | tk.Tcl_Obj
-    ) -> float | None:
-        return type_spec(cls._interp.getdouble(value)) if cls.get_string(value) else None
+    def get_number(cls, type_spec: type[int] | type[float], value: TclValue) -> float | None:
+        if cls.get_string(value):
+            return type_spec(cls._interp.getdouble(value))  # type: ignore
 
     @classmethod
-    def get_bool(cls, value: str | tk.Tcl_Obj) -> bool | None:
-        return cls._interp.getboolean(value) if cls.get_string(value) else None
+    def get_bool(cls, value: TclValue) -> bool | None:
+        if cls.get_string(value):
+            return cls._interp.getboolean(value)  # type: ignore
 
     @classmethod
-    def get_iterable(cls, value: str | tk.Tcl_Obj) -> tuple:
-        return cls._interp.splitlist(value)
+    def get_iterable(cls, value: TclValue) -> tuple[str]:
+        return cls._interp.splitlist(value)  # type: ignore
 
     @classmethod
-    def with_redraw(cls, func: Callable) -> Callable:
+    def with_redraw(cls, func: WrappedFunction[P, T]):
         @functools.wraps(func)
-        def wrapper(self, *args, **kwargs) -> Any:
+        def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> T:
             cls._interp.eval("update idletasks")
             result = func(self, *args, **kwargs)
             cls._interp.eval("update idletasks")
@@ -263,18 +315,18 @@ class Tcl:
         return wrapper
 
     @classmethod
-    def redraw_before(cls, func: Callable) -> Callable:
+    def redraw_before(cls, func: WrappedFunction[P, T]):
         @functools.wraps(func)
-        def wrapper(self, *args, **kwargs) -> Any:
+        def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> T:
             cls._interp.eval("update idletasks")
             return func(self, *args, **kwargs)
 
         return wrapper
 
     @classmethod
-    def redraw_after(cls, func: Callable) -> Callable:
+    def redraw_after(cls, func: WrappedFunction[P, T]):
         @functools.wraps(func)
-        def wrapper(self, *args, **kwargs) -> Any:
+        def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> T:
             result = func(self, *args, **kwargs)
             cls._interp.eval("update idletasks")
             return result

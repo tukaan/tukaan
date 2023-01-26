@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict, Tuple, TypeVar
 
-from ._tcl import Tcl
-from .enums import Align, Anchor
-from .exceptions import LayoutError
+from tukaan._tcl import Tcl
+from tukaan.enums import Align, Anchor
+from tukaan.exceptions import LayoutError
 
 if TYPE_CHECKING:
-    from ._base import WidgetBase, WindowBase
+    from tukaan._base import WidgetBase, WindowBase  # TODO doesn't exist
+
+IntOrStr = TypeVar("IntOrStr", int, str)
 
 
 class LayoutManager(ABC):
@@ -19,10 +21,10 @@ class LayoutManager(ABC):
         self._widget = owner
 
     @abstractmethod
-    def __call__(self, *args, **kwargs) -> None:
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
         pass
 
-    def _cget(self, return_type: type[Any], option: str) -> int | str | None:
+    def _cget(self, return_type: type[IntOrStr], option: str) -> IntOrStr | None:
         try:
             result = Tcl.call({option: return_type}, self._type, "info", self._widget)[option]
         except KeyError:
@@ -30,7 +32,7 @@ class LayoutManager(ABC):
         else:
             return result
 
-    def _config(self, **kwargs) -> None:
+    def _config(self, **kwargs: Any) -> None:
         Tcl.call(None, self._type, "configure", self._widget, *Tcl.to_tcl_args(**kwargs))
 
 
@@ -98,7 +100,7 @@ class Grid(LayoutManager):
 
         result = ""
 
-        if isinstance(align, (tuple, list)) and len(align) == 1:
+        if len(align) == 1:
             align = align * 2
         elif isinstance(align, Align):
             align = (align,) * 2
@@ -143,16 +145,7 @@ class Grid(LayoutManager):
         return None, None
 
     def _get_pad(self):
-        result = Tcl.call(
-            {
-                "-padx": (int,),
-                "-pady": (int,),
-            },
-            "grid",
-            "info",
-            self._widget,
-        )
-
+        result = Tcl.call(Dict[str, int], "grid", "info", self._widget)
         return result["-padx"], result["-pady"]
 
     @property
@@ -451,10 +444,10 @@ class ToplevelGrid:
 
     @property
     def size(self) -> tuple[int, int]:
-        return Tcl.call((int,), "grid", "size", self._widget)
+        return Tcl.call(Tuple[int, int], "grid", "size", self._widget)
 
     def detect(self, x: int, y: int):
-        return tuple(reversed(Tcl.call((int,), "grid", "location", self._widget, x, y)))
+        return tuple(reversed(Tcl.call(Tuple[int, ...], "grid", "location", self._widget, x, y)))
 
 
 class ContainerGrid(Grid, ToplevelGrid):

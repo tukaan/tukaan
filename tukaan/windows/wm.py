@@ -6,7 +6,7 @@ import re
 import sys
 from enum import Enum
 from fractions import Fraction
-from typing import Callable, Sequence
+from typing import Callable, Sequence, Tuple
 
 from tukaan._images import Icon
 from tukaan._misc import Position, Size
@@ -232,7 +232,7 @@ class WindowManager:
         return wrapper
 
     @property
-    def focused(self) -> int:
+    def focused(self) -> int:  # TODO correct return type?
         return Tcl.call(str, "focus", "-displayof", self._wm_path)
 
     @property
@@ -250,7 +250,7 @@ class WindowManager:
 
     @property
     def state(self) -> WindowState:
-        WindowState(self._get_state())
+        return WindowState(self._get_state())
 
     @property
     @Tcl.redraw_before
@@ -381,7 +381,7 @@ class WindowManager:
 
     @property
     def size_increment(self) -> Size:
-        return Size(*Tcl.call([str], "wm", "grid", self._wm_path)[2:])
+        return Size(*Tcl.call([str], "wm", "grid", self._wm_path)[2:])  # TODO
 
     @size_increment.setter
     def size_increment(self, value: Size | Sequence[int] | int) -> None:
@@ -393,7 +393,7 @@ class WindowManager:
     @property
     @Tcl.redraw_before
     def aspect_ratio(self) -> None | tuple[Fraction, Fraction]:
-        result = Tcl.call((int,), "wm", "aspect", self._wm_path)
+        result = Tcl.call(Tuple[int, ...], "wm", "aspect", self._wm_path)
         if not result:
             return None
         return Fraction(*result[:2]), Fraction(*result[2:])
@@ -425,7 +425,7 @@ class WindowManager:
 
     @property
     def resizable(self) -> Resizable:
-        return Resizable(Tcl.call((str, str), "wm", "resizable", self._wm_path))
+        return Resizable(Tcl.call(Tuple[str, str], "wm", "resizable", self._wm_path))
 
     @resizable.setter
     def resizable(self, value: Resizable) -> None:

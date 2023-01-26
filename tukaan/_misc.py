@@ -1,7 +1,20 @@
 from __future__ import annotations
 
-from collections import namedtuple
+from typing import NamedTuple
 
-Bbox = namedtuple("Bbox", ["x", "y", "width", "height"])
-Position = namedtuple("Position", ["x", "y"])
-Size = namedtuple("Size", ["width", "height"])
+
+class Bbox(NamedTuple):
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+class Position(NamedTuple):
+    x: int
+    y: int
+
+
+class Size(NamedTuple):
+    width: int
+    height: int

@@ -41,7 +41,7 @@ def run_in_subprocess(args: list[str]) -> str:
     return process.communicate()[0]
 
 
-def run_zenity(type_: str, title: str | None, parent: ToplevelBase | None, *options):
+def run_zenity(type_: str, title: str | None, parent: ToplevelBase | None, *options: str):
     appname = App.shared_instance.name
     args = ["zenity", type_, f"--name={appname}", f"--class={appname}"]
 
@@ -60,7 +60,7 @@ def run_zenity(type_: str, title: str | None, parent: ToplevelBase | None, *opti
 
 
 def run_kdialog(
-    type_: str, title: str | None, parent: ToplevelBase | None, *options
+    type_: str, title: str | None, parent: ToplevelBase | None, *options: str
 ) -> list[str] | None:
     args = ["kdialog", type_]
 

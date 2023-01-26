@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from collections import namedtuple
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict, Union, TypeVar, NamedTuple
 
 if TYPE_CHECKING:
     from pathlib import Path
     from tukaan._base import TkWidget
 
-from tukaan._collect import _fonts, counter
-from tukaan._props import OptionDesc, RWProperty, T_co
+from tukaan._collect import fonts, counter
+from tukaan._props import OptionDesc, RWProperty
 from tukaan._tcl import Tcl
 from tukaan._utils import seq_pairs
 from tukaan.exceptions import FontError, TukaanTclError
@@ -27,32 +26,37 @@ preset_fonts = {
     "TkTooltipFont",
 }
 
+FontPropType = TypeVar("FontPropType", str, int, bool)
 
-class _FontProperty(RWProperty[T_co, T_co]):
-    TYPE: type[str] | type[int] | type[bool]
+
+class FontMetrics(NamedTuple):
+    ascent: int
+    descent: int
+    line_spacing: int
+    fixed: bool
+
+
+class _FontProperty(RWProperty[FontPropType, FontPropType]):
+    TYPE: type
 
     def __init__(self, option: str | None = None) -> None:
         self._option = option
 
-    def __set_name__(self, owner: object, name: str) -> None:
+    def __set_name__(self, _: object, name: str) -> None:
         if self._option is None:
             self._option = name
 
-    def __get__(self, instance: TkWidget, owner: object = None) -> T_co:
+    def __get__(self, instance: TkWidget, owner: object = None) -> FontPropType:
         if owner is None:
             return NotImplemented
         return Tcl.call(self.TYPE, "font", "actual", instance, f"-{self._option}")
 
-    def __set__(self, instance: TkWidget, value: object) -> None:
+    def __set__(self, instance: TkWidget, value: FontPropType) -> None:
         Tcl.call(None, "font", "configure", instance, f"-{self._option}", value)
 
 
 class _BoolFontProperty(_FontProperty[bool]):
     TYPE = bool
-
-
-class _IntFontProperty(_FontProperty[int]):
-    TYPE = int
 
 
 class _StrFontProperty(_FontProperty[str]):
@@ -70,11 +74,8 @@ class _FontStyleProperty(_FontProperty[bool]):
     def __get__(self, instance: TkWidget, owner: object = None) -> bool:
         return super().__get__(instance, owner) == self._truthy
 
-    def __set__(self, instance: TkWidget, value: object) -> None:
+    def __set__(self, instance: TkWidget, value: bool) -> None:
         super().__set__(instance, self._truthy if value else self._falsy)
-
-
-FontMetrics = namedtuple("FontMetrics", ["ascent", "descent", "line_spacing", "fixed"])
 
 
 class Font:
@@ -119,7 +120,8 @@ class Font:
         if isinstance(family, FontFile):
             if isinstance(family, TrueTypeCollection):
                 raise FontError(
-                    f"must specify font family for font collections. Available subfamilies: {[x.info.family for x in family.fonts]}"
+                    "must specify font family for font collections. "
+                    f"Available subfamilies: {[x.info.family for x in family.fonts]}"
                 )
             else:
                 family = family.info.family
@@ -132,7 +134,7 @@ class Font:
             self._name = f"tukaan_font_{next(counter['fonts'])}"
 
         self.config(family, size, bold, italic, underline, strikethrough)
-        _fonts[self._name] = self
+        fonts[self._name] = self
 
     def __repr__(self) -> str:
         return f"Font(family={self.family!r}, size={self.size})"
@@ -174,7 +176,7 @@ class Font:
     @classmethod
     def __from_tcl__(cls, tcl_value: str) -> Font | dict[str, str | int | bool]:
         try:
-            return _fonts[tcl_value]
+            return fonts[tcl_value]
         except KeyError:
             types = {
                 "family": str,
@@ -185,13 +187,13 @@ class Font:
                 "strikethrough": bool,
             }
 
-            kwargs = {}
+            kwargs: dict[str, str | int | bool] = {}
             flat_values = Tcl.get_iterable(tcl_value)
             for key, value in seq_pairs(flat_values):
                 # TODO: Return a FontFile object if the family is loaded from a file
                 key = key.lstrip("-")
                 if key == "size":
-                    value = -value
+                    value = int(value) * -1
                 elif key == "weight":
                     value = value == "bold"
                     key = "bold"
@@ -200,7 +202,7 @@ class Font:
                     key = "italic"
                 elif key == "overstrike":
                     key = "strikethrough"
-                kwargs[key] = Tcl.from_(types[key], value)
+                kwargs[key] = Tcl.from_(types[key], value)  # TODO
 
             return kwargs
 
@@ -238,7 +240,7 @@ class Font:
         The font won't be usable again, but the previous uses will be preserved.
         """
         Tcl.call(None, "font", "delete", self._name)
-        del _fonts[self._name]
+        del fonts[self._name]
 
     def measure(self, text: str) -> int:
         """Measure, how wide the text would be with the current font family."""
@@ -248,6 +250,7 @@ class Font:
     def metrics(self) -> FontMetrics:
         """Compute the metrics of the current font family."""
         result = Tcl.call(
+            Dict[str, Any],
             {"-ascent": int, "-descent": int, "-linespace": int, "-fixed": bool},
             "font",
             "metrics",
@@ -275,7 +278,8 @@ def font(
     if isinstance(family, FontFile):
         if isinstance(family, TrueTypeCollection):
             raise FontError(
-                f"must specify font family for font collections. Available subfamilies: {[x.info.family for x in family.fonts.values()]}"
+                "must specify font family for font collections. "
+                f"Available subfamilies: {[x.info.family for x in family.fonts.values()]}"
             )
         else:
             family = family.info.family

@@ -3,42 +3,48 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from fractions import Fraction
+from typing import Generic, TypeVar, Tuple
 
-from .exceptions import ColorError
+from tukaan.exceptions import ColorError
 
-# TODO: refactor this mess
+# TODO: refactor this mess (or use a dedicated 3rd party library?)
+
+From = TypeVar("From")
+To = TypeVar("To")
+TriTuple = Tuple[int, int, int]
 
 
-class ColorModel(ABC):
+class ColorModel(ABC, Generic[From, To]):
     @staticmethod
     @abstractmethod
-    def convert_from():
-        pass
+    def convert_from(__args: From) -> To:
+        ...
 
     @staticmethod
     @abstractmethod
-    def convert_to(*args):
-        pass
+    def convert_to(__args: To) -> From:
+        ...
 
 
-class Hex(ColorModel):
+class Hex(ColorModel[str, TriTuple]):
     @staticmethod
-    def convert_from(string):
+    def convert_from(string: str):
         int_value = int(string.lstrip("#"), 16)
         return int_value >> 16, int_value >> 8 & 0xFF, int_value & 0xFF
 
     @staticmethod
-    def convert_to(r, g, b):
+    def convert_to(r: int, g: int, b: int):
         return f"#{r:02x}{g:02x}{b:02x}"
 
 
+# TODO What does this even do?
 class Rgb(ColorModel):
     @staticmethod
-    def convert_from(r, g, b):
+    def convert_from(r: int, g: int, b: int):
         return r, g, b
 
     @staticmethod
-    def convert_to(r, g, b):
+    def convert_to(r: int, g: int, b: int):
         return r, g, b
 
 
@@ -92,7 +98,7 @@ class Hsv(ColorModel):
 
 class Hsl(ColorModel):
     @staticmethod
-    def convert_from(h, s, l):
+    def convert_from(h: int, s: int, l: int):
         h, s, l = h / 360, s / 100, l / 100
 
         if s == 0.0:

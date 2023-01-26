@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tukaan._collect import _widgets
+from tukaan._collect import widgets
 from tukaan._layout import Grid
 from tukaan._misc import Bbox
 from tukaan._tcl import Tcl
@@ -34,7 +34,7 @@ class WidgetMixin:
 
     @classmethod
     def __from_tcl__(cls, tcl_value: str) -> TkWidget:
-        return _widgets[tcl_value]
+        return widgets[tcl_value]
 
 
 class GeometryMixin:
@@ -58,7 +58,7 @@ class GeometryMixin:
 
     @property
     @Tcl.redraw_before
-    def bbox(self) -> tuple:
+    def bbox(self) -> Bbox:
         return Bbox(self._abs_x(), self._abs_y(), self._width(), self._height())
 
     rel_x = property(Tcl.redraw_before(_rel_x))
