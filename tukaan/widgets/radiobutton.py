@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._cursors import Cursors
+from tukaan._cursors import Cursors, Cursor_T
 from tukaan._props import (
     CommandProp,
     CursorProp,
@@ -38,7 +38,7 @@ class RadioButton(WidgetBase, InputControl):
         target: ControlVariable,
         *,
         action: Callable[..., None] | None = None,
-        cursor: Cursors = Cursors.DEFAULT,
+        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         tooltip: str | None = None,
         width: int | None = None,

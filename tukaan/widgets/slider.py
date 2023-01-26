@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._cursors import Cursors
+from tukaan._cursors import Cursors, Cursor_T
 from tukaan._props import CursorProp, FloatDesc, FocusableProp, LinkProp, OrientProp, cget, config
 from tukaan._variables import FloatVar, IntVar
 from tukaan.enums import Orientation
@@ -25,7 +25,7 @@ class Slider(WidgetBase, InputControl):
         max: float | None = None,
         *,
         action: Callable[[float], None] | None = None,
-        cursor: Cursors = Cursors.DEFAULT,
+        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         orientation: Orientation | None = None,
         target: IntVar | FloatVar | None = None,

@@ -7,7 +7,7 @@ from typing import Callable
 from PIL import Image
 
 from tukaan._base import Container, TkWidget, WidgetBase
-from tukaan._cursors import Cursors
+from tukaan._cursors import Cursors, Cursor_T
 from tukaan._images import Icon, Pillow2Tcl
 from tukaan._props import CursorProp, FocusableProp, _convert_padding, _convert_padding_back
 from tukaan._tcl import Tcl
@@ -152,7 +152,7 @@ class TabView(WidgetBase, Container):
         self,
         parent: TkWidget,
         *,
-        cursor: Cursors = Cursors.DEFAULT,
+        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         tooltip: str | None = None,
     ) -> None:

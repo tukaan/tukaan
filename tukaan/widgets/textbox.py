@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase, XScrollable
-from tukaan._cursors import Cursors
+from tukaan._cursors import Cursors, Cursor_T
 from tukaan._misc import Bbox
 from tukaan._props import (
     CursorProp,
@@ -35,7 +35,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         self,
         parent: TkWidget,
         *,
-        cursor: Cursors = Cursors.DEFAULT,
+        cursor: Cursor_T = Cursors.DEFAULT,
         fg_color: str | Color | None = None,
         focusable: bool | None = None,
         hide_chars: bool = False,

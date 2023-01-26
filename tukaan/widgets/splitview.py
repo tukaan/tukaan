@@ -4,7 +4,7 @@ import contextlib
 from collections.abc import Iterator
 
 from tukaan._base import Container, TkWidget, WidgetBase
-from tukaan._cursors import Cursors
+from tukaan._cursors import Cursors, Cursor_T
 from tukaan._props import CursorProp, FocusableProp
 from tukaan._tcl import Tcl
 from tukaan.enums import Orientation
@@ -78,7 +78,7 @@ class SplitView(WidgetBase, Container):
         parent: TkWidget,
         orientation: Orientation | None = None,
         *,
-        cursor: Cursors = Cursors.DEFAULT,
+        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         tooltip: str | None = None,
     ) -> None:

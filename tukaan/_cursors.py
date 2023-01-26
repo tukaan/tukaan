@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from enum import Enum
 from pathlib import Path
+from typing import Union
 
 from ._system import Platform
-from ._tcl import Tcl
 
 _cursors_win_native = {
     # Native Mappings
@@ -182,3 +182,28 @@ elif Platform.os == "macOS":
     Cursors = Enum("Cursors", _cursors_tk | _cursors_macosx_native)
 else:
     Cursors = Enum("Cursors", _cursors_tk)
+
+
+class Cursor:
+    @Platform.windows_only
+    def __init__(self, source: Path):
+        # Actually accepts any pathlike object
+        src = Path(source)
+        if not src.exists():
+            raise FileNotFoundError(f"Cursor file {src!s} does not exist")
+        filetype = src.suffix
+        if filetype not in (".ani", ".cur"):
+            raise ValueError(f'Bad file type for Windows cursor: "{filetype}". Should be one of ".cur" or ".ani"')
+        self.source = "@" + str(source)
+
+    @Platform.windows_only
+    def __to_tcl__(self) -> str:
+        return self.source
+
+    @classmethod
+    @Platform.windows_only
+    def __from_tcl__(cls, value) -> Cursor:
+        return Cursor(value)
+
+
+Cursor_T = Union[Cursors, Cursor]

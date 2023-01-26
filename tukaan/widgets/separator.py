@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
-from tukaan._cursors import Cursors
+from tukaan._cursors import Cursors, Cursor_T
 from tukaan._props import CursorProp, OrientProp
 from tukaan.enums import Orientation
 
@@ -15,7 +15,7 @@ class Separator(WidgetBase, OutputDisplay):
     def __init__(
         self,
         parent: TkWidget,
-        cursor: Cursors = Cursors.DEFAULT,
+        cursor: Cursor_T = Cursors.DEFAULT,
         orientation: Orientation | None = None,
         tooltip: str | None = None,
     ) -> None:

@@ -10,8 +10,10 @@ else:
     from typing import Callable
     from typing_extensions import Protocol
 
+from pathlib import Path
+
 from tukaan._collect import _commands
-from tukaan._cursors import Cursors
+from tukaan._cursors import Cursor, Cursors, Cursor_T
 from tukaan._tcl import Tcl
 from tukaan._utils import T, T_co, T_contra, seq_pairs
 from tukaan._variables import ControlVariable
@@ -183,6 +185,15 @@ class PaddingProp(RWProperty[PaddingType, Union[int, Tuple[int, ...], None]]):
         config(instance, padding=_convert_padding(value))
 
 
-class CursorProp(OptionDesc[Cursors, Cursors]):
-    def __init__(self) -> None:
-        super().__init__("cursor", Cursors)
+class CursorProp(RWProperty[Cursor_T, Cursor_T]):
+    def __get__(self, instance: TkWidget, owner: object = None) -> Cursor_T:
+        if owner is None:
+            return NotImplemented
+        cursor_str = cget(instance, str, "-cursor")
+        if cursor_str in Cursors.values:
+            return Cursors(cursor_str)
+        return Cursor(Path(cursor_str))
+
+    def __set__(self, instance: TkWidget, value: Cursor_T) -> None:
+        return config(instance, cursor=value)
+

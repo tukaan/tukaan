@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Generator
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
-from tukaan._cursors import Cursors
+from tukaan._cursors import Cursors, Cursor_T
 from tukaan._props import CursorProp, FocusableProp, IntDesc, LinkProp, OrientProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan._variables import FloatVar, IntVar
@@ -27,7 +27,7 @@ class ProgressBar(WidgetBase, OutputDisplay):
         parent: TkWidget,
         length: int = 100,
         *,
-        cursor: Cursors = Cursors.DEFAULT,
+        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         link: IntVar | FloatVar | None = None,
         mode: ProgressMode | None = None,

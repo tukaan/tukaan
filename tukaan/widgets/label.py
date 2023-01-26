@@ -3,7 +3,7 @@ from __future__ import annotations
 from PIL import Image  # type: ignore
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
-from tukaan._cursors import Cursors
+from tukaan._cursors import Cursors, Cursor_T
 from tukaan._images import Icon, ImageProp
 from tukaan._props import (
     BackgroundProp,
@@ -39,7 +39,7 @@ class Label(WidgetBase, OutputDisplay):
         *,
         bg_color: Color | str | None = None,
         content_align: Anchor = Anchor.Center,
-        cursor: Cursors = Cursors.DEFAULT,
+        cursor: Cursor_T = Cursors.DEFAULT,
         fg_color: Color | str | None = None,
         focusable: bool | None = None,
         font: Font | None = None,

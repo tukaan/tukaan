@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Callable, Iterable
 
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._cursors import Cursors
+from tukaan._cursors import Cursors, Cursor_T
 from tukaan._props import CursorProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
@@ -21,7 +21,7 @@ class ComboBox(TextBox):
         values: dict[str, Any] | None = None,
         *,
         action: Callable | None = None,
-        cursor: Cursors = Cursors.DEFAULT,
+        cursor: Cursor_T = Cursors.DEFAULT,
         fg_color: str | Color | None = None,
         focusable: bool | None = None,
         hide_chars: bool | None = False,
