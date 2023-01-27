@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tukaan._base import Container, TkWidget, WidgetBase
-from tukaan._cursors import Cursors, Cursor_T
+from tukaan._cursors import Cursor_T, Cursors
 from tukaan._props import CursorProp, PaddingProp
 
 

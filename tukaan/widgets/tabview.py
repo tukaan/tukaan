@@ -7,7 +7,7 @@ from typing import Callable
 from PIL import Image
 
 from tukaan._base import Container, TkWidget, WidgetBase
-from tukaan._cursors import Cursors, Cursor_T
+from tukaan._cursors import Cursor_T, Cursors
 from tukaan._images import Icon, Pillow2Tcl
 from tukaan._props import CursorProp, FocusableProp, _convert_padding, _convert_padding_back
 from tukaan._tcl import Tcl

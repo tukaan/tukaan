@@ -3,7 +3,7 @@ from __future__ import annotations
 from PIL import Image  # type: ignore
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
-from tukaan._cursors import Cursors, Cursor_T
+from tukaan._cursors import Cursor_T, Cursors
 from tukaan._images import Icon, ImageProp
 from tukaan._props import (
     BackgroundProp,

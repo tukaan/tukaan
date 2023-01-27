@@ -4,7 +4,7 @@ import contextlib
 from collections.abc import Iterator
 
 from tukaan._base import Container, TkWidget, WidgetBase
-from tukaan._cursors import Cursors, Cursor_T
+from tukaan._cursors import Cursor_T, Cursors
 from tukaan._props import CursorProp, FocusableProp
 from tukaan._tcl import Tcl
 from tukaan.enums import Orientation

@@ -13,7 +13,7 @@ else:
 from pathlib import Path
 
 from tukaan._collect import _commands
-from tukaan._cursors import Cursor, Cursors, Cursor_T
+from tukaan._cursors import Cursor, Cursor_T, Cursors
 from tukaan._tcl import Tcl
 from tukaan._utils import T, T_co, T_contra, seq_pairs
 from tukaan._variables import ControlVariable
@@ -190,10 +190,11 @@ class CursorProp(RWProperty[Cursor_T, Cursor_T]):
         if owner is None:
             return NotImplemented
         cursor_str = cget(instance, str, "-cursor")
-        if cursor_str in Cursors.values:
+        if cursor_str in (c.value for c in Cursors):
             return Cursors(cursor_str)
         return Cursor(Path(cursor_str))
 
     def __set__(self, instance: TkWidget, value: Cursor_T) -> None:
+        if not isinstance(value, (Cursor, Cursors)):
+            raise TypeError(f"{type(value)} is not a valid tukaan Cursor type")
         return config(instance, cursor=value)
-

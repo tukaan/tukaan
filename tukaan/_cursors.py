@@ -4,6 +4,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Union
 
+from tukaan.exceptions import PlatformSpecificError
+
 from ._system import Platform
 
 _cursors_win_native = {
@@ -176,7 +178,7 @@ _cursors_tk_esoteric = {
 }
 _CursorsEsoteric = Enum("CursorsEsoteric", _cursors_tk_esoteric)
 
-if Platform.os == "Window":
+if Platform.os == "Windows":
     Cursors = Enum("Cursors", _cursors_tk | _cursors_win_native)
 elif Platform.os == "macOS":
     Cursors = Enum("Cursors", _cursors_tk | _cursors_macosx_native)
@@ -185,25 +187,28 @@ else:
 
 
 class Cursor:
-    @Platform.windows_only
     def __init__(self, source: Path):
-        # Actually accepts any pathlike object
-        src = Path(source)
+        if Platform.os != "Windows":
+            raise PlatformSpecificError(f"Cannot specify cursor from file on {Platform.os}")
+        src = Path(str(source).lstrip("@"))
         if not src.exists():
             raise FileNotFoundError(f"Cursor file {src!s} does not exist")
         filetype = src.suffix
         if filetype not in (".ani", ".cur"):
-            raise ValueError(f'Bad file type for Windows cursor: "{filetype}". Should be one of ".cur" or ".ani"')
+            raise ValueError(
+                f'Bad file type for Windows cursor: "{filetype}". Should be one of ".cur" or ".ani"'
+            )
         self.source = "@" + str(source)
 
-    @Platform.windows_only
     def __to_tcl__(self) -> str:
         return self.source
 
     @classmethod
-    @Platform.windows_only
     def __from_tcl__(cls, value) -> Cursor:
-        return Cursor(value)
+        return cls(value)
+
+    def __repr__(self) -> str:
+        return f"Cursor({self.source})"
 
 
 Cursor_T = Union[Cursors, Cursor]

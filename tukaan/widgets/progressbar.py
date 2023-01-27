@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Generator
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
-from tukaan._cursors import Cursors, Cursor_T
+from tukaan._cursors import Cursor_T, Cursors
 from tukaan._props import CursorProp, FocusableProp, IntDesc, LinkProp, OrientProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan._variables import FloatVar, IntVar

@@ -4,7 +4,7 @@ __author__ = "rdbende"
 __license__ = "MIT"
 __version__ = "0.2.1"
 
-from ._cursors import Cursors, Cursor
+from ._cursors import Cursor, Cursors
 from ._events import KeySeq
 from ._images import Icon, IconFactory, Image
 from ._system import Platform
