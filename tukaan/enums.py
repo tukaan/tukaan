@@ -118,8 +118,8 @@ class WindowState(Enum):
     Closed = "closed"
     FullScreen = "fullscreen"
     Hidden = "withdrawn"
-    Maximized = "maximized"
-    Minimized = "minimized"
+    Maximized = "zoomed"
+    Minimized = "iconic"
     Normal = "normal"
 
 

@@ -34,20 +34,20 @@ class WindowStateManager:
 
         if new_state == "normal":
             events.append("<<Restore>>")
-        elif new_state == "maximized":
+        elif new_state == "zoomed":
             events.append("<<Maximize>>")
-        elif new_state == "minimized":
+        elif new_state == "iconic":
             events.append("<<Minimize>>")
-        elif new_state == "hidden":
+        elif new_state == "withdrawn":
             events.append("<<Hide>>")
         elif new_state == "fullscreen":
             events.append("<<Fullscreen>>")
 
-        if prev_state == "maximized":
+        if prev_state == "zoomed":
             events.append("<<Unmaximize>>")
-        elif prev_state == "minimized":
+        elif prev_state == "iconic":
             events.append("<<Unminimize>>")
-        elif prev_state == "hidden":
+        elif prev_state == "withdrawn":
             events.append("<<Unhide>>")
         elif prev_state == "fullscreen":
             events.append("<<Unfullscreen>>")
@@ -64,24 +64,16 @@ class WindowStateManager:
             # FIXME: what if the interpreter is destroyed?
             if not Tcl.call(bool, "winfo", "exists", self._wm_path):
                 return "closed"
-            raise e
+            raise e from None
 
-        if state == "normal" and Tcl.windowing_system != "x11":  # needs further checking on X11
-            return "normal"
-        elif state == "iconic":
-            return "minimized"
-        elif state == "zoomed":
-            return "maximized"
-        elif state == "withdrawn":
-            return "hidden"
-        elif Tcl.windowing_system == "x11" and Tcl.call(
-            bool, "wm", "attributes", self._wm_path, "-zoomed"
-        ):
-            return "maximized"
-        elif Tcl.call(bool, "wm", "attributes", self._wm_path, "-fullscreen"):
+        if Tcl.call(bool, "wm", "attributes", self._wm_path, "-fullscreen"):
             return "fullscreen"
-
-        return "normal"
+        elif state == "normal" and Tcl.windowing_system == "x11":  # needs further checking on X11
+            if Tcl.windowing_system == "x11" and Tcl.call(
+                bool, "wm", "attributes", self._wm_path, "-zoomed"
+            ):
+                return "zoomed"
+        return state
 
     def minimize(self) -> None:
         Tcl.call(None, "wm", "iconify", self._wm_path)
@@ -98,9 +90,9 @@ class WindowStateManager:
     def restore(self) -> None:
         state = self.__get_state()
 
-        if state in {"hidden", "minimized"}:
+        if state in {"withdrawn", "iconic"}:
             Tcl.call(None, "wm", "deiconify", self._wm_path)
-        elif state == "maximized":
+        elif state == "zoomed":
             if Tcl.windowing_system == "x11":
                 Tcl.call(None, "wm", "attributes", self._wm_path, "-zoomed", False)
             else:
