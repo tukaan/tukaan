@@ -76,7 +76,6 @@ class TkFileDialog(FileDialogBase):
         parent: ToplevelBase | None = None,
         filetypes: dict[str, str | tuple[str, ...]] = None,
     ) -> Path | None:
-
         if filetypes is not None:
             filetypes_processed = tuple((name, filter_) for name, filter_ in filetypes.items())
         else:
@@ -242,7 +241,7 @@ class KFileDialog(FileDialogBase):
         *,
         directory: Path | None = None,
         filename: str | None = None,
-        confirm: bool = True,   # ! Unused
+        confirm: bool = True,  # ! Unused
         parent: ToplevelBase | None = None,
         filetypes: dict[str, str | tuple[str, ...]] | None = None,  # ! Unused
     ) -> Path | None:

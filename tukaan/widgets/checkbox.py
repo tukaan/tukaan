@@ -29,7 +29,6 @@ class CheckBox(WidgetBase, InputControl):
         tooltip: str | None = None,
         width: int | None = None,
     ) -> None:
-
         self._variable = BoolVar(selected) if target is None else target
         self._action = action
 

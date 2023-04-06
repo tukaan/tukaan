@@ -59,7 +59,6 @@ class App:
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, _
     ) -> NoReturn | None:
-
         if exc_type is None:
             return self.run()
 

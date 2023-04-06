@@ -126,7 +126,6 @@ class Grid(LayoutManager):
     def _parse_margin(
         self, margin: int | tuple[int, ...] | None
     ) -> tuple[tuple[int, int], tuple[int, int]] | tuple[None, None]:
-
         if isinstance(margin, int):
             return ((margin,) * 2,) * 2
         elif isinstance(margin, (tuple, list)):

@@ -45,7 +45,6 @@ class Label(WidgetBase, OutputDisplay):
         text_align: Justify = Justify.Left,
         tooltip: str | None = None,
     ) -> None:
-
         WidgetBase.__init__(
             self,
             parent,

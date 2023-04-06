@@ -28,7 +28,6 @@ class ComboBox(TextBox):
         visible_rows: int | None = None,
         width: int | None = None,
     ) -> None:
-
         self._prev_show_char = hide_chars_with
         if not hide_chars:
             hide_chars_with = None
