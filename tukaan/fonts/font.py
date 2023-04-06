@@ -121,7 +121,7 @@ class Font:
             if isinstance(family, TrueTypeCollection):
                 raise FontError(
                     "must specify font family for font collections. "
-                    f"Available subfamilies: {[x.info.family for x in family.fonts]}"
+                    + f"Available subfamilies: {[x.info.family for x in family.fonts]}"
                 )
             else:
                 family = family.info.family
@@ -129,6 +129,7 @@ class Font:
             family = "TkDefaultFont"
 
         if family in preset_fonts:
+            assert isinstance(family, str)
             self._name = family
         else:
             self._name = f"tukaan_font_{next(counter['fonts'])}"
@@ -250,7 +251,6 @@ class Font:
     def metrics(self) -> FontMetrics:
         """Compute the metrics of the current font family."""
         result = Tcl.call(
-            Dict[str, Any],
             {"-ascent": int, "-descent": int, "-linespace": int, "-fixed": bool},
             "font",
             "metrics",
@@ -279,7 +279,7 @@ def font(
         if isinstance(family, TrueTypeCollection):
             raise FontError(
                 "must specify font family for font collections. "
-                f"Available subfamilies: {[x.info.family for x in family.fonts.values()]}"
+                + f"Available subfamilies: {[x.info.family for x in family.fonts.values()]}"
             )
         else:
             family = family.info.family

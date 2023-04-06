@@ -381,7 +381,7 @@ class WindowManager:
 
     @property
     def size_increment(self) -> Size:
-        return Size(*Tcl.call([str], "wm", "grid", self._wm_path)[2:])  # TODO
+        return Size(*Tcl.call([str], "wm", "grid", self._wm_path)[2:])
 
     @size_increment.setter
     def size_increment(self, value: Size | Sequence[int] | int) -> None:
@@ -393,7 +393,7 @@ class WindowManager:
     @property
     @Tcl.redraw_before
     def aspect_ratio(self) -> None | tuple[Fraction, Fraction]:
-        result = Tcl.call(Tuple[int, ...], "wm", "aspect", self._wm_path)
+        result = Tcl.call((int,), "wm", "aspect", self._wm_path)
         if not result:
             return None
         return Fraction(*result[:2]), Fraction(*result[2:])
@@ -425,7 +425,7 @@ class WindowManager:
 
     @property
     def resizable(self) -> Resizable:
-        return Resizable(Tcl.call(Tuple[str, str], "wm", "resizable", self._wm_path))
+        return Resizable(Tcl.call((str,), "wm", "resizable", self._wm_path))
 
     @resizable.setter
     def resizable(self, value: Resizable) -> None:

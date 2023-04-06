@@ -191,7 +191,7 @@ class Tcl:
             return tuple(Tcl.to(o) for o in obj)
 
     @staticmethod
-    def from_(return_type: type[T], value: TclValue) -> T:  # noqa: CCR001
+    def from_(return_type: Any, value: TclValue) -> T:  # noqa: CCR001
         if return_type is str:
             return Tcl.get_string(value)
 
@@ -222,8 +222,7 @@ class Tcl:
                     for k, v in zip(sequence[::2], sequence[1::2])
                 }
 
-        if issubclass(return_type, EnumMeta):
-            # FIXME: this fails if return_type is None. Although return_type should'n be None at this place
+        if isinstance(return_type, EnumMeta):
             return return_type(value)
 
         if return_type is Path:

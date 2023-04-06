@@ -59,7 +59,7 @@ class Timeout:
         if self.state != "pending":
             raise RuntimeError(f"cannot cancel a {self.state} timeout")
 
-        command, _ = Tcl.call(Tuple[str, ...], "after", "info", self._after_id)
+        command, _ = Tcl.call((str,), "after", "info", self._after_id)
         Tcl.call(None, "after", "cancel", command)
         TclCallback.dispose(command)
 
