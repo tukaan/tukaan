@@ -9,7 +9,7 @@ from tukaan.enums import Align, Anchor
 from tukaan.exceptions import LayoutError
 
 if TYPE_CHECKING:
-    from tukaan._base import WidgetBase, ToplevelBase
+    from tukaan._base import ToplevelBase, WidgetBase
 
 IntOrStr = TypeVar("IntOrStr", int, str)
 

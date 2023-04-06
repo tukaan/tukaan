@@ -16,8 +16,8 @@ import _tkinter as tk
 
 from tukaan._collect import commands, counter
 from tukaan._typing import P, T, TypeAlias, WrappedFunction
-from tukaan.exceptions import TukaanTclError
 from tukaan._utils import instanceclassmethod
+from tukaan.exceptions import TukaanTclError
 
 TclValue: TypeAlias = Union[str, tk.Tcl_Obj]
 
