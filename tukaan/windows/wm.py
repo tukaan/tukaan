@@ -574,16 +574,17 @@ class WindowManager:
 
         if icon.suffix == ".png":
             self.icon = Icon(icon)
-        elif icon.suffix in (".ico", ".icns"):
-            args = [None, "wm", "iconbitmap", self._wm_path, icon.resolve()]
+        elif icon.suffix in {".ico", ".icns"}:
+            extra_args = []
             if Platform.os == "Windows":
                 # -default for iconbitmap available on Windows only
-                args.insert(-1, "-default")
+                extra_args.append("-default")
+
             try:
-                Tcl.call(*args)
+                Tcl.call(None, "wm", "iconbitmap", self._wm_path, icon.resolve(), *extra_args)
             except TukaanTclError as e:
                 raise TukaanTclError(
-                    f'Cannot set bitmap of type "{icon.suffix}" on operating system "{Platform.os}"'
+                    f'Cannot set bitmap of type "{icon.suffix}" on "{Platform.os}"'
                 ) from e
             else:
                 self._icon = icon
