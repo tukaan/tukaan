@@ -581,7 +581,7 @@ class WindowManager:
                 extra_args.append("-default")
 
             try:
-                Tcl.call(None, "wm", "iconbitmap", self._wm_path, icon.resolve(), *extra_args)
+                Tcl.call(None, "wm", "iconbitmap", self._wm_path, icon, *extra_args)
             except TukaanTclError as e:
                 raise TukaanTclError(
                     f'Cannot set bitmap of type "{icon.suffix}" on "{Platform.os}"'
