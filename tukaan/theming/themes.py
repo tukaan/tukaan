@@ -6,8 +6,6 @@ from pathlib import Path
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
 
-from .lookandfeel import LookAndFeel
-
 
 class Theme(ABC):
     is_native: bool

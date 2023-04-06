@@ -6,7 +6,7 @@ import re
 import sys
 from enum import Enum
 from fractions import Fraction
-from typing import Callable, Sequence
+from typing import Callable, Sequence, Tuple
 
 from tukaan._images import Icon
 from tukaan._misc import Position, Size
@@ -232,8 +232,8 @@ class WindowManager:
         return wrapper
 
     @property
-    def focused(self) -> int:
-        return Tcl.call(str, "focus", "-displayof", self._wm_path)
+    def focused(self) -> bool:
+        return Tcl.call(str, "focus", "-displayof", self._wm_path) == self._wm_path
 
     @property
     @Tcl.redraw_before
@@ -250,7 +250,7 @@ class WindowManager:
 
     @property
     def state(self) -> WindowState:
-        WindowState(self._get_state())
+        return WindowState(self._get_state())
 
     @property
     @Tcl.redraw_before
@@ -425,7 +425,7 @@ class WindowManager:
 
     @property
     def resizable(self) -> Resizable:
-        return Resizable(Tcl.call((str, str), "wm", "resizable", self._wm_path))
+        return Resizable(Tcl.call((str,), "wm", "resizable", self._wm_path))
 
     @resizable.setter
     def resizable(self, value: Resizable) -> None:

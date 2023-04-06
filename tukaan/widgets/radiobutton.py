@@ -102,7 +102,7 @@ class RadioGroup(Frame, InputControl):
         return f"number of items={len(self._items)}, selected={item_id!r}"
 
     def _setup_items(self, items: dict[str, str]) -> None:
-        for (value, text) in items.items():
+        for value, text in items.items():
             radio = RadioButton(self, text, value, self._variable)
             self._items[value] = radio
 

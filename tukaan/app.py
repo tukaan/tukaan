@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from typing import NoReturn
 
 try:
@@ -61,7 +59,6 @@ class App:
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, _
     ) -> NoReturn | None:
-
         if exc_type is None:
             return self.run()
 

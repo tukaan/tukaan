@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import functools
 import itertools
-import sys
-from typing import Any, Iterator, Sequence, TypeVar
+from typing import Any, Callable, Generic, Iterator, Sequence, TypeVar
 
-T = TypeVar("T")
-T_co = TypeVar("T_co", covariant=True)
-T_contra = TypeVar("T_contra", contravariant=True)
+from tukaan._typing import P, T
+
+KT = TypeVar("KT")
+VT = TypeVar("VT")
 
 
 class count:
@@ -30,20 +30,21 @@ class count:
 flatten = itertools.chain.from_iterable
 
 
-def reversed_dict(dictionary: dict[object, object]) -> dict[object, object]:
+def reversed_dict(dictionary: dict[KT, VT]) -> dict[VT, KT]:
     return {value: key for key, value in dictionary.items()}
 
 
-def seq_pairs(sequence: Sequence[object]) -> Iterator[object]:
+def seq_pairs(sequence: Sequence[T]) -> zip[tuple[T, T]]:
     return zip(sequence[::2], sequence[1::2])
 
 
-class instanceclassmethod:
-    def __init__(self, method) -> None:
+class instanceclassmethod(Generic[T]):
+    def __init__(self, method: Callable[P, T]) -> None:
         self.method = method
 
-    def __get__(self, obj: object | None, objtype: type):
-        def wrapper(*args, **kwargs):
+    def __get__(self, obj: Any, objtype: type):
+        @functools.wraps(self.method)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             if obj is None:
                 return self.method(objtype, *args, **kwargs)
             return self.method(obj, *args, **kwargs)
@@ -51,11 +52,11 @@ class instanceclassmethod:
         return wrapper
 
 
-class classproperty:
-    def __init__(self, fget):
+class classproperty(Generic[T]):
+    def __init__(self, fget: classmethod[T] | Callable[P, T]):
         if not isinstance(fget, classmethod):
             fget = classmethod(fget)
         self.fget = fget
 
-    def __get__(self, obj: object | None, objtype: type):
+    def __get__(self, obj: Any, objtype: type):
         return self.fget.__get__(obj, objtype)()

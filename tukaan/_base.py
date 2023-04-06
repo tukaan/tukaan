@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import collections
-from typing import Callable
+from typing import Any, Callable
 
-from tukaan._collect import _commands, _widgets
+from tukaan._collect import commands, widgets
 from tukaan._events import BindingsMixin
 from tukaan._layout import ContainerGrid, Geometry, Grid, Position, ToplevelGrid
 from tukaan._mixins import GeometryMixin, VisibilityMixin, WidgetMixin
@@ -33,28 +33,28 @@ class OutputDisplay:
 
 
 class XScrollable:
-    def x_scroll(self, *args) -> None:
+    def x_scroll(self, *args: Any) -> None:
         Tcl.call(None, self, "xview", *args)
 
     @property
-    def on_xscroll(self) -> Callable:
-        return _commands[cget(self, str, "-xscrollcommand")]
+    def on_xscroll(self) -> Callable[..., Any]:
+        return commands[cget(self, str, "-xscrollcommand")]
 
     @on_xscroll.setter
-    def on_xscroll(self, value: Callable) -> None:
+    def on_xscroll(self, value: Callable[P, Any]) -> None:
         config(self, xscrollcommand=value)
 
 
 class YScrollable:
-    def y_scroll(self, *args) -> None:
+    def y_scroll(self, *args: Any) -> None:
         Tcl.call(None, self, "yview", *args)
 
     @property
-    def on_yscroll(self) -> Callable:
-        return _commands[cget(self, str, "-yscrollcommand")]
+    def on_yscroll(self) -> Callable[..., Any]:
+        return commands[cget(self, str, "-yscrollcommand")]
 
     @on_yscroll.setter
-    def on_yscroll(self, value: Callable) -> None:
+    def on_yscroll(self, value: Callable[..., Any]) -> None:
         config(self, yscrollcommand=value)
 
 
@@ -63,12 +63,13 @@ class TkWidget(WidgetMixin, BindingsMixin, VisibilityMixin):
 
     _name: str
     _tcl_class: str
+    _variable: Any  # TODO This is set in LinkProp
 
     def __init__(self) -> None:
         self._children = {}
         self._child_type_count = collections.defaultdict(lambda: count())
 
-        _widgets[self._name] = self
+        widgets[self._name] = self
 
 
 class ToplevelBase(TkWidget, Container):
@@ -79,7 +80,7 @@ class ToplevelBase(TkWidget, Container):
 
 
 class WidgetBase(TkWidget, GeometryMixin):
-    def __init__(self, parent: TkWidget, tooltip: str | None = None, **kwargs) -> None:
+    def __init__(self, parent: TkWidget, tooltip: str | None = None, **kwargs: Any) -> None:
         assert isinstance(parent, Container), "parent must be a container"
 
         self._name = self._lm_path = generate_pathname(self, parent)
@@ -102,7 +103,7 @@ class WidgetBase(TkWidget, GeometryMixin):
         Tcl.call(None, "destroy", self._name)
 
         del self.parent._children[self._name]
-        del _widgets[self._name]
+        del widgets[self._name]
 
     @property
     def tooltip(self) -> str | None:
