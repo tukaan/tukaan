@@ -76,18 +76,30 @@ class WindowStateManager:
         return state
 
     def minimize(self) -> None:
+        """Hide this window from the screen, and collapse it to an icon."""
         Tcl.call(None, "wm", "iconify", self._wm_path)
 
     def maximize(self) -> None:
+        """
+        Resize this window fill up all available space.
+        Note, that this doesn't necessarily mean the entire screen.
+        """
         if Tcl.windowing_system == "x11":
             Tcl.call(None, "wm", "attributes", self._wm_path, "-zoomed", True)
         else:
             Tcl.call(None, "wm", "state", self._wm_path, "zoomed")
 
     def go_fullscreen(self) -> None:
+        """Make the window fill up the entire screen."""
         Tcl.call(None, "wm", "attributes", self._wm_path, "-fullscreen", True)
 
     def restore(self) -> None:
+        """
+        Make this window normal size.
+        If it's maximized, minimized or withdrawn, makes it visible,
+        and resizes it to normal size. If it's in full screen mode,
+        resets it to its state before switching to full screen.
+        """
         state = self.__get_state()
 
         if state in {"withdrawn", "iconic"}:
@@ -101,29 +113,42 @@ class WindowStateManager:
             Tcl.call(None, "wm", "attributes", self._wm_path, "-fullscreen", False)
 
     def hide(self) -> None:
+        """Hide this window and its icon from the screen."""
         Tcl.call(None, "wm", "withdraw", self._wm_path)
 
     def unhide(self) -> None:
+        """Restore the window if it's hidden."""
         Tcl.call(None, "wm", "deiconify", self._wm_path)
 
     def focus(self) -> None:
+        """
+        Tell the window manager, that this window wants attention.
+        Note that depending on the window manager, this may not
+        necessarily result in the window being focused.
+        """
         Tcl.call(None, "focus", "-force", self._wm_path)
 
     @property
     def state(self) -> WindowState:
+        """Return the current state of the window. See also :class:`tukaan.enums.WindowState`"""
         return WindowState(self.__get_state())
 
     @property
     def focused(self) -> bool:
+        """Return whether this window currently has input focus."""
         return Tcl.call(str, "focus", "-displayof", self._wm_path) == self._wm_path
 
     @property
     @Tcl.redraw_before
     def visible(self) -> bool:
+        """Return whether this window is currently visible on the screen or not."""
         return Tcl.call(bool, "winfo", "viewable", self._wm_path)
 
     @property
     def always_on_top(self) -> bool:
+        """Get or set whether this window should always stay on top of
+        other windows, even if it is not in focus.
+        """
         return Tcl.call(bool, "wm", "attributes", self._wm_path, "-topmost")
 
     @always_on_top.setter
@@ -137,6 +162,7 @@ class WindowGeometryManager:
     @property
     @Tcl.redraw_before
     def x(self) -> int:
+        """Get or set the position of this window on the x axis."""
         return Tcl.call(int, "winfo", "x", self._wm_path)
 
     @x.setter
@@ -148,6 +174,7 @@ class WindowGeometryManager:
     @property
     @Tcl.redraw_before
     def y(self) -> int:
+        """Get or set the position of this window on the y axis."""
         return Tcl.call(int, "winfo", "y", self._wm_path)
 
     @y.setter
@@ -159,6 +186,7 @@ class WindowGeometryManager:
     @property
     @Tcl.redraw_before
     def width(self) -> int:
+        """Get or set the width of this window."""
         return Tcl.call(int, "winfo", "width", self._wm_path)
 
     @width.setter
@@ -170,6 +198,7 @@ class WindowGeometryManager:
     @property
     @Tcl.redraw_before
     def height(self) -> int:
+        """Get or set the height of this window."""
         return Tcl.call(int, "winfo", "width", self._wm_path)
 
     @height.setter
@@ -235,15 +264,12 @@ class WindowGeometryManager:
         Tcl.call(None, "wm", "maxsize", self._wm_path, *value)
 
     @property
-    def size_increment(self) -> Size:
-        return Size(*Tcl.call([str], "wm", "grid", self._wm_path)[2:])
+    def resizable(self) -> Resizable:
+        return Resizable(Tcl.call((str,), "wm", "resizable", self._wm_path))
 
-    @size_increment.setter
-    def size_increment(self, value: Size | Sequence[int] | int) -> None:
-        if isinstance(value, int):
-            value = (value,) * 2
-
-        Tcl.call(None, "wm", "grid", self._wm_path, 1, 1, *value)
+    @resizable.setter
+    def resizable(self, value: Resizable) -> None:
+        Tcl.call(None, "wm", "resizable", self._wm_path, *value.value)
 
     @property
     @Tcl.redraw_before
@@ -279,12 +305,15 @@ class WindowGeometryManager:
         )
 
     @property
-    def resizable(self) -> Resizable:
-        return Resizable(Tcl.call((str,), "wm", "resizable", self._wm_path))
+    def size_increment(self) -> Size:
+        return Size(*Tcl.call([str], "wm", "grid", self._wm_path)[2:])
 
-    @resizable.setter
-    def resizable(self, value: Resizable) -> None:
-        Tcl.call(None, "wm", "resizable", self._wm_path, *value.value)
+    @size_increment.setter
+    def size_increment(self, value: Size | Sequence[int] | int) -> None:
+        if isinstance(value, int):
+            value = (value,) * 2
+
+        Tcl.call(None, "wm", "grid", self._wm_path, 1, 1, *value)
 
 
 class WindowDecorationManager:
@@ -296,6 +325,7 @@ class WindowDecorationManager:
     @property
     @Platform.windows_only
     def use_dark_mode_decorations(self) -> None:
+        # TODO
         ...
 
     @use_dark_mode_decorations.setter
@@ -303,7 +333,7 @@ class WindowDecorationManager:
     def use_dark_mode_decorations(self, value: bool) -> None:
         import ctypes.windll  # type: ignore
 
-        if sys.getwindowsversion().build < 22000:
+        if sys.getwindowsversion().build < 22000:  # type: ignore
             return
 
         c_value = ctypes.c_int(int(value))
@@ -342,7 +372,7 @@ class WindowManager(WindowGeometryManager, WindowStateManager, WindowDecorationM
     @property
     def type(self) -> WindowType:
         """
-        Sets the purpose of this window. Most window managers use this property
+        Set the purpose of this window. Most window managers use this property
         to appropriately set decorations and animations for the window.
 
         For example a utility window usually only has a close button, and a
