@@ -9,7 +9,7 @@ from PIL import ImageSequence
 from PIL import _imagingtk as ImagingTk  # type: ignore
 
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._collect import _images, counter
+from tukaan._collect import counter, images
 from tukaan._props import OptionDesc
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
@@ -20,7 +20,7 @@ class Pillow2Tcl:
         self._name = f"tukaan_image_{next(counter['images'])}"
         self._pil_image = image
 
-        _images[self._name] = self
+        images[self._name] = self
 
         try:
             self._animated = image.is_animated
@@ -94,12 +94,12 @@ class Pillow2Tcl:
 
     @staticmethod
     def dispose(image_name: str) -> None:
-        image = _images.get(image_name)
+        image = images.get(image_name)
 
         if image is None:
             return
 
-        del _images[image_name]
+        del images[image_name]
 
         Tcl.eval(None, f"image delete {image._name}")
 
@@ -116,7 +116,7 @@ class Pillow2Tcl:
 
     @classmethod
     def __from_tcl__(cls, value: str) -> PillowImage.Image | Icon | None:
-        result = _images.get(value)
+        result = images.get(value)
 
         if hasattr(result, "_pil_image"):
             return result._pil_image
@@ -134,7 +134,7 @@ PillowImage.Image.__to_tcl__ = pil_image_to_tcl
 class Icon:
     def __init__(self, source: Path) -> None:
         self._name = f"tukaan_icon_{next(counter['icons'])}"
-        _images[self._name] = self
+        images[self._name] = self
 
         Tcl.call(None, "image", "create", "photo", self._name, "-file", source)
 

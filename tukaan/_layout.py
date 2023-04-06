@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
-from ._tcl import Tcl
-from .enums import Align, Anchor
-from .exceptions import LayoutError
+from tukaan._tcl import Tcl
+from tukaan.enums import Align, Anchor
+from tukaan.exceptions import LayoutError
 
 if TYPE_CHECKING:
-    from ._base import WidgetBase, WindowBase
+    from tukaan._base import ToplevelBase, WidgetBase
+
+IntOrStr = TypeVar("IntOrStr", int, str)
 
 
 class LayoutManager(ABC):
@@ -19,10 +21,10 @@ class LayoutManager(ABC):
         self._widget = owner
 
     @abstractmethod
-    def __call__(self, *args, **kwargs) -> None:
+    def __call__(self, *args: Any, **kwargs: Any) -> None:
         pass
 
-    def _cget(self, return_type: type[Any], option: str) -> int | str | None:
+    def _cget(self, return_type: type[IntOrStr], option: str) -> IntOrStr | None:
         try:
             result = Tcl.call({option: return_type}, self._type, "info", self._widget)[option]
         except KeyError:
@@ -30,7 +32,7 @@ class LayoutManager(ABC):
         else:
             return result
 
-    def _config(self, **kwargs) -> None:
+    def _config(self, **kwargs: Any) -> None:
         Tcl.call(None, self._type, "configure", self._widget, *Tcl.to_tcl_args(**kwargs))
 
 
@@ -124,7 +126,6 @@ class Grid(LayoutManager):
     def _parse_margin(
         self, margin: int | tuple[int, ...] | None
     ) -> tuple[tuple[int, int], tuple[int, int]] | tuple[None, None]:
-
         if isinstance(margin, int):
             return ((margin,) * 2,) * 2
         elif isinstance(margin, (tuple, list)):
@@ -152,7 +153,6 @@ class Grid(LayoutManager):
             "info",
             self._widget,
         )
-
         return result["-padx"], result["-pady"]
 
     @property
@@ -446,7 +446,7 @@ class ToplevelGrid:
 
     cells = GridCells()
 
-    def __init__(self, owner: WindowBase) -> None:
+    def __init__(self, owner: ToplevelBase) -> None:
         self._widget = owner
 
     @property

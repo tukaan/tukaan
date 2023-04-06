@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - run: python3 -m pip install black
     - run: python3 -m black --check tukaan/*.py tukaan/*/*.py
   isort:
@@ -22,20 +22,24 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - run: python3 -m pip install isort
     - run: python3 -m isort --check tukaan/*.py tukaan/*/*.py
   pytest:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
+    - uses: actions/setup-python@v4
       with:
-        python-version: "3.9"
+        python-version: ${{ matrix.python-version }}
         cache: pip
-    - name: Install dependencies
-      run: |
-          sudo apt install python3-pil.imagetk
+    - if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install python3-pil.imagetk
+    - run: |
           python3 -m pip install pytest
           python3 -m pip install -r requirements.txt
     - uses: GabrielBB/xvfb-action@v1.4

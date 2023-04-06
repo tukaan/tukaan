@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Optional, Tuple, Union
 
 if sys.version_info >= (3, 9):
     from collections.abc import Callable
@@ -10,9 +10,9 @@ else:
     from typing import Callable
     from typing_extensions import Protocol
 
-from tukaan._collect import _commands
+from tukaan._collect import commands
 from tukaan._tcl import Tcl
-from tukaan._utils import T, T_co, T_contra, seq_pairs
+from tukaan._typing import P, T, T_co, T_contra
 from tukaan._variables import ControlVariable
 from tukaan.colors import Color
 from tukaan.enums import ImagePosition, Justify, Orientation
@@ -25,7 +25,7 @@ def cget(widget: TkWidget, return_type: type[T], option: str) -> T:
     return Tcl.call(return_type, widget, "cget", option)
 
 
-def config(widget: TkWidget, **kwargs) -> None:
+def config(widget: TkWidget, **kwargs: Any) -> None:
     assert len(kwargs) == 1
 
     ((key, value),) = kwargs.items()
@@ -97,16 +97,16 @@ class HeightProp(OptionDesc[int, int]):
         super().__init__("height", int)
 
 
-class CommandProp(OptionDesc[Optional[Callable], Optional[Callable]]):
+class CommandProp(OptionDesc[Optional[Callable[P, T]], Optional[Callable[P, T]]]):
     def __init__(self) -> None:
         super().__init__("command", str)
 
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
-        return _commands.get(cget(instance, str, "-command"))
+        return commands.get(cget(instance, str, "-command"))
 
-    def __set__(self, instance: TkWidget, value: Callable | None = None) -> None:
+    def __set__(self, instance: TkWidget, value: Callable[P, T] | None = None) -> None:
         super().__set__(instance, value or "")
 
 
@@ -125,13 +125,13 @@ class OrientProp(OptionDesc[Orientation, Orientation]):
         super().__init__("orient", Orientation)
 
 
-class LinkProp(RWProperty[ControlVariable, Optional[ControlVariable]]):
+class LinkProp(RWProperty[ControlVariable[T], Optional[ControlVariable[T]]]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
-        return cget(instance, ControlVariable, "-variable")
+        return cget(instance, ControlVariable[T], "-variable")
 
-    def __set__(self, instance: TkWidget, value: ControlVariable | None) -> None:
+    def __set__(self, instance: TkWidget, value: ControlVariable[T] | None) -> None:
         instance._variable = value
         return config(instance, variable=value or "")
 

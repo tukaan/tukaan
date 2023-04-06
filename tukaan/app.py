@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from typing import NoReturn
 
 try:
@@ -30,20 +28,16 @@ class App:
     ) -> None:
         if App._exists:
             raise Exception
+
+        try:
+            Tcl.init(name, screen)
+        except Exception as e:
+            raise e
         else:
             App._exists = True
 
-        Tcl.init(name, screen)
-
         Serif.init()
-
-        try:
-            # TODO: remove this try block, when Pillow 9.3.0 becomes 4-5 months old,
-            # and require Pillow>=9.3.0
-            ImagingTk.tkinit(Tcl.interp_address, 1)
-        except TypeError:
-            # Pillow 9.3.0
-            ImagingTk.tkinit(Tcl.interp_address)
+        ImagingTk.tkinit(Tcl.interp_address)
 
         NativeTheme.use()
 
@@ -53,15 +47,12 @@ class App:
 
         App.shared_instance = self
 
-        App.shared_instance = self
-
     def __enter__(self) -> App:
         return self
 
     def __exit__(
         self, exc_type: type[BaseException] | None, exc_value: BaseException | None, _
     ) -> NoReturn | None:
-
         if exc_type is None:
             return self.run()
 

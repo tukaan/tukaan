@@ -5,13 +5,12 @@ from functools import partial
 from typing import Any, Callable, Union
 from uuid import uuid4
 
-from tukaan._collect import _widgets
+from tukaan._collect import widgets
+from tukaan._keysyms import keysym_aliases, reversed_keysym_aliases
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
 from tukaan._utils import reversed_dict
 from tukaan.enums import EventQueue
-
-from ._keysyms import keysym_aliases, reversed_keysym_aliases
 
 if Platform.os == "macOS":
     BUTTON_NUMS = {"left": 1, "middle": 3, "right": 2}
@@ -347,7 +346,7 @@ def binding_wrapper(
 
     sent_event = event(*args)
     sent_event.sequence = sequence
-    sent_event.widget = _widgets.get(args[event._order.index("widget")])
+    sent_event.widget = widgets.get(args[event._order.index("widget")])
     result = func(sent_event)
 
     if result is not None:
