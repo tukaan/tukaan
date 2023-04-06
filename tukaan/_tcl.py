@@ -17,6 +17,7 @@ import _tkinter as tk
 from tukaan._collect import commands, counter
 from tukaan._typing import P, T, TypeAlias, WrappedFunction
 from tukaan.exceptions import TukaanTclError
+from tukaan._utils import instanceclassmethod
 
 TclValue: TypeAlias = Union[str, tk.Tcl_Obj]
 
@@ -58,9 +59,11 @@ class TclCallback:
             tb = traceback.format_exc().split("\n")[3:]
             print("Traceback (most recent call last):\n", "\n".join(tb))
 
-    def dispose(self) -> None:
-        Tcl._interp.deletecommand(self._name)  # type: ignore
-        del commands[self._name]
+    @instanceclassmethod
+    def dispose(self_or_cls, _name: str | None = None) -> None:
+        _name = _name or self_or_cls._name
+        Tcl._interp.deletecommand(_name)  # type: ignore
+        del commands[_name]
 
 
 class Tcl:

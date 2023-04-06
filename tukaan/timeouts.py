@@ -61,7 +61,7 @@ class Timeout:
 
         command, _ = Tcl.call(Tuple[str, ...], "after", "info", self._after_id)
         Tcl.call(None, "after", "cancel", command)
-        Tcl.delete_cmd(command)  # ! Unknown method
+        TclCallback.dispose(command)
 
         self._repeat = False
         self.state = "cancelled"
