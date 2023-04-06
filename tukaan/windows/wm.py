@@ -232,7 +232,7 @@ class WindowManager:
         return wrapper
 
     @property
-    def focused(self) -> bool:  # TODO correct return type?
+    def focused(self) -> bool:
         return Tcl.call(str, "focus", "-displayof", self._wm_path) == self._wm_path
 
     @property

@@ -198,7 +198,7 @@ class Tcl:
         if return_type is bool:
             return Tcl.get_bool(value)
 
-        if return_type in (int, float):
+        if return_type in {int, float}:
             return Tcl.get_number(return_type, value)
 
         if hasattr(return_type, "__from_tcl__"):
@@ -214,7 +214,7 @@ class Tcl:
                 items_len = len(sequence)
                 if len(return_type) != items_len:
                     return_type *= items_len
-                return tuple(Tcl.from_(return_type, elem) for elem in sequence)
+                return tuple(map(Tcl.from_, return_type, sequence))
 
             if isinstance(return_type, dict):
                 return {
