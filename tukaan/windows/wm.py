@@ -1,117 +1,63 @@
 from __future__ import annotations
 
-import ctypes
 import functools
 import re
 import sys
-from enum import Enum
 from fractions import Fraction
 from pathlib import Path
 from typing import Callable, Sequence
-
-from PIL import Image as PillowImage
 
 from tukaan._images import Icon
 from tukaan._misc import Position, Size
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
-from tukaan.colors import Color
-from tukaan.enums import Resizable, WindowBackdropType, WindowState, WindowType
+from tukaan.enums import Resizable, WindowState, WindowType
 from tukaan.exceptions import TukaanTclError
 
-if sys.platform == "win32":
-    windows_build = sys.getwindowsversion().build
 
-
-class AccentPolicy(ctypes.Structure):
-    _fields_ = [
-        ("AccentState", ctypes.c_int),
-        ("AccentFlags", ctypes.c_int),
-        ("GradientColor", ctypes.c_uint),
-        ("AnimationId", ctypes.c_int),
-    ]
-
-
-class WindowCompositionAttributeData(ctypes.Structure):
-    _fields_ = [
-        ("Attribute", ctypes.c_int),
-        ("Data", ctypes.POINTER(ctypes.c_int)),
-        ("SizeOfData", ctypes.c_size_t),
-    ]
-
-
-class Margins(ctypes.Structure):
-    _fields_ = [
-        ("cxLeftWidth", ctypes.c_int),
-        ("cxRightWidth", ctypes.c_int),
-        ("cyTopHeight", ctypes.c_int),
-        ("cyBottomHeight", ctypes.c_int),
-    ]
-
-
-class DWMWA(Enum):
-    TRANSITIONS_FORCEDISABLED = 3
-    USE_IMMERSIVE_DARK_MODE = 20
-    BORDER_COLOR = 34
-    CAPTION_COLOR = 35
-    TEXT_COLOR = 36
-    SYSTEMBACKDROP_TYPE = 38  # Windows 11 build >= 22621
-    MICA_EFFECT = 1029  # Undocumented, kinda buggy
-
-
-class DesktopWindowManager:
-    @staticmethod
-    def set_window_attr(name_or_hwnd: str | int, attr: DWMWA, value: int) -> None:
-        hwnd = (
-            name_or_hwnd
-            if isinstance(name_or_hwnd, int)
-            else int(Tcl.call(str, "wm", "frame", name_or_hwnd), 16)
-        )
-
-        c_value = ctypes.c_int(value)
-
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            hwnd,
-            attr.value,
-            ctypes.byref(c_value),
-            ctypes.sizeof(ctypes.c_int),
-        )
-
-    @classmethod
-    def apply_backdrop_effect(cls, window_name: str, backdrop_type: int) -> None:
-        hwnd = int(Tcl.call(str, "wm", "frame", window_name), 16)
-
-        acp = AccentPolicy()
-        acp.AccentFlags = 2  # ACCENT_ENABLE_BLURBEHIND
-        acp.AccentState = 5
-        acp.GradientColor = 0
-
-        wcad = WindowCompositionAttributeData()
-        wcad.Attribute = 19  # WCA_ACCENT_POLICY
-        wcad.SizeOfData = ctypes.sizeof(acp)
-        wcad.Data = ctypes.cast(ctypes.pointer(acp), ctypes.POINTER(ctypes.c_int))
-
-        ctypes.windll.user32.SetWindowCompositionAttribute(hwnd, wcad)
-
-        if windows_build >= 22621:
-            cls.set_window_attr(hwnd, DWMWA.SYSTEMBACKDROP_TYPE, backdrop_type)
-        elif windows_build >= 22000:
-            cls.set_window_attr(hwnd, DWMWA.MICA_EFFECT, 1 if backdrop_type else 0)
-
-
-def _get_bgr_color(rgb_hex: str) -> int:
-    return int(rgb_hex[5:7] + rgb_hex[3:5] + rgb_hex[1:3], 16)
-
-
-class WindowManager:
-    _current_state = "normal"
+class WindowStateManager:
     _wm_path: str
-    _icon: Icon | Path | None = None
+
+    _current_state = "normal"
 
     bind: Callable
     unbind: Callable
 
-    def _get_state(self) -> str:
+    def _gen_state_event(self):
+        prev_state = self._current_state
+        new_state = self.__get_state()
+
+        if new_state == prev_state or prev_state == "nostate":
+            return
+
+        events = ["<<StateChanged>>"]
+
+        if new_state == "normal":
+            events.append("<<Restore>>")
+        elif new_state == "maximized":
+            events.append("<<Maximize>>")
+        elif new_state == "minimized":
+            events.append("<<Minimize>>")
+        elif new_state == "hidden":
+            events.append("<<Hide>>")
+        elif new_state == "fullscreen":
+            events.append("<<Fullscreen>>")
+
+        if prev_state == "maximized":
+            events.append("<<Unmaximize>>")
+        elif prev_state == "minimized":
+            events.append("<<Unminimize>>")
+        elif prev_state == "hidden":
+            events.append("<<Unhide>>")
+        elif prev_state == "fullscreen":
+            events.append("<<Unfullscreen>>")
+
+        for event in events:
+            Tcl.eval(None, f"event generate {self._wm_path} {event}")
+
+        self._current_state = new_state
+
+    def __get_state(self) -> str:
         try:
             state = Tcl.call(str, "wm", "state", self._wm_path)
         except TukaanTclError as e:
@@ -137,58 +83,6 @@ class WindowManager:
 
         return "normal"
 
-    def _gen_state_event(self):
-        prev_state = self._current_state
-        new_state = self._get_state()
-
-        if new_state == prev_state or prev_state == "nostate":
-            return
-
-        events = ["<<StateChanged>>"]
-
-        if new_state == "normal":
-            events.append("<<Restore>>")
-        elif new_state == "maximized":
-            events.append("<<Maximize>>")
-        elif new_state == "minimized":
-            events.append("<<Minimize>>")
-        elif new_state == "hidden":
-            events.append("<<Hide>>")
-        elif new_state == "fullscreen":
-            events.append("<<Fullscreen>>")
-
-        if prev_state == "maximized":
-            events.extend(["<<Unmaximize>>", "<<__unmax_private__>>"])
-        elif prev_state == "minimized":
-            events.append("<<Unminimize>>")
-        elif prev_state == "hidden":
-            events.append("<<Unhide>>")
-        elif prev_state == "fullscreen":
-            events.append("<<Unfullscreen>>")
-
-        for event in events:
-            Tcl.call(None, "event", "generate", self, event)
-
-        self._current_state = new_state
-
-    def _force_redraw_titlebar(self) -> None:
-        """
-        Internal method, Windoze only
-
-        Neither user32.RedrawWindow nor user32.UpdateWindow redraws the titlebar,
-        so we need to explicitly iconify and then deiconify the window.
-        To avoid visual effects, we disable the transitions on the window for that time.
-        """
-        hwnd = self.hwnd
-        self._current_state = "nostate"
-
-        DesktopWindowManager.set_window_attr(hwnd, DWMWA.TRANSITIONS_FORCEDISABLED, 1)
-        Tcl.call(None, "wm", "iconify", self._wm_path)
-        Tcl.call(None, "wm", "deiconify", self._wm_path)
-        DesktopWindowManager.set_window_attr(hwnd, DWMWA.TRANSITIONS_FORCEDISABLED, 0)
-
-        self._current_state = self._get_state()
-
     def minimize(self) -> None:
         Tcl.call(None, "wm", "iconify", self._wm_path)
 
@@ -198,8 +92,11 @@ class WindowManager:
         else:
             Tcl.call(None, "wm", "state", self._wm_path, "zoomed")
 
+    def go_fullscreen(self) -> None:
+        Tcl.call(None, "wm", "attributes", self._wm_path, "-fullscreen", True)
+
     def restore(self) -> None:
-        state = self._get_state()
+        state = self.__get_state()
 
         if state in {"hidden", "minimized"}:
             Tcl.call(None, "wm", "deiconify", self._wm_path)
@@ -211,29 +108,18 @@ class WindowManager:
         elif state == "fullscreen":
             Tcl.call(None, "wm", "attributes", self._wm_path, "-fullscreen", False)
 
-    def fullscreen(self) -> None:
-        Tcl.call(None, "wm", "attributes", self._wm_path, "-fullscreen", True)
-
-    def focus(self) -> None:
-        Tcl.call(None, "focus", "-force", self._wm_path)
-
-    def group(self, other: WindowManager) -> None:
-        Tcl.call(None, "wm", "group", self._wm_path, other._wm_path)
-
     def hide(self) -> None:
         Tcl.call(None, "wm", "withdraw", self._wm_path)
 
     def unhide(self) -> None:
         Tcl.call(None, "wm", "deiconify", self._wm_path)
 
-    def on_close(self, func: Callable[[WindowManager], None]) -> Callable[[], None]:
-        @functools.wraps(func)
-        def wrapper() -> None:
-            if func(self):
-                self.destroy()
+    def focus(self) -> None:
+        Tcl.call(None, "focus", "-force", self._wm_path)
 
-        Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", wrapper)
-        return wrapper
+    @property
+    def state(self) -> WindowState:
+        return WindowState(self.__get_state())
 
     @property
     def focused(self) -> bool:
@@ -242,19 +128,19 @@ class WindowManager:
     @property
     @Tcl.redraw_before
     def visible(self) -> bool:
-        return Tcl.call(bool, "winfo", "ismapped", self._wm_path)
+        return Tcl.call(bool, "winfo", "viewable", self._wm_path)
 
     @property
-    def id(self) -> int:
-        return int(Tcl.call(str, "winfo", "id", self._wm_path), 16)
+    def always_on_top(self) -> bool:
+        return Tcl.call(bool, "wm", "attributes", self._wm_path, "-topmost")
 
-    @property
-    def hwnd(self) -> int:
-        return int(Tcl.call(str, "wm", "frame", self._wm_path), 16)
+    @always_on_top.setter
+    def always_on_top(self, value: bool) -> None:
+        Tcl.call(None, "wm", "attributes", self._wm_path, "-topmost", value)
 
-    @property
-    def state(self) -> WindowState:
-        return WindowState(self._get_state())
+
+class WindowGeometryManager:
+    _wm_path: str
 
     @property
     @Tcl.redraw_before
@@ -357,33 +243,6 @@ class WindowManager:
         Tcl.call(None, "wm", "maxsize", self._wm_path, *value)
 
     @property
-    def title(self) -> str:
-        return Tcl.call(str, "wm", "title", self._wm_path)
-
-    @title.setter
-    def title(self, value: str) -> None:
-        Tcl.call(None, "wm", "title", self._wm_path, value)
-
-    @property
-    def always_on_top(self) -> bool:
-        return Tcl.call(bool, "wm", "attributes", self._wm_path, "-topmost")
-
-    @always_on_top.setter
-    def always_on_top(self, value: bool = False) -> None:
-        Tcl.call(None, "wm", "attributes", self._wm_path, "-topmost", value)
-
-    @property
-    def opacity(self) -> float:
-        return Tcl.call(float, "wm", "attributes", self._wm_path, "-alpha")
-
-    @opacity.setter
-    def opacity(self, value: float) -> None:
-        if Tcl.windowing_system == "x11":
-            Tcl.call(None, "tkwait", "visibility", self._wm_path)
-
-        Tcl.call(None, "wm", "attributes", self._wm_path, "-alpha", value)
-
-    @property
     def size_increment(self) -> Size:
         return Size(*Tcl.call([str], "wm", "grid", self._wm_path)[2:])
 
@@ -435,8 +294,68 @@ class WindowManager:
     def resizable(self, value: Resizable) -> None:
         Tcl.call(None, "wm", "resizable", self._wm_path, *value.value)
 
+
+class WindowDecorationManager:
+    """Stuff that isn't necessarily related to the window decoration, but is part of the 'eye-candy'"""
+
+    _wm_path: str
+    _icon: Icon | Path | None = None
+
+    @property
+    @Platform.windows_only
+    def use_dark_mode_decorations(self) -> None:
+        ...
+
+    @use_dark_mode_decorations.setter
+    @Platform.windows_only
+    def use_dark_mode_decorations(self, value: bool) -> None:
+        import ctypes.windll  # type: ignore
+
+        if sys.getwindowsversion().build < 22000:
+            return
+
+        c_value = ctypes.c_int(int(value))
+
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            int(Tcl.call(str, "wm", "frame", self._wm_path), 16),
+            20,  # DWMWA_USE_IMMERSIVE_DARK_MODE
+            ctypes.byref(c_value),
+            ctypes.sizeof(ctypes.c_int),
+        )
+
+    @property
+    def title(self) -> str:
+        return Tcl.call(str, "wm", "title", self._wm_path)
+
+    @title.setter
+    def title(self, value: str) -> None:
+        Tcl.call(None, "wm", "title", self._wm_path, value)
+
+    @property
+    def opacity(self) -> float:
+        return Tcl.call(float, "wm", "attributes", self._wm_path, "-alpha")
+
+    @opacity.setter
+    def opacity(self, value: float) -> None:
+        if Tcl.windowing_system == "x11":
+            Tcl.call(None, "tkwait", "visibility", self._wm_path)
+
+        Tcl.call(None, "wm", "attributes", self._wm_path, "-alpha", value)
+
+
+class WindowManager(WindowGeometryManager, WindowStateManager, WindowDecorationManager):
+    _name: str
+    destroy: Callable[[], None]
+
     @property
     def type(self) -> WindowType:
+        """
+        Sets the purpose of this window. Most window managers use this property
+        to appropriately set decorations and animations for the window.
+
+        For example a utility window usually only has a close button, and a
+        splash window would be placed in the center of the screen, without decorations.
+        """
         if Tcl.windowing_system == "win32":
             if Tcl.call(bool, "wm", "attributes", self._wm_path, "-toolwindow"):
                 return WindowType.Utility
@@ -448,146 +367,33 @@ class WindowManager:
     @type.setter
     def type(self, value: WindowType) -> None:
         if Tcl.windowing_system == "win32":
-            if value is WindowType.ToolWindow:
+            if value is WindowType.Utility:
                 Tcl.call(None, "wm", "attributes", self._wm_path, "-toolwindow", True)
             elif value is WindowType.Normal:
                 Tcl.call(None, "wm", "attributes", self._wm_path, "-toolwindow", False)
         elif Tcl.windowing_system == "x11":
             Tcl.call(None, "wm", "attributes", self._wm_path, value)
 
-    @property
-    @Platform.windows_only
-    def border_color(self) -> None:
-        ...
+    def group(self, other: WindowManager) -> None:
+        Tcl.call(None, "wm", "group", self._wm_path, other._wm_path)
 
-    @border_color.setter
-    @Platform.windows_only
-    def border_color(self, value: Color | str) -> None:
-        if windows_build < 22000:
-            return None
+    def on_close(self, func: Callable[[WindowManager], None]) -> Callable[[], None]:
+        @functools.wraps(func)
+        def wrapper() -> None:
+            if func(self):
+                self.destroy()
 
-        DesktopWindowManager.set_window_attr(
-            self._wm_path, DWMWA.BORDER_COLOR, _get_bgr_color(value)
-        )
+        Tcl.call(None, "wm", "protocol", self._wm_path, "WM_DELETE_WINDOW", wrapper)
+        return wrapper
 
     @property
-    @Platform.windows_only
-    def titlebar_color(self) -> None:
-        ...
-
-    @titlebar_color.setter
-    @Platform.windows_only
-    def titlebar_color(self, value: Color | str) -> None:
-        if windows_build < 22000:
-            return None
-
-        DesktopWindowManager.set_window_attr(
-            self._wm_path, DWMWA.CAPTION_COLOR, _get_bgr_color(value)
-        )
+    def id(self) -> int:
+        return int(Tcl.call(str, "winfo", "id", self._wm_path), 16)
 
     @property
-    @Platform.windows_only
-    def titlebar_text_color(self) -> None:
-        ...
-
-    @titlebar_text_color.setter
-    @Platform.windows_only
-    def titlebar_text_color(self, value: Color | str) -> None:
-        if windows_build < 22000:
-            return None
-
-        DesktopWindowManager.set_window_attr(self._wm_path, DWMWA.TEXT_COLOR, _get_bgr_color(value))
+    def hwnd(self) -> int:
+        return int(Tcl.call(str, "wm", "frame", self._wm_path), 16)
 
     @property
-    @Platform.windows_only
-    def use_dark_mode_decorations(self) -> None:
-        ...
-
-    @use_dark_mode_decorations.setter
-    @Platform.windows_only
-    def use_dark_mode_decorations(self, value: bool) -> None:
-        if windows_build < 22000:
-            return None
-
-        DesktopWindowManager.set_window_attr(
-            self._wm_path, DWMWA.USE_IMMERSIVE_DARK_MODE, int(value)
-        )
-
-    @Platform.windows_only
-    @Tcl.with_redraw
-    def set_backdrop_effect(
-        self,
-        backdrop_type: WindowBackdropType | None = WindowBackdropType.Mica,
-        dark: bool = False,
-    ) -> None:
-        if windows_build < 22000:
-            return
-
-        if backdrop_type is None:
-            backdrop_type = WindowBackdropType.Normal
-
-        if backdrop_type is WindowBackdropType.Normal:
-            Tcl.call(None, "wm", "attributes", self._wm_path, "-transparentcolor", "")
-            Tcl.call(None, "bind", self._wm_path, "<<__unmax_private__>>", "")
-        else:
-            # Make the window background, and each pixel with the
-            # same color as the window background fully transparent.
-            # These are the areas where the backdrop effect will be applied.
-            bg_color = Tcl.eval(str, "ttk::style lookup . -background")
-            Tcl.call(None, "wm", "attributes", self._wm_path, "-transparentcolor", bg_color)
-
-            # When the window has `transparentcolor`, the whole window
-            # becomes unusable after unmaximizing. Therefore we bind it to the
-            # <<__unmax_private__>> event (<<Unmaximize>>, but it's private, so the user can't unbind it)
-            # so every time it changes state, it calls the _force_redraw_titlebar method.
-            # See self._force_redraw_titlebar.__doc__ for more.
-            Tcl.call(
-                None,
-                "bind",
-                self._wm_path,
-                "<<__unmax_private__>>",
-                self._force_redraw_titlebar,
-            )
-
-        DesktopWindowManager.apply_backdrop_effect(self._wm_path, backdrop_type.value)
-
-        self.use_dark_mode_decorations = dark
-        self._force_redraw_titlebar()
-
-    @property
-    def icon(self) -> Icon | Path | None:
-        return self._icon
-
-    @icon.setter
-    def icon(self, icon: Icon | Path | None) -> None:
-        if icon is None:
-            # FIXME: The icon can't be removed, some hacks? empty image for example?
-            return
-        elif isinstance(icon, Icon):
-            # If the icon was created, then by here Tcl/Tk has to have created a valid photo image for it
-            Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", icon)
-            self._icon = icon
-            return
-
-        assert isinstance(icon, Path)
-
-        if icon.suffix == ".png":
-            self.icon = Icon(icon)
-        elif icon.suffix in {".ico", ".icns"}:
-            extra_args = []
-            if Platform.os == "Windows":
-                # -default for iconbitmap available on Windows only
-                extra_args.append("-default")
-
-            try:
-                Tcl.call(None, "wm", "iconbitmap", self._wm_path, icon, *extra_args)
-            except TukaanTclError as e:
-                raise TukaanTclError(
-                    f'Cannot set bitmap of type "{icon.suffix}" on "{Platform.os}"'
-                ) from e
-            else:
-                self._icon = icon
-        else:
-            raise ValueError(
-                f"Invalid image format: {icon.suffix}. Must be one of: .png, .ico, .icns."
-            )
+    def class_name(self) -> int:
+        return Tcl.call(str, "winfo", "class", self._wm_path)
