@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 from tukaan._base import ToplevelBase
 from tukaan._tcl import Tcl
@@ -38,7 +38,7 @@ class TkFileDialog(FileDialogBase):
         multiple: bool = False,
         filetypes: dict[str, str | tuple[str, ...]] | None = None,
     ) -> Path | list[Path] | None:
-        return_type = List[str] if multiple else str
+        return_type = [str] if multiple else str
 
         if filetypes is not None:
             filetypes_processed = tuple((name, filter_) for name, filter_ in filetypes.items())
