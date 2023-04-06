@@ -10,16 +10,12 @@ import sys
 import traceback
 from enum import Enum, EnumMeta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Sequence, Union, cast, overload
-
-if TYPE_CHECKING:
-    from tukaan._mixins import WidgetMixin
+from typing import Any, Callable, Sequence, Union, cast, overload
 
 import _tkinter as tk
-from typing_extensions import TypeAlias
 
 from tukaan._collect import commands, counter
-from tukaan._typing import P, T, WrappedFunction
+from tukaan._typing import P, T, TypeAlias, WrappedFunction
 from tukaan.exceptions import TukaanTclError
 
 TclValue: TypeAlias = Union[str, tk.Tcl_Obj]
@@ -182,10 +178,14 @@ class Tcl:
         if isinstance(obj, Enum):
             return str(obj.value)
 
-        if isinstance(obj, collections.abc.Iterator):
+        try:
+            iter(obj)
+        except TypeError:
+            raise TypeError(
+                "cannot convert Python object to Tcl. Please provide a __to_tcl__ method."
+            ) from None
+        else:
             return tuple(Tcl.to(o) for o in obj)
-
-        raise TypeError("cannot convert Python object to Tcl. Please provide a __to_tcl__ method.")
 
     @staticmethod
     def from_(return_type: type[T], value: TclValue) -> T:  # noqa: CCR001
@@ -198,7 +198,7 @@ class Tcl:
         if return_type in (int, float):
             return Tcl.get_number(return_type, value)
 
-        if issubclass(return_type, WidgetMixin) and isinstance(value, str):
+        if hasattr(return_type, "__from_tcl__"):
             return return_type.__from_tcl__(value)
 
         if isinstance(return_type, (list, tuple, dict)):
@@ -276,6 +276,8 @@ class Tcl:
         except tk.TclError as e:
             raise TukaanTclError(str(e)) from None
         else:
+            if return_type is None:
+                return
             return cls.from_(return_type, result)
 
     @classmethod

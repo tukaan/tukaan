@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Union
 
-from typing_extensions import Literal
+from tukaan._typing import Literal
 
 
 class Align(Enum):
