@@ -28,28 +28,22 @@ class App:
     ) -> None:
         if App._exists:
             raise Exception
+
+        try:
+            Tcl.init(name, screen)
+        except Exception as e:
+            raise e
         else:
             App._exists = True
 
-        Tcl.init(name, screen)
-
         Serif.init()
-
-        try:
-            # TODO: remove this try block, when Pillow 9.3.0 becomes 4-5 months old,
-            # and require Pillow>=9.3.0
-            ImagingTk.tkinit(Tcl.interp_address, 1)
-        except TypeError:
-            # Pillow 9.3.0
-            ImagingTk.tkinit(Tcl.interp_address)
+        ImagingTk.tkinit(Tcl.interp_address)
 
         NativeTheme.use()
 
         self._name = name
         self._author = author
         self._version = str(version)
-
-        App.shared_instance = self
 
         App.shared_instance = self
 
