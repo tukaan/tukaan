@@ -220,6 +220,7 @@ class Tcl:
                 }
 
         if issubclass(return_type, EnumMeta):
+            # FIXME: this fails if return_type is None. Although return_type should'n be None at this place
             return return_type(value)
 
         if return_type is Path:
