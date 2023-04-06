@@ -37,9 +37,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
-    - name: Install dependencies
-      run: |
-          sudo apt install python3-pil.imagetk
+    - if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install python3-pil.imagetk
+    - run: |
           python3 -m pip install pytest
           python3 -m pip install -r requirements.txt
     - uses: GabrielBB/xvfb-action@v1.4
