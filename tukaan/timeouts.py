@@ -1,5 +1,5 @@
 import functools
-from typing import Any, Callable, Tuple
+from typing import Any, Callable
 
 from tukaan._tcl import Tcl, TclCallback
 from tukaan._typing import P, T, WrappedFunction
