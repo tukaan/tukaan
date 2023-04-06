@@ -573,9 +573,7 @@ class WindowManager:
         assert isinstance(icon, Path)
 
         if icon.suffix == ".png":
-            win_icon = Icon(icon)
-            self._icon = win_icon
-            Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon)
+            self.icon = Icon(icon)
         elif icon.suffix in (".ico", ".icns"):
             args = [None, "wm", "iconbitmap", self._wm_path, icon.resolve()]
             if Platform.os == "Windows":
