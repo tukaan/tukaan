@@ -560,32 +560,36 @@ class WindowManager:
         return self._icon
 
     @icon.setter
-    def icon(self, icon: Path | Icon) -> None:
-        if isinstance(icon, Icon):
+    def icon(self, icon: Icon | Path | None) -> None:
+        if icon is None:
+            # FIXME: The icon can't be removed, some hacks? empty image for example?
+            return
+        elif isinstance(icon, Icon):
             # If the icon was created, then by here Tcl/Tk has to have created a valid photo image for it
-            Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", icon._name)
+            Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", icon)
             self._icon = icon
+            return
 
-        else:
-            icon_path = Path(icon)
-            if icon_path.suffix == ".png":
-                win_icon = Icon(icon_path)
-                self._icon = win_icon
-                Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
-            elif icon_path.suffix in (".ico", ".icns"):
-                args = [None, "wm", "iconbitmap", self._wm_path, icon_path.resolve()]
-                if Platform.os == "Windows":
-                    # -default for iconbitmap available on Windows only
-                    args.insert(-1, "-default")
-                try:
-                    Tcl.call(*args)
-                except TukaanTclError as e:
-                    raise TukaanTclError(
-                        f'Cannot set bitmap of type "{icon_path.suffix}" on operating system "{Platform.os}"'
-                    ) from e
-                else:
-                    self._icon = icon_path
+        assert isinstance(icon, Path)
+
+        if icon.suffix == ".png":
+            win_icon = Icon(icon)
+            self._icon = win_icon
+            Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon)
+        elif icon.suffix in (".ico", ".icns"):
+            args = [None, "wm", "iconbitmap", self._wm_path, icon.resolve()]
+            if Platform.os == "Windows":
+                # -default for iconbitmap available on Windows only
+                args.insert(-1, "-default")
+            try:
+                Tcl.call(*args)
+            except TukaanTclError as e:
+                raise TukaanTclError(
+                    f'Cannot set bitmap of type "{icon.suffix}" on operating system "{Platform.os}"'
+                ) from e
             else:
-                raise ValueError(
-                    f"Invalid image format: {icon_path.suffix}. Must be one of: .png, .ico, .icns."
-                )
+                self._icon = icon
+        else:
+            raise ValueError(
+                f"Invalid image format: {icon.suffix}. Must be one of: .png, .ico, .icns."
+            )
