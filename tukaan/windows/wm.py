@@ -585,26 +585,6 @@ class WindowManager:
                     ) from e
                 else:
                     self._icon = icon_path
-            elif icon_path.suffix in ():
-                # Future tuple of other supported filetypes, if desired
-                # Also feel free to remove this if unneeded
-                temp_file = None
-                try:
-                    # Delete is False here because Windows runs into issues with opening and closing multiple times
-                    # Just keep it open through everything and delete at the end
-                    temp_file = NamedTemporaryFile(delete=False)
-                    PillowImage.open(icon_path.resolve()).save(temp_file.name, format="PNG")
-                    win_icon = Icon(Path(temp_file.name))
-                    Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
-                except Exception as e:
-                    raise e
-                else:
-                    self._icon = icon_path
-                finally:
-                    # Whatever errors might occur here, be sure to always close and delete the temp file
-                    if temp_file is not None:
-                        temp_file.close()
-                        Path.unlink(Path(temp_file.name), missing_ok=True)
             else:
                 raise ValueError(
                     f"Invalid image format: {icon_path.suffix}. Must be one of: .png, .ico, .icns."
