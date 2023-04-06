@@ -323,6 +323,63 @@ class WindowDecorationManager:
     _icon: Icon | Path | None = None
 
     @property
+    def title(self) -> str:
+        return Tcl.call(str, "wm", "title", self._wm_path)
+
+    @title.setter
+    def title(self, value: str) -> None:
+        Tcl.call(None, "wm", "title", self._wm_path, value)
+
+    @property
+    def icon(self) -> Icon | Path | None:
+        return self._icon
+
+    @icon.setter
+    def icon(self, icon: Icon | Path | None) -> None:
+        if icon is None:
+            # FIXME: The icon can't be removed, some hacks? empty image for example?
+            return
+        elif isinstance(icon, Icon):
+            # If the icon was created, then by here Tcl/Tk has to have created a valid photo image for it
+            Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", icon)
+            self._icon = icon
+            return
+
+        assert isinstance(icon, Path)
+
+        if icon.suffix == ".png":
+            self.icon = Icon(icon)
+        elif icon.suffix in {".ico", ".icns"}:
+            extra_args = []
+            if Platform.os == "Windows":
+                # -default for iconbitmap available on Windows only
+                extra_args.append("-default")
+
+            try:
+                Tcl.call(None, "wm", "iconbitmap", self._wm_path, icon, *extra_args)
+            except TukaanTclError as e:
+                raise TukaanTclError(
+                    f'Cannot set bitmap of type "{icon.suffix}" on "{Platform.os}"'
+                ) from e
+            else:
+                self._icon = icon
+        else:
+            raise ValueError(
+                f"Invalid image format: {icon.suffix}. Must be one of: .png, .ico, .icns."
+            )
+
+    @property
+    def opacity(self) -> float:
+        return Tcl.call(float, "wm", "attributes", self._wm_path, "-alpha")
+
+    @opacity.setter
+    def opacity(self, value: float) -> None:
+        if Tcl.windowing_system == "x11":
+            Tcl.call(None, "tkwait", "visibility", self._wm_path)
+
+        Tcl.call(None, "wm", "attributes", self._wm_path, "-alpha", value)
+
+    @property
     @Platform.windows_only
     def use_dark_mode_decorations(self) -> None:
         # TODO
@@ -344,25 +401,6 @@ class WindowDecorationManager:
             ctypes.byref(c_value),
             ctypes.sizeof(ctypes.c_int),
         )
-
-    @property
-    def title(self) -> str:
-        return Tcl.call(str, "wm", "title", self._wm_path)
-
-    @title.setter
-    def title(self, value: str) -> None:
-        Tcl.call(None, "wm", "title", self._wm_path, value)
-
-    @property
-    def opacity(self) -> float:
-        return Tcl.call(float, "wm", "attributes", self._wm_path, "-alpha")
-
-    @opacity.setter
-    def opacity(self, value: float) -> None:
-        if Tcl.windowing_system == "x11":
-            Tcl.call(None, "tkwait", "visibility", self._wm_path)
-
-        Tcl.call(None, "wm", "attributes", self._wm_path, "-alpha", value)
 
 
 class WindowManager(WindowGeometryManager, WindowStateManager, WindowDecorationManager):
