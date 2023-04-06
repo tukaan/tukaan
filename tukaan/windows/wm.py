@@ -232,8 +232,8 @@ class WindowManager:
         return wrapper
 
     @property
-    def focused(self) -> int:  # TODO correct return type?
-        return Tcl.call(str, "focus", "-displayof", self._wm_path)
+    def focused(self) -> bool:  # TODO correct return type?
+        return Tcl.call(str, "focus", "-displayof", self._wm_path) == self._wm_path
 
     @property
     @Tcl.redraw_before
