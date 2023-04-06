@@ -5,9 +5,6 @@
 * Add more TODO items and indicate their priority (task mostly for [@rdbende](https://github.com/rdbende))
 
 # Simple tasks
-- Add window icon
-
-  Currently it's not possible to add any window icon. It should be a `property` in the `WindowManager` class, that accepts either a `pathlib.Path` object, or a `tukaan.Icon` object, and sets the window icon. Cross-platform twist: it should be possible to set a `png` file on every system, an `ico` Windows, and `icns` on macOS
 - Add button variants
 
   `variant` option for the `Button` widget to set styles like "outlined" (`Outline.TButton` internally), "filled" (`Filled.TButton`) and "link" (`Link.TButton`)
