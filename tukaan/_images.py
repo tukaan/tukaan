@@ -6,7 +6,7 @@ from typing import Union
 
 from PIL import Image as PillowImage
 from PIL import ImageSequence
-from PIL import _imagingtk as ImagingTk  # type: ignore
+from PIL import _imagingtk  # type: ignore
 
 from tukaan._base import TkWidget, WidgetBase
 from tukaan._collect import counter, images
@@ -46,7 +46,9 @@ class Pillow2Tcl:
     def _getmode(self, image: PillowImage.Image) -> str:
         """Get the mode of palette mapped data."""
 
-        image.apply_transparency()
+        if hasattr(image, "apply_transparency"):
+            image.apply_transparency()  # type: ignore
+
         try:
             mode = image.palette.mode
             if mode not in {"1", "L", "RGB", "RGBA"}:
@@ -76,17 +78,13 @@ class Pillow2Tcl:
             block = im.new_block(mode, size)
             im.convert2(block, im)
 
-        name = Tcl.eval(str, f"image create photo {name or ''}")
-        Tcl.eval(None, f"PyImagingPhoto {name} {block.id}")
+        img_name = Tcl.eval(str, f"image create photo {name or ''}")
+        Tcl.eval(None, f"PyImagingPhoto {img_name} {block.id}")
 
-        return duration, name
+        return duration, img_name
 
     def _setup_animation(self, image: PillowImage.Image) -> None:
-        frames = []
-
-        for frame in ImageSequence.Iterator(image):
-            frames.append(self._create(frame))
-
+        frames = [self._create(frame) for frame in ImageSequence.Iterator(image)]
         self._frames = itertools.cycle(frames)
 
     def _show_next_frame(self) -> None:
@@ -118,17 +116,14 @@ class Pillow2Tcl:
     def __from_tcl__(cls, value: str) -> PillowImage.Image | Icon | None:
         result = images.get(value)
 
-        if hasattr(result, "_pil_image"):
-            return result._pil_image
-
-        return result
+        return result._pil_image if hasattr(result, "_pil_image") else result
 
 
 def pil_image_to_tcl(self) -> str:
     return Pillow2Tcl(self)._name
 
 
-PillowImage.Image.__to_tcl__ = pil_image_to_tcl
+setattr(PillowImage.Image, "__to_tcl__", pil_image_to_tcl)
 
 
 class Icon:
@@ -157,7 +152,6 @@ class IconFactory:
 
         self._dark_icons_dir = on_light_theme
         self._light_icons_dir = on_dark_theme
-
         self._current_dir = on_light_theme
 
         if on_dark_theme is not None:
@@ -174,11 +168,13 @@ class IconFactory:
         assert self._current_dir is not None
 
         for name, icon in self.cache.items():
-            icon.source = Path(self._current_dir) / f"{name}.png"
+            Tcl.call(None, icon, "configure", "-file", Path(self._current_dir) / f"{name}.png")
 
     def get(self, icon_name: str) -> Icon:
         if icon_name in self.cache:
             return self.cache[icon_name]
+
+        assert self._current_dir is not None
 
         icon = Icon(Path(self._current_dir) / f"{icon_name}.png")
         self.cache[icon_name] = icon

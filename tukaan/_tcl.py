@@ -272,9 +272,7 @@ class Tcl:
         except tk.TclError as e:
             Tcl.raise_error(e)
         else:
-            if return_type is None:
-                return None
-            return cls.from_(return_type, result)
+            return None if return_type is None else cls.from_(return_type, result)
 
     @overload
     @classmethod

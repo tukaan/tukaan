@@ -398,9 +398,7 @@ class WindowManager:
     @Tcl.redraw_before
     def aspect_ratio(self) -> None | tuple[Fraction, Fraction]:
         result = Tcl.call((int,), "wm", "aspect", self._wm_path)
-        if not result:
-            return None
-        return Fraction(*result[:2]), Fraction(*result[2:])
+        return (Fraction(*result[:2]), Fraction(*result[2:])) if result else None
 
     @aspect_ratio.setter
     @Tcl.redraw_after

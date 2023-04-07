@@ -141,7 +141,7 @@ class RadioGroup(Frame, InputControl):
             raise ValueError(f"RadioGroup.select({item!r}): {item!r} not in radio group")
 
     @property
-    def value(self) -> str:
+    def value(self) -> str | None:
         return self._variable.get() or None
 
     @value.setter
@@ -160,6 +160,7 @@ class RadioGroup(Frame, InputControl):
     @selected.setter
     def selected(self, item: RadioButton | None) -> None:
         if item in self._items.values():
+            assert item is not None
             item.select()
         elif item is None:
             self._variable.set("")

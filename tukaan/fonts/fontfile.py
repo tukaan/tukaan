@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import struct
 from collections import namedtuple
+from typing import Iterator
 from pathlib import Path
 from typing import BinaryIO
 
@@ -42,7 +43,7 @@ nameID_order = (
 class FontInfo(namedtuple("FontInfo", nameID_order)):
     """Store information about a font family."""
 
-    def __iter__(self) -> Iterator[str, str]:
+    def __iter__(self) -> Iterator[tuple[str, str]]:
         """
         Make it possible to convert the FontInfo to a dictionary.
 
@@ -73,8 +74,11 @@ def get_font_type(magic_tag: bytes) -> str:
 
 
 class FontFile:
-    def __new__(cls, path: Path, **kwargs) -> FontFile:
-        if path is not None and not isinstance(path, Path):
+    path: Path
+
+    def __new__(cls, path: Path | None, **_) -> FontFile:
+        assert path is not None
+        if not isinstance(path, Path):
             raise TypeError("'path' should a pathlib.Path object")
 
         if cls is not FontFile:
@@ -89,6 +93,8 @@ class FontFile:
             table_name, _, start, _ = struct.unpack(">4sL2I", file.read(16))
             if table_name == b"name":  # We don't care about the other tables
                 return FontInfo(**self._read_name_table(file, start))
+
+        assert False
 
     def _read_name_table(self, file: BinaryIO, start: int) -> dict[str, str]:
         file.seek(start)
@@ -151,13 +157,14 @@ class TrueTypeCollection(FontFile):
 
 class TrueTypeFont(FontFile):
     def __init__(self, path: Path | None, _io: BinaryIO | None = None) -> None:
-        if _io is None:
+        if path is None:
+            assert _io is not None
+            self.path = Path(_io.name)
+            file = _io
+        else:
             self.path = path
             file = path.open("rb")
             file.seek(4)
-        else:
-            self.path = Path(_io.name)
-            file = _io
 
         self.info = self._parse(file)
 
@@ -168,7 +175,7 @@ class TrueTypeFont(FontFile):
 
 
 class OpenTypeFont(FontFile):
-    def __init__(self, path: Path | None) -> None:
+    def __init__(self, path: Path) -> None:
         self.path = path
 
         with path.open("rb") as file:

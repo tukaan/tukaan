@@ -10,7 +10,9 @@ class Timeout:
     _repeat: bool = False
     state: str = "not started"
 
-    def __init__(self, seconds: float, target: Callable[[], Any], *, args=(), kwargs={}) -> None:
+    def __init__(self, seconds: float, target: Callable[[], Any], *, args=(), kwargs=None) -> None:
+        if kwargs is None:
+            kwargs = {}
         assert callable(target), "target must be callable"
 
         self.seconds = seconds
@@ -77,7 +79,9 @@ class Timeout:
 
 class Timer:
     @staticmethod
-    def schedule(seconds: float, target: Callable[..., Any], *, args=(), kwargs={}) -> None:
+    def schedule(seconds: float, target: Callable[..., Any], *, args=(), kwargs=None) -> None:
+        if kwargs is None:
+            kwargs = {}
         Tcl.call(str, "after", int(seconds * 1000), TclCallback(target, args=args, kwargs=kwargs))
 
     @staticmethod

@@ -67,7 +67,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
 
     def _repr_details(self) -> str:
         value = self.value
-        return f"value='{value if len(value) <= 10 else value[:10] + '...'}'"
+        return f"value='{value if len(value) <= 10 else f'{value[:10]}...'}'"
 
     def insert(self, index: int | str | None, string: str) -> None:
         if index is None:
@@ -87,9 +87,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         return Tcl.call(str, self, "get")[indices]
 
     def get(self, *indices) -> str:
-        if indices:
-            return self[slice(*indices)]
-        return Tcl.call(str, self, "get")
+        return self[slice(*indices)] if indices else Tcl.call(str, self, "get")
 
     def set(self, value: str) -> None:
         Tcl.call(None, self, "delete", 0, "end")

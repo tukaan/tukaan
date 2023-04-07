@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import shutil
-from subprocess import PIPE, run
+from subprocess import run
 
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
@@ -20,7 +20,7 @@ plasma_reduced_motion_command = [
 
 class Accessibility:
     @classmethod
-    def allow_focus_follows_mouse(cls) -> None:
+    def enable_focus_follows_mouse(cls) -> None:
         Tcl.call(None, "tk_focusFollowsMouse")
 
     @classproperty
@@ -38,7 +38,7 @@ class Accessibility:
             else:
                 return not int(value)
         elif shutil.which("kreadconfig5"):
-            result = run(plasma_reduced_motion_command, stdout=PIPE, stderr=PIPE, check=True).stdout
+            result = run(plasma_reduced_motion_command, capture_output=True, check=True).stdout
             try:
                 return result.decode().split()[0] == "0"
             except IndexError:
