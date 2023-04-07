@@ -31,8 +31,8 @@ from .widgets.spinbox import SpinBox
 from .widgets.splitview import SplitView
 from .widgets.tabview import TabView
 from .widgets.textbox import TextBox
-from .windows.main_window import MainWindow
-from .windows.window import Window
+from .toplevels.main_window import MainWindow
+from .toplevels.window import Window
 
 __all__ = []  # Making star imports impossible. Is it illegal?
 

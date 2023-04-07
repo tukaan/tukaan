@@ -142,7 +142,7 @@ class WindowType(Enum):
     Splash = "splash"
     ToolBar = "toolbar"
     Tooltip = "tooltip"
-    ToolWindow = "toolwindow"  # xref: tukaan.windows.wm:447
+    ToolWindow = "toolwindow"
     Utility = "utility"
 
 
