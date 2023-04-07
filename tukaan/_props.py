@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from tukaan._base import TkWidget
 
 
-def cget(widget: TkWidget, return_type: type[T], option: str) -> T:
+def cget(widget: TkWidget, return_type: T | type[T], option: str) -> T:
     return Tcl.call(return_type, widget, "cget", option)
 
 

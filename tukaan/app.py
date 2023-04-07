@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import NoReturn
 
 try:
-    from PIL import Image as PillowImage
     from PIL import _imagingtk as ImagingTk  # type: ignore  # noqa: N812
 except ImportError as e:
     raise ImportError("Tukaan needs PIL and PIL._imagingtk to work with images.") from e

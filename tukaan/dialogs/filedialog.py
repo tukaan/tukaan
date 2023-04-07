@@ -74,7 +74,7 @@ class TkFileDialog(FileDialogBase):
         filename: str | None = None,
         confirm: bool = True,
         parent: ToplevelBase | None = None,
-        filetypes: dict[str, str | tuple[str, ...]] = None,
+        filetypes: dict[str, str | tuple[str, ...]] | None = None,
     ) -> Path | None:
         if filetypes is not None:
             filetypes_processed = tuple((name, filter_) for name, filter_ in filetypes.items())
@@ -151,10 +151,7 @@ class ZenityFileDialog(FileDialogBase):
         result = run_zenity("--file-selection", title, parent, *args)
 
         if result:
-            if len(result) == 1:
-                return Path(result[0])
-            else:
-                return [Path(x) for x in result]
+            return Path(result[0]) if len(result) == 1 else [Path(x) for x in result]
 
     @staticmethod
     def pick_path_to_save(
@@ -230,10 +227,7 @@ class KFileDialog(FileDialogBase):
         result = run_kdialog("--getopenfilename", title, parent, *args)
 
         if result:
-            if len(result) == 1:
-                return Path(result[0])
-            else:
-                return [Path(x) for x in result]
+            return Path(result[0]) if len(result) == 1 else [Path(x) for x in result]
 
     @staticmethod
     def pick_path_to_save(
