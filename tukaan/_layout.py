@@ -209,7 +209,7 @@ class Grid(LayoutManager):
 
     @property
     def margin(self) -> tuple[int, ...]:
-        (left, right), (top, bottom) = [x if len(x) == 2 else x * 2 for x in self._get_pad()]
+        (left, right), (top, bottom) = (x if len(x) == 2 else x * 2 for x in self._get_pad())
         return top, right, bottom, left
 
     @margin.setter

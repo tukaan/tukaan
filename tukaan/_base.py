@@ -41,7 +41,7 @@ class XScrollable:
         return commands[cget(self, str, "-xscrollcommand")]
 
     @on_xscroll.setter
-    def on_xscroll(self, value: Callable[P, Any]) -> None:
+    def on_xscroll(self, value: Callable[..., Any]) -> None:
         config(self, xscrollcommand=value)
 
 

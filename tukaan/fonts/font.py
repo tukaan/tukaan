@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, TypeVar, Union
+from typing import TYPE_CHECKING, Dict, NamedTuple, TypeVar, Union
 
 if TYPE_CHECKING:
     from pathlib import Path
