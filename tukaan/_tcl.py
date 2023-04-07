@@ -11,13 +11,14 @@ import traceback
 from enum import Enum, EnumMeta
 from pathlib import Path
 from typing import Any, Callable, Sequence, Union, cast, overload
+from inspect import isclass
 
 import _tkinter as tk
 
 from tukaan._collect import commands, counter
 from tukaan._typing import P, T, TypeAlias, WrappedFunction
 from tukaan._utils import instanceclassmethod
-from tukaan.exceptions import TukaanTclError
+from tukaan.exceptions import TukaanTclError, AppError
 
 TclValue: TypeAlias = Union[str, tk.Tcl_Obj]
 
@@ -53,11 +54,8 @@ class TclCallback:
         try:
             return self._callback(*tcl_args, *self._args, **self._kwargs)
         except Exception:
-            # remove unnecessary lines:
-            # File "/home/.../_tcl.py", line 46, in __call__
-            # return func(*args)
-            tb = traceback.format_exc().split("\n")[3:]
-            print("Traceback (most recent call last):\n", "\n".join(tb))
+            print("Exception in Tukaan callback:")
+            print(traceback.format_exc())
 
     @instanceclassmethod
     def dispose(self_or_cls, _name: str | None = None) -> None:
@@ -76,7 +74,8 @@ class Tcl:
         """Initialize the interpreter."""
         cls._interp = cast(
             tk.TkappType,
-            tk.create(screen_name, app_name, app_name, False, False, True, False, None),  # type: ignore
+            tk.create(screen_name, "", app_name, False, False, True, False, None),  # type: ignore
+            # arg #2 'baseName' is ignored in `_tkinter.c`
         )
         cls._interp.loadtk()
         cls._interp.call("wm", "withdraw", ".")
@@ -158,16 +157,16 @@ class Tcl:
             return str(obj)
 
         try:
-            return obj._name  # EAFP
+            return obj._name
         except AttributeError:
             pass
 
         try:
-            to_tcl = obj.__to_tcl__
+            obj.__to_tcl__
         except AttributeError:
             pass
         else:
-            return to_tcl()
+            return obj.__to_tcl__()
 
         if isinstance(obj, collections.abc.Mapping):
             return tuple(map(Tcl.to, itertools.chain.from_iterable(obj.items())))  # type: ignore
@@ -176,7 +175,7 @@ class Tcl:
             return TclCallback(obj)._name
 
         if isinstance(obj, Path):
-            return str(obj.resolve())
+            return str(obj.resolve().absolute())
 
         if isinstance(obj, Enum):
             return str(obj.value)
@@ -192,23 +191,28 @@ class Tcl:
 
     @staticmethod
     def from_(return_type: Any, value: TclValue) -> T:  # noqa: CCR001
-        if return_type is str:
-            return Tcl.get_string(value)
+        if isclass(return_type) and isinstance(value, return_type):
+            return value
 
         if return_type is bool:
-            return Tcl.get_bool(value)
+            return Tcl._interp.getboolean(value)
 
-        if return_type in {int, float}:
-            return Tcl.get_number(return_type, value)
+        if return_type in (int, float):
+            return return_type(Tcl._interp.getdouble(value))
 
-        if hasattr(return_type, "__from_tcl__"):
+        try:
+            return_type.__from_tcl__
+        except AttributeError:
+            pass
+        else:
             return return_type.__from_tcl__(value)
 
         if isinstance(return_type, (list, tuple, dict)):
-            sequence = Tcl.get_iterable(value)
+            sequence = Tcl._interp.splitlist(value)
 
             if isinstance(return_type, list):
-                return [Tcl.from_(return_type[0], item) for item in sequence]
+                type_ = return_type[0]
+                return [Tcl.from_(type_, item) for item in sequence]
 
             if isinstance(return_type, tuple):
                 items_len = len(sequence)
@@ -222,13 +226,34 @@ class Tcl:
                     for k, v in zip(sequence[::2], sequence[1::2])
                 }
 
+        if return_type is str:
+            if isinstance(value, tk.Tcl_Obj):
+                return str(value.string)
+
+            return Tcl._interp.call("format", value)
+
         if isinstance(return_type, EnumMeta):
             return return_type(value)
 
         if return_type is Path:
-            return Path(Tcl.get_string(value)).resolve()
+            return Path(Tcl.from_(str, value)).resolve()
 
         assert False  # type-guard, sorta
+
+    @staticmethod
+    def raise_error(error):
+        msg = str(error)
+
+        if "has been destroyed" in msg or "NULL main window" in msg:
+            raise AppError("application has been destroyed.")
+
+        if not msg.startswith("couldn't read file"):
+            raise TukaanTclError(msg) from None
+
+        # FileNotFoundError is a bit more Pythonic
+        sys.tracebacklimit = 0
+        quote = '"'
+        raise FileNotFoundError(f"No such file or directory: {msg.split(quote)[1]!r}") from None
 
     @overload
     @classmethod
@@ -245,21 +270,10 @@ class Tcl:
         try:
             result = cls._interp.call(*[cls.to(arg) for arg in args])
         except tk.TclError as e:
-            msg = str(e)
-
-            if "has been destroyed" in msg:
-                return
-
-            if not msg.startswith("couldn't read file"):
-                raise TukaanTclError(msg) from None
-
-            # FileNotFoundError is a bit more Pythonic
-            sys.tracebacklimit = 0
-            quote = '"'
-            raise FileNotFoundError(f"No such file or directory: {msg.split(quote)[1]!r}") from None
+            Tcl.raise_error(e)
         else:
             if return_type is None:
-                return
+                return None
             return cls.from_(return_type, result)
 
     @overload
@@ -277,35 +291,11 @@ class Tcl:
         try:
             result = cls._interp.eval(script)
         except tk.TclError as e:
-            raise TukaanTclError(str(e)) from None
+            Tcl.raise_error(e)
         else:
             if return_type is None:
                 return
             return cls.from_(return_type, result)
-
-    @classmethod
-    def get_string(cls, value: TclValue | Any) -> str:
-        if isinstance(value, str):
-            return value
-
-        if isinstance(value, tk.Tcl_Obj):
-            return str(value.string)
-
-        return cls._interp.call("format", value)
-
-    @classmethod
-    def get_number(cls, type_spec: type[int] | type[float], value: TclValue) -> float | None:
-        if cls.get_string(value):
-            return type_spec(cls._interp.getdouble(value))  # type: ignore
-
-    @classmethod
-    def get_bool(cls, value: TclValue) -> bool | None:
-        if cls.get_string(value):
-            return cls._interp.getboolean(value)  # type: ignore
-
-    @classmethod
-    def get_iterable(cls, value: TclValue) -> tuple[str]:
-        return cls._interp.splitlist(value)  # type: ignore
 
     @classmethod
     def with_redraw(cls, func: WrappedFunction[P, T]):
