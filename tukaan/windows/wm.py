@@ -384,8 +384,18 @@ class WindowDecorationManager:
         Tcl.call(None, "wm", "attributes", self._wm_path, "-alpha", value)
 
     @property
+    @Platform.mac_only
+    def dirty(self) -> bool:
+        return Tcl.call(bool, "wm", "attributes", "-modified")
+
+    @dirty.setter
+    @Platform.mac_only
+    def dirty(self, value: bool) -> None:
+        Tcl.call(bool, "wm", "attributes", "-modified", value)
+
+    @property
     @Platform.windows_only
-    def use_dark_mode_decorations(self) -> None:
+    def use_dark_mode_decorations(self) -> bool:
         # TODO
         ...
 
