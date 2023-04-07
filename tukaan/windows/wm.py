@@ -93,6 +93,10 @@ class WindowStateManager:
         """Make the window fill up the entire screen."""
         Tcl.call(None, "wm", "attributes", self._wm_path, "-fullscreen", True)
 
+    def exit_fullscreen(self) -> None:
+        """Exit full screen mode."""
+        Tcl.call(None, "wm", "attributes", self._wm_path, "-fullscreen", False)
+
     def restore(self) -> None:
         """
         Make this window normal size.
