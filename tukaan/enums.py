@@ -165,11 +165,3 @@ WindowTypeKind = Union[
         "utility",
     ],
 ]
-
-
-# ? Make this Windows only
-class WindowBackdropType(Enum):
-    Normal = 1
-    Mica = 2
-    Acrylic = 3
-    MicaAlt = 4
