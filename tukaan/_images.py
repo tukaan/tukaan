@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Union
 
 from PIL import Image as PillowImage
-from PIL import ImageSequence
 from PIL import _imagingtk  # type: ignore
+from PIL import ImageSequence
 
 from tukaan._base import TkWidget, WidgetBase
 from tukaan._collect import counter, images

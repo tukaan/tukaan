@@ -9,16 +9,16 @@ import numbers
 import sys
 import traceback
 from enum import Enum, EnumMeta
+from inspect import isclass
 from pathlib import Path
 from typing import Any, Callable, Sequence, Union, cast, overload
-from inspect import isclass
 
 import _tkinter as tk
 
 from tukaan._collect import commands, counter
 from tukaan._typing import P, T, TypeAlias, WrappedFunction
 from tukaan._utils import instanceclassmethod
-from tukaan.exceptions import TukaanTclError, AppError
+from tukaan.exceptions import AppError, TukaanTclError
 
 TclValue: TypeAlias = Union[str, tk.Tcl_Obj]
 

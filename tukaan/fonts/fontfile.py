@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import struct
 from collections import namedtuple
-from typing import Iterator
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, Iterator
 
 from libtukaan import Serif
 
