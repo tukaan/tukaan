@@ -115,8 +115,11 @@ class EventManager:
         event_callback = self._bindings[sequence]
         event_callback.remove(handler)
 
-    def get_handlers(self) -> EventHandlerType:
-        ...
+    def get_event_handlers(self, sequence: str) -> list[EventHandlerType]:
+        if sequence not in self._bindings:
+            return []
+
+        return self._bindings[sequence]._handlers.copy()
 
     def generate_event(self, sequence: str, data: object = None, queue: EventQueue = None) -> None:
         if not VirtualEvent._matches(sequence):
