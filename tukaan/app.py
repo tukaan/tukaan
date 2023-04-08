@@ -11,6 +11,7 @@ from libtukaan import Serif
 
 from tukaan._tcl import Tcl
 from tukaan.theming import LookAndFeel, NativeTheme, Theme
+from tukaan.events.event_manager import EventAliases
 
 
 class App:
@@ -45,6 +46,7 @@ class App:
         self._version = str(version)
 
         App.shared_instance = self
+        self.event_aliases = EventAliases()
 
     def __enter__(self) -> App:
         return self

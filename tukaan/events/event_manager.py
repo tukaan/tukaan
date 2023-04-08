@@ -1,14 +1,21 @@
 from __future__ import annotations
 
-from typing import Callable, Union
+from typing import Callable, Iterator, Union
 
 from tukaan._collect import counter
 from tukaan._tcl import Tcl
 from tukaan.enums import EventQueue
+from functools import lru_cache, partialmethod
 
 from .events import Event, _virtual_event_data_container, VirtualEvent
 
 EventHandlerType = Union[Callable[[], None | bool], Callable[[Event], None | bool]]
+
+
+@lru_cache(maxsize=100)
+def get_event_and_tcl_sequence(sequence: str) -> tuple[type[Event], str]:
+    event = Event._get_type_for_sequence(sequence)
+    return event, event._get_tcl_sequence(sequence)
 
 
 class EventCallback:
@@ -86,8 +93,7 @@ class EventManager:
             return
 
         if sequence not in self._bindings:
-            event = Event._get_type_for_sequence(sequence)
-            tcl_sequence = event._get_tcl_sequence(sequence)
+            event, tcl_sequence = get_event_and_tcl_sequence(sequence)
             if not tcl_sequence:
                 return
 
@@ -137,14 +143,25 @@ class EventManager:
 
 
 class EventAliases:
-    def assign(self, *args) -> None:
-        ...
+    def _assign_os_unassign(self, method: str, sequence: str, events: str | list[str]) -> None:
+        if isinstance(events, str):
+            events = [events]
 
-    def unassign(self, *args) -> None:
-        ...
+        tcl_sequences = [get_event_and_tcl_sequence(event)[1] for event in events]
+        if not tcl_sequences:
+            return
+
+        Tcl.call(None, "event", method, sequence, *tcl_sequences)
+
+    assign = partialmethod(_assign_os_unassign, "add")
+    unassign = partialmethod(_assign_os_unassign, "delete")
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(Tcl.call([str], "event", "info"))
 
     def __getitem__(self, sequence: str) -> list[str] | None:
-        ...
+        # TODO: convert tcl binding sequences back to tukaan ones
+        return Tcl.call([str], "event", "info", sequence) or None
 
     def __delitem__(self, sequence: str) -> None:
-        ...
+        Tcl.call(None, "event", "delete", sequence, *Tcl.call([str], "event", "info", sequence))
