@@ -10,8 +10,8 @@ except ImportError as e:
 from libtukaan import Serif
 
 from tukaan._tcl import Tcl
-from tukaan.theming import LookAndFeel, NativeTheme, Theme
 from tukaan.events.event_manager import EventAliases
+from tukaan.theming import LookAndFeel, NativeTheme, Theme
 
 
 class App:

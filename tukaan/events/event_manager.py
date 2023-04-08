@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from functools import lru_cache, partialmethod
 from typing import Callable, Iterator, Union
 
 from tukaan._collect import counter
 from tukaan._tcl import Tcl
+from tukaan._utils import instanceclassmethod
 from tukaan.enums import EventQueue
-from functools import lru_cache, partialmethod
 
-from .events import Event, _virtual_event_data_container, VirtualEvent
+from .events import Event, VirtualEvent, _virtual_event_data_container
 
 EventHandlerType = Union[Callable[[], None | bool], Callable[[Event], None | bool]]
 

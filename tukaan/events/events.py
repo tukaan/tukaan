@@ -1,22 +1,22 @@
 from __future__ import annotations
 
 import re
-from uuid import uuid4
 from typing import Any
+from uuid import uuid4
 
 from tukaan._misc import Mouse
 from tukaan._tcl import Tcl
 from tukaan._typing import T
 from tukaan._utils import reversed_dict
-from .keysyms import KEYSYM_ALIASES, REV_KEYSYM_ALIASES
 
 from .constants import (
     BINDING_MODIFIER_MAP,
     BUTTON_NUMS,
+    KEYBOARD_EVENT_REGEX,
     KEYBOARD_MODIFIERS_REGEX,
     MOD_STATE_MAP,
-    KEYBOARD_EVENT_REGEX,
 )
+from .keysyms import KEYSYM_ALIASES, REV_KEYSYM_ALIASES
 
 
 def get_modifiers(value: int) -> set[str]:
