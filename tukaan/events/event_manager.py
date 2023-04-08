@@ -83,12 +83,12 @@ class EventManager:
 
         if sequence not in self._bindings:
             event = Event._get_type_for_sequence(sequence)
-            event_callback = EventCallback(event)
-            subst_str = " ".join(item[0] for item in event._subst.values())
             tcl_sequence = event._get_tcl_sequence(sequence)
             if not tcl_sequence:
-                event_callback.dispose()
                 return
+
+            event_callback = EventCallback(event)
+            subst_str = " ".join(item[0] for item in event._subst.values())
             Tcl.call(
                 None,
                 "bind",
