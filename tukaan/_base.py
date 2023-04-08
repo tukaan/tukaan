@@ -69,14 +69,13 @@ class TkWidget(WidgetMixin, VisibilityMixin, EventManager):
         self._children = {}
         self._child_type_count = collections.defaultdict(lambda: count())
 
-        widgets[self._name] = self
-
         EventManager.__init__(self)
 
 
 class ToplevelBase(TkWidget, Container):
     def __init__(self) -> None:
         self.grid = ToplevelGrid(self)
+        widgets[self._wm_path] = self
 
         TkWidget.__init__(self)
 
@@ -88,6 +87,7 @@ class WidgetBase(TkWidget, GeometryMixin):
         self._name = self._lm_path = generate_pathname(self, parent)
         self.parent = parent
         self.parent._children[self._name] = self
+        widgets[self._name] = self
 
         TkWidget.__init__(self)
 

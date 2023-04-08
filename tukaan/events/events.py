@@ -35,8 +35,9 @@ class InvalidBindingSequenceError(Exception):
 
 class Event:
     _subclasses: list[type[Event]] = []
+
     _ignored_values: tuple[object, ...] = (None, "??", set())
-    _relevant_attrs: tuple[str, ...]
+    _relevant_attrs: tuple[str, ...] = ()
     _aliases: dict[str, str] = {}
     _subst: dict[str, tuple[str, type]] = {
         "button": ("%b", int),
@@ -79,6 +80,10 @@ class Event:
     def _matches(cls, sequence: str) -> bool:
         return sequence in cls._aliases
 
+    @classmethod
+    def _get_tcl_sequence(cls, sequence: str) -> str:
+        return cls._aliases[sequence]
+
     @staticmethod
     def _get_type_for_sequence(sequence: str) -> type[Event]:
         for klass in Event._subclasses:
@@ -86,10 +91,6 @@ class Event:
                 return klass
 
         raise InvalidBindingSequenceError(sequence)
-
-    @classmethod
-    def _get_tcl_sequence(cls, sequence: str) -> str:
-        return sequence
 
 
 class KeyboardEvent(Event):
@@ -268,4 +269,21 @@ class StateEvent(Event):
 
 
 class WindowManagerEvent(Event):
-    ...
+    _relevant_attrs: tuple[str, ...] = ("window",)
+    _subst = {"widget": (r"%W", str)}
+    _aliases = {
+        "<Maximize>": "<<Maximize>>",
+        "<Minimize>": "<<Minimize>>",
+        "<Hide>": "<<Hide>>",
+        "<Unhide>": "<<Unhide>>",
+        "<Restore>": "<<Restore>>",
+        "<EnterFullscreen>": "<<Fullscreen>>",
+        "<ExitFullscreen>": "<<Unfullscreen>>",
+        "<ContextHelp>": "<<__context_help_private__>>",
+    }
+
+    def __init__(self, *args) -> None:
+        from tukaan._base import ToplevelBase
+
+        assert len(args) == 1
+        self.window = Tcl.call(ToplevelBase, "winfo", "toplevel", args[0])

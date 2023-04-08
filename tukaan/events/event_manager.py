@@ -92,7 +92,7 @@ class EventManager:
             Tcl.call(
                 None,
                 "bind",
-                self,
+                self._lm_path,
                 tcl_sequence,
                 f"+{Tcl.to(event_callback)} {subst_str}",
             )
