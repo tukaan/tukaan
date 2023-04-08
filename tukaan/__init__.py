@@ -11,6 +11,7 @@ from .a11y.a11y import Accessibility
 from .app import App
 from .clipboard import Clipboard
 from .colors import Color, cmyk, hsl, hsv, rgb
+from .events.keysyms import KeySeq
 from .fonts.font import Font, font
 from .fonts.fontfile import FontFile, OpenTypeFont, TrueTypeCollection, TrueTypeFont
 from .screen import Screen, ScreenDistance, cm, inch, mm
