@@ -4,8 +4,9 @@ from typing import Callable, Union
 
 from tukaan._collect import counter
 from tukaan._tcl import Tcl
+from tukaan.enums import EventQueue
 
-from .events import Event
+from .events import Event, _virtual_event_data_container, VirtualEvent
 
 EventHandlerType = Union[Callable[[], None | bool], Callable[[Event], None | bool]]
 
@@ -15,10 +16,11 @@ class EventCallback:
     _handlers: list[EventHandlerType]
     _send_event_to: list[EventHandlerType]
 
-    def __init__(self, event: type[Event]) -> None:
+    def __init__(self, event: type[Event], sequence: str) -> None:
         self._handlers = []
         self._send_event_to = []
         self._event = event
+        self._sequence = sequence
 
         self._name = name = f"tukaan_event_callback_{next(counter['events_callbacks'])}"
         Tcl._interp.createcommand(name, self.__call__)  # type: ignore
@@ -26,6 +28,7 @@ class EventCallback:
     def __call__(self, *args):
         if self._send_event_to:
             event = self._event(*args)
+            event.sequence = self._sequence
 
         for handler in self._handlers:
             if handler in self._send_event_to:
@@ -57,6 +60,7 @@ class EventCallback:
 
 
 class EventManager:
+    _lm_path: str
     _bindings: dict[str, EventCallback]
 
     def __init__(self):
@@ -87,7 +91,7 @@ class EventManager:
             if not tcl_sequence:
                 return
 
-            event_callback = EventCallback(event)
+            event_callback = EventCallback(event, sequence)
             subst_str = " ".join(item[0] for item in event._subst.values())
             Tcl.call(
                 None,
@@ -114,8 +118,19 @@ class EventManager:
     def get_handlers(self) -> EventHandlerType:
         ...
 
-    def generate_event(self):
-        ...
+    def generate_event(self, sequence: str, data: object = None, queue: EventQueue = None) -> None:
+        if not VirtualEvent._matches(sequence):
+            raise Exception("can only generate virtual events")
+
+        key = None if data is None else _virtual_event_data_container.add(data)
+        Tcl.call(
+            None,
+            "event",
+            "generate",
+            self._lm_path,
+            sequence,
+            *Tcl.to_tcl_args(data=key, when=queue),
+        )
 
 
 class EventAliases:

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+from uuid import uuid4
+from typing import Any
 
 from tukaan._misc import Mouse
 from tukaan._tcl import Tcl
@@ -33,7 +35,27 @@ class InvalidBindingSequenceError(Exception):
         super().__init__(f"not a valid binding sequence: {sequence}")
 
 
+class DataContainer:
+    # FIXME: alternative from stdlib
+    _container_dict: dict[str, Any] = {}
+
+    def add(self, value: object) -> str:
+        key = uuid4().hex
+        self._container_dict[key] = value
+        return key
+
+    def pop(self, key: str) -> Any:
+        return self._container_dict.pop(key, None)
+
+    def __getitem__(self, key: str) -> Any:
+        return self._container_dict[key]
+
+
+_virtual_event_data_container = DataContainer()
+
+
 class Event:
+    sequence: str  # set in EventCallback.__call__
     _subclasses: list[type[Event]] = []
 
     _ignored_values: tuple[object, ...] = (None, "??", set())
@@ -260,10 +282,6 @@ class ScrollEvent(MouseEvent):
         self.modifiers = get_modifiers(Tcl.from_(int, args[order.index("modifiers")]))
 
 
-class VirtualEvent(Event):
-    ...
-
-
 class StateEvent(Event):
     ...
 
@@ -287,3 +305,22 @@ class WindowManagerEvent(Event):
 
         assert len(args) == 1
         self.window = Tcl.call(ToplevelBase, "winfo", "toplevel", args[0])
+
+
+class VirtualEvent(Event):
+    _subst = {"data": ("%d", int)}
+
+    def __init__(self, *args) -> None:
+        self.data = _virtual_event_data_container.pop(Tcl.from_(str, args[0]))
+
+    def __repr__(self) -> str:
+        plus_str = "" if self.data is None else f": data={self.data!r}"
+        return f"<VirtualEvent: {self.sequence}{plus_str}>"
+
+    @classmethod
+    def _matches(cls, sequence: str) -> bool:
+        return sequence.startswith("<<") and sequence.endswith(">>") and len(sequence) > 4
+
+    @classmethod
+    def _get_tcl_sequence(cls, sequence: str) -> str:
+        return sequence
