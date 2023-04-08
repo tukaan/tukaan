@@ -24,8 +24,6 @@ class EventCallback:
         Tcl._interp.createcommand(name, self.__call__)  # type: ignore
 
     def __call__(self, *args):
-        print(self._handlers)
-
         if self._send_event_to:
             event = self._event(*args)
 
@@ -48,9 +46,10 @@ class EventCallback:
 
     def remove(self, handler: EventHandlerType) -> None:
         self._handlers.remove(handler)
+        self._send_event_to.remove(handler)
 
     def dispose(self) -> None:
-        print("dispose")
+        # TODO: figure out when it is safe to dispose a handler
         Tcl._interp.deletecommand(self._name)  # type: ignore
 
 
@@ -97,9 +96,6 @@ class EventManager:
 
         event_callback = self._bindings[sequence]
         event_callback.remove(handler)
-        if len(event_callback) == 0:
-            event_callback.dispose()
-            del self._bindings[sequence]
 
     def get_handlers(self) -> EventHandlerType:
         ...
