@@ -89,14 +89,17 @@ class Event:
             setattr(self, item, value)
 
     def __repr__(self) -> str:
-        pairs = []
+        details = []
 
         for name in self._relevant_attrs:
             value = getattr(self, name)
             if value not in self._ignored_values:
-                pairs.append(f"{name}={value!r}")
+                details.append(f"{name}={value!r}")
 
-        return f"<{type(self).__name__}: {', '.join(pairs)}>"
+        if len(self._relevant_attrs) == 0:
+            details.append(f"'{self.sequence}'")
+
+        return f"<{type(self).__name__}: {', '.join(details)}>"
 
     @classmethod
     def _matches(cls, sequence: str) -> bool:
@@ -283,7 +286,11 @@ class ScrollEvent(MouseEvent):
 
 
 class StateEvent(Event):
-    ...
+    _aliases = {
+        "<Focus:In>": "<FocusIn>",
+        "<Focus:Out>": "<FocusOut>",
+        "<Destroyed>": "<Destroy>",
+    }
 
 
 class WindowManagerEvent(Event):
@@ -315,7 +322,7 @@ class VirtualEvent(Event):
 
     def __repr__(self) -> str:
         plus_str = "" if self.data is None else f": data={self.data!r}"
-        return f"<VirtualEvent: {self.sequence}{plus_str}>"
+        return f"<VirtualEvent: '{self.sequence}'{plus_str}>"
 
     @classmethod
     def _matches(cls, sequence: str) -> bool:
