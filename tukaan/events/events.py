@@ -197,11 +197,15 @@ class MouseEvent(Event):
             value = args[tuple(self._subst.keys()).index(item)]
             if value == "??":
                 setattr(self, item, None)
-                return
+                continue
 
             value: T = Tcl.from_(self._subst[item][1], value)
             if item == "button":
-                value = Mouse(reversed_dict(BUTTON_NUMS).get(value))
+                if value in (4, 5):
+                    # FIXME: this sholdn't be this way
+                    self.button = None
+                    continue
+                value = Mouse(reversed_dict(BUTTON_NUMS)[value])
             elif item == "modifiers":
                 value = get_modifiers(value)
 
@@ -235,8 +239,24 @@ class MouseEvent(Event):
         return f"<{'-'.join(tcl_modifiers)}{'-' if tcl_modifiers else ''}{cls._aliases[mouse_sequence].format(**BUTTON_NUMS)}>"
 
 
-class ScrollEvent(Event):
-    ...
+class ScrollEvent(MouseEvent):
+    _ignored_values = (None, "??", set())
+    _relevant_attrs = ("delta", "modifiers")
+    _aliases = {
+        "MouseWheel": "MouseWheel",
+        "Wheel:Up": "Button-4",
+        "Wheel:Down": "Button-5",
+    }
+
+    def __init__(self, *args) -> None:
+        order = tuple(self._subst.keys())
+
+        if Tcl.windowing_system == "x11":
+            self.delta = -1 if Tcl.from_(int, args[order.index("button")]) == 4 else 1
+        else:
+            self.delta = Tcl.from_(int, args[order.index("delta")])
+
+        self.modifiers = get_modifiers(Tcl.from_(int, args[order.index("modifiers")]))
 
 
 class VirtualEvent(Event):

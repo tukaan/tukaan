@@ -1,11 +1,5 @@
 from tukaan._system import Platform
 
-if Platform.os == "macOS":
-    BUTTON_NUMS = {"left": 1, "middle": 3, "right": 2}
-else:
-    BUTTON_NUMS = {"left": 1, "middle": 2, "right": 3}
-
-
 BINDING_MODIFIER_MAP_X11 = {
     "Ctrl/Cmd": "Control",
     "Alt/Opt": "Mod1",
@@ -50,3 +44,8 @@ MOD_STATE_MAP = {
 
 KEYBOARD_MODIFIERS_REGEX = f"({'|'.join(BINDING_MODIFIER_MAP.keys())})"
 KEYBOARD_EVENT_REGEX = r"<Key(Down|Up):\((.+?)\)>"
+
+if Platform.os == "macOS":
+    BUTTON_NUMS = {"left": 1, "middle": 3, "right": 2}
+else:
+    BUTTON_NUMS = {"left": 1, "middle": 2, "right": 3}

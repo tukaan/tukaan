@@ -70,6 +70,17 @@ class EventManager:
         overwrite: bool = False,
         send_event: bool = False,
     ) -> None:
+        if "MouseWheel" in sequence and Tcl.windowing_system == "x11":
+            # this can be removed with Tk 8.7
+            for seq in ("Wheel:Up", "Wheel:Down"):
+                self.bind(
+                    sequence.replace("MouseWheel", seq),
+                    handler,
+                    overwrite=overwrite,
+                    send_event=send_event,
+                )
+            return
+
         if sequence not in self._bindings:
             event = Event._get_type_for_sequence(sequence)
             event_callback = EventCallback(event)
