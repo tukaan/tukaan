@@ -304,7 +304,8 @@ class WindowManagerEvent(Event):
         "<Restore>": "<<Restore>>",
         "<EnterFullscreen>": "<<Fullscreen>>",
         "<ExitFullscreen>": "<<Unfullscreen>>",
-        "<ContextHelp>": "<<__context_help_private__>>",
+        "<ContextHelp>": "<<__wm_context_help_private__>>",
+        "<DeleteWindow>": "<<__wm_delete_window_private__>>",
     }
 
     def __init__(self, *args) -> None:
