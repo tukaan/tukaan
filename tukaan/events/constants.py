@@ -49,4 +49,4 @@ MOD_STATE_MAP = {
 }
 
 KEYBOARD_MODIFIERS_REGEX = f"({'|'.join(BINDING_MODIFIER_MAP.keys())})"
-KEYBOARD_EVENT_REGEX = r"<Key(Down|Up):\((.*?)\)>"
+KEYBOARD_EVENT_REGEX = r"<Key(Down|Up):\((.+?)\)>"

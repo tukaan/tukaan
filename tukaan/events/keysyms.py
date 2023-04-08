@@ -1,3 +1,6 @@
+from tukaan._system import Platform
+
+
 class KeySeq:
     ...
 
@@ -6,7 +9,6 @@ KEYSYM_ALIASES = {
     # general
     "Alt_L": "Alt:Left",
     "Alt_R": "Alt:Right",
-    "App": "Menu",
     "BackSpace": "Backspace",
     "Caps_Lock": "CapsLock",
     "Control_L": "Control:Left",
@@ -72,5 +74,8 @@ KEYSYM_ALIASES = {
     "KP_Tab": "NumPad:Tab",
     "KP_Up": "NumPad:Up",
 }
+
+if Platform.os == "Windows":
+    KEYSYM_ALIASES["App"] = "Menu"
 
 REV_KEYSYM_ALIASES = {v: k for k, v in KEYSYM_ALIASES.items()}

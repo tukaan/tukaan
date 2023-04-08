@@ -140,7 +140,6 @@ class KeyboardEvent(Event):
         modifiers = keys[:-1]
         tcl_modifiers = []
         for mod in modifiers:
-            print(mod)
             mod = BINDING_MODIFIER_MAP.get(mod)
             if not mod:
                 return None
