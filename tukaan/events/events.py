@@ -6,17 +6,24 @@ from tukaan._misc import Mouse
 from tukaan._tcl import Tcl
 from tukaan._typing import T
 from tukaan._utils import reversed_dict
+from .keysyms import KEYSYM_ALIASES, REV_KEYSYM_ALIASES
 
-from .constants import BINDING_MODIFIER_MAP, BUTTON_NUMS, KEYBOARD_MODIFIERS_REGEX, MODIFIER_MAP
+from .constants import (
+    BINDING_MODIFIER_MAP,
+    BUTTON_NUMS,
+    KEYBOARD_MODIFIERS_REGEX,
+    MOD_STATE_MAP,
+    KEYBOARD_EVENT_REGEX,
+)
 
 
 def get_modifiers(value: int) -> set[str]:
     result = []
 
-    for modifier_value in MODIFIER_MAP:
+    for modifier_value in MOD_STATE_MAP:
         if value >= modifier_value:
             value -= modifier_value
-            result.append(MODIFIER_MAP[modifier_value])
+            result.append(MOD_STATE_MAP[modifier_value])
 
     return set(result)
 
@@ -27,8 +34,10 @@ class InvalidBindingSequenceError(Exception):
 
 
 class Event:
+    _subclasses: list[type[Event]] = []
     _ignored_values: tuple[object, ...] = (None, "??", set())
     _relevant_attrs: tuple[str, ...]
+    _aliases: dict[str, str] = {}
     _subst: dict[str, tuple[str, type]] = {
         "button": ("%b", int),
         "modifiers": ("%s", int),
@@ -42,6 +51,9 @@ class Event:
         "abs_x": (r"%X", int),
         "abs_y": (r"%Y", int),
     }
+
+    def __init_subclass__(cls) -> None:
+        Event._subclasses.append(cls)
 
     def __init__(self, *args) -> None:
         for item in self._relevant_attrs:
@@ -63,9 +75,17 @@ class Event:
 
         return f"<{type(self).__name__}: {', '.join(pairs)}>"
 
+    @classmethod
+    def _matches(cls, sequence: str) -> bool:
+        return sequence in cls._aliases
+
     @staticmethod
     def _get_type_for_sequence(sequence: str) -> type[Event]:
-        return MouseEvent
+        for klass in Event._subclasses:
+            if klass._matches(sequence):
+                return klass
+
+        raise InvalidBindingSequenceError(sequence)
 
     @classmethod
     def _get_tcl_sequence(cls, sequence: str) -> str:
@@ -73,7 +93,67 @@ class Event:
 
 
 class KeyboardEvent(Event):
-    ...
+    _ignored_values = (None, "", "??", -1, 0, (), set())
+    _relevant_attrs = ("char", "modifiers", "keysymbol", "keycode")
+
+    _aliases = {
+        "<KeyDown:Any>": "<KeyPress>",
+        "<KeyDown>": "<KeyPress>",
+        "<KeyUp:Any>": "<KeyRelease>",
+        "<KeyUp>": "<KeyRelease>",
+    }
+
+    def __init__(self, *args) -> None:
+        for item in self._relevant_attrs:
+            value = args[tuple(self._subst.keys()).index(item)]
+            if value == "??":
+                setattr(self, item, None)
+                return
+
+            value = Tcl.from_(self._subst[item][1], value)
+            if item == "keysymbol" and value in KEYSYM_ALIASES:
+                value = KEYSYM_ALIASES[value]
+            elif item == "modifiers":
+                value = get_modifiers(value)
+
+            setattr(self, item, value)
+
+    @classmethod
+    def _matches(cls, sequence: str) -> bool:
+        return sequence in cls._aliases or bool(re.match(KEYBOARD_EVENT_REGEX, sequence))
+
+    @classmethod
+    def _get_tcl_sequence(cls, sequence: str) -> str | None:
+        if sequence in cls._aliases:
+            return cls._aliases[sequence]
+
+        search = re.search(KEYBOARD_EVENT_REGEX, sequence)
+        assert search is not None
+
+        press_release = {"Down": "Press", "Up": "Release"}[search[1]]
+
+        keys = search[2].split("-")
+        key = REV_KEYSYM_ALIASES.get(keys[-1], keys[-1])
+        if key == "Any":
+            key = ""
+
+        modifiers = keys[:-1]
+        tcl_modifiers = []
+        for mod in modifiers:
+            print(mod)
+            mod = BINDING_MODIFIER_MAP.get(mod)
+            if not mod:
+                return None
+            tcl_modifiers.append(mod)
+
+        if "Shift" in tcl_modifiers:
+            if len(key) == 1:
+                key = key.upper()
+            elif key == "Tab" and Tcl.windowing_system == "x11":
+                tcl_modifiers.remove("Shift")
+                key = "ISO_Left_Tab"
+
+        return f"<{'-'.join(tcl_modifiers)}{'-' if tcl_modifiers else ''}Key{press_release}{f'-{key}' if key else ''}>"
 
 
 class MouseEvent(Event):
@@ -117,11 +197,11 @@ class MouseEvent(Event):
         for item in self._relevant_attrs:
             value = args[tuple(self._subst.keys()).index(item)]
             if value == "??":
-                value = None
-            else:
-                value: T = Tcl.from_(self._subst[item][1], value)
+                setattr(self, item, None)
+                return
 
-            if value and item == "button":
+            value: T = Tcl.from_(self._subst[item][1], value)
+            if item == "button":
                 value = Mouse(reversed_dict(BUTTON_NUMS).get(value))
             elif item == "modifiers":
                 value = get_modifiers(value)
@@ -129,18 +209,28 @@ class MouseEvent(Event):
             setattr(self, item, value)
 
     @classmethod
+    def _matches(cls, sequence: str) -> bool:
+        modifiers = re.findall(KEYBOARD_MODIFIERS_REGEX, sequence)
+        match = re.match("<(.*?)-(.*?)>", sequence)
+        if match is None:
+            mouse_sequence = sequence.strip("<>")
+        elif set(match[1].split("-")) != set(modifiers):
+            return False
+        else:
+            mouse_sequence = match[2]
+        return mouse_sequence in cls._aliases
+
+    @classmethod
     def _get_tcl_sequence(cls, sequence: str) -> str | None:
         modifiers = re.findall(KEYBOARD_MODIFIERS_REGEX, sequence)
         match = re.match("<(.*)-(.*)>", sequence)
-        if match is not None and set(match[1].split("-")) != set(modifiers):
-            raise InvalidBindingSequenceError(sequence)
 
         tcl_modifiers = []
-        for modifier in modifiers:
-            modifier = BINDING_MODIFIER_MAP.get(modifier)
-            if not modifier:
+        for mod in modifiers:
+            mod = BINDING_MODIFIER_MAP.get(mod)
+            if not mod:
                 return None
-            tcl_modifiers.append(modifier)
+            tcl_modifiers.append(mod)
 
         mouse_sequence = match[2] if match is not None else sequence.strip("<>")
         return f"<{'-'.join(tcl_modifiers)}{'-' if tcl_modifiers else ''}{cls._aliases[mouse_sequence].format(**BUTTON_NUMS)}>"
