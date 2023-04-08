@@ -44,7 +44,7 @@ class EventCallback:
 
     def add(self, handler: EventHandlerType, send_event: bool) -> None:
         if handler in self._handlers:
-            return
+            self._handlers.remove(handler)
 
         self._handlers.append(handler)
         if send_event:
