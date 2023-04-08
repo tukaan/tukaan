@@ -9,7 +9,9 @@ from tukaan._variables import BoolVar
 
 
 class CheckBox(WidgetBase, InputControl):
-    _tcl_class = "ttk::checkbutton"
+    _tcl_widget_name = "ttk::checkbutton"
+    _tk_class_name = "TCheckbutton"
+
     _variable: BoolVar
 
     focusable = FocusableProp()

@@ -11,7 +11,8 @@ from tukaan.exceptions import TukaanTclError
 
 
 class TextBox(WidgetBase, InputControl, XScrollable):
-    _tcl_class = "ttk::entry"
+    _tcl_widget_name = "ttk::entry"
+    _tk_class_name = "TEntry"
 
     fg_color = ForegroundProp()
     focusable = FocusableProp()

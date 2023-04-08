@@ -142,7 +142,8 @@ class Tab(Frame):
 
 
 class TabView(WidgetBase, Container):
-    _tcl_class = "ttk::notebook"
+    _tcl_widget_name = "ttk::notebook"
+    _tk_class_name = "TNotebook"
 
     focusable = FocusableProp()
 

@@ -9,7 +9,8 @@ from tukaan.enums import Orientation
 
 
 class Slider(WidgetBase, InputControl):
-    _tcl_class = "ttk::scale"
+    _tcl_widget_name = "ttk::scale"
+    _tk_class_name = "TScale"
 
     focusable = FocusableProp()
     target = LinkProp()

@@ -62,7 +62,8 @@ class TkWidget(WidgetMixin, VisibilityMixin, EventManager):
     """Base class for every Tk widget."""
 
     _name: str
-    _tcl_class: str
+    _tcl_widget_name: str
+    _tk_class_name: str
     _variable: Any  # TODO This is set in LinkProp
 
     def __init__(self) -> None:
@@ -95,7 +96,7 @@ class WidgetBase(TkWidget, GeometryMixin):
         self.geometry = Geometry(self)
         self.position = Position(self)
 
-        Tcl.call(None, self._tcl_class, self._name, *Tcl.to_tcl_args(**kwargs))
+        Tcl.call(None, self._tcl_widget_name, self._name, *Tcl.to_tcl_args(**kwargs))
 
         if tooltip:
             ToolTipProvider.add(self, tooltip)

@@ -10,7 +10,8 @@ from tukaan.widgets.textbox import TextBox
 
 
 class ComboBox(TextBox):
-    _tcl_class = "ttk::combobox"
+    _tcl_widget_name = "ttk::combobox"
+    _tk_class_name = "TCombobox"
 
     def __init__(
         self,
