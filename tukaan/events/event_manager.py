@@ -148,9 +148,27 @@ class EventManager:
 
 
 class EventAliases:
+    def __init__(self) -> None:
+        self._event_info: dict[str, list[str]] = {}
+
     def _assign_os_unassign(self, method: str, sequence: str, events: str | list[str]) -> None:
         if isinstance(events, str):
             events = [events]
+
+        if method == "add":
+            self._event_info[sequence] = events
+        elif sequence in self._event_info:
+            self._event_info[sequence] = [item for item in self._event_info[sequence] if item not in set(events)]
+        else:
+            # can't unassign nonexistent virtual event
+            return
+
+        if Tcl.windowing_system == "x11":
+            to_be_replaced = {x for x in events if "MouseWheel" in x}
+            for event in to_be_replaced:
+                events.remove(event)
+                for seq in ("Wheel:Up", "Wheel:Down"):
+                    events.append(event.replace("MouseWheel", seq))
 
         tcl_sequences = [get_event_and_tcl_sequence(event)[1] for event in events]
         if not tcl_sequences:
@@ -162,11 +180,11 @@ class EventAliases:
     unassign = partialmethod(_assign_os_unassign, "delete")
 
     def __iter__(self) -> Iterator[str]:
-        return iter(Tcl.call([str], "event", "info"))
+        return iter(self._event_info.keys())
 
     def __getitem__(self, sequence: str) -> list[str] | None:
-        # TODO: convert tcl binding sequences back to tukaan ones
-        return Tcl.call([str], "event", "info", sequence) or None
+        return self._event_info.get(sequence)
 
     def __delitem__(self, sequence: str) -> None:
+        self._event_info.pop(sequence, None)
         Tcl.call(None, "event", "delete", sequence, *Tcl.call([str], "event", "info", sequence))
