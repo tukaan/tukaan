@@ -42,7 +42,7 @@ MOD_STATE_MAP = {
     1 << 0: "Shift",
 }
 
-KEYBOARD_MODIFIERS_REGEX = f"({'|'.join(BINDING_MODIFIER_MAP.keys())})"
+KEYBOARD_MODIFIERS_REGEX = "(Control|Shift|CapsLock|Ctrl/Cmd|Alt/Opt|NumLock|AltGr)"
 KEYBOARD_EVENT_REGEX = r"<Key(Down|Up):\((.+?)\)>"
 
 if Platform.os == "macOS":
