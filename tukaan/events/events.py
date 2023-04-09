@@ -150,6 +150,9 @@ class KeyboardEvent(Event):
 
     @classmethod
     def _get_tcl_sequence(cls, sequence: str) -> str | None:
+        if "AltGr" in sequence:
+            raise InvalidBindingSequenceError(sequence)
+
         if sequence in cls._aliases:
             return cls._aliases[sequence]
 
@@ -171,7 +174,7 @@ class KeyboardEvent(Event):
                 return None
             tcl_modifiers.append(mod)
 
-        if "Shift" in tcl_modifiers:
+        if "Shift" in tcl_modifiers or "Lock" in tcl_modifiers:
             if len(key) == 1:
                 key = key.upper()
             elif key in {"Tab", "ISO_Left_Tab"} and Tcl.windowing_system == "x11":
