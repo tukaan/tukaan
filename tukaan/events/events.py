@@ -174,7 +174,7 @@ class KeyboardEvent(Event):
         if "Shift" in tcl_modifiers:
             if len(key) == 1:
                 key = key.upper()
-            elif key == "Tab" and Tcl.windowing_system == "x11":
+            elif key in {"Tab", "ISO_Left_Tab"} and Tcl.windowing_system == "x11":
                 tcl_modifiers.remove("Shift")
                 key = "ISO_Left_Tab"
 
