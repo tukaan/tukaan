@@ -242,7 +242,7 @@ class MouseEvent(Event):
 
     @classmethod
     def _matches(cls, sequence: str) -> bool:
-        match = re.match("<(.*)-(.*)>", sequence)
+        match = re.match(r"<(.+)-(.+)>", sequence)
         if match is None:
             mouse_sequence = sequence.strip("<>")
         elif set(match[1].split("-")) != set(re.findall(KEYBOARD_MODIFIERS_REGEX, sequence)):
@@ -254,7 +254,7 @@ class MouseEvent(Event):
     @classmethod
     def _get_tcl_sequence(cls, sequence: str) -> str | None:
         modifiers = re.findall(KEYBOARD_MODIFIERS_REGEX, sequence)
-        match = re.match("<(.*)-(.*)>", sequence)
+        match = re.match(r"<(.+)-(.+)>", sequence)
 
         tcl_modifiers = []
         for mod in modifiers:
