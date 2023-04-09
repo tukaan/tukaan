@@ -35,17 +35,17 @@ class App:
             raise e
         else:
             App._exists = True
+            App.shared_instance = self
+
+        self._name = name
+        self._author = author
+        self._version = str(version)
 
         Serif.init()
         ImagingTk.tkinit(Tcl.interp_address)
 
         NativeTheme.use()
 
-        self._name = name
-        self._author = author
-        self._version = str(version)
-
-        App.shared_instance = self
         self.event_aliases = EventAliases()
 
     def __enter__(self) -> App:

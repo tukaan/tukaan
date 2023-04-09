@@ -19,6 +19,14 @@ def get_event_and_tcl_sequence(sequence: str) -> tuple[type[Event], str]:
     return event, event._get_tcl_sequence(sequence)
 
 
+def get_what_to_bind(widget_or_class) -> str:
+    if not isinstance(widget_or_class, EventManager):
+        return widget_or_class._tk_class_name
+    if hasattr(widget_or_class, "_wm_path"):
+        return widget_or_class._wm_path
+    return widget_or_class._lm_path
+
+
 class EventCallback:
     _event: type[Event]
     _handlers: list[EventHandlerType]
@@ -69,6 +77,7 @@ class EventCallback:
 
 class EventManager:
     _lm_path: str
+    _wm_path: str
     _tk_class_name: str
     _bindings: dict[str, EventCallback] = {}
 
@@ -102,15 +111,10 @@ class EventManager:
 
             event_callback = EventCallback(event, sequence)
             subst_str = " ".join(item[0] for item in event._subst.values())
-            to_bind = (
-                self_or_cls._lm_path
-                if isinstance(self_or_cls, EventManager)
-                else self_or_cls._tk_class_name
-            )
             Tcl.call(
                 None,
                 "bind",
-                to_bind,
+                get_what_to_bind(self_or_cls),
                 tcl_sequence,
                 f"+{Tcl.to(event_callback)} {subst_str}",
             )
@@ -139,33 +143,35 @@ class EventManager:
 
     @property
     def binding_tags(self) -> tuple[BindingTag]:
+        what = get_what_to_bind(self)
         result = []
-        for tag in Tcl.call((str,), "bindtags", self._lm_path):
-            if tag == self._lm_path:
+        for tag in Tcl.call((str,), "bindtags", what):
+            if tag == what:
                 result.append(BindingTag.Instance)
             elif tag == self._tk_class_name:
                 result.append(BindingTag.Class)
             elif tag == "all":
                 result.append(BindingTag.Global)
-            elif tag == Tcl.call(str, "winfo", "toplevel", self._lm_path):
+            elif tag == Tcl.call(str, "winfo", "toplevel", what):
                 result.append(BindingTag.Toplevel)
 
         return tuple(result)
 
     @binding_tags.setter
     def binding_tags(self, tags: Iterable):
+        what = get_what_to_bind(self)
         result = []
         for tag in tags:
             if tag is BindingTag.Instance:
-                result.append(self._lm_path)
+                result.append(what)
             elif tag is BindingTag.Class:
                 result.append(self._tk_class_name)
             elif tag is BindingTag.Toplevel:
-                result.append(Tcl.call(str, "winfo", "toplevel", self._lm_path))
+                result.append(Tcl.call(str, "winfo", "toplevel", what))
             elif tag is BindingTag.Global:
                 result.append("all")
 
-        Tcl.call(None, "bindtags", self._lm_path, result)
+        Tcl.call(None, "bindtags", what, result)
 
     def generate_event(self, sequence: str, data: object = None, queue: EventQueue = None) -> None:
         if not VirtualEvent._matches(sequence):

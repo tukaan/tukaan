@@ -13,7 +13,6 @@ from .wm import WindowManager
 
 class MainWindow(ToplevelBase, WindowManager):
     _tcl_widget_name = "root"  # dummy
-    _tk_class_name = "Tk"
     _wm_path = "."
     _name = _lm_path = ".app"
     _exists = False
@@ -59,6 +58,8 @@ class MainWindow(ToplevelBase, WindowManager):
             on_load()
 
         Tcl.call(None, "update", "idletasks")
+
+        self._tk_class_name = App.shared_instance._name.capitalize()
 
     def destroy(self) -> None:
         """Destroy all widgets and quit the interpreter."""
