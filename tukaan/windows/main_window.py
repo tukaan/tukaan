@@ -12,9 +12,11 @@ from .wm import WindowManager
 
 
 class MainWindow(ToplevelBase, WindowManager):
-    _exists = False
-    _name = _lm_path = ".app"
+    _tcl_widget_name = "root"  # dummy
+    _tk_class_name = "Tk"
     _wm_path = "."
+    _name = _lm_path = ".app"
+    _exists = False
 
     def __init__(
         self,

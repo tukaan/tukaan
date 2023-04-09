@@ -80,6 +80,13 @@ class EventQueue(Enum):
     AfterPrevious = "mark"
 
 
+class BindingTag(Enum):
+    Instance = 1
+    Class = 2
+    Toplevel = 3
+    Global = 4
+
+
 EventQueueType = Union[EventQueue, Literal["head", "tail", "now", "mark"]]
 
 # class Location(Enum):

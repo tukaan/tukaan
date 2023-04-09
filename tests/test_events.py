@@ -16,6 +16,7 @@ from tukaan.events.events import (
     WindowManagerEvent,
 )
 
+
 # fmt: off
 def test_convert_tukaan_binding_sequences_to_tcl_platform_specific():
     if sys.platform == "linux":

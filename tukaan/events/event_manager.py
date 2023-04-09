@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from functools import lru_cache, partialmethod
-from typing import Callable, Iterator, Union
+from typing import Callable, Iterable, Iterator, Union
 
 from tukaan._collect import counter
 from tukaan._tcl import Tcl
 from tukaan._utils import instanceclassmethod
-from tukaan.enums import EventQueue
+from tukaan.enums import BindingTag, EventQueue
 
 from .events import Event, VirtualEvent, _virtual_event_data_container
 
@@ -69,6 +69,7 @@ class EventCallback:
 
 class EventManager:
     _lm_path: str
+    _tk_class_name: str
     _bindings: dict[str, EventCallback] = {}
 
     def __init__(self):
@@ -135,6 +136,36 @@ class EventManager:
             return []
 
         return self_or_cls._bindings[sequence]._handlers.copy()
+
+    @property
+    def binding_tags(self) -> tuple[BindingTag]:
+        result = []
+        for tag in Tcl.call((str,), "bindtags", self._lm_path):
+            if tag == self._lm_path:
+                result.append(BindingTag.Instance)
+            elif tag == self._tk_class_name:
+                result.append(BindingTag.Class)
+            elif tag == "all":
+                result.append(BindingTag.Global)
+            elif tag == Tcl.call(str, "winfo", "toplevel", self._lm_path):
+                result.append(BindingTag.Toplevel)
+
+        return tuple(result)
+
+    @binding_tags.setter
+    def binding_tags(self, tags: Iterable):
+        result = []
+        for tag in tags:
+            if tag is BindingTag.Instance:
+                result.append(self._lm_path)
+            elif tag is BindingTag.Class:
+                result.append(self._tk_class_name)
+            elif tag is BindingTag.Toplevel:
+                result.append(Tcl.call(str, "winfo", "toplevel", self._lm_path))
+            elif tag is BindingTag.Global:
+                result.append("all")
+
+        Tcl.call(None, "bindtags", self._lm_path, result)
 
     def generate_event(self, sequence: str, data: object = None, queue: EventQueue = None) -> None:
         if not VirtualEvent._matches(sequence):
