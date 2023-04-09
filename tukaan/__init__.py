@@ -5,6 +5,7 @@ __license__ = "MIT"
 __version__ = "0.2.1"
 
 from ._images import Icon, IconFactory, Image
+from ._misc import Mouse
 from ._system import Platform
 from ._variables import BoolVar, FloatVar, IntVar, StringVar
 from .a11y.a11y import Accessibility
