@@ -27,6 +27,8 @@ class Mouse(Enum):
     LeftButton = "left"
     MiddleButton = "middle"
     RightButton = "right"
+    WheelUp = "up"
+    WheelDown = "down"
 
     @classproperty
     def x(self):

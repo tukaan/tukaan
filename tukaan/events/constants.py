@@ -1,5 +1,13 @@
 from tukaan._system import Platform
 
+KEYBOARD_MODIFIERS_REGEX = "(Control|Shift|CapsLock|NumLock|AltGr|Ctrl/Cmd|Alt/Opt)"
+KEYBOARD_EVENT_REGEX = r"<Key(Down|Up):\((.+?)\)>"
+
+if Platform.os == "macOS":
+    BUTTON_NUMS = {"left": 1, "middle": 3, "right": 2}
+else:
+    BUTTON_NUMS = {"left": 1, "middle": 2, "right": 3}
+
 BINDING_MODIFIER_MAP_X11 = {
     "Ctrl/Cmd": "Control",
     "Alt/Opt": "Mod1",
@@ -41,11 +49,3 @@ MOD_STATE_MAP = {
     1 << 1: "CapsLock",
     1 << 0: "Shift",
 }
-
-KEYBOARD_MODIFIERS_REGEX = "(Control|Shift|CapsLock|Ctrl/Cmd|Alt/Opt|NumLock|AltGr)"
-KEYBOARD_EVENT_REGEX = r"<Key(Down|Up):\((.+?)\)>"
-
-if Platform.os == "macOS":
-    BUTTON_NUMS = {"left": 1, "middle": 3, "right": 2}
-else:
-    BUTTON_NUMS = {"left": 1, "middle": 2, "right": 3}
