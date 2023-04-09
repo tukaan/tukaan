@@ -107,7 +107,7 @@ class Event:
 
     @classmethod
     def _get_tcl_sequence(cls, sequence: str) -> str:
-        return cls._aliases[sequence]
+        return cls._aliases.get(sequence, sequence)
 
     @staticmethod
     def _get_type_for_sequence(sequence: str) -> type[Event]:
@@ -338,7 +338,3 @@ class VirtualEvent(Event):
     @classmethod
     def _matches(cls, sequence: str) -> bool:
         return sequence.startswith("<<") and sequence.endswith(">>") and len(sequence) > 4
-
-    @classmethod
-    def _get_tcl_sequence(cls, sequence: str) -> str:
-        return sequence
