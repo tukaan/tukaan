@@ -101,7 +101,11 @@ class EventManager:
 
             event_callback = EventCallback(event, sequence)
             subst_str = " ".join(item[0] for item in event._subst.values())
-            to_bind = self_or_cls._lm_path if isinstance(self_or_cls, EventManager) else self_or_cls._tk_class_name
+            to_bind = (
+                self_or_cls._lm_path
+                if isinstance(self_or_cls, EventManager)
+                else self_or_cls._tk_class_name
+            )
             Tcl.call(
                 None,
                 "bind",
@@ -158,7 +162,9 @@ class EventAliases:
         if method == "add":
             self._event_info[sequence] = events
         elif sequence in self._event_info:
-            self._event_info[sequence] = [item for item in self._event_info[sequence] if item not in set(events)]
+            self._event_info[sequence] = [
+                item for item in self._event_info[sequence] if item not in set(events)
+            ]
         else:
             # can't unassign nonexistent virtual event
             return

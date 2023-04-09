@@ -16,7 +16,7 @@ from tukaan.events.events import (
     WindowManagerEvent,
 )
 
-
+# fmt: off
 def test_convert_tukaan_binding_sequences_to_tcl_platform_specific():
     if sys.platform == "linux":
         # Alt
@@ -69,6 +69,7 @@ def test_convert_tukaan_binding_sequences_to_tcl_platform_specific():
     else:
         with pytest.raises(InvalidBindingSequenceError):
             get_event_and_tcl_sequence("<Wheel:Up>")
+            get_event_and_tcl_sequence("<Wheel:Down>")
         assert get_event_and_tcl_sequence("<MouseWheel>") == (ScrollEvent, "<MouseWheel>")
 
     if sys.platform == "linux":
@@ -108,7 +109,7 @@ def test_convert_tukaan_mouse_binding_sequences_to_tcl():
     else:
         assert get_event_and_tcl_sequence("<MouseDown:Right>") == (MouseEvent, "<ButtonPress-3>")
         assert get_event_and_tcl_sequence("<MouseDown:Middle>") == (MouseEvent, "<ButtonPress-2>")
-    
+# fmt: on
 
 
 @with_app_context

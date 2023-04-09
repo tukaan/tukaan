@@ -287,6 +287,13 @@ class ScrollEvent(MouseEvent):
 
         self.modifiers = get_modifiers(Tcl.from_(int, args[order.index("modifiers")]))
 
+    @classmethod
+    def _get_tcl_sequence(cls, sequence: str) -> str | None:
+        if Tcl.windowing_system != "x11" and ("Wheel:Up" in sequence or "Wheel:Down" in sequence):
+            raise InvalidBindingSequenceError(sequence)
+
+        return super()._get_tcl_sequence(sequence)
+
 
 class StateEvent(Event):
     _aliases = {
