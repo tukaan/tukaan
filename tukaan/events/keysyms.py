@@ -15,8 +15,6 @@ KEYSYM_ALIASES = {
     "Control_R": "Control:Right",
     "Hyper_L": "Hyper:Left",
     "Hyper_R": "Hyper:Right",
-    "ISO_Left_Tab": "Tab",
-    "ISO_Level3_Shift": "AltGr",
     "Meta_L": "Meta:Left",
     "Meta_R": "Meta:Right",
     "Mode_switch": "ModeSwitch",
@@ -77,5 +75,7 @@ KEYSYM_ALIASES = {
 
 if Platform.os == "Windows":
     KEYSYM_ALIASES["App"] = "Menu"
+elif Platform.os == "Linux":
+    KEYSYM_ALIASES.update({"ISO_Left_Tab": "Tab", "ISO_Level3_Shift": "AltGr"})
 
 REV_KEYSYM_ALIASES = {v: k for k, v in KEYSYM_ALIASES.items()}
