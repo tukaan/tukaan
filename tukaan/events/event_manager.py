@@ -128,6 +128,11 @@ class EventManager:
 
     @instanceclassmethod
     def unbind(self_or_cls, sequence: str, handler: EventHandlerType):
+        if "MouseWheel" in sequence and Tcl.windowing_system == "x11":
+            for seq in ("Wheel:Up", "Wheel:Down"):
+                self_or_cls.unbind(sequence.replace("MouseWheel", seq), handler)
+            return
+
         if sequence not in self_or_cls._bindings:
             return
 
@@ -136,6 +141,9 @@ class EventManager:
 
     @instanceclassmethod
     def get_event_handlers(self_or_cls, sequence: str) -> list[EventHandlerType]:
+        if "MouseWheel" in sequence and Tcl.windowing_system == "x11":
+            sequence = sequence.replace("MouseWheel", "Wheel:Up")
+
         if sequence not in self_or_cls._bindings:
             return []
 

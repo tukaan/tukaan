@@ -103,6 +103,7 @@ def test_convert_tukaan_mouse_binding_sequences_to_tcl():
     assert get_event_and_tcl_sequence("<MouseDown:Any>") == (MouseEvent, "<ButtonPress>")
     assert get_event_and_tcl_sequence("<MouseDown:Left>") == (MouseEvent, "<ButtonPress-1>")
     assert get_event_and_tcl_sequence("<Control-MouseDown:Left>") == (MouseEvent, "<Control-ButtonPress-1>")
+    assert get_event_and_tcl_sequence("<Control-Shift-MouseDown:Left>") == (MouseEvent, "<Control-Shift-ButtonPress-1>")
 
     if sys.platform == "darwin":
         assert get_event_and_tcl_sequence("<MouseDown:Right>") == (MouseEvent, "<ButtonPress-2>")

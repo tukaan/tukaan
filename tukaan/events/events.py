@@ -242,11 +242,10 @@ class MouseEvent(Event):
 
     @classmethod
     def _matches(cls, sequence: str) -> bool:
-        modifiers = re.findall(KEYBOARD_MODIFIERS_REGEX, sequence)
-        match = re.match("<(.*?)-(.*?)>", sequence)
+        match = re.match("<(.*)-(.*)>", sequence)
         if match is None:
             mouse_sequence = sequence.strip("<>")
-        elif set(match[1].split("-")) != set(modifiers):
+        elif set(match[1].split("-")) != set(re.findall(KEYBOARD_MODIFIERS_REGEX, sequence)):
             return False
         else:
             mouse_sequence = match[2]
