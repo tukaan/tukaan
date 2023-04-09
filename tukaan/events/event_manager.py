@@ -10,7 +10,7 @@ from tukaan.enums import EventQueue
 
 from .events import Event, VirtualEvent, _virtual_event_data_container
 
-EventHandlerType = Union[Callable[[], None | bool], Callable[[Event], None | bool]]
+EventHandlerType = Union[Callable[[], Union[None, bool]], Callable[[Event], Union[None, bool]]
 
 
 @lru_cache(maxsize=100)
