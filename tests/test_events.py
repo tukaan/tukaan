@@ -97,6 +97,20 @@ def test_convert_tukaan_keyboard_binding_sequences_to_tcl():
         get_event_and_tcl_sequence("<KeyDown:(AltGr-a)>")
 
 
+def test_convert_tukaan_mouse_binding_sequences_to_tcl():
+    assert get_event_and_tcl_sequence("<MouseDown:Any>") == (MouseEvent, "<ButtonPress>")
+    assert get_event_and_tcl_sequence("<MouseDown:Left>") == (MouseEvent, "<ButtonPress-1>")
+    assert get_event_and_tcl_sequence("<Control-MouseDown:Left>") == (MouseEvent, "<Control-ButtonPress-1>")
+
+    if sys.platform == "darwin":
+        assert get_event_and_tcl_sequence("<MouseDown:Right>") == (MouseEvent, "<ButtonPress-2>")
+        assert get_event_and_tcl_sequence("<MouseDown:Middle>") == (MouseEvent, "<ButtonPress-3>")
+    else:
+        assert get_event_and_tcl_sequence("<MouseDown:Right>") == (MouseEvent, "<ButtonPress-3>")
+        assert get_event_and_tcl_sequence("<MouseDown:Middle>") == (MouseEvent, "<ButtonPress-2>")
+    
+
+
 @with_app_context
 def test_event_aliases_assign_and_unassign(app, window):
     assert app.event_aliases["<<MyEvent>>"] is None
