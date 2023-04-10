@@ -6,15 +6,14 @@ __version__ = "0.2.1"
 
 from ._events import KeySeq
 from ._images import Icon, IconFactory, Image
+from ._misc import Clipboard, Screen, ScreenDistance, cm, inch, mm
 from ._system import Platform
 from ._variables import BoolVar, FloatVar, IntVar, StringVar
 from .a11y.a11y import Accessibility
 from .app import App
-from .clipboard import Clipboard
 from .colors import Color, cmyk, hsl, hsv, rgb
 from .fonts.font import Font, font
 from .fonts.fontfile import FontFile, OpenTypeFont, TrueTypeCollection, TrueTypeFont
-from .screen import Screen, ScreenDistance, cm, inch, mm
 from .theming import AquaTheme, ClamTheme, KolorScheme, LookAndFeel, NativeTheme, Theme, Win32Theme
 from .timeouts import Timeout, Timer
 from .widgets.button import Button
