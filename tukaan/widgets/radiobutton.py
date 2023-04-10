@@ -26,8 +26,8 @@ class RadioButton(WidgetBase, InputControl):
         value: float | str | bool,
         target: ControlVariable,
         *,
-        focusable: bool | None = None,
         action: Callable[..., None] | None = None,
+        focusable: bool | None = None,
         tooltip: str | None = None,
         width: int | None = None,
     ) -> None:

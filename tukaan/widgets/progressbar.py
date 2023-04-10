@@ -14,9 +14,9 @@ class ProgressBar(WidgetBase, OutputDisplay):
     _tcl_class = "ttk::progressbar"
 
     focusable = FocusableProp()
+    link = LinkProp()
     orientation = OrientProp()
     value = IntDesc("value")
-    link = LinkProp()
 
     _timeout = None
 
