@@ -29,7 +29,7 @@ class MainWindow(ToplevelBase, WindowManager):
             raise AppError("too early to create main window. App context isn't initialized.")
 
         if MainWindow._exists:
-            raise AppError("can't create multiple App instances. Use tukaan.Window instead.")
+            raise AppError("can't create multiple main windows. Use tukaan.Window instead.")
         else:
             MainWindow._exists = True
 

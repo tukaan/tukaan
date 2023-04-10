@@ -14,6 +14,7 @@ class Separator(WidgetBase, OutputDisplay):
         self,
         parent: TkWidget,
         orientation: Orientation | None = None,
+        *,
         tooltip: str | None = None,
     ) -> None:
         WidgetBase.__init__(self, parent, orient=orientation, tooltip=tooltip)
