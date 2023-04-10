@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import warnings
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from tukaan._tcl import Tcl
-from tukaan.enums import Align, Anchor
+from tukaan.enums import Align
 from tukaan.exceptions import LayoutError
 
 if TYPE_CHECKING:
@@ -41,8 +40,8 @@ class Grid(LayoutManager):
 
     def __call__(
         self,
-        row: int | None = 0,
-        col: int | None = 0,
+        row: int | None = None,
+        col: int | None = None,
         *,
         align: tuple[Align | None, Align | None] | None = None,
         cell: str | None = None,
@@ -241,158 +240,6 @@ class Grid(LayoutManager):
     @align.setter
     def align(self, value: tuple[Align | None, Align | None] | None) -> None:
         self._config(sticky=self._parse_align(value))
-
-
-class Geometry(LayoutManager):
-    # TODO: Do something with % placement
-    # TODO: Properties
-
-    _type = "place"
-
-    def __call__(
-        self,
-        left: float | None = None,
-        top: float | None = None,
-        right: float | None = None,
-        bottom: float | None = None,
-    ):
-        warnings.warn("This layout manager is WIP. Some things may not work.", Warning)
-
-        x, y = left, top
-        rely = relheight = height = None
-        relx = relwidth = width = None
-
-        if (x is not None and 0 < x < 1) or (y is not None and 0 < y < 1):
-            x, relx = 0, x
-            y, rely = 0, y
-            anchor = "center"
-        else:
-            if bottom is not None:
-                rely = 1
-                y = -bottom
-
-                if top is not None:
-                    rely = 0
-                    y = top
-                    relheight = 1
-                    height = -bottom - top
-
-            if right is not None:
-                relx = 1
-                x = -right
-
-                if left is not None:
-                    relx = 0
-                    x = left
-                    relwidth = 1
-                    width = -right - left
-
-            anchor = self._get_anchor(x, y, relx, rely)
-
-        Tcl.call(
-            None,
-            "place",
-            "configure",
-            self._widget._lm_path,
-            *Tcl.to_tcl_args(
-                x=x,
-                y=y,
-                relx=relx,
-                rely=rely,
-                width=width,
-                height=height,
-                relwidth=relwidth,
-                relheight=relheight,
-                anchor=anchor,
-            ),
-        )
-
-    def _get_anchor(
-        self, x: float | None, y: float | None, relx: float | None, rely: float | None
-    ) -> str:
-        anchor = ""
-
-        if y is None:
-            anchor += "n"
-        elif y >= 0 and rely is not None and rely > 0 or y < 0:
-            anchor += "s"
-        else:
-            anchor += "n"
-
-        if x is None:
-            anchor += "w"
-        elif x >= 0 and relx is not None and relx > 0 or x < 0:
-            anchor += "e"
-        else:
-            anchor += "w"
-
-        return anchor
-
-
-class Position(LayoutManager):
-    _type = "place"
-
-    def __call__(
-        self,
-        x: float | None = 0,
-        y: float | None = 0,
-        width: float | None = None,
-        height: float | None = None,
-        anchor: Anchor | None = None,
-    ):
-        Tcl.call(
-            None,
-            "place",
-            "configure",
-            self._widget._lm_path,
-            *Tcl.to_tcl_args(
-                x=x,
-                y=y,
-                width=width,
-                height=height,
-                anchor=anchor,
-            ),
-        )
-
-    @property
-    def x(self) -> int | None:
-        return self._cget(int, "-x")
-
-    @x.setter
-    def x(self, value: int) -> None:
-        self._config(x=value)
-
-    @property
-    def y(self) -> int | None:
-        return self._cget(int, "-y")
-
-    @y.setter
-    def y(self, value: int) -> None:
-        self._config(y=value)
-
-    @property
-    def width(self) -> int | None:
-        return self._cget(int, "-width")
-
-    @width.setter
-    def width(self, value: int) -> None:
-        self._config(width=value)
-
-    @property
-    def height(self) -> int | None:
-        return self._cget(int, "-height")
-
-    @height.setter
-    def height(self, value: int) -> None:
-        self._config(height=value)
-
-    @property
-    def anchor(self) -> int | None:
-        return self._cget(Anchor, "-anchor")
-
-    @anchor.setter
-    def anchor(self, value: int) -> None:
-        self._config(anchor=value)
 
 
 class GridCells:

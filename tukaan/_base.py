@@ -5,8 +5,8 @@ from typing import Any, Callable
 
 from tukaan._collect import commands, widgets
 from tukaan._events import BindingsMixin
-from tukaan._layout import ContainerGrid, Geometry, Grid, Position, ToplevelGrid
 from tukaan._mixins import GeometryMixin, VisibilityMixin, WidgetMixin
+from tukaan._layout import ContainerGrid, Grid, ToplevelGrid
 from tukaan._props import cget, config
 from tukaan._tcl import Tcl
 from tukaan._utils import count
@@ -90,8 +90,6 @@ class WidgetBase(TkWidget, GeometryMixin):
         TkWidget.__init__(self)
 
         self.grid = ContainerGrid(self) if isinstance(self, Container) else Grid(self)
-        self.geometry = Geometry(self)
-        self.position = Position(self)
 
         Tcl.call(None, self._tcl_class, self._name, *Tcl.to_tcl_args(**kwargs))
 
