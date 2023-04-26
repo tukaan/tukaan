@@ -211,4 +211,4 @@ class Cursor:
         return f"Cursor({self.source})"
 
 
-Cursor_T = Union[Cursors, Cursor]
+Cursor_T = Union[Cursors, Cursor, _CursorsEsoteric]
