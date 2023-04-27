@@ -6,7 +6,8 @@ from tukaan.enums import Orientation
 
 
 class Separator(WidgetBase, OutputDisplay):
-    _tcl_class = "ttk::separator"
+    _tcl_widget_name = "ttk::separator"
+    _tk_class_name = "TSeparator"
 
     orientation = OrientProp()
 

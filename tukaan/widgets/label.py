@@ -19,7 +19,8 @@ from tukaan.fonts.font import Font, FontProp
 
 
 class Label(WidgetBase, OutputDisplay):
-    _tcl_class = "ttk::label"
+    _tcl_widget_name = "ttk::label"
+    _tk_class_name = "TLabel"
 
     bg_color = BackgroundProp()
     focusable = FocusableProp()

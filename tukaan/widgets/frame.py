@@ -5,7 +5,8 @@ from tukaan._props import PaddingProp
 
 
 class Frame(WidgetBase, Container):
-    _tcl_class = "ttk::frame"
+    _tcl_widget_name = "ttk::frame"
+    _tk_class_name = "TFrame"
 
     padding = PaddingProp()
 

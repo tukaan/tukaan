@@ -11,7 +11,8 @@ from tukaan.widgets.frame import Frame
 
 
 class RadioButton(WidgetBase, InputControl):
-    _tcl_class = "ttk::radiobutton"
+    _tcl_widget_name = "ttk::radiobutton"
+    _tk_class_name = "TRadiobutton"
 
     action = CommandProp()
     focusable = FocusableProp()

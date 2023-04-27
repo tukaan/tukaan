@@ -10,7 +10,8 @@ from .wm import WindowManager
 
 
 class Window(ToplevelBase, WindowManager):
-    _tcl_class = "toplevel"
+    _tcl_widget_name = "toplevel"
+    _tk_class_name = "Toplevel"
     _keys = {}
     parent: App | Window
 
@@ -32,7 +33,7 @@ class Window(ToplevelBase, WindowManager):
 
         super().__init__()
 
-        Tcl.call(None, self._tcl_class, self._wm_path)
+        Tcl.call(None, self._tcl_widget_name, self._wm_path)
         Tcl.eval(None, f"pack [ttk::frame {self._name}] -expand 1 -fill both")
 
         Tcl.call(None, "wm", "title", self._wm_path, title)

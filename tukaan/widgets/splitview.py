@@ -67,7 +67,8 @@ class Pane(Frame):
 
 
 class SplitView(WidgetBase, Container):
-    _tcl_class = "ttk::panedwindow"
+    _tcl_widget_name = "ttk::panedwindow"
+    _tk_class_name = "TPanedwindow"
 
     focusable = FocusableProp()
 

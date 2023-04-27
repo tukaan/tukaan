@@ -10,7 +10,8 @@ from tukaan.exceptions import WidgetError
 
 
 class ScrollBar(WidgetBase, InputControl):
-    _tcl_class = "ttk::scrollbar"
+    _tcl_widget_name = "ttk::scrollbar"
+    _tk_class_name = "TScrollbar"
 
     focusable = FocusableProp()
     orientation = OrientProp()

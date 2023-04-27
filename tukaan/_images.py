@@ -190,7 +190,8 @@ class ImageProp(OptionDesc[Pillow2Tcl, Union[PillowImage.Image, Icon]]):
 
 
 class Image(WidgetBase):
-    _tcl_class = "ttk::label"
+    _tcl_widget_name = "ttk::label"
+    _tk_class_name = "TLabel"  # FIXME: should be TLabel
 
     image = ImageProp()
 

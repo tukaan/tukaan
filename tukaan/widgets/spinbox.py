@@ -11,7 +11,8 @@ from .textbox import TextBox
 
 
 class SpinBox(TextBox):
-    _tcl_class = "ttk::spinbox"
+    _tcl_widget_name = "ttk::spinbox"
+    _tk_class_name = "TSpinbox"
 
     cycle = BoolDesc("wrap")
     max = FloatDesc("to")

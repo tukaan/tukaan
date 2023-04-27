@@ -4,14 +4,15 @@ __author__ = "rdbende"
 __license__ = "MIT"
 __version__ = "0.2.1"
 
-from ._events import KeySeq
 from ._images import Icon, IconFactory, Image
+from ._misc import Mouse
 from ._system import Platform
 from ._variables import BoolVar, FloatVar, IntVar, StringVar
 from .a11y.a11y import Accessibility
 from .app import App
 from .clipboard import Clipboard
 from .colors import Color, cmyk, hsl, hsv, rgb
+from .events.keysyms import KeySeq
 from .fonts.font import Font, font
 from .fonts.fontfile import FontFile, OpenTypeFont, TrueTypeCollection, TrueTypeFont
 from .screen import Screen, ScreenDistance, cm, inch, mm

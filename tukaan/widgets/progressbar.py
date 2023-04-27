@@ -11,7 +11,8 @@ from tukaan.timeouts import Timeout
 
 
 class ProgressBar(WidgetBase, OutputDisplay):
-    _tcl_class = "ttk::progressbar"
+    _tcl_widget_name = "ttk::progressbar"
+    _tk_class_name = "TProgressbar"
 
     focusable = FocusableProp()
     orientation = OrientProp()

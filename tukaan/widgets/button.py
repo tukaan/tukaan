@@ -12,7 +12,8 @@ from tukaan.enums import ImagePosition
 
 
 class Button(WidgetBase, InputControl):
-    _tcl_class = "ttk::button"
+    _tcl_widget_name = "ttk::button"
+    _tk_class_name = "TButton"
 
     action = CommandProp()
     focusable = FocusableProp()
