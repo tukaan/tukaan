@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from tukaan._collect import widgets
-from tukaan._layout import Grid
 from tukaan._misc import Bbox
 from tukaan._tcl import Tcl
 
@@ -81,15 +80,3 @@ class VisibilityMixin:
             self.unhide()
         else:
             self.hide()
-
-    def hide(self):
-        if self.layout_manager is Grid:
-            self.grid._hide()
-        else:
-            raise NotImplementedError("cannot hide element with this layout manager")
-
-    def unhide(self):
-        if self.layout_manager is Grid:
-            self.grid._unhide()
-        else:
-            raise NotImplementedError("cannot hide element with this layout manager")
