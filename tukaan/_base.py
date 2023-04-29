@@ -12,6 +12,7 @@ from tukaan._props import cget, config
 from tukaan._tcl import Tcl
 from tukaan._utils import count
 from tukaan.enums import Cursor, LegacyX11Cursor
+from libtukaan import Xcursor
 from tukaan.widgets.tooltip import ToolTipProvider
 
 
@@ -127,6 +128,8 @@ class WidgetBase(TkWidget, GeometryMixin):
 
     @cursor.setter
     def cursor(self, value: Cursor | LegacyX11Cursor | CursorFile) -> None:
+        if isinstance(value, CursorFile):
+            return Xcursor.set_cursor(self._lm_path, value._name)
         return config(self, cursor=value)
 
     @property
