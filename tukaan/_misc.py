@@ -26,7 +26,7 @@ class Size(NamedTuple):
 
 class CursorFile:
     def __init__(self, source: Path):
-        source = source.resolve().absolute()
+        source = source.resolve().absolute().as_posix()
 
         if Platform.os != "Windows":
             raise PlatformSpecificError(f"Cannot specify cursor from file on {Platform.os}")
