@@ -195,6 +195,8 @@ class Tcl:
             return value
 
         if return_type is bool:
+            if not value:
+                return False
             return Tcl._interp.getboolean(value)
 
         if return_type in (int, float):

@@ -6,7 +6,7 @@ from typing import Any, Callable
 from tukaan._collect import commands, widgets
 from tukaan._events import BindingsMixin
 from tukaan._mixins import GeometryMixin, VisibilityMixin, WidgetMixin
-from tukaan._layout import ContainerGrid, Grid, ToplevelGrid
+from tukaan.layouts import LayoutManagerBase
 from tukaan._props import cget, config
 from tukaan._tcl import Tcl
 from tukaan._utils import count
@@ -65,17 +65,20 @@ class TkWidget(WidgetMixin, BindingsMixin, VisibilityMixin):
     _tcl_class: str
     _variable: Any  # TODO This is set in LinkProp
 
+    grid: LayoutManagerBase
+
     def __init__(self) -> None:
         self._children = {}
         self._child_type_count = collections.defaultdict(lambda: count())
+
+        for name, lm in LayoutManagerBase.layout_managers.items():
+            setattr(self, name, lm(self))
 
         widgets[self._name] = self
 
 
 class ToplevelBase(TkWidget, Container):
     def __init__(self) -> None:
-        self.grid = ToplevelGrid(self)
-
         TkWidget.__init__(self)
 
 
@@ -88,8 +91,6 @@ class WidgetBase(TkWidget, GeometryMixin):
         self.parent._children[self._name] = self
 
         TkWidget.__init__(self)
-
-        self.grid = ContainerGrid(self) if isinstance(self, Container) else Grid(self)
 
         Tcl.call(None, self._tcl_class, self._name, *Tcl.to_tcl_args(**kwargs))
 
