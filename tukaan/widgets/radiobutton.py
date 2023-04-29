@@ -28,7 +28,6 @@ class RadioButton(WidgetBase, InputControl):
         *,
         action: Callable[..., None] | None = None,
         focusable: bool | None = None,
-        tooltip: str | None = None,
         width: int | None = None,
         **kwargs,
     ) -> None:
@@ -42,7 +41,6 @@ class RadioButton(WidgetBase, InputControl):
             command=action,
             takefocus=focusable,
             text=text,
-            tooltip=tooltip,
             value=value,
             variable=target,
             width=width,

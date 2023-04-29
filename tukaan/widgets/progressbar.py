@@ -29,7 +29,6 @@ class ProgressBar(WidgetBase, OutputDisplay):
         link: IntVar | FloatVar | None = None,
         mode: ProgressMode | None = None,
         orientation: Orientation | None = None,
-        tooltip: str | None = None,
         value: int | None = None,
     ) -> None:
         self._max = length
@@ -41,7 +40,6 @@ class ProgressBar(WidgetBase, OutputDisplay):
             mode=mode,
             orient=orientation,
             takefocus=focusable,
-            tooltip=tooltip,
             value=value,
             variable=link,
             **kwargs,

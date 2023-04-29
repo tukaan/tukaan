@@ -43,7 +43,6 @@ class Label(WidgetBase, OutputDisplay):
         image_pos: ImagePosition | None = None,
         max_line_length: int | None = None,
         text_align: Justify = Justify.Left,
-        tooltip: str | None = None,
         **kwargs,
     ) -> None:
         WidgetBase.__init__(
@@ -58,7 +57,6 @@ class Label(WidgetBase, OutputDisplay):
             justify=text_align,
             takefocus=focusable,
             text=text,
-            tooltip=tooltip,
             wraplength=max_line_length,
             **kwargs,
         )
