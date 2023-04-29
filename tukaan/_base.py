@@ -9,8 +9,9 @@ from tukaan._layout import ContainerGrid, Geometry, Grid, Position, ToplevelGrid
 from tukaan._mixins import GeometryMixin, VisibilityMixin, WidgetMixin
 from tukaan._props import cget, config
 from tukaan._tcl import Tcl
+from tukaan._misc import CursorFile
 from tukaan._utils import count
-from tukaan._cursors import Cursor, Cursor_T, Cursors
+from tukaan.enums import Cursor
 from tukaan.widgets.tooltip import ToolTipProvider
 
 
@@ -107,17 +108,15 @@ class WidgetBase(TkWidget, GeometryMixin):
         del _widgets[self._name]
 
     @property
-    def cursor(self) -> Cursor_T:
+    def cursor(self) -> Cursor | CursorFile:
         cursor = cget(self, str, "-cursor")
         try:
-            return Cursors(cursor)
+            return Cursor(cursor)
         except ValueError:
-            return Tcl.from_(Cursor, cursor)
+            return Tcl.from_(CursorFile, cursor)
 
     @cursor.setter
-    def cursor(self, value: Cursor_T) -> None:
-        if not isinstance(value, (Cursor, Cursors)):
-            raise TypeError(f"{type(value)} is not a valid tukaan Cursor type")
+    def cursor(self, value: Cursor | CursorFile) -> None:
         return config(self, cursor=value)
 
     @property
