@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import NamedTuple
+
 from tukaan._system import Platform
 from tukaan.exceptions import PlatformSpecificError
-
-
-from typing import NamedTuple
 
 
 class Bbox(NamedTuple):

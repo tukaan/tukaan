@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 from enum import Enum
-
-from tukaan._system import Platform
-
 from typing import Union
 
+from tukaan._system import Platform
 from tukaan._typing import Literal
-
 
 
 class Align(Enum):
@@ -256,6 +253,7 @@ elif Platform.os == "macOS":
     _cursors_tk.update(_cursors_win_native)
 
 Cursor = Enum("Cursors", _cursors_tk)
+
 
 @classmethod
 def _cursor_missing_(cls, value: str) -> Cursor:
