@@ -26,7 +26,7 @@ class Size(NamedTuple):
 
 class CursorFile:
     def __init__(self, source: Path):
-        source = source.resolve().absolute().as_posix()
+        source = source.resolve().absolute()
 
         if Platform.os != "Windows":
             raise PlatformSpecificError(f"Cannot specify cursor from file on {Platform.os}")
@@ -35,7 +35,7 @@ class CursorFile:
             raise ValueError(
                 f'Bad file type for Windows cursor: "{source.suffix}". Should be one of ".cur" or ".ani"'
             )
-        self._name = f"@{source!s}"
+        self._name = f"@{source.as_posix()!s}"
 
     @classmethod
     def __from_tcl__(cls, value: str) -> CursorFile:
