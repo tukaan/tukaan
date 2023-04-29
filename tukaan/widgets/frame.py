@@ -14,7 +14,7 @@ class Frame(WidgetBase, Container):
         parent: TkWidget,
         padding: int | tuple[int, ...] | None = None,
         tooltip: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         WidgetBase.__init__(self, parent, tooltip=tooltip, **kwargs)
 

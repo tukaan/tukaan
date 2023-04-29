@@ -36,7 +36,7 @@ class SpinBox(TextBox):
         user_edit: bool = True,
         value: float | None = None,
         width: int | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         self._prev_show_char = hide_chars_with
         if not hide_chars:
@@ -59,7 +59,7 @@ class SpinBox(TextBox):
             tooltip=tooltip,
             width=width,
             wrap=cycle,
-            **kwargs
+            **kwargs,
         )
 
         if value is not None:

@@ -44,7 +44,7 @@ class ProgressBar(WidgetBase, OutputDisplay):
             tooltip=tooltip,
             value=value,
             variable=link,
-            **kwargs
+            **kwargs,
         )
 
     def _repr_details(self) -> str:

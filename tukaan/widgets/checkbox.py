@@ -28,7 +28,7 @@ class CheckBox(WidgetBase, InputControl):
         target: BoolVar | None = None,
         tooltip: str | None = None,
         width: int | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         self._variable = BoolVar(selected) if target is None else target
         self._action = action
@@ -44,7 +44,7 @@ class CheckBox(WidgetBase, InputControl):
             tooltip=tooltip,
             variable=self._variable,
             width=width,
-            **kwargs
+            **kwargs,
         )
 
     def _call_action(self) -> None:

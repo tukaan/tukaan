@@ -3,15 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._props import (
-    CommandProp,
-    FocusableProp,
-    LinkProp,
-    TextProp,
-    WidthProp,
-    cget,
-    config,
-)
+from tukaan._props import CommandProp, FocusableProp, LinkProp, TextProp, WidthProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan._variables import ControlVariable, StringVar
 from tukaan.enums import Orientation
@@ -38,7 +30,7 @@ class RadioButton(WidgetBase, InputControl):
         focusable: bool | None = None,
         tooltip: str | None = None,
         width: int | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         if not isinstance(value, target._type_spec):
             raise TypeError("value type must match the target control variable's type.")
@@ -54,7 +46,7 @@ class RadioButton(WidgetBase, InputControl):
             value=value,
             variable=target,
             width=width,
-            **kwargs
+            **kwargs,
         )
 
     def _repr_details(self) -> str:

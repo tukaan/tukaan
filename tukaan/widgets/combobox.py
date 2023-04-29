@@ -27,7 +27,7 @@ class ComboBox(TextBox):
         user_edit: bool | None = True,
         visible_rows: int | None = None,
         width: int | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         self._prev_show_char = hide_chars_with
         if not hide_chars:
@@ -47,7 +47,7 @@ class ComboBox(TextBox):
             tooltip=tooltip,
             values=labels,
             width=width,
-            **kwargs
+            **kwargs,
         )
 
         self._action = action

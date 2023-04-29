@@ -44,7 +44,7 @@ class Label(WidgetBase, OutputDisplay):
         max_line_length: int | None = None,
         text_align: Justify = Justify.Left,
         tooltip: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         WidgetBase.__init__(
             self,
@@ -60,7 +60,7 @@ class Label(WidgetBase, OutputDisplay):
             text=text,
             tooltip=tooltip,
             wraplength=max_line_length,
-            **kwargs
+            **kwargs,
         )
 
     @property

@@ -6,13 +6,7 @@ from PIL import Image  # type: ignore
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
 from tukaan._images import Icon, ImageProp
-from tukaan._props import (
-    CommandProp,
-    FocusableProp,
-    ImagePositionProp,
-    TextProp,
-    WidthProp,
-)
+from tukaan._props import CommandProp, FocusableProp, ImagePositionProp, TextProp, WidthProp
 from tukaan._tcl import Tcl
 from tukaan.enums import ImagePosition
 
@@ -38,7 +32,7 @@ class Button(WidgetBase, InputControl):
         image_pos: ImagePosition | None = None,
         tooltip: str | None = None,
         width: int | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         WidgetBase.__init__(
             self,
@@ -50,7 +44,7 @@ class Button(WidgetBase, InputControl):
             text=text,
             tooltip=tooltip,
             width=width,
-            **kwargs
+            **kwargs,
         )
 
     def invoke(self) -> None:

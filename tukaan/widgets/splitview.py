@@ -78,15 +78,10 @@ class SplitView(WidgetBase, Container):
         *,
         focusable: bool | None = None,
         tooltip: str | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         WidgetBase.__init__(
-            self,
-            parent,
-            takefocus=focusable,
-            orient=orientation,
-            tooltip=tooltip,
-            **kwargs
+            self, parent, takefocus=focusable, orient=orientation, tooltip=tooltip, **kwargs
         )
 
         self.Pane = Pane

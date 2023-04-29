@@ -4,14 +4,7 @@ from typing import Iterable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase, XScrollable
 from tukaan._misc import Bbox
-from tukaan._props import (
-    FocusableProp,
-    ForegroundProp,
-    TextAlignProp,
-    WidthProp,
-    cget,
-    config,
-)
+from tukaan._props import FocusableProp, ForegroundProp, TextAlignProp, WidthProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
 from tukaan.exceptions import TukaanTclError
@@ -41,7 +34,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         user_edit: bool | None = True,
         value: str | None = None,
         width: int | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         self._prev_show_char = hide_chars_with
         if not hide_chars:
@@ -57,7 +50,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
             takefocus=focusable,
             tooltip=tooltip,
             width=width,
-            **kwargs
+            **kwargs,
         )
 
         self.bind("<FocusOut>", f"+{self._name} selection clear")

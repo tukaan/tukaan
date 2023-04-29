@@ -28,7 +28,7 @@ class Slider(WidgetBase, InputControl):
         target: IntVar | FloatVar | None = None,
         tooltip: str | None = None,
         value: float | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         self._variable = target
         self._action = action
@@ -45,7 +45,7 @@ class Slider(WidgetBase, InputControl):
             tooltip=tooltip,
             value=min if value is None else value,
             variable=target,
-            **kwargs
+            **kwargs,
         )
 
     def _repr_details(self) -> str:
