@@ -250,7 +250,7 @@ _cursors_win_native = {
 if Platform.os == "Windows":
     _cursors_tk.update(_cursors_win_native)
 elif Platform.os == "macOS":
-    _cursors_tk.update(_cursors_win_native)
+    _cursors_tk.update(_cursors_macos_native)
 
 Cursor = Enum("Cursors", _cursors_tk)
 
