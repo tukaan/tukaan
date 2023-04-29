@@ -27,4 +27,4 @@ class Notification:
 
                 args.extend(["-i", icon])
 
-            subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(args, capture_output=True)

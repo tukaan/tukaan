@@ -1,7 +1,8 @@
 import functools
 from typing import Any, Callable
 
-from ._tcl import Tcl, TclCallback
+from tukaan._tcl import Tcl, TclCallback
+from tukaan._typing import P, T, WrappedFunction
 
 
 class Timeout:
@@ -9,7 +10,9 @@ class Timeout:
     _repeat: bool = False
     state: str = "not started"
 
-    def __init__(self, seconds: float, target: Callable[[], Any], *, args=(), kwargs={}) -> None:
+    def __init__(self, seconds: float, target: Callable[[], Any], *, args=(), kwargs=None) -> None:
+        if kwargs is None:
+            kwargs = {}
         assert callable(target), "target must be callable"
 
         self.seconds = seconds
@@ -60,7 +63,7 @@ class Timeout:
 
         command, _ = Tcl.call((str,), "after", "info", self._after_id)
         Tcl.call(None, "after", "cancel", command)
-        Tcl.delete_cmd(command)
+        TclCallback.dispose(command)
 
         self._repeat = False
         self.state = "cancelled"
@@ -76,7 +79,9 @@ class Timeout:
 
 class Timer:
     @staticmethod
-    def schedule(seconds: float, target: Callable[[Any], Any], *, args=(), kwargs={}) -> None:
+    def schedule(seconds: float, target: Callable[..., Any], *, args=(), kwargs=None) -> None:
+        if kwargs is None:
+            kwargs = {}
         Tcl.call(str, "after", int(seconds * 1000), TclCallback(target, args=args, kwargs=kwargs))
 
     @staticmethod
@@ -89,10 +94,10 @@ class Timer:
         Tcl.eval(None, script)
 
     @staticmethod
-    def delayed(seconds: float) -> Callable:
-        def decorator(func: Callable) -> Callable:
+    def delayed(seconds: float):
+        def decorator(func: WrappedFunction[P, T]):
             @functools.wraps(func)
-            def wrapper(*args, **kwargs) -> Any:
+            def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
                 Timer.wait(seconds)
                 return func(*args, **kwargs)
 

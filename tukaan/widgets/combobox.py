@@ -29,7 +29,6 @@ class ComboBox(TextBox):
         width: int | None = None,
         **kwargs
     ) -> None:
-
         self._prev_show_char = hide_chars_with
         if not hide_chars:
             hide_chars_with = None
@@ -70,17 +69,17 @@ class ComboBox(TextBox):
     def _repr_details(self) -> str:
         selected = self.selected
         if selected:
-            plus_str = f"selected='{selected if len(selected) <= 25 else selected[:22] + '...'}'"
+            plus_str = f"selected='{selected if len(selected) <= 25 else f'{selected[:22]}...'}'"
         else:
             text = self.text
-            plus_str = f"text='{text if len(text) <= 25 else text[:22] + '...'}'"
+            plus_str = f"text='{text if len(text) <= 25 else f'{text[:22]}...'}'"
 
         selected = self.selected or self.text
-        return f"value={self.value!r}, " + plus_str
+        return f"value={self.value!r}, {plus_str}"
 
     def _setup_values(self, values: dict[str, Any] | None) -> list[str] | None:
         if not values:
-            self._values = None
+            self._values = {}
             return None
 
         if isinstance(values, dict):
@@ -110,10 +109,7 @@ class ComboBox(TextBox):
     @property
     def value(self) -> Any:
         result = Tcl.call(int, self, "current")
-        if result < 0:
-            return None
-
-        return list(self._values.values())[result]
+        return None if result < 0 else list(self._values.values())[result]
 
     @value.setter
     def value(self, value: Any) -> None:
@@ -123,12 +119,9 @@ class ComboBox(TextBox):
         Tcl.call(None, self, "current", list(self._values.values()).index(value))
 
     @property
-    def selected(self) -> int:
+    def selected(self) -> str | None:
         result = Tcl.call(int, self, "current")
-        if result < 0:
-            return None
-
-        return list(self._values.keys())[result]
+        return None if result < 0 else list(self._values.keys())[result]
 
     @selected.setter
     def selected(self, label: str) -> None:
@@ -143,9 +136,7 @@ class ComboBox(TextBox):
 
     @values.setter
     def values(self, values: dict[str, Any] | None) -> None:
-        labels = self._setup_values(values)
-        if not labels:
-            labels = ""
+        labels = self._setup_values(values) or ""
         config(self, values=labels)
 
     @property

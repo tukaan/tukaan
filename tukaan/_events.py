@@ -5,13 +5,12 @@ from functools import partial
 from typing import Any, Callable, Union
 from uuid import uuid4
 
-from tukaan._collect import _widgets
+from tukaan._collect import widgets
+from tukaan._keysyms import keysym_aliases, reversed_keysym_aliases
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
 from tukaan._utils import reversed_dict
 from tukaan.enums import EventQueue
-
-from ._keysyms import keysym_aliases, reversed_keysym_aliases
 
 if Platform.os == "macOS":
     BUTTON_NUMS = {"left": 1, "middle": 3, "right": 2}
@@ -72,7 +71,7 @@ _virtual_event_data_container = DataContainer()
 class Event:
     _sequence_aliases: dict[str, str]
     _ignored_values: tuple[object, ...]
-    _relevant_attrs: tuple[str]
+    _relevant_attrs: tuple[str, ...]
     _result: str | bool = True
     _substitutions: dict[str, tuple[str, type]] = {
         "button": ("%b", int),
@@ -90,6 +89,7 @@ class Event:
     _order: tuple[str, ...] = tuple(_substitutions.keys())
     # FIXME: _order must be updated when subclass overwrites _substitutions, this makes the code fragile
     # Tukaan requires python 3.7+, so we don't need an OrderedDict
+    sequence: str
 
     def __init__(self, *args) -> None:
         for item in self._relevant_attrs:
@@ -205,9 +205,9 @@ class KeyboardEvent(Event):
 
             modifiers = "-".join(modifier_keys) + ("-" if modifier_keys else "")
 
-            return f"<{modifiers}Key{up_or_down[search[1]]}{('-' + key) if key else ''}>"
+            return f"<{modifiers}Key{up_or_down[search[1]]}{f'-{key}' if key else ''}>"
 
-        raise Exception("this shouldn't happen")
+        assert False
 
 
 class MouseEvent(Event):
@@ -347,13 +347,10 @@ def binding_wrapper(
 
     sent_event = event(*args)
     sent_event.sequence = sequence
-    sent_event.widget = _widgets.get(args[event._order.index("widget")])
+    sent_event.widget = widgets.get(args[event._order.index("widget")])
     result = func(sent_event)
 
-    if result is not None:
-        return result
-
-    return sent_event._result
+    return result if result is not None else sent_event._result
 
 
 class BindingsMixin:
@@ -390,12 +387,7 @@ class BindingsMixin:
         else:
             script_str = ""
 
-        if hasattr(self, "_wm_path"):
-            # can't import ToplevelBase here
-            name = self._wm_path
-        else:
-            name = self._name
-
+        name = self._wm_path if hasattr(self, "_wm_path") else self._name
         Tcl.call(None, "bind", name, event._parse(sequence), script_str)
 
     def unbind(self, sequence: str) -> None:
@@ -407,16 +399,8 @@ class BindingsMixin:
             # maybe somewhere else
             raise Exception("can only generate virtual events")
 
-        if data is None:
-            key = None
-        else:
-            key = _virtual_event_data_container.add(data)
-
-        if hasattr(self, "_wm_path"):
-            name = self._wm_path
-        else:
-            name = self._name
-
+        key = None if data is None else _virtual_event_data_container.add(data)
+        name = self._wm_path if hasattr(self, "_wm_path") else self._name
         Tcl.call(None, "event", "generate", name, sequence, *Tcl.to_tcl_args(data=key, when=queue))
 
 

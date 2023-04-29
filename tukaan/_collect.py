@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 counter: DefaultDict[Any, Iterator[int]] = collections.defaultdict(count)
 
-_commands: dict[str, Callable[..., Any]] = {}
-_fonts: dict[str, Font] = {}
-_images: dict[str, Icon | Pillow2Tcl] = {}
-_variables: dict[str, ControlVariable] = {}
-_widgets: dict[str, TkWidget] = {}
+commands: dict[str, Callable[..., Any]] = {}
+fonts: dict[str, Font] = {}
+images: dict[str, Icon | Pillow2Tcl] = {}
+variables: dict[str, ControlVariable[Any]] = {}
+widgets: dict[str, TkWidget] = {}

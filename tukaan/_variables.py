@@ -1,18 +1,20 @@
 from __future__ import annotations
 
-from tukaan._collect import _variables, counter
+from typing import Generic
+
+from tukaan._collect import counter, variables
 from tukaan._tcl import Tcl
+from tukaan._typing import T
 
 
-class ControlVariable:
-    # FIXME: typing in this file
+class ControlVariable(Generic[T]):
+    _default: T
+    _type_spec: type[T]
 
-    _type_spec: type[float | str | bool]
-    _default: float | str | bool
-
-    def __init__(self, value: float | str | bool | None = None) -> None:
+    def __init__(self, value: T = None) -> None:
+        self._type_spec = type(self._default)
         self._name = f"tukaan_{self._type_spec.__name__}var_{next(counter['variable'])}"
-        _variables[self._name] = self
+        variables[self._name] = self
 
         if value is None:
             value = self._default
@@ -20,45 +22,41 @@ class ControlVariable:
         self.set(value)
 
     def __repr__(self) -> str:
-        return f"<tukaan.{type(self).__name__} control variable: tcl_name={self._name}, value={self.get()!r}>"
+        return f"<tukaan.{type(self).__name__} (tcl_name={self._name}, value={self.get()!r})>"
 
-    def __hash__(self) -> None:
+    def __hash__(self) -> int:
         return hash((self._type_spec, self._name))
 
     @classmethod
-    def __from_tcl__(cls, value: str) -> ControlVariable:
-        return _variables[value]
+    def __from_tcl__(cls, value: str) -> ControlVariable[T]:
+        return variables[value]
 
-    def set(self, value: float | str | bool) -> None:
+    def set(self, value: T) -> None:
         Tcl.call(None, "set", self._name, value)
 
-    def get(self):
+    def get(self) -> T:
         return Tcl.call(self._type_spec, "set", self._name)
 
     @property
-    def value(self):
+    def value(self) -> T:
         return self.get()
 
     @value.setter
-    def value(self, value: float | str | bool) -> None:
+    def value(self, value: T) -> None:
         self.set(value)
 
 
-class StringVar(ControlVariable):
-    _type_spec = str
+class StringVar(ControlVariable[str]):
     _default = ""
 
 
-class IntVar(ControlVariable):
-    _type_spec = int
+class IntVar(ControlVariable[int]):
     _default = 0
 
 
-class FloatVar(ControlVariable):
-    _type_spec = float
+class FloatVar(ControlVariable[float]):
     _default = 0.0
 
 
-class BoolVar(ControlVariable):
-    _type_spec = bool
+class BoolVar(ControlVariable[bool]):
     _default = False

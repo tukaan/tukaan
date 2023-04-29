@@ -23,8 +23,11 @@ class MainWindow(ToplevelBase, WindowManager):
         width: int = 300,
         height: int = 200,
         type: WindowType | None = None,
-        on_load: Callable = None,
+        on_load: Callable[[], None] | None = None,
     ) -> None:
+        if not App._exists:
+            raise AppError("too early to create main window. App context isn't initialized.")
+
         if MainWindow._exists:
             raise AppError("can't create multiple App instances. Use tukaan.Window instead.")
         else:

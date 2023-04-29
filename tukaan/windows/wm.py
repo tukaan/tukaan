@@ -7,7 +7,6 @@ import sys
 from enum import Enum
 from fractions import Fraction
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Callable, Sequence
 
 from PIL import Image as PillowImage
@@ -237,8 +236,8 @@ class WindowManager:
         return wrapper
 
     @property
-    def focused(self) -> int:
-        return Tcl.call(str, "focus", "-displayof", self._wm_path)
+    def focused(self) -> bool:
+        return Tcl.call(str, "focus", "-displayof", self._wm_path) == self._wm_path
 
     @property
     @Tcl.redraw_before
@@ -255,7 +254,7 @@ class WindowManager:
 
     @property
     def state(self) -> WindowState:
-        WindowState(self._get_state())
+        return WindowState(self._get_state())
 
     @property
     @Tcl.redraw_before
@@ -399,9 +398,7 @@ class WindowManager:
     @Tcl.redraw_before
     def aspect_ratio(self) -> None | tuple[Fraction, Fraction]:
         result = Tcl.call((int,), "wm", "aspect", self._wm_path)
-        if not result:
-            return None
-        return Fraction(*result[:2]), Fraction(*result[2:])
+        return (Fraction(*result[:2]), Fraction(*result[2:])) if result else None
 
     @aspect_ratio.setter
     @Tcl.redraw_after
@@ -430,7 +427,7 @@ class WindowManager:
 
     @property
     def resizable(self) -> Resizable:
-        return Resizable(Tcl.call((str, str), "wm", "resizable", self._wm_path))
+        return Resizable(Tcl.call((str,), "wm", "resizable", self._wm_path))
 
     @resizable.setter
     def resizable(self, value: Resizable) -> None:
@@ -560,52 +557,35 @@ class WindowManager:
         return self._icon
 
     @icon.setter
-    def icon(self, icon: Path | Icon) -> None:
-        if isinstance(icon, Icon):
+    def icon(self, icon: Icon | Path | None) -> None:
+        if icon is None:
+            # FIXME: The icon can't be removed, some hacks? empty image for example?
+            return
+        elif isinstance(icon, Icon):
             # If the icon was created, then by here Tcl/Tk has to have created a valid photo image for it
-            Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", icon._name)
+            Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", icon)
             self._icon = icon
+            return
 
-        else:
-            icon_path = Path(icon)
-            if icon_path.suffix == ".png":
-                win_icon = Icon(icon_path)
-                self._icon = win_icon
-                Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
-            elif icon_path.suffix in (".ico", ".icns"):
-                args = [None, "wm", "iconbitmap", self._wm_path, icon_path.resolve()]
-                if Platform.os == "Windows":
-                    # -default for iconbitmap available on Windows only
-                    args.insert(-1, "-default")
-                try:
-                    Tcl.call(*args)
-                except TukaanTclError as e:
-                    raise TukaanTclError(
-                        f'Cannot set bitmap of type "{icon_path.suffix}" on operating system "{Platform.os}"'
-                    ) from e
-                else:
-                    self._icon = icon_path
-            elif icon_path.suffix in ():
-                # Future tuple of other supported filetypes, if desired
-                # Also feel free to remove this if unneeded
-                temp_file = None
-                try:
-                    # Delete is False here because Windows runs into issues with opening and closing multiple times
-                    # Just keep it open through everything and delete at the end
-                    temp_file = NamedTemporaryFile(delete=False)
-                    PillowImage.open(icon_path.resolve()).save(temp_file.name, format="PNG")
-                    win_icon = Icon(Path(temp_file.name))
-                    Tcl.call(None, "wm", "iconphoto", self._wm_path, "-default", win_icon._name)
-                except Exception as e:
-                    raise e
-                else:
-                    self._icon = icon_path
-                finally:
-                    # Whatever errors might occur here, be sure to always close and delete the temp file
-                    if temp_file is not None:
-                        temp_file.close()
-                        Path.unlink(Path(temp_file.name), missing_ok=True)
+        assert isinstance(icon, Path)
+
+        if icon.suffix == ".png":
+            self.icon = Icon(icon)
+        elif icon.suffix in {".ico", ".icns"}:
+            extra_args = []
+            if Platform.os == "Windows":
+                # -default for iconbitmap available on Windows only
+                extra_args.append("-default")
+
+            try:
+                Tcl.call(None, "wm", "iconbitmap", self._wm_path, icon, *extra_args)
+            except TukaanTclError as e:
+                raise TukaanTclError(
+                    f'Cannot set bitmap of type "{icon.suffix}" on "{Platform.os}"'
+                ) from e
             else:
-                raise ValueError(
-                    f"Invalid image format: {icon_path.suffix}. Must be one of: .png, .ico, .icns."
-                )
+                self._icon = icon
+        else:
+            raise ValueError(
+                f"Invalid image format: {icon.suffix}. Must be one of: .png, .ico, .icns."
+            )

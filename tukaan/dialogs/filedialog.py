@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 from tukaan._base import ToplevelBase
 from tukaan._tcl import Tcl
@@ -12,18 +13,18 @@ from .dialog import Dialog, run_kdialog, run_zenity
 class FileDialogBase(ABC):
     @staticmethod
     @abstractmethod
-    def pick_path_to_open(*args, **kwargs) -> Path | list[Path] | None:
-        pass
+    def pick_path_to_open(title: str | None = None, **kwargs: Any) -> Path | list[Path] | None:
+        ...
 
     @staticmethod
     @abstractmethod
-    def pick_path_to_save(*args, **kwargs) -> Path | None:
-        pass
+    def pick_path_to_save(title: str | None = None, **kwargs: Any) -> Path | None:
+        ...
 
     @staticmethod
     @abstractmethod
-    def pick_directory(*args, **kwargs) -> Path | None:
-        pass
+    def pick_directory(title: str | None = None, **kwargs: Any) -> Path | None:
+        ...
 
 
 class TkFileDialog(FileDialogBase):
@@ -35,7 +36,7 @@ class TkFileDialog(FileDialogBase):
         filename: str | None = None,
         parent: ToplevelBase | None = None,
         multiple: bool = False,
-        filetypes: dict[str, str | tuple[str, ...]] = None,
+        filetypes: dict[str, str | tuple[str, ...]] | None = None,
     ) -> Path | list[Path] | None:
         return_type = [str] if multiple else str
 
@@ -43,9 +44,6 @@ class TkFileDialog(FileDialogBase):
             filetypes_processed = tuple((name, filter_) for name, filter_ in filetypes.items())
         else:
             filetypes_processed = None
-
-        if directory is not None and not isinstance(directory, Path):
-            raise TypeError("directory must be a pathlib.Path object")
 
         result = Tcl.call(
             return_type,
@@ -76,16 +74,12 @@ class TkFileDialog(FileDialogBase):
         filename: str | None = None,
         confirm: bool = True,
         parent: ToplevelBase | None = None,
-        filetypes: dict[str, str | tuple[str, ...]] = None,
+        filetypes: dict[str, str | tuple[str, ...]] | None = None,
     ) -> Path | None:
-
         if filetypes is not None:
             filetypes_processed = tuple((name, filter_) for name, filter_ in filetypes.items())
         else:
             filetypes_processed = None
-
-        if directory is not None and not isinstance(directory, Path):
-            raise TypeError("directory must be a pathlib.Path object")
 
         result = Tcl.call(
             str,
@@ -110,9 +104,6 @@ class TkFileDialog(FileDialogBase):
         default: Path | None = None,
         parent: ToplevelBase | None = None,
     ) -> Path | None:
-        if default is not None and not isinstance(default, Path):
-            raise TypeError("default directory must be a pathlib.Path object")
-
         result = Tcl.call(
             str,
             "tk_chooseDirectory",
@@ -136,12 +127,9 @@ class ZenityFileDialog(FileDialogBase):
         filename: str | None = None,
         parent: ToplevelBase | None = None,
         multiple: bool = False,
-        filetypes: dict[str, str | tuple[str, ...]] = None,
-    ) -> Path | None:
-        args = []
-
-        if directory is not None and not isinstance(directory, Path):
-            raise TypeError("directory must be a pathlib.Path object")
+        filetypes: dict[str, str | tuple[str, ...]] | None = None,
+    ) -> Path | list[Path] | None:
+        args: list[str] = []
 
         if filename:
             args.append(f"--filename={((directory or Path()) / filename).resolve()!s}")
@@ -163,10 +151,7 @@ class ZenityFileDialog(FileDialogBase):
         result = run_zenity("--file-selection", title, parent, *args)
 
         if result:
-            if len(result) == 1:
-                return Path(result[0])
-            else:
-                return [Path(x) for x in result]
+            return Path(result[0]) if len(result) == 1 else [Path(x) for x in result]
 
     @staticmethod
     def pick_path_to_save(
@@ -176,12 +161,9 @@ class ZenityFileDialog(FileDialogBase):
         filename: str | None = None,
         confirm: bool = True,
         parent: ToplevelBase | None = None,
-        filetypes: dict[str, str | tuple[str, ...]] = None,
+        filetypes: dict[str, str | tuple[str, ...]] | None = None,
     ) -> Path | None:
         args = ["--save"]
-
-        if directory is not None and not isinstance(directory, Path):
-            raise TypeError("directory must be a pathlib.Path object")
 
         if confirm:
             args.append("--confirm-overwrite")
@@ -211,9 +193,6 @@ class ZenityFileDialog(FileDialogBase):
     ) -> Path | None:
         args = ["--directory"]
 
-        if default is not None and not isinstance(default, Path):
-            raise TypeError("default directory must be a pathlib.Path object")
-
         if default:
             args.append(f"--filename={default.resolve()!s}")
 
@@ -232,12 +211,9 @@ class KFileDialog(FileDialogBase):
         filename: str | None = None,
         multiple: bool = False,
         parent: ToplevelBase | None = None,
-        filetypes: dict[str, str | tuple[str, ...]] = None,
-    ) -> Path | None:
-        args = []
-
-        if directory is not None and not isinstance(directory, Path):
-            raise TypeError("directory must be a pathlib.Path object")
+        filetypes: dict[str, str | tuple[str, ...]] | None = None,  # ! Unused parameter
+    ) -> Path | list[Path] | None:
+        args: list[str] = []
 
         if filename:
             directory = (directory or Path()) / filename
@@ -251,10 +227,7 @@ class KFileDialog(FileDialogBase):
         result = run_kdialog("--getopenfilename", title, parent, *args)
 
         if result:
-            if len(result) == 1:
-                return Path(result[0])
-            else:
-                return [Path(x) for x in result]
+            return Path(result[0]) if len(result) == 1 else [Path(x) for x in result]
 
     @staticmethod
     def pick_path_to_save(
@@ -262,14 +235,11 @@ class KFileDialog(FileDialogBase):
         *,
         directory: Path | None = None,
         filename: str | None = None,
-        confirm: bool = True,
+        confirm: bool = True,  # ! Unused
         parent: ToplevelBase | None = None,
-        filetypes: dict[str, str | tuple[str, ...]] = None,
+        filetypes: dict[str, str | tuple[str, ...]] | None = None,  # ! Unused
     ) -> Path | None:
-        args = []
-
-        if directory is not None and not isinstance(directory, Path):
-            raise TypeError("directory must be a pathlib.Path object")
+        args: list[str] = []
 
         if filename:
             directory = (directory or Path()) / filename
@@ -289,10 +259,7 @@ class KFileDialog(FileDialogBase):
         default: Path | None = None,
         parent: ToplevelBase | None = None,
     ) -> Path | None:
-        args = []
-
-        if default is not None and not isinstance(default, Path):
-            raise TypeError("default directory must be a pathlib.Path object")
+        args: list[str] = []
 
         if default:
             args.append(str(default.resolve()))
@@ -313,13 +280,13 @@ DISPATCHER = {
 
 class FileDialog(Dialog):
     @classmethod
-    def pick_path_to_open(cls, *args, **kwargs):
+    def pick_path_to_open(cls, *args: Any, **kwargs: Any):
         return DISPATCHER[cls._type].pick_path_to_open(*args, **kwargs)
 
     @classmethod
-    def pick_path_to_save(cls, *args, **kwargs):
+    def pick_path_to_save(cls, *args: Any, **kwargs: Any):
         return DISPATCHER[cls._type].pick_path_to_save(*args, **kwargs)
 
     @classmethod
-    def pick_directory(cls, *args, **kwargs):
+    def pick_directory(cls, *args: Any, **kwargs: Any):
         return DISPATCHER[cls._type].pick_directory(*args, **kwargs)

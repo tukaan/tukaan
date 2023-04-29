@@ -83,9 +83,9 @@ class Slider(WidgetBase, InputControl):
         config(self, to=value)
 
     @property
-    def action(self) -> Callable[[str], None] | None:
+    def action(self) -> Callable[[float], None] | None:
         return self._action
 
     @action.setter
-    def action(self, func: Callable[[str], None] | None) -> None:
+    def action(self, func: Callable[[float], None] | None) -> None:
         self._action = func

@@ -46,7 +46,6 @@ class Label(WidgetBase, OutputDisplay):
         tooltip: str | None = None,
         **kwargs
     ) -> None:
-
         WidgetBase.__init__(
             self,
             parent,

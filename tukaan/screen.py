@@ -62,19 +62,19 @@ class ScreenDistance:
 
         return cls(px=value)
 
-    def __eq__(self, other: ScreenDistance) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, ScreenDistance):
             raise TypeError
 
         return self.pixels == other.pixels
 
-    def __gt__(self, other: ScreenDistance) -> bool:
+    def __gt__(self, other: object) -> bool:
         if not isinstance(other, ScreenDistance):
             raise TypeError
 
         return self.pixels > other.pixels
 
-    def __lt__(self, other: ScreenDistance) -> bool:
+    def __lt__(self, other: object) -> bool:
         if not isinstance(other, ScreenDistance):
             raise TypeError
 

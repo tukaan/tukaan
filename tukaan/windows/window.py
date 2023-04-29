@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tukaan._base import ToplevelBase, generate_pathname
-from tukaan._collect import _widgets
+from tukaan._collect import widgets
 from tukaan._tcl import Tcl
 from tukaan.app import App
 from tukaan.enums import WindowType
@@ -66,4 +66,4 @@ class Window(ToplevelBase, WindowManager):
         Tcl.call(None, "destroy", self)
 
         del self.parent._children[self._name]
-        del _widgets[self._name]
+        del widgets[self._name]

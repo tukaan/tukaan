@@ -1,13 +1,28 @@
 from __future__ import annotations
 
-from collections import namedtuple
 from pathlib import Path
 from tukaan._system import Platform
 from tukaan.exceptions import PlatformSpecificError
 
-Bbox = namedtuple("Bbox", ["x", "y", "width", "height"])
-Position = namedtuple("Position", ["x", "y"])
-Size = namedtuple("Size", ["width", "height"])
+
+from typing import NamedTuple
+
+
+class Bbox(NamedTuple):
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+class Position(NamedTuple):
+    x: int
+    y: int
+
+
+class Size(NamedTuple):
+    width: int
+    height: int
 
 
 class CursorFile:
