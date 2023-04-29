@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Any, Callable, Iterable
 
 from tukaan._base import TkWidget, WidgetBase
-from tukaan._cursors import Cursor_T, Cursors
-from tukaan._props import CursorProp, cget, config
+from tukaan._props import cget, config
 from tukaan._tcl import Tcl
 from tukaan.colors import Color
 from tukaan.widgets.textbox import TextBox
@@ -13,15 +12,12 @@ from tukaan.widgets.textbox import TextBox
 class ComboBox(TextBox):
     _tcl_class = "ttk::combobox"
 
-    cursor = CursorProp()
-
     def __init__(
         self,
         parent: TkWidget,
         values: dict[str, Any] | None = None,
         *,
         action: Callable | None = None,
-        cursor: Cursor_T = Cursors.DEFAULT,
         fg_color: str | Color | None = None,
         focusable: bool | None = None,
         hide_chars: bool | None = False,
@@ -31,6 +27,7 @@ class ComboBox(TextBox):
         user_edit: bool | None = True,
         visible_rows: int | None = None,
         width: int | None = None,
+        **kwargs
     ) -> None:
 
         self._prev_show_char = hide_chars_with
@@ -42,7 +39,6 @@ class ComboBox(TextBox):
         WidgetBase.__init__(
             self,
             parent,
-            cursor=cursor,
             foreground=fg_color,
             height=visible_rows,
             justify=text_align,
@@ -52,6 +48,7 @@ class ComboBox(TextBox):
             tooltip=tooltip,
             values=labels,
             width=width,
+            **kwargs
         )
 
         self._action = action

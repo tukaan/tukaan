@@ -10,6 +10,7 @@ from tukaan._mixins import GeometryMixin, VisibilityMixin, WidgetMixin
 from tukaan._props import cget, config
 from tukaan._tcl import Tcl
 from tukaan._utils import count
+from tukaan._cursors import Cursor, Cursor_T, Cursors
 from tukaan.widgets.tooltip import ToolTipProvider
 
 
@@ -79,7 +80,7 @@ class ToplevelBase(TkWidget, Container):
 
 
 class WidgetBase(TkWidget, GeometryMixin):
-    def __init__(self, parent: TkWidget, tooltip: str | None = None, **kwargs) -> None:
+    def __init__(self, parent: TkWidget, cursor: Cursor_T | None = None, tooltip: str | None = None, **kwargs) -> None:
         assert isinstance(parent, Container), "parent must be a container"
 
         self._name = self._lm_path = generate_pathname(self, parent)
@@ -92,6 +93,7 @@ class WidgetBase(TkWidget, GeometryMixin):
         self.geometry = Geometry(self)
         self.position = Position(self)
 
+        kwargs["cursor"] = cursor
         Tcl.call(None, self._tcl_class, self._name, *Tcl.to_tcl_args(**kwargs))
 
         if tooltip:
@@ -103,6 +105,20 @@ class WidgetBase(TkWidget, GeometryMixin):
 
         del self.parent._children[self._name]
         del _widgets[self._name]
+
+    @property
+    def cursor(self) -> Cursor_T:
+        cursor = cget(self, str, "-cursor")
+        try:
+            return Cursors(cursor)
+        except ValueError:
+            return Tcl.from_(Cursor, cursor)
+
+    @cursor.setter
+    def cursor(self, value: Cursor_T) -> None:
+        if not isinstance(value, (Cursor, Cursors)):
+            raise TypeError(f"{type(value)} is not a valid tukaan Cursor type")
+        return config(self, cursor=value)
 
     @property
     def tooltip(self) -> str | None:

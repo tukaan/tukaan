@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._cursors import Cursor_T, Cursors
-from tukaan._props import CursorProp, FocusableProp, LinkProp, TextProp, WidthProp
+from tukaan._props import FocusableProp, LinkProp, TextProp, WidthProp
 from tukaan._tcl import Tcl
 from tukaan._variables import BoolVar
 
@@ -13,7 +12,6 @@ class CheckBox(WidgetBase, InputControl):
     _tcl_class = "ttk::checkbutton"
     _variable: BoolVar
 
-    cursor = CursorProp()
     focusable = FocusableProp()
     target = LinkProp()
     text = TextProp()
@@ -25,12 +23,12 @@ class CheckBox(WidgetBase, InputControl):
         text: str = None,
         *,
         action: Callable[[bool], None] | None = None,
-        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         selected: bool = False,
         target: BoolVar | None = None,
         tooltip: str | None = None,
         width: int | None = None,
+        **kwargs
     ) -> None:
 
         self._variable = BoolVar(selected) if target is None else target
@@ -40,7 +38,6 @@ class CheckBox(WidgetBase, InputControl):
             self,
             parent,
             command=self._call_action,
-            cursor=cursor,
             offvalue=False,
             onvalue=True,
             takefocus=focusable,
@@ -48,6 +45,7 @@ class CheckBox(WidgetBase, InputControl):
             tooltip=tooltip,
             variable=self._variable,
             width=width,
+            **kwargs
         )
 
     def _call_action(self) -> None:

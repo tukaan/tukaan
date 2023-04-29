@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Generator
 
 from tukaan._base import OutputDisplay, TkWidget, WidgetBase
-from tukaan._cursors import Cursor_T, Cursors
-from tukaan._props import CursorProp, FocusableProp, IntDesc, LinkProp, OrientProp, cget, config
+from tukaan._props import FocusableProp, IntDesc, LinkProp, OrientProp, cget, config
 from tukaan._tcl import Tcl
 from tukaan._variables import FloatVar, IntVar
 from tukaan.enums import Orientation, ProgressMode
@@ -14,7 +13,6 @@ from tukaan.timeouts import Timeout
 class ProgressBar(WidgetBase, OutputDisplay):
     _tcl_class = "ttk::progressbar"
 
-    cursor = CursorProp()
     focusable = FocusableProp()
     link = LinkProp()
     orientation = OrientProp()
@@ -27,7 +25,6 @@ class ProgressBar(WidgetBase, OutputDisplay):
         parent: TkWidget,
         length: int = 100,
         *,
-        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         link: IntVar | FloatVar | None = None,
         mode: ProgressMode | None = None,
@@ -40,7 +37,6 @@ class ProgressBar(WidgetBase, OutputDisplay):
         WidgetBase.__init__(
             self,
             parent,
-            cursor=cursor,
             max=length,
             mode=mode,
             orient=orientation,
@@ -48,6 +44,7 @@ class ProgressBar(WidgetBase, OutputDisplay):
             tooltip=tooltip,
             value=value,
             variable=link,
+            **kwargs
         )
 
     def _repr_details(self) -> str:

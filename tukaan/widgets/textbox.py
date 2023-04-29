@@ -3,10 +3,8 @@ from __future__ import annotations
 from typing import Iterable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase, XScrollable
-from tukaan._cursors import Cursor_T, Cursors
 from tukaan._misc import Bbox
 from tukaan._props import (
-    CursorProp,
     FocusableProp,
     ForegroundProp,
     TextAlignProp,
@@ -22,7 +20,6 @@ from tukaan.exceptions import TukaanTclError
 class TextBox(WidgetBase, InputControl, XScrollable):
     _tcl_class = "ttk::entry"
 
-    cursor = CursorProp()
     fg_color = ForegroundProp()
     focusable = FocusableProp()
     text_align = TextAlignProp()
@@ -35,7 +32,6 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         self,
         parent: TkWidget,
         *,
-        cursor: Cursor_T = Cursors.DEFAULT,
         fg_color: str | Color | None = None,
         focusable: bool | None = None,
         hide_chars: bool = False,
@@ -45,6 +41,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         user_edit: bool | None = True,
         value: str | None = None,
         width: int | None = None,
+        **kwargs
     ) -> None:
 
         self._prev_show_char = hide_chars_with
@@ -54,7 +51,6 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         WidgetBase.__init__(
             self,
             parent,
-            cursor=cursor,
             foreground=fg_color,
             justify=text_align,
             show=hide_chars_with,
@@ -62,6 +58,7 @@ class TextBox(WidgetBase, InputControl, XScrollable):
             takefocus=focusable,
             tooltip=tooltip,
             width=width,
+            **kwargs
         )
 
         self.bind("<FocusOut>", f"+{self._name} selection clear")

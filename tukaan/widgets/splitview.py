@@ -4,8 +4,7 @@ import contextlib
 from collections.abc import Iterator
 
 from tukaan._base import Container, TkWidget, WidgetBase
-from tukaan._cursors import Cursor_T, Cursors
-from tukaan._props import CursorProp, FocusableProp
+from tukaan._props import FocusableProp
 from tukaan._tcl import Tcl
 from tukaan.enums import Orientation
 from tukaan.exceptions import TukaanTclError
@@ -70,7 +69,6 @@ class Pane(Frame):
 class SplitView(WidgetBase, Container):
     _tcl_class = "ttk::panedwindow"
 
-    cursor = CursorProp()
     focusable = FocusableProp()
 
     def __init__(
@@ -78,17 +76,17 @@ class SplitView(WidgetBase, Container):
         parent: TkWidget,
         orientation: Orientation | None = None,
         *,
-        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         tooltip: str | None = None,
+        **kwargs
     ) -> None:
         WidgetBase.__init__(
             self,
             parent,
-            cursor=cursor,
             takefocus=focusable,
             orient=orientation,
             tooltip=tooltip,
+            **kwargs
         )
 
         self.Pane = Pane

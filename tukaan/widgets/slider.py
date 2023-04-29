@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._cursors import Cursor_T, Cursors
-from tukaan._props import CursorProp, FloatDesc, FocusableProp, LinkProp, OrientProp, cget, config
+from tukaan._props import FloatDesc, FocusableProp, LinkProp, OrientProp, cget, config
 from tukaan._variables import FloatVar, IntVar
 from tukaan.enums import Orientation
 
@@ -12,7 +11,6 @@ from tukaan.enums import Orientation
 class Slider(WidgetBase, InputControl):
     _tcl_class = "ttk::scale"
 
-    cursor = CursorProp()
     focusable = FocusableProp()
     orientation = OrientProp()
     target = LinkProp()
@@ -25,12 +23,12 @@ class Slider(WidgetBase, InputControl):
         max: float | None = None,
         *,
         action: Callable[[float], None] | None = None,
-        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         orientation: Orientation | None = None,
         target: IntVar | FloatVar | None = None,
         tooltip: str | None = None,
         value: float | None = None,
+        **kwargs
     ) -> None:
         self._variable = target
         self._action = action
@@ -40,7 +38,6 @@ class Slider(WidgetBase, InputControl):
             self,
             parent,
             command=self._call_action,
-            cursor=cursor,
             from_=min,
             orient=orientation,
             takefocus=focusable,
@@ -48,6 +45,7 @@ class Slider(WidgetBase, InputControl):
             tooltip=tooltip,
             value=min if value is None else value,
             variable=target,
+            **kwargs
         )
 
     def _repr_details(self) -> str:

@@ -5,11 +5,9 @@ from typing import Callable
 from PIL import Image  # type: ignore
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._cursors import Cursor_T, Cursors
 from tukaan._images import Icon, ImageProp
 from tukaan._props import (
     CommandProp,
-    CursorProp,
     FocusableProp,
     ImagePositionProp,
     TextProp,
@@ -23,7 +21,6 @@ class Button(WidgetBase, InputControl):
     _tcl_class = "ttk::button"
 
     action = CommandProp()
-    cursor = CursorProp()
     focusable = FocusableProp()
     image = ImageProp()
     image_pos = ImagePositionProp()
@@ -36,24 +33,24 @@ class Button(WidgetBase, InputControl):
         text: str | None = None,
         action: Callable | None = None,
         *,
-        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         image: Image.Image | Icon | None = None,
         image_pos: ImagePosition | None = None,
         tooltip: str | None = None,
         width: int | None = None,
+        **kwargs
     ) -> None:
         WidgetBase.__init__(
             self,
             parent,
             command=action,
             compound=image_pos,
-            cursor=cursor,
             image=image,
             takefocus=focusable,
             text=text,
             tooltip=tooltip,
             width=width,
+            **kwargs
         )
 
     def invoke(self) -> None:

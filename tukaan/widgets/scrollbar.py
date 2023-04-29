@@ -3,8 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._cursors import Cursor_T, Cursors
-from tukaan._props import CursorProp, FocusableProp, OrientProp, config
+from tukaan._props import FocusableProp, OrientProp, config
 from tukaan._tcl import Tcl
 from tukaan.enums import Orientation
 from tukaan.exceptions import WidgetError
@@ -13,7 +12,6 @@ from tukaan.exceptions import WidgetError
 class ScrollBar(WidgetBase, InputControl):
     _tcl_class = "ttk::scrollbar"
 
-    cursor = CursorProp()
     focusable = FocusableProp()
     orientation = OrientProp()
 
@@ -25,19 +23,19 @@ class ScrollBar(WidgetBase, InputControl):
         orientation: Orientation | None = None,
         *,
         auto_hide: bool = True,
-        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         tooltip: str | None = None,
+        **kwargs
     ) -> None:
         self._auto_hide = auto_hide
 
         WidgetBase.__init__(
             self,
             parent,
-            cursor=cursor,
             orient=orientation,
             takefocus=focusable,
             tooltip=tooltip,
+            **kwargs
         )
 
     def _set_command(self, value: Callable) -> None:

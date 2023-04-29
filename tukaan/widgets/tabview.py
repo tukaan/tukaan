@@ -7,9 +7,8 @@ from typing import Callable
 from PIL import Image
 
 from tukaan._base import Container, TkWidget, WidgetBase
-from tukaan._cursors import Cursor_T, Cursors
 from tukaan._images import Icon, Pillow2Tcl
-from tukaan._props import CursorProp, FocusableProp, _convert_padding, _convert_padding_back
+from tukaan._props import FocusableProp, _convert_padding, _convert_padding_back
 from tukaan._tcl import Tcl
 from tukaan.enums import ImagePosition
 from tukaan.exceptions import TukaanTclError
@@ -145,18 +144,17 @@ class Tab(Frame):
 class TabView(WidgetBase, Container):
     _tcl_class = "ttk::notebook"
 
-    cursor = CursorProp()
     focusable = FocusableProp()
 
     def __init__(
         self,
         parent: TkWidget,
         *,
-        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         tooltip: str | None = None,
+        **kwargs
     ) -> None:
-        WidgetBase.__init__(self, parent, cursor=cursor, takefocus=focusable, tooltip=tooltip)
+        WidgetBase.__init__(self, parent, takefocus=focusable, tooltip=tooltip, **kwargs)
 
         self.Tab = Tab
         setattr(self.Tab, "_widget", self)

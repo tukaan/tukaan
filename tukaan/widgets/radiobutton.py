@@ -3,10 +3,8 @@ from __future__ import annotations
 from typing import Callable
 
 from tukaan._base import InputControl, TkWidget, WidgetBase
-from tukaan._cursors import Cursor_T, Cursors
 from tukaan._props import (
     CommandProp,
-    CursorProp,
     FocusableProp,
     LinkProp,
     TextProp,
@@ -24,7 +22,6 @@ class RadioButton(WidgetBase, InputControl):
     _tcl_class = "ttk::radiobutton"
 
     action = CommandProp()
-    cursor = CursorProp()
     focusable = FocusableProp()
     target = LinkProp()
     text = TextProp()
@@ -38,10 +35,10 @@ class RadioButton(WidgetBase, InputControl):
         target: ControlVariable,
         *,
         action: Callable[..., None] | None = None,
-        cursor: Cursor_T = Cursors.DEFAULT,
         focusable: bool | None = None,
         tooltip: str | None = None,
         width: int | None = None,
+        **kwargs
     ) -> None:
         if not isinstance(value, target._type_spec):
             raise TypeError("value type must match the target control variable's type.")
@@ -51,13 +48,13 @@ class RadioButton(WidgetBase, InputControl):
             self,
             parent,
             command=action,
-            cursor=cursor,
             takefocus=focusable,
             text=text,
             tooltip=tooltip,
             value=value,
             variable=target,
             width=width,
+            **kwargs
         )
 
     def _repr_details(self) -> str:
