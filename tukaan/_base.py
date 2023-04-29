@@ -11,7 +11,7 @@ from tukaan._mixins import GeometryMixin, VisibilityMixin, WidgetMixin
 from tukaan._props import cget, config
 from tukaan._tcl import Tcl
 from tukaan._utils import count
-from tukaan.enums import Cursor
+from tukaan.enums import Cursor, LegacyX11Cursor
 from tukaan.widgets.tooltip import ToolTipProvider
 
 
@@ -115,15 +115,18 @@ class WidgetBase(TkWidget, GeometryMixin):
         del widgets[self._name]
 
     @property
-    def cursor(self) -> Cursor | CursorFile:
+    def cursor(self) -> Cursor | LegacyX11Cursor | CursorFile:
         cursor = cget(self, str, "-cursor")
         try:
             return Cursor(cursor)
         except ValueError:
-            return Tcl.from_(CursorFile, cursor)
+            try:
+                return LegacyX11Cursor(cursor)
+            except ValueError:
+                return Tcl.from_(CursorFile, cursor)
 
     @cursor.setter
-    def cursor(self, value: Cursor | CursorFile) -> None:
+    def cursor(self, value: Cursor | LegacyX11Cursor | CursorFile) -> None:
         return config(self, cursor=value)
 
     @property

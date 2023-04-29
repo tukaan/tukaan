@@ -264,3 +264,38 @@ def _cursor_missing_(cls, value: str) -> Cursor:
 
 
 Cursor._missing_ = _cursor_missing_
+
+
+class LegacyX11Cursor(Enum):
+    BasedArrowDown = "based_arrow_down"
+    BasedArrowUp = "based_arrow_up"
+    Boat = "boat"
+    Bogosity = "bogosity"
+    BoxSpiral = "box_spiral"
+    Clock = "clock"
+    CoffeeMug = "coffee_mug"
+    DiamondCross = "diamond_cross"
+    Dot = "dot"
+    DrapedBox = "draped_box"
+    Exchange = "exchange"
+    Gobbler = "gobbler"
+    Gumby = "gumby"
+    Hand1 = "hand1"
+    Heart = "heart"
+    Icon = "icon"
+    IronCross = "iron_cross"
+    LeftButton = "leftbutton"
+    Man = "man"
+    MiddleButton = "middlebutton"
+    Mouse = "mouse"
+    Pirate = "pirate"
+    RightButton = "rightbutton"
+    RtlLogo = "rtl_logo"
+    Sailboat = "sailboat"
+    Shuttle = "shuttle"
+    Spider = "spider"
+    Spraycan = "spraycan"
+    Star = "star"
+    Trek = "trek"
+    Umbrella = "umbrella"
+    X = "X_cursor"
