@@ -36,7 +36,7 @@ class CursorFile:
                 raise ValueError(
                     f'bad cursor file type: "{source.suffix}". Should be ".cur" or ".ani"'
                 )
-            self._name = f"@{source!s}"
+            self._name = f"@{source.as_posix()!s}"  # Windows needs .as_posix() for some reason
         elif Tcl.windowing_system == "x11":
             self._name = Xcursor.load_cursor(source)
         else:
