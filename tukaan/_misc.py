@@ -3,10 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import NamedTuple
 
-from tukaan._system import Platform
-from tukaan.exceptions import PlatformSpecificError
-from tukaan._tcl import Tcl
 from libtukaan import Xcursor
+
+from tukaan._system import Platform
+from tukaan._tcl import Tcl
+from tukaan.exceptions import PlatformSpecificError
 
 
 class Bbox(NamedTuple):
@@ -37,7 +38,7 @@ class CursorFile:
                 )
             self._name = f"@{source.as_posix()!s}"
         elif Tcl.windowing_system == "x11":
-            self._name: int = Xcursor.load_cursor(source)  # TODO: int is a type error
+            self._name = Xcursor.load_cursor(source)
         else:
             raise PlatformSpecificError(f"Cannot load cursor from file on {Platform.os}")
 
@@ -48,4 +49,8 @@ class CursorFile:
         return cursor
 
     def __repr__(self) -> str:
-        return f"CursorFile(Path({self._name.lstrip('@')!r}))"
+        if "@" in self._name:
+            path = self._name.lstrip("@")
+        else:
+            path = Xcursor.loaded_cursors[self._name]
+        return f"CursorFile(Path({path!r}))"

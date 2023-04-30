@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import collections
+import contextlib
 from typing import Any, Callable
+
+from libtukaan import Xcursor
 
 from tukaan._collect import commands, widgets
 from tukaan._events import BindingsMixin
@@ -12,7 +15,6 @@ from tukaan._props import cget, config
 from tukaan._tcl import Tcl
 from tukaan._utils import count
 from tukaan.enums import Cursor, LegacyX11Cursor
-from libtukaan import Xcursor
 from tukaan.widgets.tooltip import ToolTipProvider
 
 
@@ -102,9 +104,11 @@ class WidgetBase(TkWidget, GeometryMixin):
         self.geometry = Geometry(self)
         self.position = Position(self)
 
-        kwargs["cursor"] = cursor
         Tcl.call(None, self._tcl_class, self._name, *Tcl.to_tcl_args(**kwargs))
 
+        self._xcursor = None
+        if cursor:
+            self.cursor = cursor
         if tooltip:
             ToolTipProvider.add(self, tooltip)
 
@@ -117,19 +121,26 @@ class WidgetBase(TkWidget, GeometryMixin):
 
     @property
     def cursor(self) -> Cursor | LegacyX11Cursor | CursorFile:
-        cursor = cget(self, str, "-cursor")
-        try:
-            return Cursor(cursor)
-        except ValueError:
-            try:
-                return LegacyX11Cursor(cursor)
-            except ValueError:
-                return Tcl.from_(CursorFile, cursor)
+        if self._xcursor is not None:
+            # This must be checked first,
+            # since it's independent of the widget's actual Tk cursor
+            return CursorFile.__from_tcl__(self._xcursor)
+
+        tk_cursor = cget(self, str, "-cursor")
+        with contextlib.suppress(ValueError):
+            return Cursor(tk_cursor)
+
+        with contextlib.suppress(ValueError):
+            return LegacyX11Cursor(tk_cursor)
+
+        return CursorFile.__from_tcl__(tk_cursor)
 
     @cursor.setter
     def cursor(self, value: Cursor | LegacyX11Cursor | CursorFile) -> None:
-        if isinstance(value, CursorFile):
+        if isinstance(value, CursorFile) and Tcl.windowing_system == "x11":
+            self._xcursor = value._name
             return Xcursor.set_cursor(self._lm_path, value._name)
+        self._xcursor = None
         return config(self, cursor=value)
 
     @property
