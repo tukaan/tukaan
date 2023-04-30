@@ -3,6 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Union
 
+from tukaan._system import Platform
 from tukaan._typing import Literal
 
 
@@ -173,3 +174,128 @@ class WindowBackdropType(Enum):
     Mica = 2
     Acrylic = 3
     MicaAlt = 4
+
+
+_cursors_tk = {
+    # Most of these are native cursor mappings on Linux,
+    # and fall back to basic X11 ones
+    #
+    # General
+    "Arrow": "arrow",
+    "RightArrow": "right_ptr",
+    "UpArrow": "center_ptr",
+    "Blank": "none",
+    # Link & Status
+    "Forbidden": "circle",
+    "Help": "question_arrow",
+    "Wait": "watch",
+    "Progress": "watch",
+    "PointingHand": "hand2",
+    # Selection
+    "Crosshair": "crosshair",
+    "Bullseye": "dotbox",
+    "Text": "xterm",
+    # Resize
+    "Move": "fleur",
+    "UpResize": "top_side",
+    "DownResize": "bottom_side",
+    "RightResize": "right_side",
+    "LeftResize": "left_side",
+    "HorResize": "sb_h_double_arrow",
+    "VertResize": "sb_v_double_arrow",
+    "NwSeResize": "sizing",  # TODO: better idea?
+    "NeSwResize": "sizing",
+    "TopRightResize": "top_right_corner",
+    "TopLeftResize": "top_left_corner",
+    "BottomRightResize": "bottom_right_corner",
+    "BottomLeftResize": "bottom_left_corner",
+    # Drag and drop
+    "DragLink": "left_ptr",  # TODO
+    "DragCopy": "left_ptr",  # TODO
+    "Grab": "hand2",
+    "Grabbing": "fleur",
+    # Additional cursors
+    "Cell": "plus",
+    "Pencil": "pencil",
+    "Eyedrop": "crosshair",
+}
+
+_cursors_macos_native = {
+    "Forbidden": "notallowed",
+    "Wait": "wait",
+    "Progress": "spinning",
+    "PointingHand": "pointinghand",
+    "Text": "text",
+    "DragLink": "aliasarrow",
+    "DragCopy": "copyarrow",
+    "Grab": "openhand",
+    "Grabbing": "closedhand",
+    "Eyedrop": "eyedrop",
+}
+
+_cursors_win_native = {
+    "UpArrow": "uparrow",
+    "Forbidden": "no",
+    "Wait": "wait",
+    "Progress": "starting",
+    "Text": "ibeam",
+    "Move": "size",
+    "HorResize": "size_we",
+    "VertResize": "size_ns",
+    "NwSeResize": "size_nw_se",
+    "NeSwResize": "size_ne_sw",
+}
+
+
+if Platform.os == "Windows":
+    _cursors_tk.update(_cursors_win_native)
+elif Platform.os == "macOS":
+    _cursors_tk.update(_cursors_macos_native)
+
+Cursor = Enum("Cursors", _cursors_tk)
+
+
+@classmethod
+def _cursor_missing_(cls, value: str) -> Cursor:
+    if value == "":
+        return cls.Arrow
+    elif value in ("xterm", "ibeam", "text"):
+        return cls.Text
+
+
+Cursor._missing_ = _cursor_missing_
+
+
+class LegacyX11Cursor(Enum):
+    BasedArrowDown = "based_arrow_down"
+    BasedArrowUp = "based_arrow_up"
+    Boat = "boat"
+    Bogosity = "bogosity"
+    BoxSpiral = "box_spiral"
+    Clock = "clock"
+    CoffeeMug = "coffee_mug"
+    DiamondCross = "diamond_cross"
+    Dot = "dot"
+    DrapedBox = "draped_box"
+    Exchange = "exchange"
+    Gobbler = "gobbler"
+    Gumby = "gumby"
+    Hand1 = "hand1"
+    Heart = "heart"
+    Icon = "icon"
+    IronCross = "iron_cross"
+    LeftButton = "leftbutton"
+    Man = "man"
+    MiddleButton = "middlebutton"
+    Mouse = "mouse"
+    Pirate = "pirate"
+    RightButton = "rightbutton"
+    RtlLogo = "rtl_logo"
+    Sailboat = "sailboat"
+    Shuttle = "shuttle"
+    Spider = "spider"
+    Spraycan = "spraycan"
+    Star = "star"
+    Trek = "trek"
+    Umbrella = "umbrella"
+    X = "X_cursor"

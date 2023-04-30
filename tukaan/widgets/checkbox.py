@@ -26,8 +26,8 @@ class CheckBox(WidgetBase, InputControl):
         focusable: bool | None = None,
         selected: bool = False,
         target: BoolVar | None = None,
-        tooltip: str | None = None,
         width: int | None = None,
+        **kwargs,
     ) -> None:
         self._variable = BoolVar(selected) if target is None else target
         self._action = action
@@ -40,9 +40,9 @@ class CheckBox(WidgetBase, InputControl):
             onvalue=True,
             takefocus=focusable,
             text=text,
-            tooltip=tooltip,
             variable=self._variable,
             width=width,
+            **kwargs,
         )
 
     def _call_action(self) -> None:

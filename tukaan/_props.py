@@ -10,6 +10,8 @@ else:
     from typing import Callable
     from typing_extensions import Protocol
 
+from pathlib import Path
+
 from tukaan._collect import commands
 from tukaan._tcl import Tcl
 from tukaan._typing import P, T, T_co, T_contra

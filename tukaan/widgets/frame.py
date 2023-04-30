@@ -10,11 +10,8 @@ class Frame(WidgetBase, Container):
     padding = PaddingProp()
 
     def __init__(
-        self,
-        parent: TkWidget,
-        padding: int | tuple[int, ...] | None = None,
-        tooltip: str | None = None,
+        self, parent: TkWidget, padding: int | tuple[int, ...] | None = None, **kwargs
     ) -> None:
-        WidgetBase.__init__(self, parent, tooltip=tooltip)
+        WidgetBase.__init__(self, parent, **kwargs)
 
         self.padding = padding

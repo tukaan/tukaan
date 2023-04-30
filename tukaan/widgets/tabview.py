@@ -146,14 +146,8 @@ class TabView(WidgetBase, Container):
 
     focusable = FocusableProp()
 
-    def __init__(
-        self,
-        parent: TkWidget,
-        *,
-        focusable: bool | None = None,
-        tooltip: str | None = None,
-    ) -> None:
-        WidgetBase.__init__(self, parent, takefocus=focusable, tooltip=tooltip)
+    def __init__(self, parent: TkWidget, *, focusable: bool | None = None, **kwargs) -> None:
+        WidgetBase.__init__(self, parent, takefocus=focusable, **kwargs)
 
         self.Tab = Tab
         setattr(self.Tab, "_widget", self)

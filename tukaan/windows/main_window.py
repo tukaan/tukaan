@@ -59,8 +59,4 @@ class MainWindow(ToplevelBase, WindowManager):
         Tcl.call(None, "update", "idletasks")
 
     def destroy(self) -> None:
-        """Destroy all widgets and quit the interpreter."""
-        Tcl.call(None, "destroy", self._name)
-        Tcl.call(None, "destroy", self._wm_path)
-
         App.quit()

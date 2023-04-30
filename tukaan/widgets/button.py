@@ -30,8 +30,8 @@ class Button(WidgetBase, InputControl):
         focusable: bool | None = None,
         image: Image.Image | Icon | None = None,
         image_pos: ImagePosition | None = None,
-        tooltip: str | None = None,
         width: int | None = None,
+        **kwargs,
     ) -> None:
         WidgetBase.__init__(
             self,
@@ -41,8 +41,8 @@ class Button(WidgetBase, InputControl):
             image=image,
             takefocus=focusable,
             text=text,
-            tooltip=tooltip,
             width=width,
+            **kwargs,
         )
 
     def invoke(self) -> None:
