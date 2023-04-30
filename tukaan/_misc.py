@@ -54,3 +54,8 @@ class CursorFile:
         else:
             path = Xcursor.loaded_cursors[self._name]
         return f"CursorFile(Path({path!r}))"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CursorFile):
+            return NotImplemented
+        return self._name == other._name

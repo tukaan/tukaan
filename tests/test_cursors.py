@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 import tukaan
-from tests.base import with_app_context
+from tests.base import TESTS_DIRECTORY, with_app_context
 from tukaan import CursorFile
 from tukaan.enums import Cursor, LegacyX11Cursor
 
@@ -30,16 +30,23 @@ def test_legacy_x11_cursor_naming():
         assert cursor.name.lower() == cursor.value.replace("_", "")
 
 
-@pytest.mark.skipif(sys.platform != "win32", reason="Can only load cursor from file on Windows")
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows only cursor loading thingy")
 @with_app_context
 def test_windows_cursor_file(app, window):
-    label = tukaan.Label(window, cursor=CursorFile(Path("./foo.cur")))
-    assert label.cursor == CursorFile(Path("./foo.cur"))
+    label = tukaan.Label(window, cursor=CursorFile(TESTS_DIRECTORY / "watch_cursor.ani"))
+    assert label.cursor == CursorFile(TESTS_DIRECTORY / "watch_cursor.ani")
     assert label.cursor._name.startswith("@")
-    assert label.cursor._name.endswith("foo.cur")
+    assert label.cursor._name.endswith("watch_cursor.ani")
 
     with pytest.raises(ValueError):
         CursorFile(Path("./foo.png"))
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="Xcursor is Linux only")
+@with_app_context
+def test_xcursor(app, window):
+    label = tukaan.Label(window, cursor=CursorFile(TESTS_DIRECTORY / "watch_cursor"))
+    assert label.cursor == CursorFile(TESTS_DIRECTORY / "watch_cursor")
 
 
 @with_app_context
