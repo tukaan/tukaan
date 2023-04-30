@@ -32,15 +32,15 @@ class CursorFile:
         source = source.resolve().absolute()
 
         if Platform.os == "Windows":
-            if source.suffix not in (".ani", ".cur"):
+            if source.suffix not in (".cur", ".ani"):
                 raise ValueError(
-                    f'Bad file type for Windows cursor: "{source.suffix}". Should be one of ".cur" or ".ani"'
+                    f'bad cursor file type: "{source.suffix}". Should be ".cur" or ".ani"'
                 )
-            self._name = f"@{source.as_posix()!s}"
+            self._name = f"@{source!s}"
         elif Tcl.windowing_system == "x11":
             self._name = Xcursor.load_cursor(source)
         else:
-            raise PlatformSpecificError(f"Cannot load cursor from file on {Platform.os}")
+            raise PlatformSpecificError(f"can't load cursor from file on {Platform.os}")
 
     @classmethod
     def __from_tcl__(cls, value: str) -> CursorFile:
