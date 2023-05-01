@@ -389,7 +389,7 @@ class WindowDecorationManager:
     @dirty.setter
     @Platform.mac_only
     def dirty(self, value: bool) -> None:
-        Tcl.call(bool, "wm", "attributes", "-modified", value)
+        Tcl.call(None, "wm", "attributes", "-modified", value)
 
     @property
     @Platform.windows_only
