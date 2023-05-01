@@ -120,6 +120,9 @@ class WidgetBase(TkWidget, GeometryMixin):
 
         del self.parent._children[self._name]
         del widgets[self._name]
+        del self.grid
+        del self.position
+        del self.geometry
 
     @property
     def cursor(self) -> Cursor | LegacyX11Cursor | CursorFile:
