@@ -6,6 +6,7 @@ __version__ = "0.2.1"
 
 from ._events import KeySeq
 from ._images import Icon, IconFactory, Image
+from ._misc import CursorFile
 from ._system import Platform
 from ._variables import BoolVar, FloatVar, IntVar, StringVar
 from .a11y.a11y import Accessibility

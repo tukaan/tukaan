@@ -7,7 +7,7 @@ try:
 except ImportError as e:
     raise ImportError("Tukaan needs PIL and PIL._imagingtk to work with images.") from e
 
-from libtukaan import Serif
+from libtukaan import Serif, Xcursor
 
 from tukaan._tcl import Tcl
 from tukaan.theming import LookAndFeel, NativeTheme, Theme
@@ -36,6 +36,8 @@ class App:
             App._exists = True
 
         Serif.init()
+        if Tcl.windowing_system == "x11":
+            Xcursor.init()
         ImagingTk.tkinit(Tcl.interp_address)
 
         NativeTheme.use()
@@ -85,8 +87,11 @@ class App:
 
     @classmethod
     def quit(cls) -> None:
-        """Quit the entire Tcl interpreter."""
+        """Destroy all widgets and quit the Tcl interpreter."""
         Serif.cleanup()
+        Xcursor.cleanup_cursors()
+        Tcl.call(None, "destroy", ".app")
+        Tcl.call(None, "destroy", ".")
         Tcl.quit()
 
     @classmethod

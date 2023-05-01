@@ -12,8 +12,8 @@ class Slider(WidgetBase, InputControl):
     _tcl_class = "ttk::scale"
 
     focusable = FocusableProp()
-    target = LinkProp()
     orientation = OrientProp()
+    target = LinkProp()
     value = FloatDesc("value")
 
     def __init__(
@@ -26,8 +26,8 @@ class Slider(WidgetBase, InputControl):
         focusable: bool | None = None,
         orientation: Orientation | None = None,
         target: IntVar | FloatVar | None = None,
-        tooltip: str | None = None,
         value: float | None = None,
+        **kwargs,
     ) -> None:
         self._variable = target
         self._action = action
@@ -41,9 +41,9 @@ class Slider(WidgetBase, InputControl):
             orient=orientation,
             takefocus=focusable,
             to=100 if max is None else max,
-            tooltip=tooltip,
             value=min if value is None else value,
             variable=target,
+            **kwargs,
         )
 
     def _repr_details(self) -> str:
