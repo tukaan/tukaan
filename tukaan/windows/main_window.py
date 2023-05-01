@@ -59,4 +59,5 @@ class MainWindow(ToplevelBase, WindowManager):
         Tcl.call(None, "update", "idletasks")
 
     def destroy(self) -> None:
+        del self.grid
         App.quit()

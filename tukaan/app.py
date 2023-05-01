@@ -92,6 +92,7 @@ class App:
         Xcursor.cleanup_cursors()
         Tcl.call(None, "destroy", ".app")
         Tcl.call(None, "destroy", ".")
+        App.shared_instance = None
         Tcl.quit()
 
     @classmethod
