@@ -1,1 +1,1 @@
-watch_cursor and watch_cursor.ani: The Suru icon theme
+`move_cursor`, `watch_cursor`, `move_cursor.cur` and `watch_cursor.ani`: The Suru icon theme

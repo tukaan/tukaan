@@ -52,7 +52,7 @@ class CursorFile:
         if "@" in self._name:
             path = self._name.lstrip("@")
         else:
-            path = Xcursor.loaded_cursors[self._name]
+            path = Xcursor.get_path_for_cursor(self._name)
         return f"CursorFile(Path({path!r}))"
 
     def __eq__(self, other: object) -> bool:
