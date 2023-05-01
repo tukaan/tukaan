@@ -330,7 +330,8 @@ class WindowDecorationManager:
 
     @title.setter
     def title(self, value: str) -> None:
-        Tcl.call(None, "wm", "title", self._wm_path, value)
+        if value is not None:
+            Tcl.call(None, "wm", "title", self._wm_path, value)
 
     @property
     def icon(self) -> Icon | Path | None:
