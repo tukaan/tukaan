@@ -114,6 +114,8 @@ class WidgetBase(TkWidget, GeometryMixin):
 
     def destroy(self) -> None:
         """Destroy this widget, and remove it from the screen."""
+        Xcursor.undefine_cursors(Tcl.eval({str}, f"winfo children {self._lm_path}"))
+        Xcursor.undefine_cursors({self._lm_path})
         Tcl.call(None, "destroy", self._name)
 
         del self.parent._children[self._name]
