@@ -60,10 +60,7 @@ class WindowStateManager:
         try:
             state = Tcl.call(str, "wm", "state", self._wm_path)
         except TukaanTclError as e:
-            # FIXME: what if the interpreter is destroyed?
-            if not Tcl.call(bool, "winfo", "exists", self._wm_path):
-                return "closed"
-            raise e from None
+            return "closed"
 
         if Tcl.call(bool, "wm", "attributes", self._wm_path, "-fullscreen"):
             return "fullscreen"
