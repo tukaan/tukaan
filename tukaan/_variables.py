@@ -11,7 +11,7 @@ class ControlVariable(Generic[T]):
     _default: T
     _type_spec: type[T]
 
-    def __init__(self, value: T = None) -> None:
+    def __init__(self, value: T | None = None) -> None:
         self._type_spec = type(self._default)
         self._name = f"tukaan_{self._type_spec.__name__}var_{next(counter['variable'])}"
         variables[self._name] = self

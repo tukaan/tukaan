@@ -47,6 +47,7 @@ class Platform:
         def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> T | None:
             if sys.platform == "win32":
                 return func(self, *args, **kwargs)
+            return None
 
         return wrapper
 
@@ -56,6 +57,7 @@ class Platform:
         def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> T | None:
             if sys.platform == "darwin":
                 return func(self, *args, **kwargs)
+            return None
 
         return wrapper
 
@@ -65,5 +67,6 @@ class Platform:
         def wrapper(self: Any, *args: P.args, **kwargs: P.kwargs) -> T | None:
             if sys.platform == "linux":
                 return func(self, *args, **kwargs)
+            return None
 
         return wrapper

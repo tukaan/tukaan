@@ -104,10 +104,10 @@ class Hsl(ColorModel):
         if s == 0.0:
             return (round(l * 255),) * 3
 
-        if l >= 0.5:
-            tmp_1 = l + s - l * s
-        elif l < 0.5:
+        if l < 0.5:
             tmp_1 = l * (1 + s)
+        else:
+            tmp_1 = l + s - l * s
 
         tmp_2 = 2 * l - tmp_1
 
@@ -204,7 +204,7 @@ class Color:
     green: int
     blue: int
 
-    def __init__(self, color: str = None, **kwargs):
+    def __init__(self, color: str | None = None, **kwargs):
         if len(kwargs) != 1:
             if color:
                 value = color

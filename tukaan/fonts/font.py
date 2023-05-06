@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, NamedTuple, TypeVar, Union
+from typing import TYPE_CHECKING, Dict, NamedTuple, TypeVar, Union, Protocol
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -11,6 +11,7 @@ from tukaan._collect import counter, fonts
 from tukaan._props import OptionDesc, RWProperty
 from tukaan._tcl import Tcl
 from tukaan._utils import seq_pairs
+from tukaan._typing import T_co, T_contra
 from tukaan.exceptions import FontError, TukaanTclError
 from tukaan.fonts.fontfile import FontFile, FontInfo, TrueTypeCollection
 
@@ -36,22 +37,18 @@ class FontMetrics(NamedTuple):
     fixed: bool
 
 
-class _FontProperty(RWProperty[FontPropType, FontPropType]):
+class _FontProperty(Protocol[T_co, T_contra]):
     TYPE: type
 
-    def __init__(self, option: str | None = None) -> None:
+    def __init__(self, option: str) -> None:
         self._option = option
 
-    def __set_name__(self, _: object, name: str) -> None:
-        if self._option is None:
-            self._option = name
-
-    def __get__(self, instance: TkWidget, owner: object = None) -> FontPropType:
+    def __get__(self, instance: Font, owner: object = None) -> FontPropType:
         if owner is None:
             return NotImplemented
         return Tcl.call(self.TYPE, "font", "actual", instance, f"-{self._option}")
 
-    def __set__(self, instance: TkWidget, value: FontPropType) -> None:
+    def __set__(self, instance: Font, value: FontPropType) -> None:
         Tcl.call(None, "font", "configure", instance, f"-{self._option}", value)
 
 
@@ -64,17 +61,17 @@ class _StrFontProperty(_FontProperty[str]):
 
 
 @dataclass
-class _FontStyleProperty(_FontProperty[bool]):
+class _FontStyleProperty(_FontProperty[str]):
     TYPE = str
 
     _option: str
     _truthy: str
     _falsy: str
 
-    def __get__(self, instance: TkWidget, owner: object = None) -> bool:
+    def __get__(self, instance: Font, owner: object = None) -> bool:  # type: ignore
         return super().__get__(instance, owner) == self._truthy
 
-    def __set__(self, instance: TkWidget, value: bool) -> None:
+    def __set__(self, instance: Font, value: bool) -> None:  # type: ignore
         super().__set__(instance, self._truthy if value else self._falsy)
 
 
@@ -134,6 +131,7 @@ class Font:
         else:
             self._name = f"tukaan_font_{next(counter['fonts'])}"
 
+        assert isinstance(family, str)  # mypy lol
         self.config(family, size, bold, italic, underline, strikethrough)
         fonts[self._name] = self
 
@@ -207,9 +205,6 @@ class Font:
 
             return kwargs
 
-    family = _StrFontProperty()
-    """Get or set the current font family."""
-
     @property
     def size(self) -> int:
         """Get or set the current font size."""
@@ -221,6 +216,9 @@ class Font:
             value = round(value)
 
         Tcl.call(None, "font", "configure", self, "-size", -value)
+
+    family = _StrFontProperty("family")
+    """Get or set the current font family."""
 
     bold = _FontStyleProperty("weight", "bold", "normal")
     """Get or set whether the font should be drawn as bold."""
@@ -286,8 +284,8 @@ def font(
     elif not family:
         family = "TkDefaultFont"
 
-    weight = {True: "bold", False: "normal"}.get(bold)
-    slant = {True: "italic", False: "roman"}.get(italic)
+    weight = {True: "bold", False: "normal"}.get(bold)  # type: ignore
+    slant = {True: "italic", False: "roman"}.get(italic)  # type: ignore
 
     if size:
         size = -size  # Negative value means points in Tk, but pixels in Tukaan. Invert it

@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING, Any, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Optional, Tuple, Union, Protocol
 
 if sys.version_info >= (3, 9):
     from collections.abc import Callable
-    from typing import Protocol
 else:
     from typing import Callable
-    from typing_extensions import Protocol
 
 from pathlib import Path
 
@@ -16,14 +14,15 @@ from tukaan._collect import commands
 from tukaan._tcl import Tcl
 from tukaan._typing import P, T, T_co, T_contra
 from tukaan._variables import ControlVariable
-from tukaan.colors import Color
 from tukaan.enums import ImagePosition, Justify, Orientation
-
-if TYPE_CHECKING:
-    from tukaan._base import TkWidget
+from tukaan.colors import Color
 
 
-def cget(widget: TkWidget, return_type: T | type[T], option: str) -> T:
+class TkWidget(Protocol):
+    _name: str
+
+
+def cget(widget: TkWidget, return_type: T, option: str) -> T:
     return Tcl.call(return_type, widget, "cget", option)
 
 
@@ -99,16 +98,16 @@ class HeightProp(OptionDesc[int, int]):
         super().__init__("height", int)
 
 
-class CommandProp(OptionDesc[Optional[Callable[P, T]], Optional[Callable[P, T]]]):
+class CommandProp(OptionDesc[Optional[Callable[P, T]], Optional[Union[Callable[P, T], str]]]):
     def __init__(self) -> None:
         super().__init__("command", str)
 
-    def __get__(self, instance: TkWidget, owner: object = None):
+    def __get__(self, instance: TkWidget, owner: object = None) -> Callable[P, T] | None:
         if owner is None:
             return NotImplemented
         return commands.get(cget(instance, str, "-command"))
 
-    def __set__(self, instance: TkWidget, value: Callable[P, T] | None = None) -> None:
+    def __set__(self, instance: TkWidget, value: Callable[P, T] | None = None) -> None:  # type: ignore
         super().__set__(instance, value or "")
 
 
@@ -178,7 +177,7 @@ class PaddingProp(RWProperty[PaddingType, Union[int, Tuple[int, ...], None]]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
-        return _convert_padding_back(cget(instance, (int,), "-padding"))
+        return _convert_padding_back(cget(instance, (int,), "-padding"))  # type: ignore
 
     def __set__(self, instance: TkWidget, value: int | tuple[int, ...] | None) -> None:
         config(instance, padding=_convert_padding(value))

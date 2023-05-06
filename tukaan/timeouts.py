@@ -10,10 +10,9 @@ class Timeout:
     _repeat: bool = False
     state: str = "not started"
 
-    def __init__(self, seconds: float, target: Callable[[], Any], *, args=(), kwargs=None) -> None:
-        if kwargs is None:
-            kwargs = {}
-        assert callable(target), "target must be callable"
+    def __init__(self, seconds: float, target: Callable[[], Any]) -> None:
+        if not callable(target):
+            raise TypeError("target must be callable")
 
         self.seconds = seconds
         self.target = target
@@ -24,6 +23,21 @@ class Timeout:
             name += "()"
 
         return f"<{self.state.capitalize()} `{name}` timeout at {hex(id(self))}>"
+
+    def start(self) -> None:
+        self._after_id = Tcl.call(str, "after", int(self.seconds * 1000), self.__call__)
+        self.state = "pending"
+
+    def cancel(self) -> None:
+        if self.state != "pending":
+            raise RuntimeError(f"cannot cancel a {self.state} timeout")
+
+        command, _ = Tcl.call((str,), "after", "info", self._after_id)
+        Tcl.call(None, "after", "cancel", command)
+        TclCallback.dispose(command)
+
+        self._repeat = False
+        self.state = "cancelled"
 
     def run_once(self):
         try:
@@ -49,40 +63,23 @@ class Timeout:
 
     __call__ = run
 
-    def start(self) -> None:
-        self._after_id = Tcl.call(str, "after", int(self.seconds * 1000), self.__call__)
-        self.state = "pending"
-
     def repeat(self) -> None:
         self._repeat = True
         self.start()
 
-    def cancel(self) -> None:
-        if self.state != "pending":
-            raise RuntimeError(f"cannot cancel a {self.state} timeout")
-
-        command, _ = Tcl.call((str,), "after", "info", self._after_id)
-        Tcl.call(None, "after", "cancel", command)
-        TclCallback.dispose(command)
-
-        self._repeat = False
-        self.state = "cancelled"
-
     @property
-    def is_repeated(self) -> bool:
+    def repeated(self) -> bool:
         return self._repeat
 
-    @is_repeated.setter
-    def is_repeated(self, repeat: bool) -> None:
-        self._repeat = repeat
+    @repeated.setter
+    def repeated(self, value: bool) -> None:
+        self._repeat = value
 
 
 class Timer:
     @staticmethod
-    def schedule(seconds: float, target: Callable[..., Any], *, args=(), kwargs=None) -> None:
-        if kwargs is None:
-            kwargs = {}
-        Tcl.call(str, "after", int(seconds * 1000), TclCallback(target, args=args, kwargs=kwargs))
+    def schedule(seconds: float, target: Callable[..., Any]) -> None:
+        Tcl.call(str, "after", int(seconds * 1000), TclCallback(target))
 
     @staticmethod
     def wait(seconds: float) -> None:

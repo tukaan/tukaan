@@ -27,6 +27,7 @@ class ImagePosition(Enum):
     def _missing_(cls, value: object) -> ImagePosition | None:
         if value == "":
             return cls.Default
+        return None
 
 
 ImagePositionType = Union[
@@ -253,6 +254,7 @@ def _cursor_missing_(cls, value: str) -> Cursor:
         return cls.Arrow
     elif value in ("xterm", "ibeam", "text"):
         return cls.Text
+    return None
 
 
 Cursor._missing_ = _cursor_missing_

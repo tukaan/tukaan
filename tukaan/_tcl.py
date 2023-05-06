@@ -24,38 +24,21 @@ TclValue: TypeAlias = Union[str, tk.Tcl_Obj]
 
 
 class TclCallback:
-    def __init__(
-        self,
-        callback: Callable[..., Any],
-        converters: Sequence[Any] = (),
-        args: Sequence[Any] = (),
-        kwargs: collections.abc.Mapping[Any, Any] = {},
-    ):
+    def __init__(self, callback: Callable[..., Any]):
         self._callback = callback
-        self._converters = converters
-        self._args = args
-        self._kwargs = kwargs
-
         self._name = name = f"tukaan_command_{next(counter['commands'])}"
         commands[name] = callback
 
         Tcl._interp.createcommand(name, self.__call__)  # type: ignore
 
     def __call__(self, *tcl_args: Any) -> Any:
-        if self._converters and tcl_args:
-            result: list[Any] = []
-            for index, value in enumerate(tcl_args):
-                with contextlib.suppress(KeyError):
-                    value = Tcl.from_(self._converters[index], value)
-                result.append(value)
-
-            tcl_args = tuple(result)
-
         try:
-            return self._callback(*tcl_args, *self._args, **self._kwargs)
+            result = self._callback(*tcl_args)
         except Exception:
             print("Exception in Tukaan callback:")
             print(traceback.format_exc())
+        else:
+            return result
 
     @instanceclassmethod
     def dispose(self_or_cls, _name: str | None = None) -> None:
@@ -212,7 +195,7 @@ class Tcl:
 
             if isinstance(return_type, (set, list)):
                 [items_type] = return_type
-                return type(return_type)((Tcl.from_(items_type, item) for item in sequence))
+                return type(return_type)(Tcl.from_(items_type, item) for item in sequence)
 
             if isinstance(return_type, tuple):
                 diff = len(sequence) - len(return_type)
@@ -271,8 +254,11 @@ class Tcl:
             result = cls._interp.call(*[cls.to(arg) for arg in args])
         except tk.TclError as e:
             Tcl.raise_error(e)
+
+        if return_type is None:
+            return None
         else:
-            return None if return_type is None else cls.from_(return_type, result)
+            return cls.from_(return_type, result)
 
     @overload
     @classmethod

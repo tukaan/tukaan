@@ -42,7 +42,7 @@ nameID_order = (
 class FontInfo(namedtuple("FontInfo", nameID_order)):
     """Store information about a font family."""
 
-    def __iter__(self) -> Iterator[tuple[str, str]]:
+    def __iter__(self) -> Iterator:
         """
         Make it possible to convert the FontInfo to a dictionary.
 

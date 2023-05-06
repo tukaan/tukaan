@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
-from typing import Any, Callable
+from typing import Any, Callable, TypeVar, Union
 
 from libtukaan import Xcursor
 
@@ -15,6 +15,8 @@ from tukaan._tcl import Tcl
 from tukaan._utils import count
 from tukaan.enums import Cursor, LegacyX11Cursor
 from tukaan.widgets.tooltip import ToolTipProvider
+
+Cursor_T = Union[Cursor, LegacyX11Cursor, CursorFile]
 
 
 def generate_pathname(widget: TkWidget, parent: TkWidget) -> str:
@@ -124,6 +126,8 @@ class VisibilityMixin:
 
 
 class XScrollable:
+    _name: str
+
     def x_scroll(self, *args: Any) -> None:
         Tcl.call(None, self, "xview", *args)
 
@@ -137,6 +141,8 @@ class XScrollable:
 
 
 class YScrollable:
+    _name: str
+
     def y_scroll(self, *args: Any) -> None:
         Tcl.call(None, self, "yview", *args)
 
@@ -208,7 +214,7 @@ class WidgetBase(TkWidget, GeometryMixin):
         del widgets[self._name]
 
     @property
-    def cursor(self) -> Cursor | LegacyX11Cursor | CursorFile:
+    def cursor(self) -> Cursor_T:
         if self._xcursor is not None:
             # This must be checked first,
             # since it's independent of the widget's actual Tk cursor
@@ -221,10 +227,10 @@ class WidgetBase(TkWidget, GeometryMixin):
         with contextlib.suppress(ValueError):
             return LegacyX11Cursor(tk_cursor)
 
-        return CursorFile.__from_tcl__(tk_cursor)
+        return Tcl.from_(tk_cursor)
 
     @cursor.setter
-    def cursor(self, value: Cursor | LegacyX11Cursor | CursorFile) -> None:
+    def cursor(self, value: Cursor_T) -> None:
         if isinstance(value, CursorFile) and Tcl.windowing_system == "x11":
             self._xcursor = value._name
             return Xcursor.set_cursor(self._lm_path, value._name)

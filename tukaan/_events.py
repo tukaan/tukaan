@@ -393,7 +393,7 @@ class BindingsMixin:
     def unbind(self, sequence: str) -> None:
         self.bind(sequence, None)
 
-    def generate_event(self, sequence: str, data: object = None, queue: EventQueue = None) -> None:
+    def generate_event(self, sequence: str, data: object | None = None, queue: EventQueue | None = None) -> None:
         if not VirtualEvent._match(sequence):
             # I don't want people to generate physical event with this
             # maybe somewhere else

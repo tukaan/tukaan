@@ -6,7 +6,8 @@ __version__ = "0.2.1"
 
 from ._events import KeySeq
 from ._images import Icon, IconFactory, Image
-from ._misc import Clipboard, Screen, ScreenDistance, cm, inch, mm, CursorFile
+from ._misc import Clipboard, CursorFile
+from tukaan.monitor import Screen, ScreenDistance, cm, inch, mm
 from ._system import Platform
 from ._variables import BoolVar, FloatVar, IntVar, StringVar
 from .a11y.a11y import Accessibility

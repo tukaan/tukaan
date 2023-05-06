@@ -53,7 +53,7 @@ class instanceclassmethod(Generic[T]):
 
 
 class classproperty(Generic[T]):
-    def __init__(self, fget: classmethod[T] | Callable[P, T]):
+    def __init__(self, fget: Callable[P, T]):
         if not isinstance(fget, classmethod):
             fget = classmethod(fget)
         self.fget = fget
