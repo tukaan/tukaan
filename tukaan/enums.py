@@ -119,8 +119,8 @@ class WindowState(Enum):
     Closed = "closed"
     FullScreen = "fullscreen"
     Hidden = "withdrawn"
-    Maximized = "maximized"
-    Minimized = "minimized"
+    Maximized = "zoomed"
+    Minimized = "iconic"
     Normal = "normal"
 
 
@@ -143,7 +143,7 @@ class WindowType(Enum):
     Splash = "splash"
     ToolBar = "toolbar"
     Tooltip = "tooltip"
-    ToolWindow = "toolwindow"  # xref: tukaan.windows.wm:447
+    ToolWindow = "toolwindow"
     Utility = "utility"
 
 
@@ -166,14 +166,6 @@ WindowTypeKind = Union[
         "utility",
     ],
 ]
-
-
-# ? Make this Windows only
-class WindowBackdropType(Enum):
-    Normal = 1
-    Mica = 2
-    Acrylic = 3
-    MicaAlt = 4
 
 
 _cursors_tk = {

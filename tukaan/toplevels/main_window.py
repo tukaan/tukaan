@@ -23,7 +23,6 @@ class MainWindow(ToplevelBase, WindowManager):
         width: int = 300,
         height: int = 200,
         type: WindowType | None = None,
-        on_load: Callable[[], None] | None = None,
     ) -> None:
         if not App._exists:
             raise AppError("too early to create main window. App context isn't initialized.")
@@ -47,15 +46,7 @@ class MainWindow(ToplevelBase, WindowManager):
         if type is not None:
             self.type = type
 
-        if hasattr(self, "setup"):
-            Tcl.call(None, "update", "idletasks")
-            self.setup()
-
         Tcl.call(None, "wm", "deiconify", ".")
-
-        if callable(on_load):
-            on_load()
-
         Tcl.call(None, "update", "idletasks")
 
     def destroy(self) -> None:

@@ -21,7 +21,8 @@ class Window(ToplevelBase, WindowManager):
         *,
         width: int = 300,
         height: int = 200,
-        x_type: WindowType | None = None,
+        modal: bool = False,
+        type: WindowType | None = None,
     ) -> None:
         assert isinstance(parent, (App, ToplevelBase)), "Window parent must be an App or a Window"
 
@@ -38,29 +39,28 @@ class Window(ToplevelBase, WindowManager):
         Tcl.call(None, "wm", "title", self._wm_path, title)
         Tcl.call(None, "wm", "geometry", self._wm_path, f"{width}x{height}")
 
-        if x_type is not None and Tcl.windowing_system == "x11":
-            Tcl.call(None, "wm", "attributes", self._wm_path, "-type", x_type)
+        if modal:
+            Tcl.call(None, "wm", "transient", self._wm_path, self.parent._wm_path)
+
+            if Tcl.windowing_system == "aqua":
+                Tcl.call(
+                    "::tk::unsupported::MacWindowStyle", "style", self._wm_path, "moveableModal", ""
+                )
+
+        if type is not None:
+            self.type = type
 
         Tcl.call(None, "bind", self._name, "<Map>", self._gen_state_event)
         Tcl.call(None, "bind", self._name, "<Unmap>", self._gen_state_event)
         Tcl.call(None, "bind", self._name, "<Configure>", self._gen_state_event)
         Tcl.call(None, "update", "idletasks")
 
-    def wait_till_closed(self) -> None:
+    def wait_until_closed(self) -> None:
         Tcl.call(None, "tkwait", "window", self._wm_path)
 
     @property
-    def modal(self) -> str:
+    def modal(self) -> bool:
         return bool(Tcl.call(str, "wm", "transient", self._wm_path))
-
-    @modal.setter
-    def modal(self, value: bool) -> None:
-        Tcl.call(None, "wm", "transient", self._wm_path, self.parent._wm_path if value else "")
-
-        if Tcl.windowing_system == "aqua":
-            Tcl.call(
-                "::tk::unsupported::MacWindowStyle", "style", self._wm_path, "moveableModal", ""
-            )
 
     def destroy(self) -> None:
         Tcl.call(None, "destroy", self)

@@ -29,7 +29,7 @@ class TclCallback:
         callback: Callable[..., Any],
         converters: Sequence[Any] = (),
         args: Sequence[Any] = (),
-        **kwargs: collections.abc.Mapping[Any, Any],
+        kwargs: collections.abc.Mapping[Any, Any] = {},
     ):
         self._callback = callback
         self._converters = converters

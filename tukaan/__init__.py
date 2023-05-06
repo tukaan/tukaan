@@ -18,6 +18,8 @@ from .fonts.fontfile import FontFile, OpenTypeFont, TrueTypeCollection, TrueType
 from .screen import Screen, ScreenDistance, cm, inch, mm
 from .theming import AquaTheme, ClamTheme, KolorScheme, LookAndFeel, NativeTheme, Theme, Win32Theme
 from .timeouts import Timeout, Timer
+from .toplevels.main_window import MainWindow
+from .toplevels.window import Window
 from .widgets.button import Button
 from .widgets.checkbox import CheckBox
 from .widgets.combobox import ComboBox
@@ -32,8 +34,6 @@ from .widgets.spinbox import SpinBox
 from .widgets.splitview import SplitView
 from .widgets.tabview import TabView
 from .widgets.textbox import TextBox
-from .windows.main_window import MainWindow
-from .windows.window import Window
 
 __all__ = []  # Making star imports impossible. Is it illegal?
 

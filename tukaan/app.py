@@ -29,7 +29,7 @@ class App:
             raise Exception
 
         try:
-            Tcl.init(name, screen)
+            Tcl.init(name.capitalize().replace(" ", "_"), screen)
         except Exception as e:
             raise e
         else:
