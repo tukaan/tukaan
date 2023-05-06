@@ -30,10 +30,10 @@ class TextBox(WidgetBase, InputControl, XScrollable):
         hide_chars: bool = False,
         hide_chars_with: str | None = "•",
         text_align: str | None = None,
-        tooltip: str | None = None,
         user_edit: bool | None = True,
         value: str | None = None,
         width: int | None = None,
+        **kwargs,
     ) -> None:
         self._prev_show_char = hide_chars_with
         if not hide_chars:
@@ -47,8 +47,8 @@ class TextBox(WidgetBase, InputControl, XScrollable):
             show=hide_chars_with,
             state=None if user_edit else "readonly",
             takefocus=focusable,
-            tooltip=tooltip,
             width=width,
+            **kwargs,
         )
 
         self.bind("<FocusOut>", f"+{self._name} selection clear")

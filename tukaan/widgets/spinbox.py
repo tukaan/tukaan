@@ -32,10 +32,10 @@ class SpinBox(TextBox):
         hide_chars: bool | None = False,
         hide_chars_with: str | None = "•",
         text_align: str | None = None,
-        tooltip: str | None = None,
         user_edit: bool = True,
         value: float | None = None,
         width: int | None = None,
+        **kwargs,
     ) -> None:
         self._prev_show_char = hide_chars_with
         if not hide_chars:
@@ -55,9 +55,9 @@ class SpinBox(TextBox):
             state=None if user_edit else "readonly",
             takefocus=focusable,
             to=max,
-            tooltip=tooltip,
             width=width,
             wrap=cycle,
+            **kwargs,
         )
 
         if value is not None:

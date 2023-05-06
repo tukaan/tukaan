@@ -6,7 +6,7 @@ __version__ = "0.2.1"
 
 from ._events import KeySeq
 from ._images import Icon, IconFactory, Image
-from ._misc import Clipboard, Screen, ScreenDistance, cm, inch, mm
+from ._misc import Clipboard, Screen, ScreenDistance, cm, inch, mm, CursorFile
 from ._system import Platform
 from ._variables import BoolVar, FloatVar, IntVar, StringVar
 from .a11y.a11y import Accessibility
@@ -16,6 +16,8 @@ from .fonts.font import Font, font
 from .fonts.fontfile import FontFile, OpenTypeFont, TrueTypeCollection, TrueTypeFont
 from .theming import AquaTheme, ClamTheme, KolorScheme, LookAndFeel, NativeTheme, Theme, Win32Theme
 from .timeouts import Timeout, Timer
+from .toplevels.main_window import MainWindow
+from .toplevels.window import Window
 from .widgets.button import Button
 from .widgets.checkbox import CheckBox
 from .widgets.combobox import ComboBox
@@ -30,8 +32,6 @@ from .widgets.spinbox import SpinBox
 from .widgets.splitview import SplitView
 from .widgets.tabview import TabView
 from .widgets.textbox import TextBox
-from .windows.main_window import MainWindow
-from .windows.window import Window
 
 __all__ = []  # Making star imports impossible. Is it illegal?
 

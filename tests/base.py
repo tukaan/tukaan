@@ -1,6 +1,10 @@
 import tukaan
 from tukaan._tcl import Tcl
 
+from pathlib import Path
+
+TESTS_DIRECTORY = Path(__file__).parent
+
 app = None
 window = None
 

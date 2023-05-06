@@ -28,8 +28,8 @@ class RadioButton(WidgetBase, InputControl):
         *,
         action: Callable[..., None] | None = None,
         focusable: bool | None = None,
-        tooltip: str | None = None,
         width: int | None = None,
+        **kwargs,
     ) -> None:
         if not isinstance(value, target._type_spec):
             raise TypeError("value type must match the target control variable's type.")
@@ -41,10 +41,10 @@ class RadioButton(WidgetBase, InputControl):
             command=action,
             takefocus=focusable,
             text=text,
-            tooltip=tooltip,
             value=value,
             variable=target,
             width=width,
+            **kwargs,
         )
 
     def _repr_details(self) -> str:

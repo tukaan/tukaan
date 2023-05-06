@@ -43,8 +43,8 @@ setup(
         "tukaan/dialogs",
         "tukaan/fonts",
         "tukaan/theming",
+        "tukaan/toplevels",
         "tukaan/widgets",
-        "tukaan/windows",
     ],
     package_data={
         "": [

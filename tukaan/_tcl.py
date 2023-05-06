@@ -29,7 +29,7 @@ class TclCallback:
         callback: Callable[..., Any],
         converters: Sequence[Any] = (),
         args: Sequence[Any] = (),
-        **kwargs: collections.abc.Mapping[Any, Any],
+        kwargs: collections.abc.Mapping[Any, Any] = {},
     ):
         self._callback = callback
         self._converters = converters
@@ -207,17 +207,17 @@ class Tcl:
         else:
             return return_type.__from_tcl__(value)
 
-        if isinstance(return_type, (list, tuple, dict)):
+        if isinstance(return_type, (set, list, tuple, dict)):
             sequence = Tcl._interp.splitlist(value)
 
-            if isinstance(return_type, list):
-                type_ = return_type[0]
-                return [Tcl.from_(type_, item) for item in sequence]
+            if isinstance(return_type, (set, list)):
+                [items_type] = return_type
+                return type(return_type)((Tcl.from_(items_type, item) for item in sequence))
 
             if isinstance(return_type, tuple):
-                items_len = len(sequence)
-                if len(return_type) != items_len:
-                    return_type *= items_len
+                diff = len(sequence) - len(return_type)
+                if diff:
+                    return_type = return_type + (return_type[-1],) * diff
                 return tuple(map(Tcl.from_, return_type, sequence))
 
             if isinstance(return_type, dict):

@@ -24,3 +24,7 @@ class LayoutError(Exception):
 
 class CellNotFoundError(LayoutError):
     ...
+
+
+class PlatformSpecificError(Exception):
+    ...
