@@ -17,7 +17,6 @@ from tukaan.exceptions import TukaanTclError
 
 class WindowStateManager:
     _wm_path: str
-
     _current_state = "normal"
 
     bind: Callable
@@ -25,7 +24,7 @@ class WindowStateManager:
 
     def _gen_state_event(self):
         prev_state = self._current_state
-        new_state = self.__get_state()
+        new_state = self._get_state()
 
         if new_state == prev_state or prev_state == "nostate":
             return
@@ -57,7 +56,7 @@ class WindowStateManager:
 
         self._current_state = new_state
 
-    def __get_state(self) -> str:
+    def _get_state(self) -> str:
         try:
             state = Tcl.call(str, "wm", "state", self._wm_path)
         except TukaanTclError as e:
@@ -104,7 +103,7 @@ class WindowStateManager:
         and resizes it to normal size. If it's in full screen mode,
         resets it to its state before switching to full screen.
         """
-        state = self.__get_state()
+        state = self._get_state()
 
         if state in {"withdrawn", "iconic"}:
             Tcl.call(None, "wm", "deiconify", self._wm_path)
@@ -124,7 +123,7 @@ class WindowStateManager:
         """Restore the window if it's hidden."""
         Tcl.call(None, "wm", "deiconify", self._wm_path)
 
-    def focus(self) -> None:
+    def request_attention(self) -> None:
         """
         Tell the window manager, that this window wants attention.
         Note that depending on the window manager, this may not
@@ -134,8 +133,8 @@ class WindowStateManager:
 
     @property
     def state(self) -> WindowState:
-        """Return the current state of the window. See also :class:`tukaan.enums.WindowState`"""
-        return WindowState(self.__get_state())
+        """Return the current state of this window. See also :class:`tukaan.enums.WindowState`"""
+        return WindowState(self._get_state())
 
     @property
     def focused(self) -> bool:
@@ -319,7 +318,7 @@ class WindowGeometryManager:
 
 
 class WindowDecorationManager:
-    """Stuff that isn't necessarily related to the window decoration, but is part of the 'eye-candy'"""
+    """These aren't necessarily related to the window decoration"""
 
     _wm_path: str
     _icon: Icon | Path | None = None
@@ -394,13 +393,13 @@ class WindowDecorationManager:
 
     @property
     @Platform.windows_only
-    def use_dark_mode_decorations(self) -> bool:
+    def use_dark_decorations(self) -> bool:
         # TODO
         ...
 
-    @use_dark_mode_decorations.setter
+    @use_dark_decorations.setter
     @Platform.windows_only
-    def use_dark_mode_decorations(self, value: bool) -> None:
+    def use_dark_decorations(self, value: bool) -> None:
         import ctypes.windll  # type: ignore
 
         if sys.getwindowsversion().build < 22000:  # type: ignore
@@ -468,5 +467,5 @@ class WindowManager(WindowGeometryManager, WindowStateManager, WindowDecorationM
         return int(Tcl.call(str, "wm", "frame", self._wm_path), 16)
 
     @property
-    def class_name(self) -> int:
+    def class_name(self) -> str:
         return Tcl.call(str, "winfo", "class", self._wm_path)
