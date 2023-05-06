@@ -102,7 +102,7 @@ class WindowStateManager:
         """
         state = self._get_state()
 
-        if state in {"withdrawn", "iconic"}:
+        if state in ("withdrawn", "iconic"):
             Tcl.call(None, "wm", "deiconify", self._wm_path)
         elif state == "zoomed":
             if Tcl.windowing_system == "x11":
@@ -348,7 +348,7 @@ class WindowDecorationManager:
 
         if icon.suffix == ".png":
             self.icon = Icon(icon)
-        elif icon.suffix in {".ico", ".icns"}:
+        elif icon.suffix in (".ico", ".icns"):
             extra_args = []
             if Platform.os == "Windows":
                 # -default for iconbitmap available on Windows only
