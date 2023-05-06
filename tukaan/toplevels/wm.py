@@ -391,13 +391,25 @@ class WindowDecorationManager:
     @property
     @Platform.windows_only
     def use_dark_decorations(self) -> bool:
-        # TODO
-        ...
+        import ctypes
+
+        if sys.getwindowsversion().build < 22000:  # type: ignore
+            return False
+
+        c_value = ctypes.c_int()
+
+        ctypes.windll.dwmapi.DwmGetWindowAttribute(
+            self.hwnd,
+            20,  # DWMWA_USE_IMMERSIVE_DARK_MODE
+            ctypes.byref(c_value),
+            ctypes.sizeof(ctypes.c_int),
+        )
+        return bool(c_value)
 
     @use_dark_decorations.setter
     @Platform.windows_only
     def use_dark_decorations(self, value: bool) -> None:
-        import ctypes.windll  # type: ignore
+        import ctypes
 
         if sys.getwindowsversion().build < 22000:  # type: ignore
             return
@@ -405,7 +417,7 @@ class WindowDecorationManager:
         c_value = ctypes.c_int(int(value))
 
         ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            int(Tcl.call(str, "wm", "frame", self._wm_path), 16),
+            self.hwnd,
             20,  # DWMWA_USE_IMMERSIVE_DARK_MODE
             ctypes.byref(c_value),
             ctypes.sizeof(ctypes.c_int),
