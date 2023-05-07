@@ -37,7 +37,7 @@ class FontMetrics(NamedTuple):
     fixed: bool
 
 
-class _FontProperty(Protocol[T_co, T_contra]):
+class _FontProperty(Protocol[FontPropType]):
     TYPE: type
 
     def __init__(self, option: str) -> None:
