@@ -40,8 +40,12 @@ class FontMetrics(NamedTuple):
 class _FontProperty(Protocol[FontPropType]):
     TYPE: type
 
-    def __init__(self, option: str) -> None:
+    def __init__(self, option: str | None = None) -> None:
         self._option = option
+
+    def __set_name__(self, _: object, name: str) -> None:
+        if self._option is None:
+            self._option = name
 
     def __get__(self, instance: Font, owner: object = None) -> FontPropType:
         if owner is None:
@@ -217,7 +221,7 @@ class Font:
 
         Tcl.call(None, "font", "configure", self, "-size", -value)
 
-    family = _StrFontProperty("family")
+    family = _StrFontProperty()
     """Get or set the current font family."""
 
     bold = _FontStyleProperty("weight", "bold", "normal")
