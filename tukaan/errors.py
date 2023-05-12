@@ -1,0 +1,6 @@
+class AppDoesNotExist(Exception):
+    ...
+
+
+class TclCallError(Exception):
+    ...

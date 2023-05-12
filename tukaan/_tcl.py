@@ -10,45 +10,44 @@ from pathlib import Path
 from traceback import format_exc
 from typing import Any, Callable, NoReturn, TypeAlias, Union, overload
 
+# Yes, we use _tkinter, because it "just works"
+# I do plan to write our own _tkinter.c though, so `to` and `from_` can be optimized more
 import _tkinter as tk
 
-# Yes, we use _tkinter, because it "just works"
-# I do plan to write our own _tkinter.c though, so it can be optimized more
-
-from ._typing import T, T_co, T_contra
+from tukaan._system import Platform, Version
+from tukaan._typing import T, T_co, T_contra
+from tukaan.errors import AppDoesNotExist, TclCallError
 
 TclValue: TypeAlias = Union[str, tk.Tcl_Obj]
 
 
 class Tcl:
     _interp: tk.TkappType
-
-    version: str
-    interp_address: int
-    windowing_system: str
-    dll_ext: str
+    interp_address: int | None = None
 
     @classmethod
     def initialize(cls, app_name: str, screen_name: str | None) -> None:
         """Initialize the Tcl interpreter."""
-        cls._interp = interp = tk.create(screen_name, "", app_name, False, False, True, False, None)  # type: ignore
+        cls._interp = interp = tk.create(screen_name, "", app_name, False, False, True, False, None)
         interp.loadtk()
-        #interp.call("wm", "withdraw", ".")
+        interp.call("wm", "withdraw", ".")
 
-        cls.version = interp.call("info", "patchlevel")
-        cls.interp_address = interp.interpaddr()  # PIL needs this # type: ignore
-        cls.windowing_system = str(interp.call("tk", "windowingsystem")).lower()
-        cls.dll_ext = interp.call("info", "sharedlibextension")
+        cls.interp_address = interp.interpaddr()  # PIL needs this
+
+        Platform.tcl_version = cls.call(Version, "info", "patchlevel")
+        Platform.tk_version = cls.call(Version, "set", "tk_version")
+        Platform.window_sys = str(interp.call("tk", "windowingsystem")).lower()
+        Platform.dll_ext = str(interp.call("info", "sharedlibextension"))
 
     @classmethod
     def start_main_loop(cls) -> None:
         """Start the main event loop."""
-        cls._interp.mainloop(0)  # type: ignore
+        cls._interp.mainloop(0)
 
     @classmethod
     def quit(cls) -> None:
         """Quit the interpreter."""
-        cls._interp.quit()  # type: ignore
+        cls._interp.quit()
 
     @classmethod
     def load_dll(cls, dll_path: Path, pkg_name: str | None) -> None:
@@ -66,9 +65,7 @@ class Tcl:
 
     @overload
     @staticmethod
-    def to(
-        obj: TclValue | bool | numbers.Real | Callable[..., Any] | Enum | Path
-    ) -> str:
+    def to(obj: TclValue | bool | numbers.Real | Callable[..., Any] | Enum | Path) -> str:
         ...
 
     @staticmethod
@@ -83,8 +80,6 @@ class Tcl:
             value = obj.__to_tcl__()
         elif isinstance(obj, collections.abc.Mapping):
             value = tuple(map(Tcl.to, chain.from_iterable(obj.items())))
-        elif callable(obj):
-            value = Procedure(obj)._name
         elif isinstance(obj, Path):
             value = str(obj.resolve().absolute())
         elif isinstance(obj, Enum):
@@ -98,6 +93,7 @@ class Tcl:
                 ) from None
             else:
                 value = tuple(Tcl.to(o) for o in obj)
+        return value
 
     @staticmethod
     def from_(return_type: Any, value: TclValue) -> Any:
@@ -118,17 +114,13 @@ class Tcl:
 
             if isinstance(return_type, (set, list)):
                 [items_type] = return_type
-                return type(return_type)(
-                    (Tcl.from_(items_type, item) for item in sequence)
-                )
-
-            if isinstance(return_type, tuple):
+                return type(return_type)((Tcl.from_(items_type, item) for item in sequence))
+            elif isinstance(return_type, tuple):
                 diff = len(sequence) - len(return_type)
                 if diff:
                     return_type = return_type + (return_type[-1],) * diff
                 return tuple(map(Tcl.from_, return_type, sequence))
-
-            if isinstance(return_type, dict):
+            elif isinstance(return_type, dict):
                 return {
                     str(k): Tcl.from_(return_type.get(k, str), v)
                     for k, v in zip(sequence[::2], sequence[1::2])
@@ -137,7 +129,6 @@ class Tcl:
         elif return_type is str:
             if isinstance(value, tk.Tcl_Obj):
                 return str(value.string)
-
             return Tcl.from_(str, Tcl._interp.call("format", value))
 
         elif isinstance(return_type, EnumMeta):
@@ -146,7 +137,9 @@ class Tcl:
         elif return_type is Path:
             return Path(Tcl.from_(str, value)).resolve()
 
-        assert False  # type-guard, sorta
+        raise TypeError(
+            f"cannot convert Tcl value to Python: {value!r}. Invalid return_type: {return_type!r}"
+        ) from None
 
     # Tcl interface
 
@@ -164,7 +157,6 @@ class Tcl:
     def call(cls, return_type: type[T] | T | None, *args: Any) -> T | None:
         try:
             result = cls._interp.call(*[cls.to(arg) for arg in args])
-            print(result)
         except tk.TclError as e:
             Tcl.raise_error(e)
         else:
@@ -173,19 +165,12 @@ class Tcl:
     @staticmethod
     def raise_error(error: tk.TclError) -> NoReturn:
         message = str(error)
-
         if "has been destroyed" in message or "NULL main window" in message:
-            raise Exception("application has been destroyed.")
-
-        if message.startswith("couldn't read file"):
-            # FileNotFoundError is a bit more Pythonic
-            sys.tracebacklimit = 0
-            quote = '"'
-            raise FileNotFoundError(
-                f"No such file or directory: {message.split(quote)[1]!r}"
-            ) from None
-
-        raise Exception(message) from None
+            raise AppDoesNotExist("application has been destroyed.") from None
+        elif "no such file or directory" in message:
+            filename = message.split('"')[1]
+            raise FileNotFoundError(f"No such file or directory: {filename!r}") from None
+        raise TclCallError(message) from None
 
     @staticmethod
     def to_tcl_args(**kwargs: Any) -> tuple[Any, ...]:
@@ -199,20 +184,3 @@ class Tcl:
 
             result.extend((f"-{key}", value))
         return tuple(result)
-
-
-class Procedure:
-    def __init__(self, callback: Callable[..., Any]) -> None:
-        self._callback = callback
-        self._name = name = "tukaan_command_"
-
-        Tcl._interp.createcommand(name, self.__call__)  # type: ignore
-
-    def __call__(self, *tcl_args: Any) -> Any:
-        try:
-            return self._callback(*tcl_args)
-        except Exception:
-            print("Exception in Tukaan callback:", format_exc(), sep="\n")
-
-    def dispose(self, _name: str | None = None) -> None:
-        Tcl._interp.deletecommand(_name)  # type: ignore
