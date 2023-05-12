@@ -1,0 +1,58 @@
+[tool.black]
+line-length = 100
+skip-magic-trailing-comma = true
+
+
+[tool.isort]
+line_length = 100
+profile = "black"
+multi_line_output = 3
+
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools ~=63.2.0",
+    "wheel ~=0.37.1",
+]
+
+
+[project]
+name = "tukaan"
+version = "0.3.0"
+description = "Tukaan is a modern, cross platform Python toolkit for creating desktop GUI applications."
+readme = "README.md"
+authors = [{name = "rdbende", email = "rdbende@proton.me"}]
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+keywords = ["gui", "tcl", "tcl/tk", "tk", "tkinter", "ttk", "tukaan", "ui"]
+classifiers = [
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Tcl",
+        "Programming Language :: C",
+        "Programming Language :: C++",
+        "Typing :: Typed",
+]
+dynamic = []
+dependencies = [
+    "pillow>=9.3.0",
+    "screeninfo>=0.8",
+    "libtukaan-win>=0.1.5; sys_platform == 'win32'",
+    "libtukaan-mac>=0.1.5; sys_platform == 'darwin'",
+    "libtukaan-unix>=0.1.5; sys_platform == 'linux'",
+    "typing_extensions>=4.3.0; python_version < '3.10'",
+]
+
+[project.urls]
+homepage = "https://tukaan.github.io"
+documentation = "https://tukaan.github.io/docs"
+repository = "https://github.com/tukaan/tukaan"
+changelog = "https://github.com/tukaan/tukaan/blob/master/CHANGELOG.md"
