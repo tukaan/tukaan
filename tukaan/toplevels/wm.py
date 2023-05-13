@@ -5,16 +5,167 @@ from typing import Callable
 
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
-from tukaan.enums import WindowType
+from tukaan.enums import WindowType, WindowState
+
+
+class WindowStateManager:
+    _toplevel_name: str
+    bind: Callable
+    unbind: Callable
+
+    _current_state = "normal"
+
+    def _get_state(self) -> str:
+        try:
+            state = Tcl.call(str, "wm", "state", self._toplevel_name)
+            print(state)
+        except TukaanTclError as e:
+            return "closed"
+
+        if Tcl.call(bool, "wm", "attributes", self._toplevel_name, "-fullscreen"):
+            return "fullscreen"
+        elif state == "normal" and Platform.window_sys == "x11":
+            # needs further checks on X11
+            if Tcl.call(bool, "wm", "attributes", self._toplevel_name, "-zoomed"):
+                return "zoomed"
+        return state
+
+    def _gen_state_event(self):
+        prev_state = self._current_state
+        new_state = self._get_state()
+
+        if new_state == prev_state or prev_state == "nostate":
+            return
+
+        events = ["<<StateChanged>>"]
+
+        if new_state == "normal":
+            events.append("<<Restore>>")
+        elif new_state == "zoomed":
+            events.append("<<Maximize>>")
+        elif new_state == "iconic":
+            events.append("<<Minimize>>")
+        elif new_state == "withdrawn":
+            events.append("<<Hide>>")
+        elif new_state == "fullscreen":
+            events.append("<<Fullscreen>>")
+
+        if prev_state == "zoomed":
+            events.append("<<Unmaximize>>")
+        elif prev_state == "iconic":
+            events.append("<<Unminimize>>")
+        elif prev_state == "withdrawn":
+            events.append("<<Unhide>>")
+        elif prev_state == "fullscreen":
+            events.append("<<Unfullscreen>>")
+
+        for event in events:
+            Tcl.eval(None, f"event generate {self._lm_path} {event}")
+
+        self._current_state = new_state
+
+    def minimize(self) -> None:
+        """Hide this window from the screen, and collapse it to an icon."""
+        Tcl.call(None, "wm", "iconify", self._toplevel_name)
+
+    def maximize(self) -> None:
+        """
+        Resize this window fill up all available space.
+        Note, that this doesn't necessarily mean the entire screen.
+        """
+        if Platform.window_sys == "x11":
+            Tcl.call(None, "wm", "attributes", self._toplevel_name, "-zoomed", True)
+        else:
+            Tcl.call(None, "wm", "state", self._toplevel_name, "zoomed")
+
+    def go_fullscreen(self) -> None:
+        """Make the window fill up the entire screen."""
+        Tcl.call(None, "wm", "attributes", self._toplevel_name, "-fullscreen", True)
+
+    def exit_fullscreen(self) -> None:
+        """Exit full screen mode."""
+        Tcl.call(None, "wm", "attributes", self._toplevel_name, "-fullscreen", False)
+
+    def restore(self) -> None:
+        """
+        Make this window normal size.
+        If it's maximized, minimized or withdrawn, makes it visible,
+        and resizes it to normal size. If it's in full screen mode, resets it
+        to the state it was in before going full screen.
+        """
+        state = self._get_state()
+
+        if state in ("withdrawn", "iconic"):
+            Tcl.call(None, "wm", "deiconify", self._toplevel_name)
+        elif state == "zoomed":
+            if Platform.window_sys == "x11":
+                Tcl.call(None, "wm", "attributes", self._toplevel_name, "-zoomed", False)
+            else:
+                Tcl.call(None, "wm", "state", self._toplevel_name, "normal")
+        elif state == "fullscreen":
+            Tcl.call(None, "wm", "attributes", self._toplevel_name, "-fullscreen", False)
+
+    def hide(self) -> None:
+        """
+        Hide this window and its icon from the screen.
+        On macOS this does not seem to hide the window icon.
+        """
+        Tcl.call(None, "wm", "withdraw", self._toplevel_name)
+
+    def unhide(self) -> None:
+        """Restore this window if it's hidden."""
+        Tcl.call(None, "wm", "deiconify", self._toplevel_name)
+
+    def request_attention(self, force: bool = False) -> None:
+        """
+        Tell the window manager, that this window wants attention.
+        Note that depending on the window manager, this may not necessarily result
+        in the window being focused.
+        """
+        if force:
+            Tcl.call(None, "focus", self._toplevel_name)
+        else:
+            Tcl.call(None, "focus", "-force", self._toplevel_name)
+
+    @property
+    def state(self) -> WindowState:
+        """Return the current state of this window. See also :class:`tukaan.enums.WindowState`"""
+        return WindowState(self._get_state())
+
+    @property
+    def focused(self) -> bool:
+        """Return whether this window currently has input focus."""
+        return Tcl.call(str, "focus", "-displayof", self._toplevel_name) == self._toplevel_name
+
+    @property
+    @Tcl.redraw_before
+    def visible(self) -> bool:
+        """Return whether this window is currently visible on the screen or not."""
+        return Tcl.call(bool, "winfo", "viewable", self._toplevel_name)
+
+    @property
+    def always_on_top(self) -> bool:
+        """
+        Get or set whether this window should always stay on top of
+        other windows, even if it isn't in focus.
+        """
+        return Tcl.call(bool, "wm", "attributes", self._toplevel_name, "-topmost")
+
+    @always_on_top.setter
+    @Tcl.redraw_before
+    def always_on_top(self, value: bool) -> None:
+        Tcl.call(None, "wm", "attributes", self._toplevel_name, "-topmost", value)
 
 
 class WindowDecorationManager:
-    # These aren't necessarily related to the window decoration
-
     _toplevel_name: str
 
     @property
     def title(self) -> str:
+        """
+        Get or set the title of this window. It usually appears in the
+        title bar of the window (if it has one), and next to the taskbar/panel icon.
+        """
         return Tcl.call(str, "wm", "title", self._toplevel_name)
 
     @title.setter
@@ -23,6 +174,7 @@ class WindowDecorationManager:
 
     @property
     def opacity(self) -> float:
+        """Get or set the opacity of this window."""
         return Tcl.call(float, "wm", "attributes", self._toplevel_name, "-alpha")
 
     @opacity.setter
@@ -36,6 +188,11 @@ class WindowDecorationManager:
     @property
     @Platform.macOS_only
     def dirty(self) -> bool:
+        """
+        Get or set whether something inside the window has been modified,
+        for example if a document is 'dirty'.
+        On macOS this means displaying a dot inside the close button of the window.
+        """
         return Tcl.call(bool, "wm", "attributes", self._toplevel_name, "-modified")
 
     @dirty.setter
@@ -44,18 +201,20 @@ class WindowDecorationManager:
         Tcl.call(None, "wm", "attributes", self._toplevel_name, "-modified", value)
 
 
-class WindowManager(WindowDecorationManager):
+class WindowManager(WindowStateManager, WindowDecorationManager):
     _toplevel_name: str
     destroy: Callable[[], None]
 
     @property
     def type(self) -> WindowType:
         """
-        Set the purpose of this window. Most window managers use this property
+        Get or set the purpose of this window. Most window managers use this property
         to appropriately set decorations and animations for the window.
 
         For example a utility window usually only has a close button, and a
         splash window would be placed in the center of the screen, without decorations.
+
+        See also :class:`tukaan.enums.WindowType`
         """
         if Platform.window_sys == "win32":
             if Tcl.call(bool, "wm", "attributes", self._toplevel_name, "-toolwindow"):

@@ -3,6 +3,14 @@ from __future__ import annotations
 from enum import Enum, Flag
 
 
+class WindowState(Enum):
+    Closed = "closed"
+    FullScreen = "fullscreen"
+    Hidden = "withdrawn"
+    Maximized = "zoomed"
+    Minimized = "iconic"
+    Normal = "normal"
+
 class WindowType(Enum):
     Combo = "combo"
     Desktop = "desktop"
