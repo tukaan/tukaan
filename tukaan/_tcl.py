@@ -47,7 +47,7 @@ class Tcl:
         Platform.dll_ext = str(interp.call("info", "sharedlibextension"))
 
     @classmethod
-    def start_main_loop(cls) -> None:
+    def main_loop(cls) -> None:
         """Start the main event loop."""
         cls._interp.mainloop(0)
 

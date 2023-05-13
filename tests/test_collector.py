@@ -5,9 +5,9 @@ TestObject = object()
 
 
 def test_add_items():
-    collector.add("spam", print)  # tukaan_spam_0
-    collector.add("ham", print)  # tukaan_ham_0
-    collector.add("ham", TestObject)  # tukaan_ham_1
+    assert collector.add("spam", print) == "tukaan_spam_0"
+    assert collector.add("ham", print) == "tukaan_ham_0"
+    assert collector.add("ham", TestObject) == "tukaan_ham_1"
 
     assert hasattr(collector, "spam")
     assert hasattr(collector, "ham")
@@ -38,12 +38,12 @@ def test_remove_by_key():
     collector.remove_by_key("ham", "tukaan_ham_1")
     assert TestObject not in collector.ham.values()
 
-    # Add stuff back
-    collector.add("spam", print)  # tukaan_spam_1
-    collector.add("ham", TestObject)  # tukaan_ham_2
-
 
 def test_remove_by_object():
+    # Add stuff back
+    assert collector.add("spam", print) == "tukaan_spam_1"
+    assert collector.add("ham", TestObject) == "tukaan_ham_2"
+
     assert "tukaan_spam_1" in collector.spam
     collector.remove_by_object("spam", print)
     assert "tukaan_spam_1" not in collector.spam

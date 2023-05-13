@@ -16,6 +16,7 @@ class Collector:
         container = getattr(self, category)
         key = f"tukaan_{category}_{next(self._counter[category])}"
         container[key] = obj
+        return key
 
     def remove_by_key(self, category: str, key: str) -> None:
         if not hasattr(self, category):
