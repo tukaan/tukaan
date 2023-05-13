@@ -149,7 +149,7 @@ class WindowStateManager:
         if Tcl.call(bool, "wm", "attributes", self._toplevel_name, "-fullscreen"):
             return "fullscreen"
         elif state == "normal" and Platform.window_sys == "x11":
-            # needs further checks on X11
+            # Further checks needed on X11
             if Tcl.call(bool, "wm", "attributes", self._toplevel_name, "-zoomed"):
                 return "zoomed"
         return state
