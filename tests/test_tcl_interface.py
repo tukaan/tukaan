@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from types import FunctionType
 
 from tests.base import with_app_context
-from tukaan._tcl import Tcl
+from tukaan._tcl import Procedure, Tcl
 
 
 @with_app_context  # just to make sure the interpreter is initialized
@@ -73,6 +74,19 @@ def test_convert_from_tcl_pathlib_path():
     assert isinstance(result, Path)
     assert result.name == "foo.png"
     assert result == Path.cwd() / "foo.png"
+
+
+def test_convert_from_tcl_callable():
+    def spammer_function():
+        pass
+
+    tcl_proc_name = Tcl.to(spammer_function)
+    assert tcl_proc_name in Tcl.call({str}, "info", "commands")
+
+    result = Tcl.from_(Procedure, tcl_proc_name)
+    assert isinstance(result, FunctionType)
+    assert callable(result)
+    assert result is spammer_function
 
 
 class Foo(Enum):

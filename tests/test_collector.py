@@ -1,6 +1,5 @@
 from tukaan._collect import collector
 
-
 TestObject = object()
 
 

@@ -5,12 +5,14 @@ from enum import Enum
 from inspect import isclass
 from numbers import Real
 from pathlib import Path
-from typing import Any, Callable, NoReturn, TypeAlias, Union, overload, Iterable
+from traceback import format_exc
+from typing import Any, Callable, Iterable, NoReturn, TypeAlias, Union, overload
 
 # Yes, we use _tkinter, because it "just works"
 # I do plan to write our own _tkinter.c though, so `to` and `from_` can be optimized more
 import _tkinter as tk
 
+from tukaan._collect import collector
 from tukaan._system import Platform, Version
 from tukaan._typing import T, T_co, T_contra
 from tukaan.errors import AppDoesNotExistError, TclCallError
@@ -65,9 +67,7 @@ class Tcl:
 
     @overload
     @staticmethod
-    def to(
-        obj: Iterable[Any] | collections.abc.Mapping[Any, Any]
-    ) -> tuple[TclValue, ...]:
+    def to(obj: Iterable[Any] | collections.abc.Mapping[Any, Any]) -> tuple[TclValue, ...]:
         ...
 
     @overload
@@ -91,6 +91,8 @@ class Tcl:
             value = str(obj.resolve().absolute())
         elif isinstance(obj, Enum):
             value = Tcl.to(obj.value)
+        elif callable(obj):
+            value = Procedure(obj)._name
         else:
             try:
                 iter(obj)
@@ -212,3 +214,25 @@ class Tcl:
 
             result.extend((f"-{key}", value))
         return tuple(result)
+
+
+class Procedure:
+    def __init__(self, callback: Callable[..., Any]) -> None:
+        self._callback = callback
+        self._name = collector.add("commands", self)
+
+        Tcl._interp.createcommand(self._name, self.__call__)
+
+    def __call__(self, *tcl_args: Any) -> Any:
+        try:
+            return self._callback(*tcl_args)
+        except Exception:
+            print("Exception in Tukaan callback:", format_exc(), sep="\n")
+
+    @classmethod
+    def __from_tcl__(cls, value: str) -> Callable[..., Any]:
+        return collector.get_by_key("commands", value)._callback
+
+    def dispose(self) -> None:
+        Tcl._interp.deletecommand(self._name)
+        collector.remove_by_key("commands", self._name)

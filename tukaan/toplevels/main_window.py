@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tukaan._tcl import Tcl
+from tukaan._tcl import Procedure, Tcl
 from tukaan.app import App
 from tukaan.errors import AppDoesNotExistError, MainWindowAlreadyExistsError
 
@@ -25,7 +25,7 @@ class MainWindow:
         Tcl.eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
         Tcl.call(None, "wm", "title", ".", title)
         Tcl.eval(None, f"wm geometry . {width}x{height}")
-        # Tcl.call(None, "wm", "protocol", ".", "WM_DELETE_WINDOW", App.quit)
+        Tcl.call(None, "wm", "protocol", ".", "WM_DELETE_WINDOW", App.quit)
 
         Tcl.eval(None, "wm deiconify .")
         Tcl.eval(None, "update idletasks")
