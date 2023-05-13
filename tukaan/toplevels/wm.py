@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import functools
 from typing import Callable
+import sys
 
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
@@ -199,6 +200,45 @@ class WindowDecorationManager:
     @Platform.macOS_only
     def dirty(self, value: bool) -> None:
         Tcl.call(None, "wm", "attributes", self._toplevel_name, "-modified", value)
+
+    @property
+    @Platform.windows_only
+    def dark_themed_titlebar(self) -> bool:
+        """
+        Get or set whether this window should have a dark themed titlebar.
+        This attribute doesn't do anything below Windows 11 build 22000, and on other operating systems.
+        """
+        import ctypes
+
+        if sys.getwindowsversion().build < 22000:  # type: ignore
+            return False
+
+        c_value = ctypes.c_int()
+
+        ctypes.windll.dwmapi.DwmGetWindowAttribute(
+            self.hwnd,
+            20,  # DWMWA_USE_IMMERSIVE_DARK_MODE
+            ctypes.byref(c_value),
+            ctypes.sizeof(ctypes.c_int),
+        )
+        return bool(c_value)
+
+    @dark_themed_titlebar.setter
+    @Platform.windows_only
+    def dark_themed_titlebar(self, value: bool) -> None:
+        import ctypes
+
+        if sys.getwindowsversion().build < 22000:  # type: ignore
+            return
+
+        c_value = ctypes.c_int(int(value))
+
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            self.hwnd,
+            20,  # DWMWA_USE_IMMERSIVE_DARK_MODE
+            ctypes.byref(c_value),
+            ctypes.sizeof(ctypes.c_int),
+        )
 
 
 class WindowManager(WindowStateManager, WindowDecorationManager):
