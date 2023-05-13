@@ -162,11 +162,11 @@ class Tcl:
 
     @overload
     @classmethod
-    def call(cls, return_type: type[T] | T, *args: Any) -> T:
+    def call(cls, return_type: T_contra, *args: Any) -> T_co:  # type: ignore # TODO
         ...
 
     @classmethod
-    def call(cls, return_type: type[T] | T | None, *args: Any) -> T | None:
+    def call(cls, return_type: T_contra | None, *args: Any) -> T_co | None:  # type: ignore
         try:
             result = cls._interp.call(*[cls.to(arg) for arg in args])
         except tk.TclError as e:
@@ -181,11 +181,11 @@ class Tcl:
 
     @overload
     @classmethod
-    def eval(cls, return_type: type[T] | T, script: str) -> T:
+    def eval(cls, return_type: T_contra, script: str) -> T_co:  # type: ignore # TODO
         ...
 
     @classmethod
-    def eval(cls, return_type: type[T] | T | None, script: str) -> T | None:
+    def eval(cls, return_type: T_contra | None, script: str) -> T_co | None:  # type: ignore
         try:
             result = cls._interp.eval(script)
         except tk.TclError as e:

@@ -11,6 +11,7 @@ class WindowState(Enum):
     Minimized = "iconic"
     Normal = "normal"
 
+
 class WindowType(Enum):
     Combo = "combo"
     Desktop = "desktop"
@@ -32,3 +33,11 @@ class WindowType(Enum):
     def _missing_(cls, value: str) -> WindowType | None:
         if value == "":
             return cls.Normal
+
+
+class Resizable(Enum):
+    # TODO: These names... bleh
+    Not = ("0", "0")
+    Horizontal = ("1", "0")
+    Vertical = ("0", "1")
+    Both = ("1", "1")

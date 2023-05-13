@@ -3,7 +3,75 @@ import sys
 import pytest
 
 from tests.base import with_app_context
-from tukaan.enums import WindowType, WindowState
+from tukaan.enums import Resizable, WindowState, WindowType
+
+
+@pytest.mark.xfail
+@with_app_context
+def test_window_geometry(app, window):
+    # This test succeds if I put `test_window_size_increment` down there, but it's weird
+    assert isinstance(window.x, int)
+    assert isinstance(window.y, int)
+    assert isinstance(window.width, int)
+    assert isinstance(window.height, int)
+
+    initial_y = window.y
+    window.x = 100
+    assert window.x == 100
+    assert window.y == initial_y
+    window.y = 150
+    assert window.y == 150
+    assert window.x == 100
+    assert window.position == (100, 150)
+
+    initial_height = window.height
+    window.width = 200
+    assert window.width == 200
+    assert window.height == initial_height
+    window.height = 250
+    assert window.width == 200
+    assert window.height == 250  # this fails randomly ://
+    assert window.size == (200, 250)
+
+
+@with_app_context
+def test_window_min_max_size(app, window):
+    assert isinstance(window.min_size, tuple)
+    assert isinstance(window.max_size, tuple)
+
+    window.min_size = 200
+    assert window.min_size == (200, 200)
+    window.min_size = (100, 100)
+    assert window.min_size == (100, 100)
+
+    window.max_size = 800
+    assert window.max_size == (800, 800)
+    window.max_size = 400
+    assert window.max_size == (400, 400)
+
+
+@with_app_context
+def test_window_resizable(app, window):
+    assert isinstance(window.resizable, Resizable)
+
+    window.resizable = Resizable.Not
+    assert window.resizable == Resizable.Not
+    window.resizable = Resizable.Vertical
+    assert window.resizable == Resizable.Vertical
+    window.resizable = Resizable.Horizontal
+    assert window.resizable == Resizable.Horizontal
+    window.resizable = Resizable.Both
+    assert window.resizable == Resizable.Both
+
+
+@with_app_context
+def test_window_size_increment(app, window):
+    assert isinstance(window.size_increment, tuple)
+
+    window.size_increment = 20
+    assert window.size_increment == (20, 20)
+    window.size_increment = (10, 10)
+    assert window.size_increment == (10, 10)
 
 
 @with_app_context

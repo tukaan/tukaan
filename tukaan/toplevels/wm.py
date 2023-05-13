@@ -1,12 +1,136 @@
 from __future__ import annotations
 
 import functools
-from typing import Callable
+import re
 import sys
+from fractions import Fraction
+from typing import Callable
 
 from tukaan._system import Platform
 from tukaan._tcl import Tcl
-from tukaan.enums import WindowType, WindowState
+from tukaan.enums import Resizable, WindowState, WindowType
+from tukaan.errors import TclCallError
+
+
+class WindowGeometryManager:
+    _toplevel_name: str
+
+    @Tcl.redraw_before
+    def _get_geometry(self) -> tuple[int, ...]:
+        return tuple(
+            map(int, re.split(r"x|\+", Tcl.call(str, "wm", "geometry", self._toplevel_name)))
+        )
+
+    @property
+    def x(self) -> int:
+        """Get or set the position of this window on the x axis."""
+        return self._get_geometry()[2]
+
+    @x.setter
+    @Tcl.redraw_after
+    def x(self, value: int) -> None:
+        Tcl.call(None, "wm", "geometry", self._toplevel_name, f"+{value}+{self.y}")
+
+    @property
+    def y(self) -> int:
+        """Get or set the position of this window on the y axis."""
+        return self._get_geometry()[3]
+
+    @y.setter
+    @Tcl.redraw_after
+    def y(self, value: int) -> None:
+        Tcl.call(None, "wm", "geometry", self._toplevel_name, f"+{self.x}+{value}")
+
+    @property
+    @Tcl.redraw_before
+    def position(self) -> tuple[int, ...]:
+        return self._get_geometry()[2:]
+
+    @position.setter
+    @Tcl.redraw_after
+    def position(self, value: tuple[int, ...] | int) -> None:
+        if isinstance(value, int):
+            value = (value,) * 2
+
+        Tcl.call(None, "wm", "geometry", self._toplevel_name, "+{}+{}".format(*value))
+
+    @property
+    def width(self) -> int:
+        """Get or set the width of this window."""
+        return self._get_geometry()[0]
+
+    @width.setter
+    @Tcl.redraw_after
+    def width(self, value: int) -> None:
+        Tcl.call(None, "wm", "geometry", self._toplevel_name, f"{value}x{self.height}")
+
+    @property
+    def height(self) -> int:
+        """Get or set the height of this window."""
+        return self._get_geometry()[1]
+
+    @height.setter
+    @Tcl.redraw_after
+    def height(self, value: int) -> None:
+        Tcl.call(None, "wm", "geometry", self._toplevel_name, f"{self.width}x{value}")
+
+    @property
+    @Tcl.redraw_before
+    def size(self) -> tuple[int, ...]:
+        return self._get_geometry()[:2]
+
+    @size.setter
+    @Tcl.redraw_after
+    def size(self, value: tuple[int, ...] | int) -> None:
+        if isinstance(value, int):
+            value = (value,) * 2
+
+        Tcl.call(None, "wm", "geometry", self._toplevel_name, "{}x{}".format(*value))
+
+    @property
+    @Tcl.redraw_before
+    def min_size(self) -> tuple[int, ...]:
+        return Tcl.call((int,), "wm", "minsize", self._toplevel_name)
+
+    @min_size.setter
+    @Tcl.redraw_after
+    def min_size(self, value: tuple[int, ...] | int) -> None:
+        if isinstance(value, int):
+            value = (value,) * 2
+
+        Tcl.call(None, "wm", "minsize", self._toplevel_name, *value)
+
+    @property
+    @Tcl.redraw_before
+    def max_size(self) -> tuple[int, ...]:
+        return Tcl.call((int,), "wm", "maxsize", self._toplevel_name)
+
+    @max_size.setter
+    @Tcl.redraw_after
+    def max_size(self, value: tuple[int, ...] | int) -> None:
+        if isinstance(value, int):
+            value = (value,) * 2
+
+        Tcl.call(None, "wm", "maxsize", self._toplevel_name, *value)
+
+    @property
+    def resizable(self) -> Resizable:
+        return Resizable(Tcl.call((str,), "wm", "resizable", self._toplevel_name))
+
+    @resizable.setter
+    def resizable(self, value: Resizable) -> None:
+        Tcl.call(None, "wm", "resizable", self._toplevel_name, *value.value)
+
+    @property
+    def size_increment(self) -> tuple[int, ...]:
+        return Tcl.call((int,), "wm", "grid", self._toplevel_name)[2:]
+
+    @size_increment.setter
+    def size_increment(self, value: tuple[int, ...] | int) -> None:
+        if isinstance(value, int):
+            value = (value,) * 2
+
+        Tcl.call(None, "wm", "grid", self._toplevel_name, 1, 1, *value)
 
 
 class WindowStateManager:
@@ -19,8 +143,7 @@ class WindowStateManager:
     def _get_state(self) -> str:
         try:
             state = Tcl.call(str, "wm", "state", self._toplevel_name)
-            print(state)
-        except TukaanTclError as e:
+        except TclCallError:
             return "closed"
 
         if Tcl.call(bool, "wm", "attributes", self._toplevel_name, "-fullscreen"):
@@ -35,7 +158,7 @@ class WindowStateManager:
         prev_state = self._current_state
         new_state = self._get_state()
 
-        if new_state == prev_state or prev_state == "nostate":
+        if new_state == prev_state:
             return
 
         events = ["<<StateChanged>>"]
@@ -61,7 +184,7 @@ class WindowStateManager:
             events.append("<<Unfullscreen>>")
 
         for event in events:
-            Tcl.eval(None, f"event generate {self._lm_path} {event}")
+            Tcl.eval(None, f"event generate .app {event}")  # TODO: not .app
 
         self._current_state = new_state
 
@@ -160,6 +283,7 @@ class WindowStateManager:
 
 class WindowDecorationManager:
     _toplevel_name: str
+    hwnd: int
 
     @property
     def title(self) -> str:
@@ -241,7 +365,7 @@ class WindowDecorationManager:
         )
 
 
-class WindowManager(WindowStateManager, WindowDecorationManager):
+class WindowManager(WindowGeometryManager, WindowStateManager, WindowDecorationManager):
     _toplevel_name: str
     destroy: Callable[[], None]
 
