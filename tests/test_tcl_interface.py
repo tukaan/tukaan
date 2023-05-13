@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 
+from tests.base import with_app_context
 from tukaan._tcl import Tcl
 
-Tcl.initialize("test app", None)
 
-
-def test_convert_from_tcl_str():
+@with_app_context  # just to make sure the interpreter is initialized
+def test_convert_from_tcl_str(app, window):
     result = Tcl.call(str, "set", "test_var", "test_convert_str_from_tcl")
     assert isinstance(result, str)
     assert result == "test_convert_str_from_tcl"
@@ -106,3 +106,17 @@ def test_convert_from_tcl_custom_object():
     result = Tcl.call(ClassWithFromTcl, "set", "test_var", "foo")
     assert isinstance(result, ClassWithFromTcl)
     assert result.value == "foo"
+
+
+def test_convert_to_tcl_dict():
+    result = Tcl.to({})
+    assert isinstance(result, tuple)
+    assert result == ()
+
+    result = Tcl.to({"a": 1})
+    assert isinstance(result, tuple)
+    assert result == ("a", 1)
+
+    result = Tcl.to({"a": {"a": {"a": 1}}})
+    assert isinstance(result, tuple)
+    assert result == ("a", ("a", ("a", 1)))

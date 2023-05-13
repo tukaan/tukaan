@@ -14,6 +14,10 @@ format:
 	python3 -m black $(PYTHON_FILES)
 	python3 -m isort $(PYTHON_FILES)
 
+typecheck:
+	sh env/bin/activate
+	python3 -m pyright $(PYTHON_FILES)
+
 test:
 	sh env/bin/activate
 	python3 -m pytest

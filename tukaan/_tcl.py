@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import collections.abc
-import sys
-from enum import Enum, EnumMeta
+from enum import Enum
 from inspect import isclass
-from itertools import chain
 from numbers import Real
 from pathlib import Path
-from traceback import format_exc
-from typing import Any, Callable, NoReturn, TypeAlias, Union, overload
+from typing import Any, Callable, NoReturn, TypeAlias, Union, overload, Iterable
 
 # Yes, we use _tkinter, because it "just works"
 # I do plan to write our own _tkinter.c though, so `to` and `from_` can be optimized more
@@ -16,9 +13,9 @@ import _tkinter as tk
 
 from tukaan._system import Platform, Version
 from tukaan._typing import T, T_co, T_contra
-from tukaan.errors import AppDoesNotExist, TclCallError
+from tukaan.errors import AppDoesNotExistError, TclCallError
 
-TclValue: TypeAlias = Union[str, tk.Tcl_Obj]
+TclValue: TypeAlias = Union[Real, str, bool, tk.Tcl_Obj]
 
 
 class Tcl:
@@ -28,14 +25,24 @@ class Tcl:
     @classmethod
     def initialize(cls, app_name: str, screen_name: str | None) -> None:
         """Initialize the Tcl interpreter."""
-        cls._interp = interp = tk.create(screen_name, "", app_name, False, False, True, False, None)
+        app_name = app_name.capitalize().replace(" ", "_")
+        cls._interp = interp = tk.create(
+            screen_name,  # screenName, $DISPLAY by default
+            "",  # baseName, ignored in _tkinter.c
+            app_name,  # className, the classname of the main window
+            False,  # not interactive
+            False,  # wantobjects, we don't want _tkinter to convert Tcl stuff to Python, because it's SLOW
+            True,  # wantTk
+            False,  # sync, don't execute X commands synchronously
+            None,  # use, we don't want to embed the root window
+        )
         interp.loadtk()
         interp.call("wm", "withdraw", ".")
 
         cls.interp_address = interp.interpaddr()  # PIL needs this
 
-        Platform.tcl_version = cls.call(Version, "info", "patchlevel")
-        Platform.tk_version = cls.call(Version, "set", "tk_version")
+        Platform.tcl_version = cls.call(Version, "set", "tcl_patchLevel")
+        Platform.tk_version = cls.call(Version, "set", "tk_patchLevel")
         Platform.window_sys = str(interp.call("tk", "windowingsystem")).lower()
         Platform.dll_ext = str(interp.call("info", "sharedlibextension"))
 
@@ -59,27 +66,27 @@ class Tcl:
     @overload
     @staticmethod
     def to(
-        obj: collections.abc.Iterator[Any] | collections.abc.Mapping[Any, Any]
+        obj: Iterable[Any] | collections.abc.Mapping[Any, Any]
     ) -> tuple[TclValue, ...]:
         ...
 
     @overload
     @staticmethod
-    def to(obj: TclValue | bool | numbers.Real | Callable[..., Any] | Enum | Path) -> str:
+    def to(obj: TclValue | bool | Real | Callable[..., Any] | Enum | Path) -> str:
         ...
 
     @staticmethod
     def to(obj: Any) -> TclValue | tuple[TclValue, ...]:
         if isinstance(obj, (str, bool, Real, tk.Tcl_Obj)):
             value = obj
-        elif isinstance(obj, (tuple, list)):
-            return tuple(Tcl.to(o) for o in obj)
+        elif isinstance(obj, (tuple, list, set)):
+            return tuple(Tcl.to(item) for item in obj)
         elif hasattr(obj, "_name"):
             value = obj._name
         elif hasattr(obj, "__to_tcl__"):
             value = obj.__to_tcl__()
-        elif isinstance(obj, collections.abc.Mapping):
-            value = tuple(map(Tcl.to, chain.from_iterable(obj.items())))
+        elif isinstance(obj, dict):
+            value = tuple(Tcl.to(item) for pair in obj.items() for item in pair)
         elif isinstance(obj, Path):
             value = str(obj.resolve().absolute())
         elif isinstance(obj, Enum):
@@ -89,56 +96,58 @@ class Tcl:
                 iter(obj)
             except TypeError:
                 raise TypeError(
-                    "cannot convert Python object to Tcl. Please provide a `__to_tcl__` method."
+                    f"cannot convert {obj!r} to Tcl. Please provide a `__to_tcl__` method."
                 ) from None
             else:
                 value = tuple(Tcl.to(o) for o in obj)
         return value
 
     @staticmethod
-    def from_(return_type: Any, value: TclValue) -> Any:
-        if isclass(return_type) and isinstance(value, return_type):
+    def from_(type_spec: Any, value: TclValue) -> Any:
+        if isclass(type_spec) and isinstance(value, type_spec):
             return value
-
-        elif return_type is bool:
+        elif type_spec is bool:
             return Tcl._interp.getboolean(value)
+        elif type_spec is int:
+            return Tcl._interp.getint(value)
+        elif type_spec is float:
+            return Tcl._interp.getdouble(value)
+        elif isinstance(type_spec, type):
+            if hasattr(type_spec, "__from_tcl__"):
+                return type_spec.__from_tcl__(value)  # type: ignore
+            elif issubclass(type_spec, Enum):
+                return type_spec(value)
+            elif issubclass(type_spec, Path):
+                return Path(Tcl.from_(str, value)).resolve()
 
-        elif return_type in (int, float):
-            return return_type(Tcl._interp.getdouble(value))
-
-        elif hasattr(return_type, "__from_tcl__"):
-            return return_type.__from_tcl__(value)
-
-        elif isinstance(return_type, (set, list, tuple, dict)):
+        elif isinstance(type_spec, (set, list, tuple, dict)):
             sequence = Tcl._interp.splitlist(value)
 
-            if isinstance(return_type, (set, list)):
-                [items_type] = return_type
-                return type(return_type)((Tcl.from_(items_type, item) for item in sequence))
-            elif isinstance(return_type, tuple):
-                diff = len(sequence) - len(return_type)
+            if isinstance(type_spec, (set, list)):
+                # {int} -> {1, 2, 3}
+                # [int] -> [1, 2, 3]
+                [items_type] = type_spec
+                return type(type_spec)(Tcl.from_(items_type, item) for item in sequence)
+            elif isinstance(type_spec, tuple):
+                # (int, str) -> (1, "spam", "str")
+                diff = len(sequence) - len(type_spec)
                 if diff:
-                    return_type = return_type + (return_type[-1],) * diff
-                return tuple(map(Tcl.from_, return_type, sequence))
-            elif isinstance(return_type, dict):
+                    type_spec = type_spec + (type_spec[-1],) * diff
+                return tuple(map(Tcl.from_, type_spec, sequence))
+            elif isinstance(type_spec, dict):
+                # {"a": int, "b": str} -> {"a": 1, "b": "spam", "c": "str"}
                 return {
-                    str(k): Tcl.from_(return_type.get(k, str), v)
+                    str(k): Tcl.from_(type_spec.get(k, str), v)
                     for k, v in zip(sequence[::2], sequence[1::2])
                 }
 
-        elif return_type is str:
+        elif type_spec is str:
             if isinstance(value, tk.Tcl_Obj):
                 return str(value.string)
             return Tcl.from_(str, Tcl._interp.call("format", value))
 
-        elif isinstance(return_type, EnumMeta):
-            return return_type(value)
-
-        elif return_type is Path:
-            return Path(Tcl.from_(str, value)).resolve()
-
         raise TypeError(
-            f"cannot convert Tcl value to Python: {value!r}. Invalid return_type: {return_type!r}"
+            f"cannot convert Tcl value to Python: {value!r}. Invalid return type specification: {type_spec!r}"
         ) from None
 
     # Tcl interface
@@ -162,11 +171,30 @@ class Tcl:
         else:
             return None if return_type is None else cls.from_(return_type, result)
 
+    @overload
+    @classmethod
+    def eval(cls, return_type: None, script: str) -> None:
+        ...
+
+    @overload
+    @classmethod
+    def eval(cls, return_type: type[T] | T, script: str) -> T:
+        ...
+
+    @classmethod
+    def eval(cls, return_type: type[T] | T | None, script: str) -> T | None:
+        try:
+            result = cls._interp.eval(script)
+        except tk.TclError as e:
+            Tcl.raise_error(e)
+        else:
+            return None if return_type is None else cls.from_(return_type, result)
+
     @staticmethod
     def raise_error(error: tk.TclError) -> NoReturn:
         message = str(error)
         if "has been destroyed" in message or "NULL main window" in message:
-            raise AppDoesNotExist("application has been destroyed.") from None
+            raise AppDoesNotExistError("application has been destroyed.") from None
         elif "no such file or directory" in message:
             filename = message.split('"')[1]
             raise FileNotFoundError(f"No such file or directory: {filename!r}") from None

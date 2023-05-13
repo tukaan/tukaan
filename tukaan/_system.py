@@ -19,6 +19,17 @@ class Version:
         return Version(*(int(x) for x in value.split(".")))
 
 
+def run_conditionally(condition: bool, func: WrappedFunction[P, T]):
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T | None:
+        if condition:
+            return func(*args, **kwargs)
+        else:
+            return None
+
+    return wrapper
+
+
 class Platform:
     tcl_version: Version | None = None
     tk_version: Version | None = None
@@ -31,16 +42,6 @@ class Platform:
         os = sys.platform
 
     py_version = Version(*(int(i) for i in python_version_tuple()))
-
-    def run_conditionally(condition: bool, func: WrappedFunction[P, T]):
-        @functools.wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T | None:
-            if condition:
-                return func(*args, **kwargs)
-            else:
-                return None
-
-        return wrapper
 
     windows_only = staticmethod(functools.partial(run_conditionally, sys.platform == "win32"))
     macOS_only = staticmethod(functools.partial(run_conditionally, sys.platform == "darwin"))

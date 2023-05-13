@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Callable, Literal, TypeVar
+from typing import Any, Callable, TypeVar
 
 if sys.version_info >= (3, 10):
     from typing import Concatenate, ParamSpec, TypeAlias

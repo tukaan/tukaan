@@ -8,6 +8,9 @@ line_length = 100
 profile = "black"
 multi_line_output = 3
 
+[tool.ruff]
+line-length = 100
+
 
 [build-system]
 build-backend = "setuptools.build_meta"
