@@ -1,0 +1,26 @@
+from __future__ import annotations
+
+from enum import Enum, Flag
+
+
+class WindowType(Enum):
+    Combo = "combo"
+    Desktop = "desktop"
+    Dialog = "dialog"
+    DnD = "dnd"
+    Dock = "dock"
+    DropdownMenu = "dropdown_menu"
+    Menu = "menu"
+    Normal = "normal"
+    Notification = "notification"
+    PopupMenu = "popup_menu"
+    Splash = "splash"
+    ToolBar = "toolbar"
+    ToolTip = "tooltip"
+    ToolWindow = "toolwindow"
+    Utility = "utility"
+
+    @classmethod
+    def _missing_(cls, value: str) -> WindowType | None:
+        if value == "":
+            return cls.Normal

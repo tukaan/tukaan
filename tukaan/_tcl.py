@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
+import functools
 from enum import Enum
 from inspect import isclass
 from numbers import Real
@@ -14,7 +15,7 @@ import _tkinter as tk
 
 from tukaan._collect import collector
 from tukaan._system import Platform, Version
-from tukaan._typing import T, T_co, T_contra
+from tukaan._typing import P, T, T_co, T_contra, WrappedFunction
 from tukaan.errors import AppDoesNotExistError, TclCallError
 
 TclValue: TypeAlias = Union[Real, str, bool, tk.Tcl_Obj]
@@ -214,6 +215,36 @@ class Tcl:
 
             result.extend((f"-{key}", value))
         return tuple(result)
+
+    @classmethod
+    def with_redraw(cls, func: WrappedFunction[P, T]):
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            cls._interp.eval("update idletasks")
+            result = func(*args, **kwargs)
+            cls._interp.eval("update idletasks")
+            return result
+
+        return wrapper
+
+    @classmethod
+    def redraw_before(cls, func: WrappedFunction[P, T]):
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            cls._interp.eval("update idletasks")
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    @classmethod
+    def redraw_after(cls, func: WrappedFunction[P, T]):
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            result = func(*args, **kwargs)
+            cls._interp.eval("update idletasks")
+            return result
+
+        return wrapper
 
 
 class Procedure:

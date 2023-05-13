@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from tukaan._tcl import Procedure, Tcl
+from tukaan._tcl import Tcl
 from tukaan.app import App
 from tukaan.errors import AppDoesNotExistError, MainWindowAlreadyExistsError
 
+from .wm import WindowManager
 
-class MainWindow:
+
+class MainWindow(WindowManager):
     _exists = False
     _toplevel_name = "."
 
