@@ -9,14 +9,19 @@ class Collector:
     def __init__(self):
         self._counter = defaultdict(count)
 
-    def add(self, category: str, obj: object) -> str:
+    def add(self, category: str, obj: object, name: str | None = None) -> str:
         if not hasattr(self, category):
             setattr(self, category, {})
 
         container = getattr(self, category)
-        key = f"tukaan_{category}_{next(self._counter[category])}"
-        container[key] = obj
-        return key
+
+        if not name:
+            name = f"tukaan_{category}_{next(self._counter[category])}"
+        elif name in container:
+            raise KeyError(f"object with name {name} already exsist in this container")
+
+        container[name] = obj
+        return name
 
     def remove_by_key(self, category: str, key: str) -> None:
         if not hasattr(self, category):

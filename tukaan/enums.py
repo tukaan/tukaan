@@ -3,6 +3,13 @@ from __future__ import annotations
 from enum import Enum, Flag
 
 
+class Align(Enum):
+    Start = 0
+    End = 1
+    Stretch = 2
+    Center = 3
+
+
 class WindowState(Enum):
     Closed = "closed"
     FullScreen = "fullscreen"

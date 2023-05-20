@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from tukaan._base import ToplevelWidget
 from tukaan._tcl import Tcl
 from tukaan.app import App
 from tukaan.errors import AppDoesNotExistError, MainWindowAlreadyExistsError
@@ -7,9 +8,11 @@ from tukaan.errors import AppDoesNotExistError, MainWindowAlreadyExistsError
 from .wm import WindowManager
 
 
-class MainWindow(WindowManager):
+class MainWindow(ToplevelWidget, WindowManager):
     _exists = False
     _toplevel_name = "."
+    _name = ".app"
+    _widget_cmd = "."
 
     def __init__(self, title: str = "Tukaan", *, width: int = 300, height: int = 200) -> None:
         if not App._exists:
@@ -23,6 +26,9 @@ class MainWindow(WindowManager):
             )
         else:
             MainWindow._exists = True
+
+        self._tk_class = App.shared_instance._name.capitalize().replace(" ", "_")
+        ToplevelWidget.__init__(self)
 
         Tcl.eval(None, "pack [ttk::frame .app] -expand 1 -fill both")
         Tcl.call(None, "wm", "title", ".", title)

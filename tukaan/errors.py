@@ -15,3 +15,7 @@ class MainWindowAlreadyExistsError(Exception):
 
 class TclCallError(Exception):
     ...
+
+
+class WrongWidgetError(Exception):
+    ...

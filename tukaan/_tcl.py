@@ -40,7 +40,7 @@ class Tcl:
             None,  # use, we don't want to embed the root window
         )
         interp.loadtk()
-        interp.call("wm", "withdraw", ".")
+        interp.call("wm", "withdraw", ".")  # This isn't a very clever idea
 
         cls.interp_address = interp.interpaddr()  # PIL needs this
 
