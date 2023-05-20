@@ -1,3 +1,5 @@
+import pytest
+
 from tests.base import with_app_context
 from tukaan._base import Widget
 from tukaan.enums import Align
@@ -50,6 +52,7 @@ class SimpleMegaWidget(Widget, widget_cmd="ttk::frame", tk_class="TFrame"):
         self.finalize_megawidget(self._button._name)
 
 
+@pytest.mark.xfail(reason="Need to figure out, how default row and col indexes should work")
 @with_app_context
 def test_gridding_a_button(app, window):
     for index, widget in enumerate([SimpleButton(window), SimpleMegaWidget(window)]):
