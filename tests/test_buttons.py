@@ -1,5 +1,4 @@
 from tukaan import Button
-from tukaan._tcl import Tcl
 
 
 def test_button_text_and_action(root):
