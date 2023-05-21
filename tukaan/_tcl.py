@@ -257,8 +257,9 @@ class Procedure:
     def __call__(self, *tcl_args: Any) -> Any:
         try:
             return self._callback(*tcl_args)
-        except Exception:
-            print("Exception in Tukaan callback:", format_exc(), sep="\n")
+        except Exception as e:
+            e.add_note("This exception occured within a Tukaan callback handler.")
+            print(format_exc())
 
     @classmethod
     def __from_tcl__(cls, value: str) -> Callable[..., Any]:
