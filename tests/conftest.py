@@ -3,24 +3,17 @@ import pytest
 import tukaan
 from tukaan._tcl import Tcl
 
-app_object = tukaan.App("Test App")
-window_object = tukaan.MainWindow("Test window")
 
-
-def update_func():
-    Tcl.call(None, "update")
-
-
-@pytest.fixture
-def update():
-    yield update_func
-
-
-@pytest.fixture
+@pytest.fixture(autouse=True, scope="session")
 def app():
-    yield app_object
+    yield tukaan.App("Test App")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def root():
-    yield window_object
+    yield tukaan.MainWindow("Test window")
+
+
+@pytest.fixture()
+def update():
+    yield lambda: Tcl.call(None, "update")

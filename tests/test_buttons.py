@@ -37,6 +37,8 @@ def test_button_properties(root, update):
     button.width = 2
     assert button.width == 2
 
+    # Maybe this ism't the right behavior of -takefocus
+    # At least not how Tk does it
     assert button.focusable
     button.focusable = False
     assert not button.focusable
