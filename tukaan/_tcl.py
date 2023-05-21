@@ -263,7 +263,10 @@ class Procedure:
 
     @classmethod
     def __from_tcl__(cls, value: str) -> Callable[..., Any]:
-        return collector.get_by_key("commands", value)._callback
+        proc = collector.get_by_key("commands", value)
+        if proc is not None:
+            return proc._callback
+        return None
 
     def dispose(self) -> None:
         Tcl._interp.deletecommand(self._name)

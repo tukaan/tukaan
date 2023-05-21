@@ -1,6 +1,5 @@
 import pytest
 
-from tests.base import with_app_context
 from tukaan._base import Widget
 from tukaan.enums import Align
 from tukaan.layouts.grid import convert_align_to_tk_sticky
@@ -53,13 +52,12 @@ class SimpleMegaWidget(Widget, widget_cmd="ttk::frame", tk_class="TFrame"):
 
 
 @pytest.mark.xfail(reason="Need to figure out, how default row and col indexes should work")
-@with_app_context
-def test_gridding_a_button(app, window):
-    for index, widget in enumerate([SimpleButton(window), SimpleMegaWidget(window)]):
+def test_gridding_a_button(root):
+    for index, widget in enumerate([SimpleButton(root), SimpleMegaWidget(root)]):
         widget.grid(col=index, margin=(1, 2, 3, 4), align=(None, Align.Stretch))
         assert widget.grid.location == (0, index)
         assert widget.grid.row == 0
         assert widget.grid.col == index
         assert widget.grid.margin == (1, 2, 3, 4)
         assert widget.grid.align == (Align.Center, Align.Stretch)
-        assert window.grid.size == (index + 1, 1)
+        assert root.grid.size == (index + 1, 1)

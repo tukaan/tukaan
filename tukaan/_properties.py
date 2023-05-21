@@ -80,6 +80,14 @@ class FocusableProp(BoolDescriptor):
     def __init__(self) -> None:
         super().__init__("takefocus")
 
+    def __get__(self, instance: TkWidget, owner: object = None) -> T:
+        if owner is None:
+            return NotImplemented
+        result = Tcl.call(str, instance, "cget", "-takefocus")
+        if result == "ttk::takefocus":
+            return Tcl.call(bool, "ttk::takefocus", instance)
+        return Tcl.from_(bool, result)
+
 
 class ActionProp(OptionDescriptor[Procedure, Optional[Callable[P, T]]]):
     def __init__(self, option: str = "command") -> None:

@@ -3,11 +3,9 @@ from enum import Enum
 from pathlib import Path
 from types import FunctionType
 
-from tests.base import with_app_context
 from tukaan._tcl import Procedure, Tcl
 
 
-@with_app_context  # just to make sure the interpreter is initialized
 def test_convert_from_tcl_str(*_):
     result = Tcl.call(str, "set", "test_var", "test_convert_str_from_tcl")
     assert isinstance(result, str)
