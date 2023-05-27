@@ -16,8 +16,6 @@ class ProgressBar(Widget, widget_cmd="ttk::progressbar", tk_class="TProgressbar"
     orientation = EnumDesc("orient", Orientation)
     value = IntDesc()
 
-    _timeout = None
-
     def __init__(
         self,
         parent: TkWidget,
@@ -29,8 +27,7 @@ class ProgressBar(Widget, widget_cmd="ttk::progressbar", tk_class="TProgressbar"
         orientation: Orientation | None = None,
         value: int | None = None,
     ) -> None:
-        Widget.__init__(
-            self,
+        super().__init__(
             parent,
             length=length,
             max=max,

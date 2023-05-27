@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from tukaan._tcl import Tcl
+try:
+    from PIL import _imagingtk as ImagingTk  # type: ignore
+except ImportError as e:
+    raise ImportError("Tukaan needs PIL and PIL._imagingtk to work with images.") from e
 
-from .errors import AppAlreadyExistsError
+from tukaan._tcl import Tcl
+from tukaan.errors import AppAlreadyExistsError
 
 
 class App:
@@ -21,6 +25,7 @@ class App:
             raise AppAlreadyExistsError
 
         Tcl.initialize(name, display)
+        ImagingTk.tkinit(Tcl.interp_address)
         App._exists = True
         App.shared_instance = self
 
