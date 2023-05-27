@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from enum import Enum, EnumType
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Tuple, Union
 
 if sys.version_info >= (3, 9):
     from collections.abc import Callable
@@ -101,3 +101,44 @@ class FocusableProp(BoolDesc):
 class ActionProp(OptionDescriptor[Procedure, Optional[Callable[P, T]]]):
     def __init__(self, option: str = "command") -> None:
         super().__init__(option, Procedure)
+
+
+PaddingType = Tuple[int, int, int, int]
+
+
+def convert_padding_to_tk(padding: int | tuple[int, ...] | None) -> tuple[int, ...] | str:
+    if padding is None:
+        return ()
+    elif isinstance(padding, int):
+        return (padding,) * 4
+    else:
+        length = len(padding)
+        if length == 1:
+            return padding * 4
+        elif length == 2:
+            return (padding[1], padding[0], padding[1], padding[0])
+        elif length == 3:
+            return (padding[1], padding[0], padding[1], padding[2])
+        elif length == 4:
+            return (padding[3], padding[0], padding[1], padding[2])
+
+        return ""
+
+
+def convert_padding_back(padding: tuple[int, ...]) -> PaddingType:
+    if len(padding) == 1:
+        return (padding[0],) * 4
+    elif len(padding) == 4:
+        return (padding[1], padding[2], padding[3], padding[0])
+
+    return (0,) * 4
+
+
+class PaddingProp(RWProperty[PaddingType, Union[int, Tuple[int, ...], None]]):
+    def __get__(self, instance: TkWidget, owner: object = None):
+        if owner is None:
+            return NotImplemented
+        return convert_padding_back(cget(instance, (int,), "-padding"))
+
+    def __set__(self, instance: TkWidget, value: int | tuple[int, ...] | None) -> None:
+        config(instance, padding=convert_padding_to_tk(value))

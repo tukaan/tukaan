@@ -77,7 +77,8 @@ class Widget(TkWidget):
 
         TkWidget.__init__(self)
 
-        kwargs["class"] = self._tk_class
+        if self._widget_cmd.startswith("ttk::"):
+            kwargs["class"] = self._tk_class
         Tcl.call(None, self._widget_cmd, self._name, *Tcl.to_tcl_args(**kwargs))
         self.parent = parent
 
