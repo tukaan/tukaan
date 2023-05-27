@@ -8,7 +8,7 @@ env/touchfile: requirements.txt requirements-dev.txt
 	. env/bin/activate; pip install -Ur requirements-dev.txt
 	touch env/touchfile
 
-install: venv
+init: venv
 	. env/bin/activate; python3 -m pip install -e .
 
 format: venv
