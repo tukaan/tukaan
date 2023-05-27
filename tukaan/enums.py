@@ -48,3 +48,13 @@ class Resizable(Enum):
     Horizontal = ("1", "0")
     Vertical = ("0", "1")
     Both = ("1", "1")
+
+
+class ProgressMode(Enum):
+    Determinate = "determinate"
+    Indeterminate = "indeterminate"
+
+
+class Orientation(Enum):
+    Horizontal = "horizontal"
+    Vertical = "vertical"

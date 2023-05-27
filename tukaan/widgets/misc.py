@@ -1,0 +1,6 @@
+class Slider:
+    ...
+
+
+class ScrollBar:
+    ...

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from enum import Enum, EnumType
 from typing import TYPE_CHECKING, Any, Optional
 
 if sys.version_info >= (3, 9):
@@ -56,33 +57,39 @@ class DynamicProperty:
             self._option = name
 
 
-class IntDescriptor(OptionDescriptor[int, int], DynamicProperty):
+class IntDesc(OptionDescriptor[int, int], DynamicProperty):
     def __init__(self, option: str = "") -> None:
         super().__init__(option, int)
 
 
-class FloatDescriptor(OptionDescriptor[float, float], DynamicProperty):
+class FloatDesc(OptionDescriptor[float, float], DynamicProperty):
     def __init__(self, option: str = "") -> None:
         super().__init__(option, float)
 
 
-class BoolDescriptor(OptionDescriptor[bool, bool], DynamicProperty):
+class BoolDesc(OptionDescriptor[bool, bool], DynamicProperty):
     def __init__(self, option: str = "") -> None:
         super().__init__(option, bool)
 
 
-class StrDescriptor(OptionDescriptor[str, str], DynamicProperty):
+class StrDesc(OptionDescriptor[str, str], DynamicProperty):
     def __init__(self, option: str = "") -> None:
         super().__init__(option, str)
 
 
-class FocusableProp(BoolDescriptor):
+class EnumDesc(OptionDescriptor[Enum, Enum], DynamicProperty):
+    def __init__(self, option: str = "", enum: EnumType | None = None) -> None:
+        assert enum is not None, "use the `enum` kwarg to set the enum for an EnumDesc"
+        super().__init__(option, enum)  # type: ignore
+
+
+class FocusableProp(BoolDesc):
     # FIXME: the current behavior isn't right
     # It should also work with a Callable[[TkWidget], bool]
     def __init__(self) -> None:
         super().__init__("takefocus")
 
-    def __get__(self, instance: TkWidget, owner: object = None) -> T:
+    def __get__(self, instance: TkWidget, owner: object = None) -> bool:
         if owner is None:
             return NotImplemented
         result = Tcl.call(str, instance, "cget", "-takefocus")
