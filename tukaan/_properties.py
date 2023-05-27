@@ -77,6 +77,8 @@ class StrDescriptor(OptionDescriptor[str, str], DynamicProperty):
 
 
 class FocusableProp(BoolDescriptor):
+    # FIXME: the current behavior isn't right
+    # It should also work with a Callable[[TkWidget], bool]
     def __init__(self) -> None:
         super().__init__("takefocus")
 
@@ -84,8 +86,8 @@ class FocusableProp(BoolDescriptor):
         if owner is None:
             return NotImplemented
         result = Tcl.call(str, instance, "cget", "-takefocus")
-        if result == "ttk::takefocus":
-            return Tcl.call(bool, "ttk::takefocus", instance)
+        if result not in ("", "0", "1"):
+            return Tcl.call(bool, result, instance)
         return Tcl.from_(bool, result)
 
 
