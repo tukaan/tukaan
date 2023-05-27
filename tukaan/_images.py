@@ -9,6 +9,7 @@ from PIL import ImageSequence
 
 from tukaan._base import TkWidget, Widget
 from tukaan._collect import collector
+from tukaan._properties import OptionDescriptor
 from tukaan._tcl import Tcl
 
 
@@ -69,6 +70,11 @@ def create_animated_image(image: PillowImage.Image, transparent: bool = False) -
 
 
 def convert_pillow_to_tk(image: PillowImage.Image) -> str:
+    if image in getattr(collector, "pil_images", {}).values():
+        for k, v in collector.pil_images.items():  # type: ignore
+            if v == image:
+                return k
+
     transparent = "transparency" in image.info
 
     if getattr(image, "is_animated", False):
@@ -81,8 +87,16 @@ def convert_pillow_to_tk(image: PillowImage.Image) -> str:
 
 
 setattr(PillowImage.Image, "__to_tcl__", convert_pillow_to_tk)
+setattr(PillowImage.Image, "__from_tcl__", lambda value: collector.get_by_key("pil_images", value))
+
+
+class ImageProp(OptionDescriptor[PillowImage.Image, PillowImage.Image]):
+    def __init__(self) -> None:
+        super().__init__("image", PillowImage.Image)
 
 
 class Image(Widget, widget_cmd="ttk::label", tk_class="TLabel"):
+    image = ImageProp()
+
     def __init__(self, parent: TkWidget, image: PillowImage.Image | None = None) -> None:
         super().__init__(parent, image=image)

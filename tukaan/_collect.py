@@ -48,7 +48,6 @@ class Collector:
     def get_by_object(self, category: str, obj: object) -> str | None:
         if not hasattr(self, category):
             return None
-
         for k, v in getattr(self, category).items():
             if v is obj:
                 return k
