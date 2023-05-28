@@ -61,10 +61,14 @@ class ToplevelWidget(TkWidget):
 
 
 class Widget(TkWidget):
-    def __init_subclass__(cls, /, widget_cmd: str, tk_class: str, **kwargs):
+    def __init_subclass__(
+        cls, widget_cmd: str | None = None, tk_class: str | None = None, **kwargs
+    ):
         super().__init_subclass__(**kwargs)
-        cls._widget_cmd = widget_cmd
-        cls._tk_class = tk_class
+        if widget_cmd is not None:
+            cls._widget_cmd = widget_cmd
+        if widget_cmd is not None:
+            cls._tk_class = tk_class
 
     def __init__(self, parent: TkWidget, **kwargs):
         py_widget_class_name = type(self).__name__.lower()
