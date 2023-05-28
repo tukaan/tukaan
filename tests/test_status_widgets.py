@@ -5,10 +5,11 @@ from tukaan.enums import Orientation, ProgressMode
 from tukaan._tcl import Tcl
 
 
-def test_progressbar_properties(root):
+def test_progress_bar_properties(root):
     progress_bar = ProgressBar(
         root, max=160, length=300, mode=ProgressMode.Determinate, orientation=Orientation.Vertical
     )
+    assert progress_bar.parent is root
 
     assert progress_bar.max == 160
     assert progress_bar.length == 300

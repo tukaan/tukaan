@@ -16,23 +16,21 @@ from tukaan._properties import OptionDescriptor
 from tukaan._tcl import Tcl
 
 
-def test_image_initialization(root, tests_dir):
+def test_image_properties(root, tests_dir):
     image = PillowImage.open(tests_dir / "spam.png")
     widget = Image(root, image)
     assert widget.parent is root
     assert widget.image is image
 
+    widget2 = Image(root)
+    image = PillowImage.open(tests_dir / "ham.gif")
+    assert widget2.image is None
 
-def test_image_prop_setter(root, tests_dir):
-    widget = Image(root)
-    image = PillowImage.open(tests_dir / "spam.png")
-    assert widget.image is None
+    widget2.image = image
+    assert widget2.image == image
 
-    widget.image = image
-    assert widget.image == image
-
-    widget.image = None
-    assert widget.image is None
+    widget2.image = None
+    assert widget2.image is None
 
 
 def test_get_image_mode():
