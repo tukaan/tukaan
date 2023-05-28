@@ -41,7 +41,7 @@ class ProgressBar(Widget, widget_cmd="ttk::progressbar", tk_class="TProgressbar"
         Tcl.call(None, self, "step", amount)
 
     def start(self, steps_per_second: int = 20) -> None:
-        Tcl.call(None, self, "start", 1 / steps_per_second)
+        Tcl.call(None, self, "start", round(1 / steps_per_second))
 
     def stop(self) -> None:
         Tcl.call(None, self, "stop")

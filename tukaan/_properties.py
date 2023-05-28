@@ -61,6 +61,11 @@ class IntDesc(OptionDescriptor[int, int], DynamicProperty):
     def __init__(self, option: str = "") -> None:
         super().__init__(option, int)
 
+    def __get__(self, instance: TkWidget, owner: object = None) -> T:
+        if owner is None:
+            return NotImplemented
+        return int(cget(instance, float, f"-{self._option}"))
+
 
 class FloatDesc(OptionDescriptor[float, float], DynamicProperty):
     def __init__(self, option: str = "") -> None:
