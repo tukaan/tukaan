@@ -16,7 +16,7 @@ class Frame(Widget, widget_cmd="frame", tk_class="Frame"):
 class Panel(Widget, widget_cmd="ttk::frame", tk_class="TFrame"):
     padding = PaddingProp()
 
-    def __init__(self, parent: TkWidget, padding: tuple[int, ...] | None = None) -> None:
+    def __init__(self, parent: TkWidget, padding: int | tuple[int, ...] | None = None) -> None:
         Widget.__init__(self, parent)
 
         self.padding = padding
@@ -27,6 +27,8 @@ class LabeledPanel:
 
 
 class Pane(Panel):
+    parent: SplitView
+
     def __init__(
         self,
         owner: SplitView,
@@ -34,7 +36,7 @@ class Pane(Panel):
         padding: int | tuple[int, ...] | None = None,
         weight: int | None = None,
         auto_append: bool = True,
-    ):
+    ) -> None:
         super().__init__(owner, padding=padding)
         self._stored_options = {"weight": weight}
 

@@ -1,4 +1,4 @@
-__all__ = []
+__all__: list = []
 
 
 from tukaan._images import Image

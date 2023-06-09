@@ -51,7 +51,7 @@ def create_image(image: PillowImage.Image, transparent: bool = False) -> tuple[s
         block = im.new_block(mode, image.size)
         im.convert2(block, im)
 
-    name = Tcl.eval(str, "image create photo")
+    name: str = Tcl.eval(str, "image create photo")
     Tcl.eval(None, f"PyImagingPhoto {name} {block.id}")
 
     return name, int(image.info.get("duration", 50))

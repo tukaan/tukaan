@@ -67,7 +67,7 @@ class Widget(TkWidget):
         super().__init_subclass__(**kwargs)
         if widget_cmd is not None:
             cls._widget_cmd = widget_cmd
-        if widget_cmd is not None:
+        if tk_class is not None:
             cls._tk_class = tk_class
 
     def __init__(self, parent: TkWidget, **kwargs) -> None:

@@ -37,9 +37,10 @@ class WindowType(Enum):
     Utility = "utility"
 
     @classmethod
-    def _missing_(cls, value: str) -> WindowType | None:
+    def _missing_(cls, value: object) -> WindowType | None:
         if value == "":
             return cls.Normal
+        return None
 
 
 class Resizable(Enum):

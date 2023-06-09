@@ -142,7 +142,7 @@ class WindowStateManager:
 
     def _get_state(self) -> str:
         try:
-            state = Tcl.call(str, "wm", "state", self._toplevel_name)
+            state: str = Tcl.call(str, "wm", "state", self._toplevel_name)
         except TclCallError:
             return "closed"
 

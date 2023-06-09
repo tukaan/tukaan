@@ -61,7 +61,7 @@ class IntDesc(OptionDescriptor[int, int], DynamicProperty):
     def __init__(self, option: str = "") -> None:
         super().__init__(option, int)
 
-    def __get__(self, instance: TkWidget, owner: object = None) -> T:
+    def __get__(self, instance: TkWidget, owner: object = None) -> int:
         if owner is None:
             return NotImplemented
         return int(cget(instance, float, f"-{self._option}"))
@@ -97,7 +97,7 @@ class FocusableProp(BoolDesc):
     def __get__(self, instance: TkWidget, owner: object = None) -> bool:
         if owner is None:
             return NotImplemented
-        result = Tcl.call(str, instance, "cget", "-takefocus")
+        result: str = Tcl.call(str, instance, "cget", "-takefocus")
         if result not in ("", "0", "1"):
             return Tcl.call(bool, result, instance)
         return Tcl.from_(bool, result)
