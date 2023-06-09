@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterator
+from typing import ClassVar, Iterator
 
 from tukaan._collect import collector
 from tukaan._tcl import Tcl
@@ -29,8 +29,8 @@ class count:
 class TkWidget:
     _name: str
     _toplevel_name: str
-    _widget_cmd: str
-    _tk_class: str
+    _widget_cmd: ClassVar[str]
+    _tk_class: ClassVar[str]
 
     grid: LayoutManagerBase
 
@@ -70,7 +70,7 @@ class Widget(TkWidget):
         if widget_cmd is not None:
             cls._tk_class = tk_class
 
-    def __init__(self, parent: TkWidget, **kwargs):
+    def __init__(self, parent: TkWidget, **kwargs) -> None:
         py_widget_class_name = type(self).__name__.lower()
         try:
             count = next(parent._child_type_count[py_widget_class_name])
