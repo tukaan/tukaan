@@ -20,7 +20,7 @@ def test_image_properties(root, tests_dir):
     image = PillowImage.open(tests_dir / "spam.png")
     widget = Image(root, image)
     assert widget.parent is root
-    assert widget.image is image
+    assert widget.image == image
 
     widget2 = Image(root)
     image = PillowImage.open(tests_dir / "ham.gif")

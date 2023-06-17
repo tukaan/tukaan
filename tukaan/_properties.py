@@ -13,6 +13,7 @@ else:
 
 from tukaan._tcl import Procedure, Tcl
 from tukaan._typing import P, PaddingType, T, T_co, T_contra
+from tukaan._variables import ControlVariable
 
 if TYPE_CHECKING:
     from tukaan._base import TkWidget
@@ -106,6 +107,17 @@ class FocusableProp(BoolDesc):
 class ActionProp(OptionDescriptor[Procedure, Optional[Callable[P, T]]]):
     def __init__(self, option: str = "command") -> None:
         super().__init__(option, Procedure)
+
+
+class LinkProp(RWProperty[ControlVariable[T], Optional[ControlVariable[T]]]):
+    def __get__(self, instance: TkWidget, owner: object = None):
+        if owner is None:
+            return NotImplemented
+        return cget(instance, ControlVariable[T], "-variable")
+
+    def __set__(self, instance: TkWidget, value: ControlVariable[T] | None) -> None:
+        instance._variable = value
+        return config(instance, variable=value or "")
 
 
 def convert_padding_to_tk(padding: PaddingType) -> tuple[int, ...] | str:

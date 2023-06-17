@@ -71,6 +71,16 @@ def create_animated_image(image: PillowImage.Image, transparent: bool = False) -
 
 def convert_pillow_to_tk(image: PillowImage.Image) -> str:
     if image in getattr(collector, "pil_images", {}).values():
+        # TODO: document this behavior
+        # >>> img = Image.load("spam.png")
+        # >>> a = Image(.., image=Image.load("spam.png"))
+        # >>> b = Image(.., image=img)
+        # >>> a.image is b.image
+        # True
+        # >>> b.image is img
+        # False
+        # >>> b.image == img
+        # True
         for k, v in collector.pil_images.items():  # type: ignore
             if v == image:
                 return k
