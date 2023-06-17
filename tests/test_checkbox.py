@@ -5,32 +5,44 @@ def test_button_initialization(root):
     stuff = []
     command = lambda value: stuff.append(value)
 
-    button1 = CheckBox(root)
-    button2 = CheckBox(root, "Spam ham egg")
-    button3 = CheckBox(root, "Spam ham egg", selected=True, action=command)
+    checkbox1 = CheckBox(root)
+    checkbox2 = CheckBox(root, "Spam ham egg")
+    checkbox3 = CheckBox(root, "Spam ham egg", selected=True, action=command)
+    assert isinstance(checkbox1._variable, BoolVar)
 
-    assert button1.text == ""
-    assert button2.text == "Spam ham egg"
-    assert button2.text == button3.text
+    assert checkbox1.text == ""
+    assert checkbox2.text == "Spam ham egg"
+    assert checkbox2.text == checkbox3.text
 
-    assert not button1.selected
-    assert not button2.selected
-    assert button3.selected
+    assert not checkbox1.selected
+    assert not checkbox2.selected
+    assert checkbox3.selected
 
-    assert button2.action is None
-    assert button3.action is command
+    assert checkbox2.action is None
+    assert checkbox3.action is command
 
-    button2.action = button3.action
-    assert button2.action is command
+    checkbox2.action = checkbox3.action
+    assert checkbox2.action is command
 
-    button2.invoke()
+    checkbox2.invoke()
     assert stuff and stuff[0] is True
 
-    button3.invoke()
+    checkbox3.invoke()
     assert stuff == [True, False]
 
 
+def test_checkbox_custom_link_var(root):
+    link = BoolVar(True)
+    checkbox = CheckBox(root, link=link)
+    assert checkbox.selected
+    assert checkbox._variable == link
+    assert checkbox.link == link
+    checkbox.link = None  # Should this be allowed?
+    assert checkbox.link is None
+
+
 ### Methods
+
 
 def test_checkbox_de_select(root):
     checkbox1 = CheckBox(root)
@@ -52,6 +64,7 @@ def test_checkbox_toggle(root):
 
 
 ### Properties
+
 
 def test_checkbox_action_porperty(root):
     action_called = False
@@ -75,3 +88,12 @@ def test_checkbox_selected_property(root):
 
     checkbox.selected = False
     assert not checkbox.selected
+
+
+def test_checkbox_width_property(root):
+    checkbox = CheckBox(root, width=10)
+    checkbox.grid()
+
+    assert checkbox.width == 10
+    checkbox.width = 2
+    assert checkbox.width == 2

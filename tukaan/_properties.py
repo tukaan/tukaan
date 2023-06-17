@@ -113,7 +113,7 @@ class LinkProp(RWProperty[ControlVariable[T], Optional[ControlVariable[T]]]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
-        return cget(instance, ControlVariable[T], "-variable")
+        return cget(instance, ControlVariable, "-variable")
 
     def __set__(self, instance: TkWidget, value: ControlVariable[T] | None) -> None:
         instance._variable = value
