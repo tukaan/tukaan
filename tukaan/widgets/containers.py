@@ -3,8 +3,9 @@ from __future__ import annotations
 from collections.abc import Iterator
 
 from tukaan._base import TkWidget, Widget
-from tukaan._properties import FocusableProp, PaddingProp, cget
+from tukaan._properties import FocusableProp, PaddingProp, StrDesc, cget
 from tukaan._tcl import Tcl
+from tukaan._typing import PaddingType
 from tukaan.enums import Orientation
 
 
@@ -16,14 +17,22 @@ class Frame(Widget, widget_cmd="frame", tk_class="Frame"):
 class Panel(Widget, widget_cmd="ttk::frame", tk_class="TFrame"):
     padding = PaddingProp()
 
-    def __init__(self, parent: TkWidget, padding: int | tuple[int, ...] | None = None) -> None:
+    def __init__(self, parent: TkWidget, *, padding: PaddingType = None) -> None:
         Widget.__init__(self, parent)
 
         self.padding = padding
 
 
-class LabeledPanel:
-    ...
+class LabeledPanel(Widget, widget_cmd="ttk::labelframe", tk_class="TLabelframe"):
+    padding = PaddingProp()
+    text = StrDesc()
+
+    def __init__(
+        self, parent: TkWidget, text: str | None = None, *, padding: PaddingType = None
+    ) -> None:
+        Widget.__init__(self, parent, text=text)
+
+        self.padding = padding
 
 
 class Pane(Panel):
@@ -78,8 +87,8 @@ class Pane(Panel):
     @weight.setter
     def weight(self, value: int) -> None:
         if self in self.parent.panes:
-            Tcl.call(None, self.parent, "pane", self, "-weight", value)
-        self._stored_options["weight"] = value
+            Tcl.call(None, self.parent, "pane", self, "-weight", value or 0)
+        self._stored_options["weight"] = value or 0
 
 
 class SplitView(Widget, widget_cmd="ttk::panedwindow", tk_class="TPanedwindow"):

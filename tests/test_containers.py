@@ -1,20 +1,40 @@
 import pytest
 
-from tukaan import Panel, SplitView
+from tukaan import LabeledPanel, Panel, SplitView
 from tukaan._base import Widget
 from tukaan._tcl import Tcl
 from tukaan.enums import Orientation
 
 
-def test_panel_initialization(root):
+def test_panel_properties(root):
     panel = Panel(root, padding=(1, 2, 3, 4))
     assert panel.parent is root
     assert panel.padding == (1, 2, 3, 4)
+
     panel.padding = (4, 9, 2, 6)
     assert panel.padding == (4, 9, 2, 6)
+    panel.padding = None
+    assert panel.padding == (0, 0, 0, 0)
 
 
-def test_pane_initialization(root):
+def test_labeled_panel_properties(root):
+    panel = LabeledPanel(root, "Some title here:", padding=(1, 2, 3, 4))
+    assert panel.parent is root
+    assert panel.padding == (1, 2, 3, 4)
+    assert panel.text == "Some title here:"
+
+    panel.padding = (4, 9, 2, 6)
+    assert panel.padding == (4, 9, 2, 6)
+    panel.padding = None
+    assert panel.padding == (0, 0, 0, 0)
+
+    panel.text = "spam"
+    assert panel.text == "spam"
+    panel.text = None
+    assert panel.text is ""
+
+
+def test_pane_properties(root):
     split_view = SplitView(root)
     pane = split_view.create_pane(padding=(1, 2, 3, 4), weight=2)
     assert pane.parent is split_view
@@ -24,10 +44,14 @@ def test_pane_initialization(root):
     assert pane.padding == (1, 2, 3, 4)
     pane.padding = (4, 9, 2, 6)
     assert pane.padding == (4, 9, 2, 6)
+    pane.padding = None
+    assert pane.padding == (0, 0, 0, 0)
 
     assert pane.weight == 2
     pane.weight = 7
     assert pane.weight == 7
+    pane.weight = None
+    assert pane.weight == 0
 
 
 def test_pane_append(root):
@@ -81,8 +105,7 @@ def test_split_view_initialization(root):
 
 def test_split_view_length(root):
     split_view = SplitView(root)
-    for i in range(10):
-        split_view.create_pane()
+    [split_view.create_pane() for _ in range(10)]
     assert len(split_view) == 10
 
 

@@ -1,5 +1,5 @@
 import sys
-from typing import Callable, TypeVar
+from typing import Callable, Optional, Tuple, TypeVar, Union
 
 if sys.version_info >= (3, 10):
     from typing import ParamSpec, TypeAlias
@@ -13,3 +13,4 @@ T_co = TypeVar("T_co", covariant=True)
 T_contra = TypeVar("T_contra", contravariant=True)
 
 WrappedFunction: TypeAlias = Callable[P, T]
+PaddingType: TypeAlias = Optional[Union[int, Tuple[int, ...]]]

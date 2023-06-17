@@ -12,7 +12,7 @@ else:
     from typing_extensions import Protocol
 
 from tukaan._tcl import Procedure, Tcl
-from tukaan._typing import P, T, T_co, T_contra
+from tukaan._typing import P, PaddingType, T, T_co, T_contra
 
 if TYPE_CHECKING:
     from tukaan._base import TkWidget
@@ -108,10 +108,7 @@ class ActionProp(OptionDescriptor[Procedure, Optional[Callable[P, T]]]):
         super().__init__(option, Procedure)
 
 
-PaddingType = Tuple[int, int, int, int]
-
-
-def convert_padding_to_tk(padding: int | tuple[int, ...] | None) -> tuple[int, ...] | str:
+def convert_padding_to_tk(padding: PaddingType) -> tuple[int, ...] | str:
     if padding is None:
         return ()
     elif isinstance(padding, int):
@@ -130,7 +127,7 @@ def convert_padding_to_tk(padding: int | tuple[int, ...] | None) -> tuple[int, .
         return ""
 
 
-def convert_padding_back(padding: tuple[int, ...]) -> PaddingType:
+def convert_padding_back(padding: tuple[int, ...]) -> Tuple[int, int, int, int]:
     if len(padding) == 1:
         return (padding[0],) * 4
     elif len(padding) == 4:
@@ -139,11 +136,11 @@ def convert_padding_back(padding: tuple[int, ...]) -> PaddingType:
     return (0,) * 4
 
 
-class PaddingProp(RWProperty[PaddingType, Union[int, Tuple[int, ...], None]]):
+class PaddingProp(RWProperty[Tuple[int, int, int, int], PaddingType]):
     def __get__(self, instance: TkWidget, owner: object = None):
         if owner is None:
             return NotImplemented
         return convert_padding_back(cget(instance, (int,), "-padding"))
 
-    def __set__(self, instance: TkWidget, value: int | tuple[int, ...] | None) -> None:
+    def __set__(self, instance: TkWidget, value: PaddingType) -> None:
         config(instance, padding=convert_padding_to_tk(value))
