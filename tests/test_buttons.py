@@ -1,14 +1,15 @@
-from tukaan import Button
 from PIL import Image
+
+from tukaan import Button
 
 
 def test_button_initialization(root):
     stuff = []
-    command = lambda: stuff.append("foo")
+    callback = lambda: stuff.append("foo")
 
     button1 = Button(root)
     button2 = Button(root, "Spam ham egg")
-    button3 = Button(root, "Spam ham egg", action=command)
+    button3 = Button(root, "Spam ham egg", action=callback)
 
     assert button1.parent is root
     assert button2.parent is root
@@ -19,10 +20,10 @@ def test_button_initialization(root):
     assert button2.text == button3.text
 
     assert button2.action is None
-    assert button3.action is command
+    assert button3.action is callback
 
     button2.action = button3.action
-    assert button2.action is command
+    assert button2.action is callback
 
     button2.invoke()
     assert "foo" in stuff
@@ -32,6 +33,7 @@ def test_button_initialization(root):
 
 
 ### Properties
+
 
 def test_button_image_property(root, tests_dir):
     img = Image.open(tests_dir / "spam.png")

@@ -11,12 +11,10 @@ else:
     from typing import Callable
     from typing_extensions import Protocol
 
+from tukaan._base import TkWidget
 from tukaan._tcl import Procedure, Tcl
 from tukaan._typing import P, PaddingType, T, T_co, T_contra
 from tukaan._variables import ControlVariable
-
-if TYPE_CHECKING:
-    from tukaan._base import TkWidget
 
 
 def cget(widget: TkWidget, return_type: T | type[T], option: str) -> T:
@@ -115,7 +113,9 @@ class LinkProp(RWProperty[ControlVariable[T], Optional[ControlVariable[T]]]):
             return NotImplemented
         return cget(instance, ControlVariable, "-variable")
 
-    def __set__(self, instance: TkWidget, value: ControlVariable[T] | None) -> None:
+    def __set__(self, instance: TkWidget, value: ControlVariable[T] | TkWidget | None) -> None:
+        if isinstance(value, TkWidget):
+            value = value._variable
         instance._variable = value
         return config(instance, variable=value or "")
 

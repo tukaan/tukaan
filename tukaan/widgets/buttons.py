@@ -6,9 +6,9 @@ from PIL.Image import Image
 
 from tukaan._base import TkWidget, Widget
 from tukaan._images import ImageProp
-from tukaan._properties import ActionProp, FocusableProp, IntDesc, LinkProp, StrDesc
+from tukaan._properties import ActionProp, FocusableProp, IntDesc, LinkProp, StrDesc, cget, config
 from tukaan._tcl import Tcl
-from tukaan._variables import BoolVar
+from tukaan._variables import BoolVar, ControlVariable, IntVar
 
 
 class Button(Widget, widget_cmd="ttk::button", tk_class="TButton"):
@@ -92,7 +92,7 @@ class CheckBox(Widget, widget_cmd="ttk::checkbutton", tk_class="TCheckbutton"):
 
     @property
     def selected(self) -> bool:
-        """Get or set whether this checkbox is currently selected or not."""
+        """Get or set whether this checkbox is currently selected."""
         return self._variable.get()
 
     @selected.setter
@@ -108,8 +108,66 @@ class CheckBox(Widget, widget_cmd="ttk::checkbutton", tk_class="TCheckbutton"):
         self._action = func
 
 
-class RadioButton:
-    ...
+class RadioButton(Widget, widget_cmd="ttk::radiobutton", tk_class="TRadiobutton"):
+    action = ActionProp()
+    focusable = FocusableProp()
+    link = LinkProp[object]()
+    text = StrDesc()
+    width = IntDesc()
+
+    def __init__(
+        self,
+        parent: TkWidget,
+        text: str | None = None,
+        value: float | str | bool = 0,
+        link: ControlVariable | TkWidget | None = None,
+        *,
+        action: Callable[..., None] | None = None,
+        focusable: bool | None = None,
+        width: int | None = None,
+    ) -> None:
+        if isinstance(link, ControlVariable):
+            self._variable = link
+        elif isinstance(link, RadioButton):
+            self._variable = link._variable
+        elif link is None:
+            self._variable = ControlVariable.get_class_for_type(value)(value)
+        if not isinstance(value, self._variable._type_spec):
+            raise TypeError("value type must match the linked control variable's type.")
+
+        super().__init__(
+            parent,
+            command=action,
+            takefocus=focusable,
+            text=text,
+            value=value,
+            variable=self._variable,
+            width=width,
+        )
+
+    def invoke(self) -> None:
+        """Invoke this radiobutton, as if it had been clicked."""
+        Tcl.call(None, self, "invoke")
+
+    def select(self) -> None:
+        """Select this radiobutton."""
+        self._variable.set(self.value)
+
+    @property
+    def selected(self) -> bool:
+        """Get or set whether this radiobutton is selected."""
+        return self._variable.get() == self.value
+
+    @property
+    def value(self) -> float | str | bool:
+        return cget(self, self._variable._type_spec, "-value")
+
+    @value.setter
+    def value(self, value: float | str | bool) -> None:
+        if not isinstance(value, self._variable._type_spec):
+            raise TypeError("value type must match the linked control variable's type.")
+
+        config(self, value=value)
 
 
 class RadioGroup:

@@ -3,11 +3,11 @@ from tukaan import BoolVar, CheckBox
 
 def test_button_initialization(root):
     stuff = []
-    command = lambda value: stuff.append(value)
+    callback = lambda value: stuff.append(value)
 
     checkbox1 = CheckBox(root)
     checkbox2 = CheckBox(root, "Spam ham egg")
-    checkbox3 = CheckBox(root, "Spam ham egg", selected=True, action=command)
+    checkbox3 = CheckBox(root, "Spam ham egg", selected=True, action=callback)
     assert isinstance(checkbox1._variable, BoolVar)
 
     assert checkbox1.text == ""
@@ -19,10 +19,10 @@ def test_button_initialization(root):
     assert checkbox3.selected
 
     assert checkbox2.action is None
-    assert checkbox3.action is command
+    assert checkbox3.action is callback
 
     checkbox2.action = checkbox3.action
-    assert checkbox2.action is command
+    assert checkbox2.action is callback
 
     checkbox2.invoke()
     assert stuff and stuff[0] is True
