@@ -52,6 +52,7 @@ class OptionDescriptor(RWProperty[T, T_contra]):
 
 class DynamicProperty:
     def __set_name__(self, owner: type[TkWidget], name: str) -> None:
+        self._name = name
         if not self._option:
             self._option = name
 
@@ -82,9 +83,15 @@ class StrDesc(OptionDescriptor[str, str], DynamicProperty):
 
 
 class EnumDesc(OptionDescriptor[Enum, Enum], DynamicProperty):
-    def __init__(self, option: str = "", enum: EnumType | None = None) -> None:
+    def __init__(self, option: str = "", enum: EnumType | None = None, allow_None: bool = True) -> None:
         assert enum is not None, "use the `enum` kwarg to set the enum for an EnumDesc"
+        self._allow_None = allow_None
         super().__init__(option, enum)  # type: ignore
+
+    def __set__(self, instance: TkWidget, value: T_contra) -> None:
+        if value is None and not self._allow_None:
+            raise TypeError(f"value for {type(instance).__name__}.{self._name} must be a member of {self._type!r}")
+        super().__set__(instance, value)
 
 
 class FocusableProp(BoolDesc):
