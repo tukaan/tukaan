@@ -7,53 +7,58 @@ from tukaan._tcl import Procedure, Tcl
 
 
 def test_convert_from_tcl_str(*_):
-    result = Tcl.call(str, "set", "test_var", "test_convert_str_from_tcl")
-    assert isinstance(result, str)
-    assert result == "test_convert_str_from_tcl"
+    for string in ("", "test_convert_str_from_tcl"):
+        assert Tcl.call(str, "set", "test_var", string) == string
 
 
 def test_convert_from_tcl_int():
-    result = Tcl.call(int, "set", "test_var", "65536")
-    assert isinstance(result, int)
-    assert result == 65536
+    for number in (0, 3, 65536, 1234567890):
+        result = Tcl.call(int, "set", "test_var", number)
+        assert isinstance(result, int)
+        assert result == number
 
 
 def test_convert_from_tcl_float():
-    result = Tcl.call(float, "set", "test_var", "3.141591653")
-    assert isinstance(result, float)
-    assert result == 3.141591653
+    for number in (0, 0.0, 0.1, 3.141592653):
+        result = Tcl.call(float, "set", "test_var", number)
+        assert isinstance(result, float)
+        assert result == number
+
+
+def test_Nonelike_to_number():
+    for none in (False, ""):
+        for type_ in (int, float):
+            result = Tcl.call(type_, "set", "test_var", none)
+            assert isinstance(result, type_)
+            assert result == 0
 
 
 def test_convert_from_tcl_bool():
-    result = Tcl.call(bool, "set", "test_var", "1")
-    assert isinstance(result, bool)
-    assert result is True
+    truthy = ["true", "tru", "yes", "y", "on", "1"]
+    falsy = ["false", "fal", "no", "n", "off", "0"]
 
-    result = Tcl.call(bool, "set", "test_var", "0")
-    assert isinstance(result, bool)
-    assert result is False
+    for string in truthy:
+        assert Tcl.call(bool, "set", "test_var", string.upper()) is True
+        assert Tcl.call(bool, "set", "test_var", string.lower()) is True
 
-    result = Tcl.call(bool, "set", "test_var", "yes")
-    assert isinstance(result, bool)
-    assert result is True
+    for string in falsy:
+        assert Tcl.call(bool, "set", "test_var", string.upper()) is False
+        assert Tcl.call(bool, "set", "test_var", string.lower()) is False
+
+    for boolean in (0, 1, False, True):
+        assert Tcl.call(bool, "set", "test_var", boolean) == boolean
 
 
 def test_convert_from_tcl_set():
-    result = Tcl.call({int}, "set", "test_var", Tcl.to({1, 2, 3}))
-    assert isinstance(result, set)
-    assert result == {1, 2, 3}
+    assert Tcl.call({int}, "set", "test_var", Tcl.to({1, 2, 3})) == {1, 2, 3}
 
 
 def test_convert_from_tcl_list():
-    result = Tcl.call([int], "set", "test_var", Tcl.to([1, 2, 3]))
-    assert isinstance(result, list)
-    assert result == [1, 2, 3]
+    assert Tcl.call([int], "set", "test_var", Tcl.to([1, 2, 3])) == [1, 2, 3]
 
 
 def test_convert_from_tcl_tuple():
-    result = Tcl.call((int,), "set", "test_var", Tcl.to((1, 2, 3)))
-    assert isinstance(result, tuple)
-    assert result == (1, 2, 3)
+    assert Tcl.call((int,), "set", "test_var", Tcl.to((1, 2, 3))) == (1, 2, 3)
 
 
 def test_convert_from_tcl_dict():

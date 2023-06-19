@@ -7,5 +7,5 @@ from tukaan.app import App
 from tukaan.toplevels.main_window import MainWindow
 from tukaan.widgets.buttons import Button, CheckBox, RadioButton
 from tukaan.widgets.containers import Frame, LabeledPanel, Panel, SplitView
-from tukaan.widgets.static import Divider
+from tukaan.widgets.static import Divider, Label
 from tukaan.widgets.status import ProgressBar

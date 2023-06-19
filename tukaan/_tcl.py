@@ -112,9 +112,9 @@ class Tcl:
         elif type_spec is bool:
             return Tcl._interp.getboolean(value)
         elif type_spec is int:
-            return Tcl._interp.getint(value)
+            return Tcl._interp.getint(value) if value else 0
         elif type_spec is float:
-            return Tcl._interp.getdouble(value)
+            return Tcl._interp.getdouble(value) if value else 0.0
         elif isinstance(type_spec, type):
             if hasattr(type_spec, "__from_tcl__"):
                 return type_spec.__from_tcl__(value)  # type: ignore

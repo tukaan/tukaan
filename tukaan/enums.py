@@ -10,6 +10,50 @@ class Align(Enum):
     Center = 3
 
 
+class Justify(Enum):
+    Center = "center"
+    Left = "left"
+    Right = "right"
+
+
+class Anchor(Enum):
+    Bottom = "s"
+    BottomLeft = "sw"
+    BottomRight = "se"
+    Center = "center"
+    Left = "w"
+    Right = "e"
+    Top = "n"
+    TopLeft = "nw"
+    TopRight = "ne"
+
+
+class ProgressMode(Enum):
+    Determinate = "determinate"
+    Indeterminate = "indeterminate"
+
+
+class Orientation(Enum):
+    Horizontal = "horizontal"
+    Vertical = "vertical"
+
+
+class ImagePosition(Enum):
+    Below = "bottom"
+    Default = "none"
+    ImageOnly = "image"
+    Left = "left"
+    Overlap = "center"
+    Right = "right"
+    TextOnly = "text"
+    Above = "top"
+
+    @classmethod
+    def _missing_(cls, value: object) -> ImagePosition | None:
+        if value == "":
+            return cls.Default
+
+
 class WindowState(Enum):
     Closed = "closed"
     FullScreen = "fullscreen"
@@ -49,13 +93,3 @@ class Resizable(Enum):
     Horizontal = ("1", "0")
     Vertical = ("0", "1")
     Both = ("1", "1")
-
-
-class ProgressMode(Enum):
-    Determinate = "determinate"
-    Indeterminate = "indeterminate"
-
-
-class Orientation(Enum):
-    Horizontal = "horizontal"
-    Vertical = "vertical"

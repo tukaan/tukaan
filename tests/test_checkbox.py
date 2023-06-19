@@ -1,13 +1,16 @@
 from tukaan import BoolVar, CheckBox
 
 
-def test_button_initialization(root):
+def test_checkbox_initialization(root):
     stuff = []
     callback = lambda value: stuff.append(value)
 
     checkbox1 = CheckBox(root)
     checkbox2 = CheckBox(root, "Spam ham egg")
     checkbox3 = CheckBox(root, "Spam ham egg", selected=True, action=callback)
+
+    assert checkbox1.parent is root
+
     assert isinstance(checkbox1._variable, BoolVar)
 
     assert checkbox1.text == ""

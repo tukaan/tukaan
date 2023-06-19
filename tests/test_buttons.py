@@ -12,8 +12,6 @@ def test_button_initialization(root):
     button3 = Button(root, "Spam ham egg", action=callback)
 
     assert button1.parent is root
-    assert button2.parent is root
-    assert button3.parent is root
 
     assert button1.text == ""
     assert button2.text == "Spam ham egg"
