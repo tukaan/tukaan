@@ -35,7 +35,7 @@ class TkWidget:
     grid: LayoutManagerBase
 
     def __init__(self):
-        self._child_type_count = defaultdict(lambda: count())
+        self._child_type_count = defaultdict(count)
 
         for name, lm in LayoutManagerBase.layout_managers.items():
             setattr(self, name, lm(self._name, self._toplevel_name))
