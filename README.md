@@ -1,5 +1,5 @@
 <p>
-  <img src="https://raw.githubusercontent.com/tukaan/.github/master/assets/tukaan.png" alt="Tukaan logo" width="130px" align="left">
+  <img src="https://raw.githubusercontent.com/tukaan/.github/master/assets/tukaan.png" alt="Tukaan logo" width="150px" align="left">
   <h1>Tukaan</h1>
   Tukaan is a Python toolkit for creating cross-platform GUI applications
 </p>
@@ -16,11 +16,10 @@
 </br>
 
 ## We are looking for contributors 😍
-Tukaan is already one and a half years old, but it is still in alpha state. Developing such a toolkit takes a lot of work, so the more of us there are, the better it will be, and the sooner we can release a stable version.
+Tukaan is already two years old 🎈🎉, but the project is still in early alpha state. Developing such a toolkit requires a lot of design and coding work, and I'm but a single person.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for more.
+If you like this project and want to get involved, we'd love to see your contribution! Read [CONTRIBUTING.md](CONTRIBUTING.md) for more.
 
----
 
 ## What is Tukaan?
 
@@ -29,21 +28,28 @@ Tukaan is a GUI toolkit based on Tcl/Tk. Yeah, that’s the same thing that powe
 It is designed to be a modern and pythonic framework that provides everything you need in a GUI application, without having to install all sorts of third-party extensions to accomplish a basic task.
 
 
-### 🔶 Tukaan is powerful
+### :large_orange_diamond: Tukaan is powerful
 With Tukaan you can build whatever you want. It includes a wide variety of widgets, from basic things like tooltips to advanced megawidgets, dozens of options for integration with the operating system, and a bunch of other things that make creating an application even more convenient.
 
-### 🔶 Tukaan is modern
+### :large_orange_diamond: Tukaan is modern
 Tukaan does not try to mimic the look and feel of Motif or Windows 95. You can create interfaces that look native on Windows, macOS and Plasma, or theme it however you like, so the users might actually want to use it. Unlike Tkinter, it has most of the features you expect from a GUI toolkit in the 21st century. No need to spend hours browsing random forums to figure out how to load a custom font file, such basic things are built in already!
 
-### 🔶 Tukaan is intuitive
+### :large_orange_diamond: Tukaan is intuitive
 Tukaan is pythonic and intuitive, so you don’t necessarily have to look up the documentation every time, you can figure it out for yourself. However, keep in mind that it is not recommended for complete beginners. You need some knowledge of Python, and some sort of experience in GUI programming can also come handy, although that’s not required.
 
+</br>
+<div align="center">
+<kbd></br>
+
 [Get started with Tukaan!](https://tukaan.github.io/docs)
+
+</kbd>
+</div>
 
 ## FAQ
 
 #### Why did you name this project `Tukaan`?
-Tk's logo is a feather, so I wanted to name the project after a bird with `T` and `K` in its name. So I came up with `tukán` (means toucan in english). However Github doesn't allow non-english characters in repository names, so I had to simplify it to `tukaan`.
+Tk's logo is a feather, so I wanted to name the project after a bird with `T` and `K` in its name. So I came up with `tukán` (means toucan in english), and simplified it to `tukaan`.
 
 #### How do you pronounce `Tukaan`?
 `tukaːn`
